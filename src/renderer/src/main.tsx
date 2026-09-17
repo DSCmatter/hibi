@@ -35,6 +35,7 @@ import './styles.css'
 import '../../ui/ui-case'
 import { documentExtension, isDocumentView } from '../../shared/document-types'
 import type {
+  RecentWorkspace,
   WorkspaceAction,
   WorkspaceActionResult,
   WorkspaceState,
@@ -287,6 +288,9 @@ function App() {
   }, [settingsOpen, paletteOpen])
   const [findOpen, setFindOpen] = useState(false)
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null)
+  const [recentWorkspaces, setRecentWorkspaces] = useState<
+    RecentWorkspace[] | null
+  >(null)
   const [welcomeDismissed, setWelcomeDismissed] = useState(
     () => sessionStorage.getItem('hibi:welcome-dismissed') === 'true',
   )
@@ -516,6 +520,13 @@ function App() {
 
   useEffect(() => {
     let active = true
+    // Read the welcome list alongside document/addon state, before the editor mounts.
+    void window.hibi
+      .getRecentWorkspaces()
+      .catch(() => [])
+      .then((items) => {
+        if (active) setRecentWorkspaces(items)
+      })
     Promise.all([
       window.hibi.getAppInfo(),
       window.hibi.getDocument(),
@@ -1581,6 +1592,7 @@ function App() {
           )}
           {showWelcome && addonHost.ready && (
             <StartupPlaceholder
+              recent={recentWorkspaces}
               mode={mode}
               busy={busy}
               onOpen={(id) => void openFolder(id)}

@@ -22,6 +22,8 @@ macOS uses the installed bundle's icon directly. Development sets a 256px dock i
 
 Independent native preferences load concurrently. Appearance, protocol security, permission policy, and IPC registration precede navigation; other preference reads overlap renderer loading. IPC waits for those reads before accessing session state or processing edits.
 
+The recent-workspace list is read alongside document metadata and addon preferences, before editor capabilities finish loading. Reapplying the current interface casing does not rewrite preferences or rebuild the native menu.
+
 Renderer catalogs import data-only manifests and optional lightweight `flavor-info.ts` descriptors. Implementations load only when enabled. Keep syntax detection separate from nodes, renderers, fonts, and export code so disabled flavors remain discoverable without loading their engines. `Settings.tsx` is a separate lazy boundary; shared runtime preferences belong outside it.
 
 The shell can render before document capabilities finish. Enabled schema, serialization, matching document formats, and input addons must finish `start()` before editing begins. A failed required addon leaves source-only editing available. Unknown API v1 addons keep this conservative behavior. `startup: 'background'` is only for services/UI that do not change editing semantics. Unrelated enabled formats and background services activate at idle after required capabilities; disabling an in-flight addon invalidates its activation and scoped registrations. Existing editors stay mounted and inert during required capability changes.

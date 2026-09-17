@@ -595,6 +595,7 @@ if (!app.requestSingleInstanceLock()) {
       })
       handle(UI_CASE_CHANNEL, async (event, value: unknown) => {
         trustedWindow(event)
+        if (value === getUiCase()) return
         await saveUiCase(value)
         installMenu()
       })
