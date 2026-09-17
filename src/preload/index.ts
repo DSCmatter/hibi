@@ -105,6 +105,13 @@ if (process.isMainFrame) {
     updateDocument: (markdown) =>
       ipcRenderer.invoke(DOCUMENT_CHANNELS.update, markdown),
     openDocument: () => ipcRenderer.invoke(DOCUMENT_CHANNELS.open),
+    openExternalDocuments: () => ipcRenderer.invoke(DOCUMENT_CHANNELS.external),
+    onExternalDocuments: (callback) => {
+      const listener = () => callback()
+      ipcRenderer.on(DOCUMENT_CHANNELS.externalPending, listener)
+      return () =>
+        ipcRenderer.removeListener(DOCUMENT_CHANNELS.externalPending, listener)
+    },
     newDocument: () => ipcRenderer.invoke(DOCUMENT_CHANNELS.new),
     saveDocument: (saveAs) =>
       ipcRenderer.invoke(DOCUMENT_CHANNELS.save, saveAs),

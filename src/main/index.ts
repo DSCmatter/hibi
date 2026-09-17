@@ -1,4 +1,4 @@
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron'
 import {
@@ -53,6 +53,7 @@ import {
   getDocument,
   getDocumentPath,
   hasUnsavedDocuments,
+  loadDocument,
   loadDocumentPreferences,
   moveDocumentTab,
   navigateDocument,
@@ -65,6 +66,8 @@ import {
   setTabsEnabled,
   updateDocument,
 } from './document'
+import { isDocumentName } from './document-types'
+import { externalFileArguments } from './external-files'
 import { listVersions, previewVersion } from './history'
 import { hotkeys, loadHotkeys, saveHotkeys } from './hotkeys'
 import { readDocumentImage } from './images'
@@ -146,6 +149,24 @@ let mainWindow: BrowserWindow | null = null
 let fileOperation: Promise<unknown> | null = null
 let quitting = false
 let recordingHotkey = false
+const externalFiles: string[] = []
+function queueExternalFiles(paths: string[]) {
+  for (const path of paths) {
+    if (!externalFiles.includes(path)) externalFiles.push(path)
+  }
+  if (!mainWindow) createWindow()
+  mainWindow?.webContents.send(DOCUMENT_CHANNELS.externalPending)
+  if (!testing && mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  }
+}
+// Finder can deliver these before app.whenReady(). Keep them until the renderer asks.
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  queueExternalFiles([path])
+})
 app.on('before-quit', () => {
   quitting = true
 })
@@ -482,7 +503,11 @@ function installMenu(): void {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
+  externalFiles.push(
+    ...externalFileArguments(process.argv, process.cwd(), !app.isPackaged),
+  )
+  app.on('second-instance', (_event, argv, cwd) => {
+    queueExternalFiles(externalFileArguments(argv, cwd, !app.isPackaged))
     if (testing) return
     if (!mainWindow) createWindow()
     if (mainWindow?.isMinimized()) mainWindow.restore()
@@ -741,6 +766,28 @@ if (!app.requestSingleInstanceLock()) {
       })
       handle(DOCUMENT_CHANNELS.open, (event) =>
         runFileOperation(event, openDocument),
+      )
+      handle(DOCUMENT_CHANNELS.external, (event) =>
+        readAfterFileOperation(event, () =>
+          runFileOperation(event, async (window) => {
+            let document = null
+            const errors: string[] = []
+            for (const path of externalFiles.splice(0)) {
+              try {
+                if (!isDocumentName(path))
+                  throw new Error('Unsupported document format.')
+                const opened = await loadDocument(window, path)
+                if (!opened) break
+                document = opened
+              } catch (error) {
+                errors.push(
+                  `${basename(path)}: ${error instanceof Error ? error.message : 'Could not open file.'}`,
+                )
+              }
+            }
+            return { document, errors }
+          }),
+        ),
       )
       handle(DOCUMENT_CHANNELS.navigate, (event, direction: unknown) =>
         runFileOperation(event, (window) =>

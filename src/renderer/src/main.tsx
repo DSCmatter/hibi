@@ -502,6 +502,55 @@ function App() {
     }
   }, [acceptDocument])
 
+  const documentLoaded = document !== null
+  useEffect(() => {
+    if (!documentLoaded) return
+    let stopped = false
+    let running = false
+    let requested = true
+    let timer: ReturnType<typeof setTimeout>
+    const drain = async () => {
+      if (stopped || running || !requested) return
+      if (busyRef.current || dialogs.isOpen()) {
+        timer = setTimeout(() => void drain(), 100)
+        return
+      }
+      requested = false
+      running = true
+      busyRef.current = true
+      setBusy(true)
+      try {
+        const result = await window.hibi.openExternalDocuments()
+        if (result.document) {
+          acceptDocument(result.document)
+          savedText.current = result.document.savedMarkdown
+          setSettingsOpen(false)
+          setWorkspace(await window.hibi.getWorkspace())
+        }
+        if (result.errors.length) setError(result.errors.join('\n'))
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : 'Could not open file.',
+        )
+      } finally {
+        running = false
+        busyRef.current = false
+        setBusy(false)
+        void drain()
+      }
+    }
+    const unsubscribe = window.hibi.onExternalDocuments(() => {
+      requested = true
+      void drain()
+    })
+    void drain()
+    return () => {
+      stopped = true
+      clearTimeout(timer)
+      unsubscribe()
+    }
+  }, [documentLoaded, acceptDocument, dialogs, setError])
+
   const runCommand = useCallback(
     async (command: DocumentCommand) => {
       if (busyRef.current || dialogs.isOpen()) return false
