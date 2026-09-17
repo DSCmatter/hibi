@@ -19,7 +19,11 @@
 .graph-expanded-placeholder {
   aspect-ratio: 1;
 }
-.graph-fullscreen .graph-canvas {
+.graph-modal {
+  height: min(65vh, 560px);
+  min-height: 240px;
+}
+.graph-modal .graph-canvas {
   flex: 1;
   min-height: 0;
   aspect-ratio: auto;

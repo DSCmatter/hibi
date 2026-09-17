@@ -16,6 +16,14 @@ import type { noteGraph } from './model'
 
 type Node = ReturnType<typeof noteGraph>['nodes'][number] & SimulationNodeDatum
 type Edge = { source: Node; target: Node }
+type View = { x: number; y: number; scale: number; centered: string | null }
+
+function cameraPosition(view: View, nodes: Node[]) {
+  const node = nodes.find((node) => node.id === view.centered)
+  return node
+    ? { x: -(node.x ?? 0) * view.scale, y: -(node.y ?? 0) * view.scale }
+    : { x: view.x, y: view.y }
+}
 export function GraphCanvas({
   graph,
   active,
@@ -30,7 +38,12 @@ export function GraphCanvas({
   const svg = useRef<SVGSVGElement>(null)
   const simulation = useRef<Simulation<Node, undefined> | null>(null)
   const [size, setSize] = useState({ width: 640, height: 400 })
-  const [view, setView] = useState({ x: 0, y: 0, scale: 1 })
+  const [view, setView] = useState<View>({
+    x: 0,
+    y: 0,
+    scale: 1,
+    centered: active,
+  })
   const [layout, setLayout] = useState<{ nodes: Node[]; edges: Edge[] }>({
     nodes: [],
     edges: [],
@@ -61,10 +74,12 @@ export function GraphCanvas({
           0.15,
           Math.min(4, old.scale * Math.exp(-event.deltaY * 0.002)),
         )
+        const position = cameraPosition(old, simulation.current?.nodes() ?? [])
         return {
           scale,
-          x: x - ((x - old.x) * scale) / old.scale,
-          y: y - ((y - old.y) * scale) / old.scale,
+          centered: null,
+          x: x - ((x - position.x) * scale) / old.scale,
+          y: y - ((y - position.y) * scale) / old.scale,
         }
       })
     }
@@ -98,16 +113,25 @@ export function GraphCanvas({
       engine.on('tick', publish)
       publish()
     }
-    setView({
+    setView((old) => ({
       x: 0,
       y: 0,
+      centered: old.centered,
       scale: Math.min(1, 8 / Math.sqrt(Math.max(1, nodes.length))),
-    })
+    }))
     return () => {
       engine.stop()
       simulation.current = null
     }
   }, [graph])
+  useEffect(() => {
+    setView((old) => ({ ...old, centered: active }))
+  }, [active])
+  const position = cameraPosition(view, layout.nodes)
+  function activate(node: Node) {
+    setView((old) => ({ ...old, centered: node.id }))
+    open(node.id)
+  }
   function fit() {
     if (!layout.nodes.length) return
     const xs = layout.nodes.map((node) => node.x ?? 0),
@@ -126,6 +150,7 @@ export function GraphCanvas({
     )
     setView({
       scale,
+      centered: null,
       x: (-(left + right) / 2) * scale,
       y: (-(top + bottom) / 2) * scale,
     })
@@ -160,13 +185,15 @@ export function GraphCanvas({
             event.preventDefault()
             setView((old) => ({
               ...old,
-              x: old.x + step[0],
-              y: old.y + step[1],
+              centered: null,
+              x: position.x + step[0],
+              y: position.y + step[1],
             }))
           }
         }}
         onPointerDown={(event) => {
           if (event.button !== 0) return
+          setView((old) => ({ ...old, ...position, centered: null }))
           const id =
             event.target instanceof Element
               ? event.target.closest('[data-node]')?.getAttribute('data-node')
@@ -217,14 +244,16 @@ export function GraphCanvas({
           if (!current || current.pointer !== event.pointerId) return
           drag.current = null
           event.currentTarget.releasePointerCapture(event.pointerId)
-          if (current.node && !current.moved) open(current.node.id)
+          if (current.node && !current.moved) activate(current.node)
         }}
         onPointerCancel={() => {
           drag.current = null
         }}
       >
         <title>Workspace note connections</title>
-        <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
+        <g
+          transform={`translate(${position.x} ${position.y}) scale(${view.scale})`}
+        >
           {layout.edges.map((edge) => (
             <line
               key={JSON.stringify([edge.source.id, edge.target.id])}
@@ -247,7 +276,7 @@ export function GraphCanvas({
                 if (['Enter', ' '].includes(event.key)) {
                   event.preventDefault()
                   event.stopPropagation()
-                  open(node.id)
+                  activate(node)
                 }
               }}
             >

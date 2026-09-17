@@ -24,7 +24,7 @@ if (confirmed) await context.dialogs.alert({ title: 'name selected', description
 
 ## custom content
 
-Use `size: 'fullscreen'` for an immersive view such as the graph. It fills the app window while retaining the shared header, close button, focus trap, and Escape dismissal. Normal and wide dialogs retain their existing dimensions.
+Use `size: 'fullscreen'` when a view needs the entire app window. It retains the shared header, close button, focus trap, and Escape dismissal. Normal and wide dialogs retain their existing dimensions; the expanded graph uses a wide modal.
 
 `open<T>({ title, description?, content, footer?, size?, closeOnOutsideClick? })` returns `{ result: Promise<T | null>, close(value?) }`. the `content({ close })` and optional `footer({ close })` render functions must be pure; render a component inside them when you need hooks. `size` is `normal`, `wide`, or `fullscreen`; all fit the viewport. outside clicks dismiss by default and can be disabled for a form; escape and the close button remain available.
 

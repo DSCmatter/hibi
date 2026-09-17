@@ -8,14 +8,12 @@ import { noteGraph } from './model'
 
 export function GraphPanel({
   context,
-  fullscreen = false,
+  expandedView = false,
   initialQuery = '',
-  onOpen,
 }: {
   context: AddonContext
-  fullscreen?: boolean
+  expandedView?: boolean
   initialQuery?: string
-  onOpen?: () => void
 }) {
   const { snapshot, workspace, loading, error } = useWorkspaceSnapshot(context)
   const [query, setQuery] = useState(initialQuery)
@@ -68,27 +66,21 @@ export function GraphPanel({
     }
   }, [full, query])
   const open = (path: string) => {
-    onOpen?.()
     void context.workspace.openFile(path)
   }
   const expand = () => {
     setExpanded(true)
     const dialog = context.dialogs.open({
       title: 'Workspace graph',
-      size: 'fullscreen',
-      content: ({ close }) => (
-        <GraphPanel
-          context={context}
-          fullscreen
-          initialQuery={query}
-          onOpen={() => close(null)}
-        />
+      size: 'wide',
+      content: () => (
+        <GraphPanel context={context} expandedView initialQuery={query} />
       ),
     })
     void dialog.result.then(() => setExpanded(false))
   }
   return (
-    <Panel className={`graph-panel${fullscreen ? ' graph-fullscreen' : ''}`}>
+    <Panel className={`graph-panel${expandedView ? ' graph-modal' : ''}`}>
       <ControlRow className="graph-controls">
         <TextInput
           type="search"
@@ -134,7 +126,7 @@ export function GraphPanel({
               graph={graph}
               active={workspace.activePath}
               open={open}
-              expand={fullscreen ? undefined : expand}
+              expand={expandedView ? undefined : expand}
             />
           ) : (
             <PanelMessage
@@ -144,7 +136,7 @@ export function GraphPanel({
               Try another filter.
             </PanelMessage>
           )}
-          {!fullscreen && (
+          {!expandedView && (
             <section className="graph-connections" aria-label="Connections">
               <h3>Connections</h3>
               {connections.length ? (

@@ -161,6 +161,46 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
   assert.equal(await graph.locator('line').count(), 1)
   const canvas = await graph.locator('.graph-canvas').boundingBox()
   assert.ok(Math.abs(canvas.width - canvas.height) < 1)
+  const assertCentered = async (view, path) => {
+    const circle = view.locator(`[data-node="${path}"] circle`)
+    await page.waitForFunction(
+      (circle) => {
+        const node = circle.getBoundingClientRect()
+        const canvas = circle.closest('svg').getBoundingClientRect()
+        return (
+          Math.abs(node.x + node.width / 2 - canvas.x - canvas.width / 2) < 1 &&
+          Math.abs(node.y + node.height / 2 - canvas.y - canvas.height / 2) < 1
+        )
+      },
+      await circle.elementHandle(),
+    )
+  }
+  const centerNode = async (view, path, keyboard = false) => {
+    const svg = view.getByRole('application', { name: 'Workspace graph' })
+    await svg.focus()
+    await svg.press('ArrowRight')
+    const scale = (
+      await svg.locator(':scope > g').getAttribute('transform')
+    ).match(/scale\(([^)]+)\)/)[1]
+    const node = view.locator(`[data-node="${path}"]`)
+    if (keyboard) await node.press('Enter')
+    else await node.locator('circle').click()
+    await assertCentered(view, path)
+    assert.equal(
+      (await svg.locator(':scope > g').getAttribute('transform')).match(
+        /scale\(([^)]+)\)/,
+      )[1],
+      scale,
+    )
+    await waitForAsync(
+      page,
+      async (path) => (await window.hibi.getDocument()).name === path,
+      path,
+    )
+  }
+  await graph.getByRole('button', { name: /^zoom in$/i }).click()
+  await centerNode(graph, 'b.md')
+  await centerNode(graph, 'b.md', true)
   await graph
     .getByRole('region', { name: 'Connections' })
     .getByRole('button', { name: 'a.md', exact: true })
@@ -178,14 +218,20 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
   await expanded.locator('[data-node="a.md"]').waitFor()
   await page.waitForFunction(() => {
     const rect = document
-      .querySelector('dialog[data-size="fullscreen"]')
+      .querySelector('dialog[data-size="wide"]')
       .getBoundingClientRect()
     return (
-      Math.abs(rect.width - innerWidth) < 1 &&
-      Math.abs(rect.height - innerHeight) < 1
+      rect.x > 0 &&
+      rect.y > 0 &&
+      rect.width < innerWidth &&
+      rect.height < innerHeight
     )
   })
   assert.equal(await graph.locator('.graph-canvas').count(), 0)
+  await centerNode(expanded, 'a.md')
+  assert.equal(await expanded.isVisible(), true)
+  await centerNode(expanded, 'b.md', true)
+  assert.equal(await expanded.isVisible(), true)
   await page.keyboard.press('Escape')
   await expanded.waitFor({ state: 'hidden' })
   await graph.locator('.graph-canvas').waitFor()
@@ -225,6 +271,7 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
     .getByRole('button', { name: /^open a\.md$/i, exact: true })
     .focus()
   await page.keyboard.press('Enter')
+  await assertCentered(graph, 'a.md')
   assert.equal(await graph.isVisible(), true)
   await page.waitForFunction(
     () => document.querySelector('.app').getAttribute('aria-busy') === 'false',
