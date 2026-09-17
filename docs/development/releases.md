@@ -19,6 +19,8 @@ All packages retain `com.ryanaque.hibi` and the Hibi icons from `electron-builde
 
 The workflow uses the repository's built-in token; only the publication job has `contents: write`. No additional secret is needed. To check changelog generation locally, run `node --test tests/nightly.test.mjs`; workflow syntax is checked with `actionlint`.
 
+Nightlies share the incremental checks/cache with regular CI. Select `clean` on a manual run to rebuild and run all tests without caches. A clean run can rebuild an unchanged revision for validation; it keeps an already published prerelease intact rather than replacing its assets.
+
 ## Website addon catalog
 
 `.github/workflows/addons-sync.yml` runs on pushes to `main` that change `src/addons/**`. It can also be run manually for an initial sync. `node scripts/export-addons.mjs` exports `authors.ts`, manifests, Markdown files, and images into `out/addons`, preserving relative paths. Runtime TypeScript, stylesheets, audio, hidden files, and symlinks are excluded; manifests are copied without being executed.
