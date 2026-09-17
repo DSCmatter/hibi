@@ -837,6 +837,7 @@ function App() {
       case 'markdown':
         showTitlebar()
         setSettingsOpen(false)
+        dismissWelcome()
         setMode(command)
         break
       case 'toggle-titlebar':

@@ -81,3 +81,6 @@ new, open, save, and save as use native dialogs. hibi checks for unsaved edits b
 source switching preserves original markdown. rich edits may normalize markdown syntax. the [frontmatter addon](frontmatter.md) preserves metadata while allowing visual body edits. raw html, reference definitions, and frontmatter without its enabled addon stay editable in source mode; their rich preview is read-only, without a banner. local images display without rewriting their Markdown references.
 
 documents are UTF-8 and limited to 2 mib. drafts are held in memory; renderer reloads recover them from the main process, but a full process or machine crash can lose unsaved edits.
+# Start screen
+
+Switching editor views dismisses the first-start welcome screen, just like typing or choosing Dismiss. Empty documents retain the regular typing placeholder.
