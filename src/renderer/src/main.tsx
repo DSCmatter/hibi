@@ -293,6 +293,7 @@ function App() {
       setResetEditor((value) => value + 1)
     },
     workspace: {
+      index: () => window.hibi.getWorkspaceIndex(),
       snapshot: () => window.hibi.getWorkspaceSnapshot(),
       get: () => window.hibi.getWorkspace(),
       open: openFolder,

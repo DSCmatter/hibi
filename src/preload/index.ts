@@ -74,6 +74,7 @@ if (process.isMainFrame) {
     openRecentWorkspace: (id) =>
       ipcRenderer.invoke(WORKSPACE_CHANNELS.openRecent, id),
     getWorkspaceSnapshot: () => ipcRenderer.invoke(WORKSPACE_CHANNELS.snapshot),
+    getWorkspaceIndex: () => ipcRenderer.invoke(WORKSPACE_CHANNELS.index),
     workspaceAction: (action) =>
       ipcRenderer.invoke(WORKSPACE_CHANNELS.action, action),
     openWorkspace: () => ipcRenderer.invoke(WORKSPACE_CHANNELS.open),

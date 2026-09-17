@@ -183,6 +183,8 @@ the host removes registrations when the addon stops, preserves source text while
 
 ## shared navigation
 
+`context.workspace.index()` returns the current workspace and note text, including new workspace drafts. It reuses the workspace tree, excludes embedded media, accepts empty folders, and enforces 2,000-note/20 MiB text limits. Use it for tags, connections, and other indexes; `snapshot()` retains its full export behavior. Background reads wait for active file writes without taking the write lock themselves, so sidebar refreshes cannot block saves or plugin actions.
+
 Register a desktop view with `context.sidebar.register({ id, label, icon, Content })`. Its handle's `open(input?)` reveals the shared sidebar and passes selection data to `Content`. Views appear automatically in the titlebar picker and command palette, support pinning and resizing, and disappear when their addon stops. Existing API v1 addons remain compatible.
 
 Unavailable addon pins do not consume the three visible pin slots. Pinning another view clears unavailable entries while startup preserves pins until addons finish loading.

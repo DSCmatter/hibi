@@ -634,6 +634,10 @@ export function useAddons(environment: Environment) {
               disposed
                 ? Promise.reject(new Error('addon is disabled.'))
                 : latest.current.workspace.snapshot(),
+            index: () =>
+              disposed
+                ? Promise.reject(new Error('addon is disabled.'))
+                : latest.current.workspace.index(),
             get: () => latest.current.workspace.get(),
             open: () =>
               disposed

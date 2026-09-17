@@ -82,6 +82,7 @@ import { installedAddons, installedAsset, openAddonsFolder } from './sideload'
 import { getUiCase, loadUiCase, saveUiCase } from './ui-case'
 import {
   getWorkspace,
+  indexWorkspace,
   observeWorkspace,
   openRecentWorkspace,
   openWorkspace,
@@ -166,6 +167,15 @@ function runFileOperation<T>(
   })
   fileOperation = pending
   return pending
+}
+
+async function readAfterFileOperation<T>(
+  event: IpcMainInvokeEvent,
+  read: (window: BrowserWindow) => Promise<T>,
+) {
+  const window = trustedWindow(event)
+  while (fileOperation) await fileOperation.catch(() => undefined)
+  return read(window)
 }
 
 function titleBarColors() {
@@ -581,7 +591,9 @@ if (!app.requestSingleInstanceLock()) {
       ipcMain.handle(
         ADDON_CHANNELS.query,
         (event, id: unknown, method: unknown, input: unknown) =>
-          invokeAddon(trustedWindow(event), id, method, input, true),
+          readAfterFileOperation(event, (window) =>
+            invokeAddon(window, id, method, input, true),
+          ),
       )
       ipcMain.handle(HOTKEY_CHANNELS.get, (event) => {
         trustedWindow(event)
@@ -663,7 +675,10 @@ if (!app.requestSingleInstanceLock()) {
         },
       )
       ipcMain.handle(WORKSPACE_CHANNELS.snapshot, (event) =>
-        runFileOperation(event, snapshotWorkspace),
+        readAfterFileOperation(event, snapshotWorkspace),
+      )
+      ipcMain.handle(WORKSPACE_CHANNELS.index, (event) =>
+        readAfterFileOperation(event, indexWorkspace),
       )
       ipcMain.handle(WORKSPACE_CHANNELS.action, (event, input: unknown) =>
         runFileOperation(event, (window) => workspaceAction(window, input)),

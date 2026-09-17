@@ -17,6 +17,7 @@ export type { CodeLanguage } from '../shared/syntax'
 
 import type {
   ExplorerDecorationProvider,
+  WorkspaceIndex,
   WorkspaceSnapshot,
   WorkspaceState,
 } from '../shared/workspace'
@@ -354,6 +355,8 @@ export type AddonContext = {
   workspace: {
     /** Explorer-only badges/colors. Removed with this addon's lifecycle. */
     registerDecorations: (provider: ExplorerDecorationProvider) => () => void
+    /** Read note text and workspace drafts without embedding media or blocking writes. */
+    index: () => Promise<WorkspaceIndex | null>
     snapshot: () => Promise<WorkspaceSnapshot>
     get: () => Promise<WorkspaceState | null>
     open: () => Promise<WorkspaceState | null>

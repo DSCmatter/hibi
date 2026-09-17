@@ -91,6 +91,7 @@ export type DesktopApi = {
   getRecentWorkspaces: () => Promise<import('./workspace').RecentWorkspace[]>
   openRecentWorkspace: (id: string) => Promise<WorkspaceState | null>
   getWorkspaceSnapshot: () => Promise<import('./workspace').WorkspaceSnapshot>
+  getWorkspaceIndex: () => Promise<import('./workspace').WorkspaceIndex | null>
   workspaceAction: (
     action: import('./workspace').WorkspaceAction,
   ) => Promise<import('./workspace').WorkspaceActionResult | null>
