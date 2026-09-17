@@ -88,6 +88,7 @@ test('desktop launch, isolation, offline reload, and recovery', {
         'getRecentWorkspaces',
         'openRecentWorkspace',
         'getWorkspaceSnapshot',
+        'getWorkspaceIndex',
         'workspaceAction',
         'openWorkspace',
         'refreshWorkspace',

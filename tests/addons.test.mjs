@@ -169,7 +169,7 @@ test('plugin pages, metadata, shared controls, and full source vim editing', {
     await page.waitForFunction(
       (open) =>
         document.querySelector('.app-statusbar').getBoundingClientRect()
-          .left === (open ? 196 : 0),
+          .left === (open ? 256 : 0),
       open,
     )
     assert.equal(
