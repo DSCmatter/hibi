@@ -4,6 +4,8 @@
 
 search below **back to app** to find settings by name or description. results group matching controls under their categories, including enabled plugins. choose a result to open its page and focus the control. the clear button or escape restores the category list; down arrow enters results for keyboard navigation. plugin settings load for discovery only when search or the command palette is open.
 
+returning to settings preserves the search and focuses its input.
+
 ## sidebar views
 
 view shortcuts sit beside the window controls while the sidebar is expanded. the sidebar toggle always keeps its sidebar icon and sits at the right edge of the expanded sidebar, separated from the views dropdown by a 4 px gap. shortcuts that fit appear before it; the views dropdown keeps every view available at narrower widths. collapsing the sidebar hides the shortcuts and dropdown, leaving only the toggle.

@@ -149,10 +149,12 @@ export function SettingsScreen({
   const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
   const searching = terms.length > 0
   useLayoutEffect(() => {
-    if (open)
-      screen.current
-        ?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
-        ?.focus({ preventScroll: true })
+    if (!open) return
+    const target =
+      screen.current?.querySelector<HTMLElement>(
+        '[role="tab"][aria-selected="true"]',
+      ) ?? search.current
+    target?.focus({ preventScroll: true })
   }, [open])
   const casing = useSyncExternalStore(uiCase.subscribe, uiCase.snapshot)
   const pluginPages = addons.filter(

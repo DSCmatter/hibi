@@ -73,4 +73,13 @@ test('settings search groups controls, discovers enabled plugins, and reveals fi
     true,
   )
   await page.getByRole('tab', { name: 'Appearance', exact: true }).waitFor()
+  await search.fill('spelling')
+  await page.getByRole('button', { name: 'Back to app', exact: true }).click()
+  await page.locator('.settings-screen').waitFor({ state: 'hidden' })
+  await clickMenu(app, 'Settings')
+  await page.waitForFunction(
+    () =>
+      document.activeElement?.getAttribute('aria-label') === 'Search settings',
+  )
+  assert.equal(await search.inputValue(), 'spelling')
 })
