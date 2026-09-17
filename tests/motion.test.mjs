@@ -27,6 +27,11 @@ test('switching documents retains split/source layout without replaying view tra
   page.setDefaultTimeout(6000)
   const chooseFile = (file) =>
     app.evaluate(({ dialog }, file) => {
+      // Never leave an unexpected native prompt waiting for a human in CI.
+      dialog.showMessageBox = async () => {
+        globalThis.fileMotionPrompts = (globalThis.fileMotionPrompts ?? 0) + 1
+        return { response: 1 }
+      }
       dialog.showOpenDialog = async () => ({
         canceled: false,
         filePaths: [file],
@@ -105,6 +110,11 @@ test('switching documents retains split/source layout without replaying view tra
       basename(file),
     )
   }
+  assert.equal(
+    await app.evaluate(() => globalThis.fileMotionPrompts ?? 0),
+    0,
+    'switching unedited documents must not open a confirmation dialog',
+  )
 })
 
 test('split panes align corresponding carets in both directions without feedback or document changes', {
