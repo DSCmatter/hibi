@@ -24,6 +24,7 @@ import {
   type Hotkeys,
 } from '../../shared/hotkeys'
 import { isMediaFile } from '../../shared/media'
+import { startupMark } from '../../shared/startup'
 import { DialogProvider, useDialogs } from '../../ui/DialogProvider'
 import { MenuHost } from '../../ui/MenuHost'
 import { ToastProvider, useToasts } from '../../ui/Sonner'
@@ -73,6 +74,7 @@ import { VersionHistory } from './VersionHistory'
 import { WorkspaceSidebar } from './WorkspaceSidebar'
 import { type WorkspaceRename, workspaceMenuItems } from './workspace-menu'
 
+startupMark('renderer-entry')
 function App() {
   const [settingsCategory, setSettingsCategory] = useState('hibi')
   const [settingTarget, setSettingTarget] = useState<string | null>(null)
@@ -924,7 +926,9 @@ function App() {
     })
   }
 
+  if (document) startupMark('document-available')
   if ((!document || !addonHost.ready) && !failed) return <LoadingScreen full />
+  startupMark('editing-capabilities')
 
   const paletteCommands: PaletteCommand[] = actions
     .filter(

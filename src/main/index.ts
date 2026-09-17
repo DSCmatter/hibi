@@ -32,6 +32,7 @@ import {
 } from '../shared/hotkeys'
 import { MEDIA_CHANNELS } from '../shared/media'
 import { SIDELOAD_CHANNELS } from '../shared/sideload'
+import { startupMark, startupSpan } from '../shared/startup'
 import { UI_CASE_CHANNEL } from '../shared/ui-case'
 import { WORKSPACE_CHANNELS } from '../shared/workspace'
 import {
@@ -96,6 +97,7 @@ import {
 } from './workspace'
 import { workspaceAction } from './workspace-actions'
 
+startupMark('main-entry')
 app.setName('hibi')
 // Let held Vim motions repeat instead of opening macOS's accent picker.
 if (process.platform === 'darwin')
@@ -230,6 +232,7 @@ async function serveAsset(request: Request): Promise<Response> {
 }
 
 function createWindow(): void {
+  startupMark('window-start')
   const window = new BrowserWindow({
     width: 1000,
     height: 720,
@@ -309,6 +312,7 @@ function createWindow(): void {
       })
   })
   window.once('ready-to-show', () => {
+    startupMark('window-painted')
     if (testing) return
     if (!app.isPackaged && app.commandLine.hasSwitch('user-data-dir'))
       window.showInactive()
@@ -491,12 +495,13 @@ if (!app.requestSingleInstanceLock()) {
   void app
     .whenReady()
     .then(async () => {
+      startupMark('app-ready')
       if (process.platform === 'darwin') app.dock?.setIcon(appIcon)
-      await loadHotkeys()
-      await loadAddons()
-      await loadAppearance()
-      await loadUiCase()
-      await loadDocumentPreferences()
+      await startupSpan('hotkeys', loadHotkeys)
+      await startupSpan('addons', loadAddons)
+      await startupSpan('appearance', loadAppearance)
+      await startupSpan('ui-case', loadUiCase)
+      await startupSpan('document-preferences', loadDocumentPreferences)
       protocol.handle('app', serveAsset)
       session.defaultSession.setPermissionCheckHandler(() => false)
       session.defaultSession.setPermissionRequestHandler(
