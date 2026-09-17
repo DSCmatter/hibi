@@ -16,6 +16,8 @@ Main and renderer checkpoints use the `hibi:` performance-entry prefix. Entry ch
 
 The `app://` scheme allows V8 code caching. Native addon implementations load on their first authorized call, with shared in-flight imports and a second enabled-state check after loading. Worker entrypoints resolve from the application root so chunk splitting does not change their locations.
 
+macOS uses the installed bundle's icon directly. Development sets a 256px dock icon once instead of repeatedly encoding the 1024px source through both the dock and window constructors. Windows and Linux retain their window icons. Addon archive downloading and extraction load only when installing a remote addon.
+
 Independent native preferences load concurrently. Appearance, protocol security, permission policy, and IPC registration precede navigation; other preference reads overlap renderer loading. IPC waits for those reads before accessing session state or processing edits.
 
 Renderer catalogs import data-only manifests and optional lightweight `flavor-info.ts` descriptors. Implementations load only when enabled. Keep syntax detection separate from nodes, renderers, fonts, and export code so disabled flavors remain discoverable without loading their engines. `Settings.tsx` is a separate lazy boundary; shared runtime preferences belong outside it.

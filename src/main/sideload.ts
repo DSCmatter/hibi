@@ -24,7 +24,6 @@ import {
   defineColorscheme,
 } from '../shared/colorschemes'
 import type { InstalledAddon } from '../shared/sideload'
-import { downloadAddon, unpackAddon } from './addon-download'
 import { downloadRepository, repositoryUrl } from './addon-repository'
 
 type Package = InstalledAddon & { entry: string; hash: string; files: string[] }
@@ -226,6 +225,7 @@ export async function installPackage(
   url?: unknown,
 ): Promise<boolean> {
   if (url !== undefined) {
+    const { downloadAddon, unpackAddon } = await import('./addon-download')
     const temporary = await mkdtemp(join(app.getPath('temp'), 'hibi-addon-'))
     try {
       let download = repositoryUrl(url)

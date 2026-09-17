@@ -7,6 +7,7 @@ import {
   dialog,
   ipcMain,
   Menu,
+  nativeImage,
   nativeTheme,
   net,
   protocol,
@@ -266,7 +267,7 @@ function createWindow(): void {
     show: false,
     focusable: !testing,
     title: 'Hibi',
-    icon: appIcon,
+    ...(process.platform === 'darwin' ? {} : { icon: appIcon }),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     ...(process.platform === 'darwin'
       ? { trafficLightPosition: { x: 12, y: 11 } }
@@ -526,7 +527,14 @@ if (!app.requestSingleInstanceLock()) {
     .whenReady()
     .then(async () => {
       startupMark('app-ready')
-      if (process.platform === 'darwin') app.dock?.setIcon(appIcon)
+      // Installed macOS apps already carry their full-resolution bundle icon.
+      // A dock-sized development icon avoids re-encoding 1024px images at launch.
+      if (process.platform === 'darwin' && !app.isPackaged)
+        app.dock?.setIcon(
+          nativeImage
+            .createFromPath(appIcon)
+            .resize({ width: 256, height: 256 }),
+        )
       const preferences = Promise.all([
         startupSpan('hotkeys', loadHotkeys),
         startupSpan('addons', loadAddons),
