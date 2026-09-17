@@ -1,6 +1,6 @@
 # graph
 
-optional extension by may (`1262793452236570667`), version 1.0.0. enable in settings → addons, then use **open workspace graph** in the palette, toolbar, or graph status pill.
+optional extension by may (`1262793452236570667`), version 1.0.0. enable in settings → addons, then use **open workspace graph** in the palette, toolbar, or sidebar view picker. graph does not add a static status-bar shortcut.
 
 The graph opens in the shared sidebar, with a pinnable view shortcut and the standard resize handle. Opening a note keeps the graph beside the editor. Hiding or switching the view stops its simulation and subscriptions. Workspace reads are debounced; typing updates the active draft in memory without rescanning files.
 

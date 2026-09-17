@@ -28,12 +28,6 @@ export default defineAddon({
       Content: () => <GitPanel context={context} draft={draft} />,
     })
     const open = () => view.open()
-    context.statusBar.register({
-      id: 'repository',
-      label: 'Git',
-      tooltip: 'Repository status and branches',
-      onClick: open,
-    })
     context.commands.register({
       id: 'status',
       label: 'Git: status, diffs, and commits',

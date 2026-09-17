@@ -92,6 +92,12 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
       (addon) => addon.id === 'graph' && addon.enabled,
     ),
   )
+  assert.equal(
+    await page
+      .locator('[data-status-id="graph.open"], [data-status-id="tags.tags"]')
+      .count(),
+    0,
+  )
   await app.evaluate(({ dialog }, root) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [root] })
     dialog.showMessageBox = async () => ({ response: 1 })
@@ -137,6 +143,10 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
   await pressShortcut(app, `${mod}+Shift+]`)
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.locator('.hibi-tag[data-tag="personal"]').waitFor()
+  await source.fill('No tags in this note.')
+  await page
+    .locator('[data-status-id="tags.tags"]')
+    .waitFor({ state: 'hidden' })
   await source.fill('# beta\n\n#personal #newtag\n\n[back](a.md)')
   await page
     .locator('[data-status-id="tags.tags"]')

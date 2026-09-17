@@ -91,6 +91,19 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
   await page.locator('#addon-git').click()
   await page.waitForFunction(() => document.querySelector('#addon-git').checked)
   await page.getByRole('button', { name: /^back to app$/i }).click()
+  assert.equal(
+    await page.locator('[data-status-id="git.repository"]').count(),
+    0,
+  )
+  const openGit = async () => {
+    const picker = page.getByRole('button', { name: /sidebar views/i })
+    if (!(await picker.isVisible()))
+      await page
+        .getByRole('button', { name: /toggle workspace sidebar/i })
+        .click()
+    await picker.click()
+    await page.getByRole('menuitem', { name: /^git$/i, exact: true }).click()
+  }
   const invoke = (method, input) =>
     page.evaluate(
       ({ method, input }) => window.hibi.invokeAddon('git', method, input),
@@ -109,7 +122,7 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
   await invoke('unstage', 'note.md')
   assert.equal((await invoke('state')).files[0].worktree, 'M')
   await invoke('stage', 'note.md')
-  await page.getByRole('button', { name: /^git$/i, exact: true }).click()
+  await openGit()
   const panel = page.getByRole('complementary', { name: /^git$/i, exact: true })
   await panel.getByRole('button', { name: /^commit changes$/i }).click()
   let commitDialog = page.getByRole('dialog', { name: /^commit changes$/i })
@@ -119,7 +132,7 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
   assert.equal(await page.getByRole('dialog').count(), 0)
   await page.getByRole('button', { name: /toggle workspace sidebar/i }).click()
   await panel.waitFor({ state: 'hidden' })
-  await page.getByRole('button', { name: /^git$/i, exact: true }).click()
+  await openGit()
   await panel.getByRole('button', { name: /^commit changes$/i }).click()
   commitDialog = page.getByRole('dialog', { name: /^commit changes$/i })
   assert.equal(
@@ -336,7 +349,7 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
     await page.evaluate(() => window.hibi.queryAddon('git', 'decorations')),
     null,
   )
-  await page.getByRole('button', { name: /^git$/i, exact: true }).click()
+  await openGit()
   await panel.getByText(/^no repository$/i).waitFor()
   assert.equal(await panel.getByRole('alert').count(), 0)
   assert.equal(await panel.getByText(/Error invoking remote method/).count(), 0)

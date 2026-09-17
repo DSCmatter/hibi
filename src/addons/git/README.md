@@ -1,6 +1,6 @@
 # git
 
-optional extension by may. enable in settings → addons, then open the repository root as your workspace. click the git status pill or use the git commands in the palette.
+optional extension by may. enable in settings → addons, then open the repository root as your workspace. choose Git in the sidebar view picker or use the git commands in the palette. git does not add a static status-bar shortcut.
 
 Git opens in the shared, resizable sidebar. Its view appears in the titlebar picker and supports pinning. A Branch section holds the selector and repository actions. The commit icon opens a message dialog; drafts survive dismissal or switching views while the addon remains enabled. A clean repository shows a centered confirmation instead of an empty changes list. Folders outside a repository show a friendly explanation. Refresh reads repository status without locking editing.
 

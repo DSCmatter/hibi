@@ -32,7 +32,7 @@ export default defineAddon({
     })
     const status = context.statusBar.register({
       id: 'tags',
-      label: 'Tags',
+      label: '',
       tooltip: 'Browse workspace tags',
       onClick: () => browse(),
     })
@@ -41,10 +41,8 @@ export default defineAddon({
         ? noteTags(document.markdown)
         : []
       status.update({
-        label: tags.length ? `Tags · ${tags.length}` : 'Tags',
-        tooltip: tags.length
-          ? tags.map((tag) => `#${tag}`).join(' · ')
-          : 'Browse workspace tags',
+        label: tags.length ? `Tags · ${tags.length}` : '',
+        tooltip: tags.map((tag) => `#${tag}`).join(' · '),
       })
     })
     context.editor.registerRich(richTags(browse))

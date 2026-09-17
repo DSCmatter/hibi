@@ -26,11 +26,5 @@ export default defineAddon({
       icon: Network,
       onClick: open,
     })
-    context.statusBar.register({
-      id: 'open',
-      label: 'Graph',
-      tooltip: 'Explore workspace connections',
-      onClick: open,
-    })
   },
 })
