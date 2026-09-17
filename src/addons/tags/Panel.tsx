@@ -1,9 +1,9 @@
-import { FileText, RefreshCw } from 'lucide-react'
+import { CircleAlert, FileText, Tags } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { isMarkdownDocument } from '../../shared/document-types'
 import type { WorkspacePage } from '../../shared/workspace'
 import type { AddonContext } from '../api'
-import { Button, ControlRow, IconButton, Panel, TextInput } from '../ui'
+import { Button, ControlRow, Panel, PanelMessage, TextInput } from '../ui'
 import { useWorkspaceSnapshot } from '../workspace-snapshot'
 import { noteTags } from './syntax'
 
@@ -14,8 +14,7 @@ export function TagsPanel({
   context: AddonContext
   selection: unknown
 }) {
-  const { snapshot, workspace, loading, error, refresh } =
-    useWorkspaceSnapshot(context)
+  const { snapshot, workspace, loading, error } = useWorkspaceSnapshot(context)
   const [query, setQuery] = useState('')
   const [selected, select] = useState('')
   const parsed = useRef(new WeakMap<WorkspacePage, string[]>()).current
@@ -57,22 +56,30 @@ export function TagsPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <IconButton
-          aria-label="Refresh tags"
-          title="Refresh tags"
-          onClick={refresh}
-          disabled={loading}
-        >
-          <RefreshCw size={14} />
-        </IconButton>
       </ControlRow>
-      {error && <p role="alert">{error}</p>}
-      {loading && !snapshot ? (
-        <p role="status">Reading tags…</p>
+      {error ? (
+        <PanelMessage
+          icon={<CircleAlert size={24} />}
+          title="Tags unavailable"
+          role="alert"
+        >
+          {error}
+        </PanelMessage>
+      ) : loading && !snapshot ? (
+        <PanelMessage icon={<Tags size={24} />} title="Reading tags…" loading />
       ) : !workspace ? (
-        <Button onClick={() => void context.workspace.open().then(refresh)}>
-          Open a folder
-        </Button>
+        <PanelMessage icon={<Tags size={24} />} title="No workspace open">
+          Open a workspace to browse tags across your notes.
+        </PanelMessage>
+      ) : !matches.length ? (
+        <PanelMessage
+          icon={<Tags size={24} />}
+          title={index.length ? 'No matching tags' : 'No tags yet'}
+        >
+          {index.length
+            ? 'Try another filter.'
+            : 'Write #tag in a note to organize it here.'}
+        </PanelMessage>
       ) : (
         <div className="tags-browser">
           <section className="tags-list" aria-label="Workspace tags">
@@ -87,32 +94,33 @@ export function TagsPanel({
                 <span>{paths.length}</span>
               </Button>
             ))}
-            {!matches.length && (
-              <p>No tags found. write #tag in a note to add one.</p>
-            )}
           </section>
-          <section
-            className="tags-files"
-            aria-label={selected ? `Notes tagged #${selected}` : 'Tagged notes'}
-          >
-            <p>
-              {selected
-                ? `#${selected} · ${files.length} ${files.length === 1 ? 'note' : 'notes'}`
-                : 'Select a tag to see its notes.'}
-            </p>
-            {files.map((path) => (
-              <Button
-                variant="row"
-                key={path}
-                onClick={() => {
-                  void context.workspace.openFile(path)
-                }}
-              >
-                <FileText size={14} aria-hidden="true" />
-                <span title={path}>{path}</span>
-              </Button>
-            ))}
-          </section>
+          {files.length > 0 && (
+            <section
+              className="tags-files"
+              aria-label={
+                selected ? `Notes tagged #${selected}` : 'Tagged notes'
+              }
+            >
+              <p>
+                {selected
+                  ? `#${selected} · ${files.length} ${files.length === 1 ? 'note' : 'notes'}`
+                  : 'Select a tag to see its notes.'}
+              </p>
+              {files.map((path) => (
+                <Button
+                  variant="row"
+                  key={path}
+                  onClick={() => {
+                    void context.workspace.openFile(path)
+                  }}
+                >
+                  <FileText size={14} aria-hidden="true" />
+                  <span title={path}>{path}</span>
+                </Button>
+              ))}
+            </section>
+          )}
         </div>
       )}
     </Panel>

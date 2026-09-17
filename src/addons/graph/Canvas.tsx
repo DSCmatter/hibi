@@ -9,7 +9,7 @@ import {
   type Simulation,
   type SimulationNodeDatum,
 } from 'd3-force'
-import { Maximize2, Minus, Plus } from 'lucide-react'
+import { Focus, Maximize2, Minus, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { IconButton } from '../../ui/Controls'
 import type { noteGraph } from './model'
@@ -20,10 +20,12 @@ export function GraphCanvas({
   graph,
   active,
   open,
+  expand,
 }: {
   graph: ReturnType<typeof noteGraph>
   active: string | null
   open: (path: string) => void
+  expand?: (() => void) | undefined
 }) {
   const svg = useRef<SVGSVGElement>(null)
   const simulation = useRef<Simulation<Node, undefined> | null>(null)
@@ -130,6 +132,15 @@ export function GraphCanvas({
   }
   return (
     <div className="graph-canvas">
+      {expand && (
+        <IconButton
+          className="graph-expand"
+          aria-label="Expand graph"
+          onClick={expand}
+        >
+          <Maximize2 size={14} />
+        </IconButton>
+      )}
       <svg
         ref={svg}
         role="application"
@@ -272,7 +283,7 @@ export function GraphCanvas({
           <Minus size={16} />
         </IconButton>
         <IconButton aria-label="Fit graph" onClick={fit}>
-          <Maximize2 size={16} />
+          <Focus size={16} />
         </IconButton>
       </div>
     </div>

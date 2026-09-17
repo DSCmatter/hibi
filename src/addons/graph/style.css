@@ -1,28 +1,68 @@
 .graph-panel {
   flex: 1;
+  min-height: 0;
 }
 .graph-controls > input.ui-field {
   flex-basis: 100%;
 }
-.graph-controls > .ui-button {
-  flex: 1;
-}
-.graph-summary,
-.graph-help {
+.graph-summary {
   color: var(--muted);
   font-size: var(--text-xs);
 }
 .graph-canvas {
   position: relative;
-  flex: 1;
-  min-height: 220px;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 1;
   overflow: hidden;
+}
+.graph-expanded-placeholder {
+  aspect-ratio: 1;
+}
+.graph-fullscreen .graph-canvas {
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+.graph-expand {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  z-index: 1;
+}
+.graph-connections {
+  margin-inline: calc(-1 * var(--space-3));
+}
+.graph-connections h3,
+.graph-connections p {
+  padding-inline: var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.graph-connections h3 {
+  margin: 0 0 var(--space-2);
+  font-weight: 500;
+}
+.graph-connections .ui-button {
+  width: 100%;
+  justify-content: flex-start;
+  border: 0;
+  border-radius: 0;
+  padding-inline: var(--space-4);
+  min-height: var(--sidebar-row-height);
+}
+.graph-connections span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.graph-connections svg {
+  flex-shrink: 0;
 }
 .graph-canvas > svg {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 220px;
   touch-action: none;
   cursor: grab;
 }

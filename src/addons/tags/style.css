@@ -66,3 +66,6 @@
 .tags-files svg {
   flex-shrink: 0;
 }
+.tags-panel {
+  flex: 1;
+}

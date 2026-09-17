@@ -159,15 +159,36 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
     .waitFor()
   assert.equal(await graph.locator('[data-node]').count(), 3)
   assert.equal(await graph.locator('line').count(), 1)
+  const canvas = await graph.locator('.graph-canvas').boundingBox()
+  assert.ok(Math.abs(canvas.width - canvas.height) < 1)
   await graph
-    .getByRole('button', { name: /^current note$/i, exact: true })
-    .click()
-  await page.waitForFunction(
-    () => document.querySelectorAll('[data-node]').length === 2,
+    .getByRole('region', { name: 'Connections' })
+    .getByRole('button', { name: 'a.md', exact: true })
+    .waitFor()
+  assert.equal(
+    await graph
+      .getByRole('button', {
+        name: /refresh graph|current note|open a folder/i,
+      })
+      .count(),
+    0,
   )
-  await graph
-    .getByRole('button', { name: /^current note$/i, exact: true })
-    .click()
+  await graph.getByRole('button', { name: /expand graph/i }).click()
+  const expanded = page.getByRole('dialog', { name: /workspace graph/i })
+  await expanded.locator('[data-node="a.md"]').waitFor()
+  await page.waitForFunction(() => {
+    const rect = document
+      .querySelector('dialog[data-size="fullscreen"]')
+      .getBoundingClientRect()
+    return (
+      Math.abs(rect.width - innerWidth) < 1 &&
+      Math.abs(rect.height - innerHeight) < 1
+    )
+  })
+  assert.equal(await graph.locator('.graph-canvas').count(), 0)
+  await page.keyboard.press('Escape')
+  await expanded.waitFor({ state: 'hidden' })
+  await graph.locator('.graph-canvas').waitFor()
   await graph
     .getByRole('searchbox', { name: /filter graph notes/i })
     .fill('orphan')

@@ -111,17 +111,31 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
   await invoke('stage', 'note.md')
   await page.getByRole('button', { name: /^git$/i, exact: true }).click()
   const panel = page.getByRole('complementary', { name: /^git$/i, exact: true })
-  await panel.getByLabel(/commit staged changes/i).fill('local commit')
+  await panel.getByRole('button', { name: /^commit changes$/i }).click()
+  let commitDialog = page.getByRole('dialog', { name: /^commit changes$/i })
+  await commitDialog.getByLabel(/commit message/i).fill('local commit')
+  await page.keyboard.press('Escape')
+  await commitDialog.waitFor({ state: 'hidden' })
   assert.equal(await page.getByRole('dialog').count(), 0)
   await page.getByRole('button', { name: /toggle workspace sidebar/i }).click()
   await panel.waitFor({ state: 'hidden' })
   await page.getByRole('button', { name: /^git$/i, exact: true }).click()
+  await panel.getByRole('button', { name: /^commit changes$/i }).click()
+  commitDialog = page.getByRole('dialog', { name: /^commit changes$/i })
   assert.equal(
-    await panel.getByLabel(/commit staged changes/i).inputValue(),
+    await commitDialog.getByLabel(/commit message/i).inputValue(),
     'local commit',
   )
-  await panel.getByRole('button', { name: /^commit$/i, exact: true }).click()
-  await panel.getByText(/working tree clean\./i).waitFor()
+  await commitDialog
+    .getByRole('button', { name: /^commit$/i, exact: true })
+    .click()
+  await commitDialog.waitFor({ state: 'hidden' })
+  await panel.getByText(/^working tree clean$/i).waitFor()
+  assert.equal(await panel.getByRole('textbox').count(), 0)
+  assert.equal(
+    await panel.getByRole('heading', { name: /changes/i }).count(),
+    0,
+  )
   await panel.getByRole('button', { name: /^push/i }).click()
   await waitForAsync(
     page,
@@ -322,4 +336,8 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
     await page.evaluate(() => window.hibi.queryAddon('git', 'decorations')),
     null,
   )
+  await page.getByRole('button', { name: /^git$/i, exact: true }).click()
+  await panel.getByText(/^no repository$/i).waitFor()
+  assert.equal(await panel.getByRole('alert').count(), 0)
+  assert.equal(await panel.getByText(/Error invoking remote method/).count(), 0)
 })

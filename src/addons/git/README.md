@@ -2,7 +2,7 @@
 
 optional extension by may. enable in settings → addons, then open the repository root as your workspace. click the git status pill or use the git commands in the palette.
 
-Git opens in the shared, resizable sidebar. Its view appears in the titlebar picker and supports pinning. Branches, changes, diffs, and commit controls stay beside the editor; commit-message drafts survive hiding or switching views while the addon remains enabled. Refresh reads repository status without locking editing.
+Git opens in the shared, resizable sidebar. Its view appears in the titlebar picker and supports pinning. A Branch section holds the selector and repository actions. The commit icon opens a message dialog; drafts survive dismissal or switching views while the addon remains enabled. A clean repository shows a centered confirmation instead of an empty changes list. Folders outside a repository show a friendly explanation. Refresh reads repository status without locking editing.
 
 ## explorer integration
 

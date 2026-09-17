@@ -223,6 +223,32 @@ span.select-control > svg {
   gap: var(--space-2);
   min-width: 0;
 }
+.ui-panel .ui-panel-message {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 180px;
+  padding: var(--space-5) var(--space-2);
+  color: var(--muted);
+  text-align: center;
+  font-size: var(--text-sm);
+}
+.ui-panel-message-icon {
+  display: flex;
+  margin-bottom: var(--space-2);
+  opacity: 0.65;
+}
+.ui-panel-message strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.ui-panel-message p {
+  max-width: 32ch;
+  line-height: 1.5;
+}
 .ui-control-row > .ui-field {
   flex: 1 1 160px;
 }
@@ -245,5 +271,21 @@ span.select-control > svg {
   .ui-field,
   button.ui-button {
     transition: none;
+  }
+}
+.ui-panel-message[data-loading="true"] .ui-panel-message-icon {
+  animation: panel-loading 1.8s ease-in-out infinite alternate;
+}
+@keyframes panel-loading {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-panel-message[data-loading="true"] .ui-panel-message-icon {
+    animation: none;
   }
 }

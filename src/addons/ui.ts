@@ -5,6 +5,7 @@ export {
   ControlRow,
   IconButton,
   Panel,
+  PanelMessage,
   Select,
   SettingRow,
   Slider,
