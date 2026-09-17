@@ -52,6 +52,7 @@ import {
   getDocument,
   getDocumentPath,
   hasUnsavedDocuments,
+  loadDocumentPreferences,
   navigateDocument,
   newDocument,
   openDocument,
@@ -59,6 +60,7 @@ import {
   restoreDocument,
   saveDocument,
   selectDocumentTab,
+  setTabsEnabled,
   updateDocument,
 } from './document'
 import { listVersions, previewVersion } from './history'
@@ -493,6 +495,7 @@ if (!app.requestSingleInstanceLock()) {
       await loadAddons()
       await loadAppearance()
       await loadUiCase()
+      await loadDocumentPreferences()
       protocol.handle('app', serveAsset)
       session.defaultSession.setPermissionCheckHandler(() => false)
       session.defaultSession.setPermissionRequestHandler(
@@ -621,6 +624,9 @@ if (!app.requestSingleInstanceLock()) {
       )
       ipcMain.handle(DOCUMENT_CHANNELS.closeTab, (event, id: unknown) =>
         runFileOperation(event, (window) => closeDocumentTab(window, id)),
+      )
+      ipcMain.handle(DOCUMENT_CHANNELS.tabsEnabled, (event, enabled: unknown) =>
+        runFileOperation(event, (window) => setTabsEnabled(window, enabled)),
       )
       ipcMain.handle(HISTORY_CHANNELS.list, (event) => {
         trustedWindow(event)

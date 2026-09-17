@@ -98,6 +98,8 @@ if (process.isMainFrame) {
       ipcRenderer.invoke(DOCUMENT_CHANNELS.selectTab, id),
     closeDocumentTab: (id) =>
       ipcRenderer.invoke(DOCUMENT_CHANNELS.closeTab, id),
+    setTabsEnabled: (enabled) =>
+      ipcRenderer.invoke(DOCUMENT_CHANNELS.tabsEnabled, enabled),
     updateDocument: (markdown) =>
       ipcRenderer.invoke(DOCUMENT_CHANNELS.update, markdown),
     openDocument: () => ipcRenderer.invoke(DOCUMENT_CHANNELS.open),

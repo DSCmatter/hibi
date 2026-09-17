@@ -88,6 +88,9 @@ export function SettingsScreen({
   onCursorSettings,
   showLineNumbers,
   onShowLineNumbers,
+  tabsEnabled,
+  tabsBusy,
+  onTabsEnabled,
 }: {
   selected: string
   onCategory: (category: string) => void
@@ -109,6 +112,9 @@ export function SettingsScreen({
   onCursorSettings: (settings: CursorSettings) => void
   showLineNumbers: boolean
   onShowLineNumbers: (show: boolean) => void
+  tabsEnabled: boolean
+  tabsBusy: boolean
+  onTabsEnabled: (enabled: boolean) => void
 }) {
   const screen = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
@@ -190,6 +196,24 @@ export function SettingsScreen({
             hidden={category !== 'editor'}
           >
             <h1>Editor</h1>
+            <h2>Documents</h2>
+            <div className="settings-group">
+              <SettingRow
+                id="document-tabs"
+                label="Use tabs"
+                description="Open documents in separate tabs. Turn off to work with one file at a time."
+              >
+                <Toggle
+                  id="document-tabs"
+                  aria-describedby="document-tabs-description"
+                  checked={tabsEnabled}
+                  aria-disabled={tabsBusy}
+                  onChange={(event) => {
+                    if (!tabsBusy) onTabsEnabled(event.target.checked)
+                  }}
+                />
+              </SettingRow>
+            </div>
             <AutosaveSettings />
             <h2>Layout</h2>
             <div className="settings-group">

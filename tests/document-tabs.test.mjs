@@ -7,6 +7,254 @@ import { electron } from './electron.mjs'
 import { clickMenu, pressShortcut } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 
+test('single-file mode guards replacement, closes other tabs safely, and persists', {
+  timeout: 45000,
+}, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'hibi-single-file-'))
+  const notes = join(root, 'notes')
+  await mkdir(notes)
+  const a = join(notes, 'a.md'),
+    b = join(notes, 'b.md'),
+    savedDraft = join(notes, 'saved.md')
+  await writeFile(a, 'original a')
+  await writeFile(b, 'original b')
+  const launch = () =>
+    electron.launch({
+      args: [resolve('.'), `--user-data-dir=${join(root, 'profile')}`],
+    })
+  let app = await launch()
+  t.after(async () => {
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 })
+    })
+    await app.close()
+    await rm(root, { recursive: true, force: true })
+  })
+  let page = await app.firstWindow()
+  page.setDefaultTimeout(6000)
+  await page
+    .getByRole('textbox', { name: /document editor/i })
+    .fill('keep this draft')
+  await app.evaluate(
+    ({ dialog }, { b, savedDraft }) => {
+      globalThis.choice = 2
+      dialog.showMessageBox = async () => ({ response: globalThis.choice })
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [b] })
+      dialog.showSaveDialog = async () => ({
+        canceled: false,
+        filePath: savedDraft,
+      })
+    },
+    { b, savedDraft },
+  )
+  await clickMenu(app, 'Open…')
+  await page.getByRole('tab', { name: 'b.md', exact: true }).waitFor()
+  await clickMenu(app, 'Settings')
+  await page.getByRole('tab', { name: /^editor$/i, exact: true }).click()
+  await page.locator('#document-tabs').click()
+  await page.waitForFunction(
+    () => document.querySelector('.app').getAttribute('aria-busy') === 'false',
+  )
+  assert.equal(await page.locator('#document-tabs').isChecked(), true)
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).tabs.length,
+    2,
+  )
+  await app.evaluate(() => {
+    globalThis.choice = 0
+  })
+  await page.locator('#document-tabs').click()
+  await page.waitForFunction(
+    () => !document.querySelector('#document-tabs').checked,
+  )
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#document-tabs').getAttribute('aria-disabled') ===
+      'false',
+  )
+  assert.equal(await readFile(savedDraft, 'utf8'), 'keep this draft')
+  await page.keyboard.press('Escape')
+  assert.equal(
+    await page.getByRole('tablist', { name: 'Open documents' }).count(),
+    0,
+  )
+  assert.match(
+    await page.locator('.single-document-title').innerText(),
+    /b\.md/,
+  )
+  await page
+    .getByRole('textbox', { name: /document editor/i })
+    .fill('changed b')
+  await page
+    .locator('.single-document-title')
+    .getByRole('status', { name: /unsaved changes/i })
+    .waitFor()
+  await app.evaluate(({ dialog }, notes) => {
+    globalThis.choice = 2
+    dialog.showOpenDialog = async () => ({
+      canceled: false,
+      filePaths: [notes],
+    })
+  }, notes)
+  await page.evaluate(() => window.hibi.openWorkspace())
+  assert.equal(
+    await page.evaluate(() => window.hibi.openWorkspaceFile('a.md')),
+    null,
+  )
+  let document = await page.evaluate(() => window.hibi.getDocument())
+  assert.equal(document.name, 'b.md')
+  assert.equal(document.markdown, 'changed b')
+  assert.equal(document.tabs.length, 1)
+  await app.evaluate(() => {
+    globalThis.choice = 0
+  })
+  document = await page.evaluate(() => window.hibi.openWorkspaceFile('a.md'))
+  assert.equal(document.name, 'a.md')
+  assert.equal(document.tabs.length, 1)
+  assert.equal(await readFile(b, 'utf8'), 'changed b')
+  await page.evaluate(() => window.hibi.updateDocument('changed a'))
+  await assert.rejects(
+    page.evaluate(() => window.hibi.openWorkspaceFile('missing.md')),
+  )
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    'changed a',
+  )
+  await app.evaluate(() => {
+    globalThis.choice = 2
+  })
+  assert.equal(await page.evaluate(() => window.hibi.newDocument()), null)
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    'changed a',
+  )
+  await app.evaluate(() => {
+    globalThis.choice = 1
+  })
+  document = await page.evaluate(() => window.hibi.newDocument())
+  assert.equal(document.markdown, '')
+  assert.equal(document.tabs.length, 1)
+  assert.equal(await readFile(a, 'utf8'), 'original a')
+  await assert.rejects(
+    page.evaluate(() => window.hibi.setTabsEnabled('invalid')),
+    /Invalid tabs preference/,
+  )
+  await app.close()
+  app = await launch()
+  page = await app.firstWindow()
+  page.setDefaultTimeout(6000)
+  await page.getByRole('textbox', { name: /document editor/i }).waitFor()
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).tabsEnabled,
+    false,
+  )
+  assert.equal(
+    await page.getByRole('tablist', { name: 'Open documents' }).count(),
+    0,
+  )
+  await clickMenu(app, 'Settings')
+  await page.getByRole('tab', { name: /^editor$/i, exact: true }).click()
+  await page.locator('#document-tabs').click()
+  await page.waitForFunction(
+    () => document.querySelector('#document-tabs').checked,
+  )
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#document-tabs').getAttribute('aria-disabled') ===
+      'false',
+  )
+  await page.keyboard.press('Escape')
+  await page.getByRole('tablist', { name: 'Open documents' }).waitFor()
+  await clickMenu(app, 'New')
+  await waitForAsync(
+    page,
+    async () => (await window.hibi.getDocument()).tabs.length === 2,
+  )
+})
+
+test('tab entry and exit animate, while reduced motion removes transitions', {
+  timeout: 30000,
+}, async (t) => {
+  const profile = await mkdtemp(join(tmpdir(), 'hibi-tab-motion-'))
+  const app = await electron.launch({
+    args: [resolve('.'), `--user-data-dir=${profile}`],
+  })
+  t.after(async () => {
+    await app.close()
+    await rm(profile, { recursive: true, force: true })
+  })
+  const page = await app.firstWindow()
+  page.setDefaultTimeout(6000)
+  await page.getByRole('textbox', { name: /document editor/i }).waitFor()
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  const first = (await page.evaluate(() => window.hibi.getDocument())).tabId
+  const observe = (name) =>
+    page.evaluate(
+      ({ name, first }) => {
+        window.tabMotion = null
+        const observer = new MutationObserver(() => {
+          const tab = [...document.querySelectorAll('.document-tab')].find(
+            (tab) =>
+              tab
+                .querySelector('[data-tab-id]')
+                ?.getAttribute('data-tab-id') !== first &&
+              getComputedStyle(tab).animationName === name,
+          )
+          const animation = tab?.getAnimations()[0]
+          if (!animation) return
+          observer.disconnect()
+          animation.pause()
+          animation.currentTime = 80
+          const style = getComputedStyle(tab)
+          window.tabMotion = {
+            opacity: Number(style.opacity),
+            x: new DOMMatrixReadOnly(style.transform).m41,
+          }
+          animation.finish()
+        })
+        observer.observe(document.querySelector('.document-tabs'), {
+          childList: true,
+          subtree: true,
+          attributes: true,
+        })
+      },
+      { name, first },
+    )
+  await observe('tab-open')
+  await clickMenu(app, 'New')
+  await page.waitForFunction(() => window.tabMotion)
+  let sample = await page.evaluate(() => window.tabMotion)
+  assert.ok(
+    sample.opacity > 0 && sample.opacity < 1 && sample.x < 0 && sample.x > -10,
+  )
+  await observe('tab-close')
+  await page
+    .getByRole('button', { name: /^close untitled\.md$/i })
+    .last()
+    .click()
+  await page.waitForFunction(() => window.tabMotion)
+  sample = await page.evaluate(() => window.tabMotion)
+  assert.ok(
+    sample.opacity > 0 && sample.opacity < 1 && sample.x < 0 && sample.x > -10,
+  )
+  await page.waitForFunction(
+    () => !document.querySelector('.document-tab[data-closing="true"]'),
+  )
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await clickMenu(app, 'New')
+  await waitForAsync(
+    page,
+    async () => (await window.hibi.getDocument()).tabs.length === 2,
+  )
+  assert.equal(
+    await page
+      .locator('.document-tab')
+      .last()
+      .evaluate((tab) => getComputedStyle(tab).animationName),
+    'none',
+  )
+})
+
 test('file tabs preserve independent drafts and guard closing, saving, and workspace mutations', {
   timeout: 40000,
 }, async (t) => {

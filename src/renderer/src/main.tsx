@@ -683,6 +683,7 @@ function App() {
 
   async function applyDocumentOperation(
     operation: () => Promise<DocumentState | null>,
+    revealDocument = true,
   ) {
     if (busyRef.current || dialogs.isOpen()) return
     busyRef.current = true
@@ -693,8 +694,10 @@ function App() {
       acceptDocument(next)
       savedText.current = next.savedMarkdown
       setWorkspace(await window.hibi.getWorkspace())
-      setSettingsOpen(false)
-      settingsNavigation.current.forward = []
+      if (revealDocument) {
+        setSettingsOpen(false)
+        settingsNavigation.current.forward = []
+      }
     } catch (error) {
       setError(
         error instanceof Error ? error.message : 'could not open document.',
@@ -1337,6 +1340,14 @@ function App() {
         onHotkeys={setHotkeys}
         padding={padding}
         onPadding={setPadding}
+        tabsEnabled={document?.tabsEnabled !== false}
+        tabsBusy={busy}
+        onTabsEnabled={(enabled) =>
+          void applyDocumentOperation(
+            () => window.hibi.setTabsEnabled(enabled),
+            false,
+          )
+        }
         hideTitlebar={hideTitlebar}
         onHideTitlebar={(value) => {
           setHideTitlebar(value)
@@ -1350,12 +1361,16 @@ function App() {
         inert={settingsOpen}
       >
         <EditorToolbar mode={mode} typing={typing} />
+        {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: tabpanel and region both support accessible names. */}
         <div
           className="editor-page"
           id="document-editor-panel"
-          role="tabpanel"
+          role={document?.tabsEnabled === false ? 'region' : 'tabpanel'}
+          aria-label={
+            document?.tabsEnabled === false ? document.name : undefined
+          }
           aria-labelledby={
-            document ? `document-tab-${document.tabId}` : undefined
+            document?.tabsEnabled ? `document-tab-${document.tabId}` : undefined
           }
           data-startup={showWelcome}
         >

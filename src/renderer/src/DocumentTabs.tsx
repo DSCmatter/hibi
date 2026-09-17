@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { DocumentState } from '../../shared/desktop'
 import { IconButton } from '../../ui/Controls'
 
@@ -15,6 +15,26 @@ export function DocumentTabs({
   onClose: (id: string) => void
 }) {
   const active = useRef<HTMLButtonElement>(null)
+  const [rendered, setRendered] = useState(document.tabs)
+  const tabIds = document.tabs.map((tab) => tab.id).join(',')
+  useLayoutEffect(() => {
+    setRendered((previous) => [
+      ...previous.map(
+        (tab) => document.tabs.find((current) => current.id === tab.id) ?? tab,
+      ),
+      ...document.tabs.filter(
+        (tab) => !previous.some((old) => old.id === tab.id),
+      ),
+    ])
+  }, [document.tabs])
+  useEffect(() => {
+    const ids = new Set(tabIds.split(','))
+    const timer = setTimeout(
+      () => setRendered((tabs) => tabs.filter((tab) => ids.has(tab.id))),
+      matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 200,
+    )
+    return () => clearTimeout(timer)
+  }, [tabIds])
   // biome-ignore lint/correctness/useExhaustiveDependencies: the newly selected tab must remain visible in the scroll strip.
   useLayoutEffect(() => {
     active.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
@@ -57,12 +77,24 @@ export function DocumentTabs({
         }
       }}
     >
-      {document.tabs.map((tab) => {
+      {rendered.map((tab) => {
+        const closing = !document.tabs.some((current) => current.id === tab.id)
         const selected = tab.id === document.tabId
         const name = selected ? document.name : tab.name
         const dirty = selected ? document.dirty : tab.dirty
         return (
-          <div className="document-tab" key={tab.id} data-active={selected}>
+          <div
+            className="document-tab"
+            key={tab.id}
+            data-active={selected}
+            data-closing={closing}
+            inert={closing}
+            aria-hidden={closing}
+            onAnimationEnd={(event) => {
+              if (closing && event.target === event.currentTarget)
+                setRendered((tabs) => tabs.filter((item) => item.id !== tab.id))
+            }}
+          >
             <button
               type="button"
               role="tab"

@@ -8,6 +8,7 @@ export const DOCUMENT_CHANNELS = {
   autosave: 'document:autosave',
   selectTab: 'document:select-tab',
   closeTab: 'document:close-tab',
+  tabsEnabled: 'document:tabs-enabled',
   rename: 'document:rename',
   image: 'document:image',
   navigate: 'document:navigate',
@@ -21,6 +22,8 @@ export type DocumentState = {
   /** Stable window-local tab identity, including across save and rename. */
   tabId: string
   tabs: DocumentTab[]
+  /** False keeps only the active document open. */
+  tabsEnabled: boolean
   /** Opaque identity for per-file preferences. Contains no filesystem path. */
   id: string
   /** Workspace draft with a target name but no file on disk yet. */
@@ -106,6 +109,7 @@ export type DesktopApi = {
   getDocument: () => Promise<DocumentState>
   selectDocumentTab: (id: string) => Promise<DocumentState>
   closeDocumentTab: (id: string) => Promise<DocumentState | null>
+  setTabsEnabled: (enabled: boolean) => Promise<DocumentState>
   updateDocument: (markdown: string) => Promise<void>
   openDocument: () => Promise<DocumentState | null>
   newDocument: () => Promise<DocumentState | null>

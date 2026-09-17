@@ -177,6 +177,19 @@ export function Titlebar({
         <div className="document-title">
           {settingsOpen ? (
             <span>Settings</span>
+          ) : document?.tabsEnabled === false ? (
+            <span className="single-document-title" title={document.name}>
+              <span>{document.name}</span>
+              {document.dirty && (
+                <span
+                  className="dirty-dot"
+                  role="status"
+                  aria-label="Unsaved changes"
+                >
+                  •
+                </span>
+              )}
+            </span>
           ) : document ? (
             <DocumentTabs
               document={document}
