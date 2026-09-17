@@ -159,7 +159,7 @@ test('local images resolve from the note, validate content, and retain their Mar
   const markdown = (await page.evaluate(() => window.hibi.getDocument()))
     .markdown
   assert.ok(markdown.includes('assets/my%20image.png'))
-  assert.ok(markdown.includes(image))
+  assert.ok(imageSources(markdown).has(image))
   assert.ok(!markdown.includes('data:image'))
   await mkdir(join(folder, 'nested'))
   await writeFile(

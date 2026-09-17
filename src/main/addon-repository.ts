@@ -141,6 +141,7 @@ export async function downloadRepository(
       throw new Error('repository exceeds addon download limits (64 mib).')
     throw new Error(
       'could not read the git repository. use a public https repository with a ready-to-use addon package.',
+      { cause: error },
     )
   } finally {
     clearInterval(monitor)
