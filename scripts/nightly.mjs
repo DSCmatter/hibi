@@ -1,0 +1,91 @@
+import { execFileSync } from 'node:child_process'
+import { appendFileSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
+
+export function nightly(cwd = '.', date = new Date()) {
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim()
+  const sha = git('rev-parse', 'HEAD')
+  const tags = git('tag', '--merged', 'HEAD').split('\n').filter(Boolean)
+  const previous = tags.length
+    ? git(
+        'describe',
+        '--tags',
+        '--match',
+        tags.some((tag) => tag.startsWith('nightly-')) ? 'nightly-*' : '*',
+        '--abbrev=0',
+        'HEAD',
+      )
+    : undefined
+  const day = date.toISOString().slice(0, 10)
+  const base = JSON.parse(
+    readFileSync(resolve(cwd, 'package.json'), 'utf8'),
+  ).version.split('-')[0]
+  return {
+    sha,
+    previous,
+    changed: !previous || git('rev-list', '-1', previous) !== sha,
+    tag: `nightly-${day}-${sha.slice(0, 7)}`,
+    version: `${base}-nightly.${day.replaceAll('-', '')}.${sha.slice(0, 7)}`,
+    commits: git(
+      'log',
+      '--format=%H%x09%s',
+      previous ? `${previous}..HEAD` : 'HEAD',
+    ),
+  }
+}
+
+export function releaseNotes(release, repository) {
+  const url = `https://github.com/${repository}`
+  const commits = release.commits
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [sha, ...subject] = line.split('\t')
+      const title = subject.join('\t').replace(/[\\`*_{}[\]<>]/g, '\\$&')
+      return `- ${title} ([${sha.slice(0, 7)}](${url}/commit/${sha}))`
+    })
+  return [
+    `# Hibi nightly ${release.version}`,
+    '',
+    `Built from [${release.sha.slice(0, 7)}](${url}/commit/${release.sha}).`,
+    '',
+    'Downloads: macOS Apple Silicon and Intel (DMG/ZIP), Windows x64 (installer), Linux x64 (AppImage).',
+    'These development builds are unsigned on Windows and ad-hoc signed on macOS, without notarization. They use the regular Hibi app identity and data profile; save and back up work before trying a nightly.',
+    'Verify downloads against SHA256SUMS.txt.',
+    '',
+    '## Changes',
+    '',
+    ...commits,
+    '',
+    ...(release.previous
+      ? [
+          `[Full comparison](${url}/compare/${encodeURIComponent(release.previous)}...${release.sha})`,
+          '',
+        ]
+      : []),
+  ].join('\n')
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+) {
+  const release = nightly()
+  if (process.argv[2] === 'prepare') {
+    const values = ['sha', 'changed', 'tag', 'version']
+      .map((key) => `${key}=${release[key]}`)
+      .join('\n')
+    appendFileSync(process.env.GITHUB_OUTPUT, `${values}\n`)
+  } else if (process.argv[2] === 'notes') {
+    release.version = process.argv[3] ?? release.version
+    process.stdout.write(releaseNotes(release, process.env.GITHUB_REPOSITORY))
+  } else {
+    throw new Error('Usage: node scripts/nightly.mjs prepare|notes')
+  }
+}
