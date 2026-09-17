@@ -10,6 +10,10 @@ if (!Number.isInteger(runs) || runs < 1 || runs > 50)
   throw new Error('Use 1–50 runs.')
 const temp = await mkdtemp(join(tmpdir(), 'hibi-benchmark-'))
 const samples = []
+const recentPaths = ['notes', 'journal', 'projects'].map((name) =>
+  join(temp, name),
+)
+for (const path of recentPaths) await mkdir(path)
 const enabledAddons = (process.env.HIBI_BENCH_ADDONS ?? '')
   .split(',')
   .filter(Boolean)
@@ -70,6 +74,26 @@ async function measure(page, start, app, scenario) {
     )
   })
   const editable = performance.now() - start
+  let ready = null
+  if (
+    ['fresh-profile', 'warm-profile', 'warm-profile-prime'].includes(scenario)
+  ) {
+    await page.waitForFunction((paths) => {
+      const buttons = [
+        ...document.querySelectorAll('.startup-placeholder li button'),
+      ]
+      return (
+        buttons.length === paths.length &&
+        buttons.every(
+          (button, index) =>
+            button.textContent === paths[index] &&
+            !button.disabled &&
+            !button.closest('[inert]'),
+        )
+      )
+    }, recentPaths)
+    ready = performance.now() - start
+  }
   const previousText = await editor.textContent()
   const beforeInput = performance.now()
   await editor.press('x')
@@ -88,6 +112,7 @@ async function measure(page, start, app, scenario) {
     await new Promise((done) => setTimeout(done, 50))
   }
   const renderer = await page.evaluate(() => ({
+    timeOrigin: performance.timeOrigin,
     milestones: performance
       .getEntriesByType('mark')
       .filter((entry) => entry.name.startsWith('hibi:'))
@@ -106,8 +131,9 @@ async function measure(page, start, app, scenario) {
   })
   await session.send('Debugger.enable')
   await session.detach()
-  const main = await app.evaluate(() =>
-    performance
+  const main = await app.evaluate(() => ({
+    timeOrigin: performance.timeOrigin,
+    entries: performance
       .getEntries()
       .filter((entry) => entry.name.startsWith('hibi:'))
       .map((entry) => ({
@@ -115,8 +141,17 @@ async function measure(page, start, app, scenario) {
         ms: entry.startTime,
         duration: entry.duration,
       })),
-  )
-  samples.push({ scenario, editable, firstInput, typing, renderer, main })
+  }))
+  samples.push({
+    scenario,
+    startedAt: performance.timeOrigin + start,
+    editable,
+    ready,
+    firstInput,
+    typing,
+    renderer,
+    main,
+  })
 }
 
 try {
@@ -127,6 +162,11 @@ try {
         scenario === 'warm-profile' ? 'warm' : `${scenario}-${run}`,
       )
       await mkdir(profile, { recursive: true })
+      if (scenario !== 'minimal')
+        await writeFile(
+          join(profile, 'recent-workspaces.json'),
+          JSON.stringify(recentPaths),
+        )
       if (scenario !== 'minimal' && enabledAddons.length)
         await writeFile(
           join(profile, 'addons.json'),
@@ -245,6 +285,20 @@ try {
           group.map((sample) => sample.editable),
           0.95,
         ),
+        readyMedian:
+          quantile(
+            group.flatMap((sample) =>
+              sample.ready === null ? [] : [sample.ready],
+            ),
+            0.5,
+          ) ?? null,
+        readyP95:
+          quantile(
+            group.flatMap((sample) =>
+              sample.ready === null ? [] : [sample.ready],
+            ),
+            0.95,
+          ) ?? null,
         firstInputP95: quantile(
           group.map((sample) => sample.firstInput),
           0.95,

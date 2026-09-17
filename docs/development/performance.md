@@ -4,6 +4,8 @@ See [the recorded comparison](startup-measurements.md) for measured gains, trade
 
 Run `npm run build`, then `node scripts/benchmark-startup.mjs > startup.json`. `HIBI_BENCH_RUNS` controls repetitions (default five). The report separates a minimal Electron page, fresh profiles, retained-profile relaunches, and macOS window reopening. It measures editor availability, the first displayed keystroke, subsequent typing latency, loaded scripts, and the emitted static dependency graph. The first retained-profile run is reported separately as cache priming.
 
+Process-launch scenarios seed three recent workspaces in each isolated profile. `readyMedian` and `readyP95` require both editable text and all three enabled workspace buttons, before typing dismisses the start screen. `startedAt` and each process's `timeOrigin` allow checkpoints to be compared on the same launch timeline. The recent-workspace list is distinct from opening and indexing a workspace's files.
+
 Set `HIBI_BENCH_DOCUMENTS=1` to measure opening synthetic large and code-heavy notes after launch, including the first source-view switch. `HIBI_BENCH_ADDONS=math,typst,vim,graph` repeats the scenarios with a representative enabled-addon profile. Document-open latency is reported separately from process startup.
 
 Measurements use production assets in the test Electron runtime with hidden windows and isolated temporary profiles. Automation adds latency. A fresh profile is **not** an OS cold-cache launch; the script never clears machine caches. Packaged launch measurements and other platforms must be reported separately. Use median and p95; do not promise a launch budget from a single run.
