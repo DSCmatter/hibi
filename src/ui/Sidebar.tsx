@@ -79,9 +79,8 @@ function RenameInput({
   }, [id])
   return (
     <TextInput
-      variant="inline"
       ref={input}
-      className="inline-edit sidebar-rename"
+      className="sidebar-rename"
       aria-label="Rename item"
       value={editing.value}
       disabled={editing.disabled}
@@ -297,7 +296,32 @@ export function Sidebar({
                     }}
                   >
                     {editing?.id === item.id ? (
-                      <RenameInput editing={editing} />
+                      <div
+                        className="sidebar-edit"
+                        style={{ paddingLeft: 16 + depth * 14 }}
+                      >
+                        {mode === 'tree' && (
+                          <ChevronRight
+                            className={`sidebar-chevron ${item.children && collapsible ? '' : 'leaf'}`}
+                            size={12}
+                            style={{
+                              rotate:
+                                item.children && expanded.has(item.id)
+                                  ? '90deg'
+                                  : '0deg',
+                            }}
+                            aria-hidden="true"
+                          />
+                        )}
+                        {Icon && (
+                          <Icon
+                            size={15}
+                            strokeWidth={1.5}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <RenameInput editing={editing} />
+                      </div>
                     ) : (
                       <button
                         key={item.id}
