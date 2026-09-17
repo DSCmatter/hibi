@@ -91,6 +91,20 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
   await page.waitForFunction(
     () => document.querySelectorAll('.tiptap .katex').length === 2,
   )
+  const fonts = await page.evaluate(async () => {
+    const main = await document.fonts.load('16px KaTeX_Main')
+    const math = await document.fonts.load('italic 16px KaTeX_Math')
+    return {
+      main: main.length,
+      math: math.length,
+      family: getComputedStyle(document.querySelector('.katex')).fontFamily,
+    }
+  })
+  assert.ok(
+    fonts.main > 0 && fonts.math > 0,
+    'math fonts must be declared and load locally',
+  )
+  assert.match(fonts.family, /KaTeX_Main/)
   await page.waitForFunction(() => document.fonts.check('16px KaTeX_Main'))
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
@@ -148,6 +162,19 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
   })
   await site.locator('.katex').first().waitFor()
   assert.equal(await site.locator('.katex').count(), 2)
+  assert.ok(
+    await site.evaluate(
+      async () =>
+        (await document.fonts.load('italic 16px KaTeX_Math')).length > 0,
+    ),
+  )
+  assert.match(
+    await site
+      .locator('.katex')
+      .first()
+      .evaluate((element) => getComputedStyle(element).fontFamily),
+    /KaTeX_Main/,
+  )
   assert.equal(
     await site.locator('pre .hibi-token-keyword').innerText(),
     'const',

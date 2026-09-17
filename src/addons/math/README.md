@@ -9,3 +9,5 @@ settings → syntax has separate inline and block math switches. turning either 
 katex and its fonts run locally. exports embed rendered equations, mathml, styles, fonts, and license notices; no cdn or runtime model is required. katex uses `trust: false`, bounded macro expansion, and no shared user macros. this is latex math supported by katex, not an executable tex document engine.
 
 uses mit-licensed [tiptap mathematics](https://tiptap.dev/docs/editor/extensions/nodes/mathematics) and [katex](https://katex.org/docs/security), listed in hibi's open source licenses.
+
+Font embedding preserves each complete `@font-face` rule and the KaTeX math-family declarations in both the editor and offline exports.
