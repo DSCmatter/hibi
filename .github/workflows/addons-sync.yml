@@ -1,0 +1,67 @@
+name: sync addons
+on:
+  push:
+    branches: [main]
+    paths: ['src/addons/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: addons-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out addon source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: source/.nvmrc
+      - name: Export catalog data
+        working-directory: source
+        run: node scripts/export-addons.mjs
+      - name: Source revision
+        id: source
+        working-directory: source
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Check out website
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: hibigarden/site
+          ref: main
+          path: site
+          token: ${{ secrets.ADDONS_SYNC_TOKEN }}
+      - name: Sync catalog and preserve its route
+        run: rsync -a --delete --exclude=/index.html source/out/addons/ site/addons/
+      - name: Detect catalog changes
+        id: changes
+        working-directory: site
+        run: |
+          git add -- addons
+          if git diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Validate website
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: site
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Publish changed catalog
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: site
+        env:
+          SOURCE_COMMIT: ${{ steps.source.outputs.sha }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "addons: sync to main ($SOURCE_COMMIT)"
+          git push origin HEAD:main
