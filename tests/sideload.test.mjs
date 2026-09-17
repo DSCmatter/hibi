@@ -202,7 +202,9 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     async () =>
       !(await window.hibi.getDocument()).markdown.includes('fixture-code'),
   )
-  await source.press(`${mod}+Shift+z`)
+  await source.press(
+    process.platform === 'win32' ? 'Control+y' : `${mod}+Shift+z`,
+  )
   await choose('enable fixture addon')
   await page
     .locator('.source-pane .hibi-token-keyword')

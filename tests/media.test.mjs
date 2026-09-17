@@ -155,6 +155,9 @@ test('file picker and drops attach media safely, stream videos, and move/open wo
     page,
     async () => (await window.hibi.getWorkspace())?.name === 'notes',
   )
+  await page.waitForFunction(
+    () => document.querySelector('.app')?.getAttribute('aria-busy') === 'false',
+  )
   const snapshot = await page.evaluate(() => window.hibi.getWorkspaceSnapshot())
   assert.match(
     snapshot.pages.find((item) => item.path === 'attached.md').images[

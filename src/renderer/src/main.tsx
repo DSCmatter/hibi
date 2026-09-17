@@ -450,7 +450,7 @@ function App() {
           acceptDocument(next)
           savedText.current = next.savedMarkdown
           if (command === 'new' || command === 'open') setSettingsOpen(false)
-          setWorkspace(await window.hibi.getWorkspace())
+          setWorkspace(await window.hibi.refreshWorkspace())
         }
         return Boolean(next)
       } catch (error) {

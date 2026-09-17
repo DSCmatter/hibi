@@ -44,13 +44,20 @@ test('toolbar auto-hide defaults on, shares top-bar timing, and moves content sm
     true,
   )
   await page.getByRole('button', { name: /^back to app$/i }).click()
+  await page.locator('.toolbar-slot').evaluate(async (element) => {
+    await Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished),
+    )
+  })
   const expanded = await page
     .locator('.toolbar-slot')
     .evaluate((element) => element.getBoundingClientRect().height)
   const sample = () =>
     page.evaluate(async () => {
       const values = []
-      for (let frame = 0; frame < 16; frame++) {
+      for (let frame = 0; frame < 32; frame++) {
         await new Promise(requestAnimationFrame)
         values.push({
           height: document
@@ -73,8 +80,7 @@ test('toolbar auto-hide defaults on, shares top-bar timing, and moves content sm
       }
       return values
     })
-  await rich.press('a')
-  const hiding = await sample()
+  const [hiding] = await Promise.all([sample(), rich.press('a')])
   assert.ok(
     hiding.some((value) => value.height > 1 && value.height < expanded - 1),
   )

@@ -281,7 +281,9 @@ test('desktop launch, isolation, offline reload, and recovery', {
       const reloaded = new Promise((resolve) =>
         contents.once('did-finish-load', resolve),
       )
-      contents.forcefullyCrashRenderer()
+      if (process.platform === 'linux')
+        process.kill(contents.getOSProcessId(), 'SIGKILL')
+      else contents.forcefullyCrashRenderer()
       await reloaded
       // Playwright retains its crashed target; inspect the new renderer through Electron.
       return contents.executeJavaScript(

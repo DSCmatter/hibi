@@ -30,6 +30,10 @@ GitHub Actions uses its isolated desktop for test windows, keeping Linux composi
 
 The root `/release/` packaging directory is ignored; nested keybeats `release/` sample folders are tracked. Folder moves use Windows' native non-overwriting rename behavior there; on Unix an empty destination is reserved first. Repository-install checks exercise real Git through a captured command runner, without platform-specific executable shims. Native dialog tests hold their mocked dialog open until the busy state is observed.
 
+After document file operations, the explorer rescans the workspace instead of relying on filesystem watcher delivery. This keeps newly saved drafts visible on platforms whose recursive watchers miss changes under renamed folders. Windows source-editor tests use the standard Ctrl+Y redo shortcut.
+
+Recovery checks terminate only their own renderer process on Linux, avoiding Electron's platform-specific crash-dump path; other platforms use `forcefullyCrashRenderer`. They still verify a real renderer loss, the reload response, and recovered editor/draft state.
+
 toolbar and tooltip checks exercise all display modes, visibility, scope cleanup, stale handles, keyboard help, existing descriptions, and help inside native dialogs. keybeats tests decode all 150 local recordings with audio output muted, exercise rich/source input, repeats, search exclusion, profile switching, mute, and disabling the addon. command palette tests sample the selection marker mid-transition and check reduced motion.
 
 colorscheme checks cover all bundled token roles, text contrast, retained upstream notices, rejected CSS expressions, native window persistence, editor/undo preservation, system appearance, addon palette fallback/restoration, CSS override precedence, and exported appearance controls down to 320 px. native Windows/Linux caption rendering needs a check on those platforms.
