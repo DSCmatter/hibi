@@ -29,7 +29,7 @@ import { MenuHost } from '../../ui/MenuHost'
 import { ToastProvider, useToasts } from '../../ui/Sonner'
 import type { ToastHandle } from '../../ui/toasts'
 import './styles.css'
-import { documentExtension } from '../../shared/document-types'
+import { documentExtension, isDocumentView } from '../../shared/document-types'
 import type {
   WorkspaceAction,
   WorkspaceActionResult,
@@ -134,19 +134,6 @@ function App() {
     const previous = currentDocument.current
     if (previous?.revision !== next.revision) setOutlineTarget(null)
     if (
-      !documentFormats.isMarkdown(next.name) &&
-      (!previous || documentFormats.isMarkdown(previous.name))
-    ) {
-      setMode((mode) =>
-        mode === 'normal'
-          ? documentFormats.get(next.name) &&
-            documentExtension(next.name) !== 'txt'
-            ? 'side-by-side'
-            : 'markdown'
-          : mode,
-      )
-    }
-    if (
       previous &&
       previous.id !== next.id &&
       previous.revision === next.revision
@@ -201,7 +188,13 @@ function App() {
     )
   }, [])
   const autosaveStatus = useAutosave(document, busy, acknowledgeSave)
-  const [mode, setMode] = useState<ViewMode>('normal')
+  const [selectedMode, setMode] = useState<ViewMode>('normal')
+  const availableViews = documentFormats.views(document?.name ?? 'untitled.md')
+  const mode: ViewMode = availableViews.includes(selectedMode)
+    ? selectedMode
+    : availableViews.includes('side-by-side')
+      ? 'side-by-side'
+      : 'markdown'
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [failed, setFailed] = useState(false)
   const [typing, setTyping] = useState(false)
@@ -835,6 +828,7 @@ function App() {
       case 'normal':
       case 'side-by-side':
       case 'markdown':
+        if (!availableViews.includes(command)) break
         showTitlebar()
         setSettingsOpen(false)
         dismissWelcome()
@@ -912,7 +906,7 @@ function App() {
   }
   function openFlavors() {
     if (!markdownDocument) {
-      openSetting('addons')
+      openSetting(documentFormat ? 'formats' : 'addons')
       return
     }
     dialogs.open({
@@ -934,7 +928,10 @@ function App() {
 
   const paletteCommands: PaletteCommand[] = actions
     .filter(
-      ({ id, category }) => id !== 'palette' && !(category === 'file' && busy),
+      ({ id, category }) =>
+        id !== 'palette' &&
+        !(category === 'file' && busy) &&
+        (!isDocumentView(id) || availableViews.includes(id)),
     )
     .map(({ id, label, category }) => ({
       id,
@@ -1037,19 +1034,23 @@ function App() {
         (state) => state.id === manifest.id && state.enabled,
       )
       return [
-        {
-          id: `addon.toggle.${manifest.id}`,
-          category:
-            manifest.kind === 'theme'
-              ? ('themes' as const)
-              : ('extensions' as const),
-          label: `${enabled ? 'Disable' : 'Enable'} ${manifest.name}`,
-          keywords: manifest.description,
-          run: () => {
-            void addonHost.setEnabled(manifest.id, !enabled)
-          },
-        },
-        ...(Settings && enabled
+        ...(manifest.id === 'markdown'
+          ? []
+          : [
+              {
+                id: `addon.toggle.${manifest.id}`,
+                category:
+                  manifest.kind === 'theme'
+                    ? ('themes' as const)
+                    : ('extensions' as const),
+                label: `${enabled ? 'Disable' : 'Enable'} ${manifest.name}`,
+                keywords: `${manifest.id} ${manifest.description}`,
+                run: () => {
+                  void addonHost.setEnabled(manifest.id, !enabled)
+                },
+              },
+            ]),
+        ...(enabled && (Settings || manifest.fileExtensions?.length)
           ? [
               {
                 id: `addon.settings.${manifest.id}`,
@@ -1291,6 +1292,7 @@ function App() {
         document={document}
         settingsOpen={settingsOpen}
         mode={mode}
+        availableViews={availableViews}
         onMode={(view) => addonHost.app.runAction(view)}
       />
       {paletteOpen && (

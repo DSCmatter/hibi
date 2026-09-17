@@ -32,7 +32,7 @@ import { EditorView, keymap, lineNumbers, placeholder } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 import { marked } from 'marked'
 import { useEffect, useRef } from 'react'
-import type { SourceExtension } from '../../addons/api'
+import type { DocumentFormat, SourceExtension } from '../../addons/api'
 import { codeHighlighter, codeLanguages } from './code-languages'
 import type { FindMove, FindStatus } from './FindBar'
 import {
@@ -57,6 +57,8 @@ export function SourceEditor({
   markdownMode,
   sourceLanguage,
   codeLanguage,
+  sourceFormat,
+  supportsMedia,
   label,
   active,
   onReady,
@@ -76,6 +78,8 @@ export function SourceEditor({
   markdownMode: boolean
   sourceLanguage: Language | undefined
   codeLanguage?: string | undefined
+  sourceFormat?: DocumentFormat['formatting']
+  supportsMedia: boolean
   label: string
   active: boolean
   onReady: () => void
@@ -97,13 +101,29 @@ export function SourceEditor({
     sourceLanguage,
     codeLanguage,
     label,
+    sourceFormat,
+    supportsMedia,
   })
-  parserOptions.current = { markdownMode, sourceLanguage, codeLanguage, label }
+  parserOptions.current = {
+    markdownMode,
+    sourceLanguage,
+    codeLanguage,
+    label,
+    sourceFormat,
+    supportsMedia,
+  }
   const configureParser = useRef(() => {})
   // biome-ignore lint/correctness/useExhaustiveDependencies: parser configuration reads these current values through parserOptions.
   useEffect(() => {
     configureParser.current()
-  }, [markdownMode, sourceLanguage, codeLanguage, label])
+  }, [
+    markdownMode,
+    sourceLanguage,
+    codeLanguage,
+    label,
+    sourceFormat,
+    supportsMedia,
+  ])
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const change = useRef(onChange)
@@ -132,11 +152,15 @@ export function SourceEditor({
         parserOptions.current
       return [
         markdownMode
-          ? markdownLanguage({ codeLanguages: codeLanguages.resolve })
+          ? codeLanguage && !codeLanguages.resolve(codeLanguage)
+            ? []
+            : markdownLanguage({ codeLanguages: codeLanguages.resolve })
           : codeLanguage
             ? (codeLanguages.resolve(codeLanguage) ?? [])
             : (sourceLanguage ?? []),
-        markdownMode ? keymap.of(formattingKeymap) : [],
+        keymap.of(
+          formattingKeymap((id) => formatting.current?.run(id) ?? false),
+        ),
         EditorView.contentAttributes.of({
           'aria-label': markdownMode ? 'Markdown editor' : `${label} editor`,
         }),
@@ -258,13 +282,20 @@ export function SourceEditor({
       }),
     })
     view.current = editor
-    configureParser.current = () =>
+    configureParser.current = () => {
       editor.dispatch({ effects: language.reconfigure(markdown()) })
+      formatting.current = sourceFormatting(
+        editor,
+        parserOptions.current.sourceFormat ??
+          (parserOptions.current.markdownMode ? 'markdown' : null),
+        parserOptions.current.supportsMedia,
+      )
+      reportFormatting.current(formatting.current)
+    }
     const unsubscribe = codeLanguages.subscribe(() =>
       editor.dispatch({ effects: language.reconfigure(markdown()) }),
     )
-    formatting.current = sourceFormatting(editor)
-    reportFormatting.current(formatting.current)
+    configureParser.current()
     let disposed = false
     const measure = () => {
       if (!disposed)

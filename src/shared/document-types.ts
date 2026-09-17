@@ -1,4 +1,8 @@
 export const markdownExtensions = ['md', 'markdown']
+export const documentViews = ['normal', 'side-by-side', 'markdown'] as const
+export type DocumentView = (typeof documentViews)[number]
+export const isDocumentView = (value: string): value is DocumentView =>
+  documentViews.some((view) => view === value)
 export const documentExtension = (name: string) =>
   name.split('.').at(-1)?.toLowerCase() ?? ''
 export const isMarkdownDocument = (name: string) =>

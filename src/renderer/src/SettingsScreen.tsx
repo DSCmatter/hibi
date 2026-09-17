@@ -135,11 +135,10 @@ export function SettingsScreen({
   const casing = useSyncExternalStore(uiCase.subscribe, uiCase.snapshot)
   const pluginPages = addons.filter(
     (addon) =>
-      !!addon.manifest.fileExtensions?.length ||
-      (addon.Settings &&
-        addonStates.some(
-          (state) => state.id === addon.manifest.id && state.enabled,
-        )),
+      (!!addon.manifest.fileExtensions?.length || addon.Settings) &&
+      addonStates.some(
+        (state) => state.id === addon.manifest.id && state.enabled,
+      ),
   )
   const items = [
     ...settingsCategories,
@@ -152,7 +151,9 @@ export function SettingsScreen({
   ]
   const category = items.some((item) => item.id === selected)
     ? selected
-    : 'hibi'
+    : selected.startsWith('plugin-')
+      ? 'addons'
+      : 'hibi'
 
   return (
     <SettingsDiscovery value={true}>

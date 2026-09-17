@@ -16,6 +16,8 @@ export default defineAddon({
       name: 'Markdown',
       extensions: manifest.fileExtensions,
       editing: 'markdown',
+      views: ['normal', 'side-by-side', 'markdown'],
+      formatting: 'markdown',
       language,
       codeLanguage: 'markdown',
       Preview: () => null,

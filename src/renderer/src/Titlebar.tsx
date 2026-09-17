@@ -32,6 +32,7 @@ export function Titlebar({
   document,
   settingsOpen,
   mode,
+  availableViews,
   onMode,
   hotkeys,
   platform,
@@ -48,6 +49,7 @@ export function Titlebar({
   document: DocumentState | null
   settingsOpen: boolean
   mode: ViewMode
+  availableViews: readonly ViewMode[]
   onMode: (mode: ViewMode) => void
   hotkeys: Hotkeys
   platform: string
@@ -220,6 +222,7 @@ export function Titlebar({
                   aria-label={label}
                   title={`${label}${hotkeys[view] ? ` (${shortcutLabels(hotkeys[view], platform).join('')})` : ''}`}
                   aria-pressed={mode === view}
+                  disabled={!availableViews.includes(view)}
                   onClick={() => onMode(view)}
                 >
                   <Icon name={view} />

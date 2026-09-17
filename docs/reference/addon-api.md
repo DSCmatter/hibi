@@ -14,10 +14,16 @@ import type {
 } from '../shared/colorschemes'
 import type { DocumentCommand } from '../shared/desktop'
 import type { AppCommand } from '../shared/hotkeys'
-import type { MarkdownSyntaxFeature } from '../shared/markdown-syntax'
+import type {
+  DocumentSyntaxFeature,
+  MarkdownSyntaxFeature,
+} from '../shared/markdown-syntax'
 import type { CodeLanguage } from '../shared/syntax'
 
-export type { MarkdownSyntaxFeature } from '../shared/markdown-syntax'
+export type {
+  DocumentSyntaxFeature,
+  MarkdownSyntaxFeature,
+} from '../shared/markdown-syntax'
 export type { CodeLanguage } from '../shared/syntax'
 
 import type {
@@ -249,6 +255,26 @@ export type RenderedMarkdown = { html: string; css: string }
 export type DocumentPreviewProps = {
   value: string
   document: Readonly<import('../shared/desktop').DocumentState>
+  /** Host-owned pinned action row. Render shared PreviewActions into this target. */
+  toolbar?: HTMLElement | null
+}
+export type DocumentSelection = {
+  source: string
+  from: number
+  to: number
+  values?: { url: string; alt: string } | undefined
+}
+export type DocumentEdit = {
+  from: number
+  to: number
+  insert: string
+  /** Selection offsets within the inserted text; defaults to its end. */
+  selection?: { from: number; to: number }
+}
+export type DocumentFormatting = {
+  actions: readonly string[]
+  apply: (action: string, selection: DocumentSelection) => DocumentEdit | null
+  isActive?: (action: string, selection: DocumentSelection) => boolean
 }
 export type DocumentFormat = {
   id: string
@@ -258,6 +284,10 @@ export type DocumentFormat = {
   editing?: 'markdown'
   /** Registered code language id. Its highlighting preference also applies to source files. */
   codeLanguage?: string
+  /** Supported editor views. Source ('markdown') is always required; normal means editable rich content. */
+  views?: readonly import('../shared/document-types').DocumentView[]
+  /** Map the shared toolbar and shortcuts to this format; Markdown variants can reuse its mapper. */
+  formatting?: 'markdown' | DocumentFormatting
   language: import('@codemirror/language').Language
   Preview: ComponentType<DocumentPreviewProps>
   insertMedia?: (
@@ -332,8 +362,19 @@ export type AddonContext = {
     ) => Promise<RenderedMarkdown>
     /** Register or override fenced-code highlighting; restored automatically on addon stop. */
     registerCodeLanguage: (language: CodeLanguage) => () => void
+    /** Resolve enabled highlighting, including contributions from other addons. */
+    resolveCodeLanguage: (
+      name: string,
+    ) => import('@codemirror/language').Language | null
+    /** Escaped code HTML using the app's enabled languages and shared token classes. */
+    renderCode: (source: string, language: string) => string
+    onCodeHighlightingChange: (listener: () => void) => () => void
     /** Contribute a renderer toggle; disabled tokens remain literal, editable Markdown. */
     registerSyntax: (feature: MarkdownSyntaxFeature) => () => void
+    /** Format-specific rendering control, without a Markdown token matcher. */
+    registerDocumentSyntax: (
+      feature: Omit<DocumentSyntaxFeature, 'scope'>,
+    ) => () => void
     /** Query this addon's local syntax id. */
     isSyntaxEnabled: (id: string) => boolean
     onSyntaxChange: (listener: () => void) => () => void

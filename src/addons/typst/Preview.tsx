@@ -1,5 +1,8 @@
+import { FileDown } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { Button } from '../../ui/Controls'
 import { DocumentNotice } from '../../ui/DocumentNotice'
+import { PreviewActions } from '../../ui/PreviewActions'
 import type { AddonContext } from '../api'
 import { svgSource } from './syntax'
 import type { TypstResult } from './types'
@@ -9,14 +12,20 @@ export function TypstPreview({
   documentId,
   context,
   block = false,
+  toolbar,
+  onExport,
 }: {
   value: string
   documentId?: string | undefined
   context: AddonContext
   block?: boolean
+  toolbar?: HTMLElement | null | undefined
+  onExport?: () => Promise<void>
 }) {
   const [result, setResult] = useState<TypstResult | null>(null)
   const [busy, setBusy] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
   const image = useMemo(
     () => (result?.svg ? svgSource(result.svg) : undefined),
     [result?.svg],
@@ -68,6 +77,32 @@ export function TypstPreview({
       data-block={block || undefined}
       aria-busy={busy}
     >
+      {onExport && (
+        <PreviewActions target={toolbar}>
+          <Button
+            disabled={busy || exporting || !image}
+            onClick={async () => {
+              setExporting(true)
+              setExportError('')
+              try {
+                await onExport()
+              } catch (error) {
+                setExportError(
+                  error instanceof Error ? error.message : String(error),
+                )
+              } finally {
+                setExporting(false)
+              }
+            }}
+          >
+            <FileDown size={14} aria-hidden />
+            Export PDF
+          </Button>
+        </PreviewActions>
+      )}
+      {exportError && (
+        <DocumentNotice title="Export unavailable" message={exportError} />
+      )}
       {busy && (
         <p className="typst-progress" role="status">
           Compiling Typst…

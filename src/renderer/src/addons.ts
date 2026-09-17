@@ -24,7 +24,7 @@ import { useToastService } from '../../ui/Sonner'
 import { createTooltipScope } from '../../ui/tooltip-store'
 import { createAddonOverrides } from './addon-overrides'
 import { addonRegistry } from './addon-registry'
-import { codeLanguages } from './code-languages'
+import { codeHtml, codeLanguages } from './code-languages'
 import { colorschemes } from './colorschemes'
 import { documentFormats, editorDocument } from './document-formats'
 import { onEditorInput, onEditorKeyEvent } from './editor-events'
@@ -176,6 +176,24 @@ export function useAddons(environment: Environment) {
       )
       const tooltipScope = createTooltipScope()
       const cleanups = new Set<() => void>()
+      const observe = (
+        subscribe: (listener: () => void) => () => void,
+        listener: () => void,
+      ) => {
+        if (disposed) return () => {}
+        const remove = subscribe(() => {
+          try {
+            listener()
+          } catch (error) {
+            latest.current.error(error)
+          }
+        })
+        cleanups.add(remove)
+        return () => {
+          remove()
+          cleanups.delete(remove)
+        }
+      }
       const stop = () => {
         if (disposed) return
         disposed = true
@@ -323,6 +341,18 @@ export function useAddons(environment: Environment) {
             },
           },
           editor: {
+            registerDocumentSyntax(feature) {
+              if (disposed) return () => {}
+              const remove = markdownSyntax.register(id, {
+                ...feature,
+                scope: 'document',
+              })
+              cleanups.add(remove)
+              return () => {
+                remove()
+                cleanups.delete(remove)
+              }
+            },
             registerSyntax(feature) {
               if (disposed) return () => {}
               const remove = markdownSyntax.register(id, feature)
@@ -334,21 +364,11 @@ export function useAddons(environment: Environment) {
             },
             isSyntaxEnabled: (localId) =>
               markdownSyntax.enabled(`${id}.${localId}`),
-            onSyntaxChange(listener) {
-              if (disposed) return () => {}
-              const remove = markdownSyntax.subscribe(() => {
-                try {
-                  listener()
-                } catch (error) {
-                  latest.current.error(error)
-                }
-              })
-              cleanups.add(remove)
-              return () => {
-                remove()
-                cleanups.delete(remove)
-              }
-            },
+            onSyntaxChange: (listener) =>
+              observe(markdownSyntax.subscribe, listener),
+            onCodeHighlightingChange: (listener) =>
+              observe(codeLanguages.subscribe, listener),
+            renderCode: codeHtml,
             getDocument: () => editorDocument.get(),
             onDocumentChange(listener) {
               if (disposed) return () => {}
@@ -400,6 +420,7 @@ export function useAddons(environment: Environment) {
               cleanups.add(cleanup)
               return cleanup
             },
+            resolveCodeLanguage: codeLanguages.resolve,
             registerFlavor(flavor) {
               if (disposed) return () => {}
               const remove = flavors.register(id, flavor)

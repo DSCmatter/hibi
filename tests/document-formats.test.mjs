@@ -6,7 +6,7 @@ import test from 'node:test'
 import { electron } from './electron.mjs'
 import { pressShortcut } from './keyboard.mjs'
 
-test('plain text stays literal and formats settings retain disabled plugins', {
+test('plain text stays literal and disabled addons stay out of formats', {
   timeout: 30000,
 }, async (t) => {
   const temp = await mkdtemp(join(tmpdir(), 'hibi-formats-'))
@@ -37,6 +37,24 @@ test('plain text stays literal and formats settings retain disabled plugins', {
     exact: true,
   })
   await source.waitFor()
+  assert.equal(
+    await page
+      .getByRole('button', { name: /^normal$/i, exact: true })
+      .isDisabled(),
+    true,
+  )
+  assert.equal(
+    await page
+      .getByRole('button', { name: /^side-by-side$/i, exact: true })
+      .isDisabled(),
+    true,
+  )
+  assert.equal(
+    await page.getByRole('button', { name: /^bold$/i, exact: true }).count(),
+    0,
+  )
+  await pressShortcut(app, `${mod}+Shift+[`)
+  assert.equal(await source.isVisible(), true)
   assert.equal(await source.textContent(), '# plain **text**$x^2$')
   assert.equal(
     await page.locator('.source-pane .hibi-token-heading').count(),
@@ -44,6 +62,16 @@ test('plain text stays literal and formats settings retain disabled plugins', {
   )
   await pressShortcut(app, `${mod}+,`)
   await page.getByRole('tab', { name: 'Formats', exact: true }).click()
+  assert.equal(
+    await page
+      .getByRole('button', { name: 'Typst settings', exact: true })
+      .count(),
+    0,
+  )
+  assert.equal(
+    await page.getByRole('tab', { name: 'Typst', exact: true }).count(),
+    0,
+  )
   await page.getByRole('searchbox', { name: 'Filter formats' }).fill('.md')
   await page
     .getByRole('button', { name: 'Markdown settings', exact: true })

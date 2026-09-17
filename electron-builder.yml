@@ -7,6 +7,9 @@ files:
   - package.json
   - LICENSE
 asar: true
+asarUnpack:
+  - node_modules/@esbuild/**/*
+  - node_modules/esbuild/**/*
 extraResources:
   - from: build
     to: icons

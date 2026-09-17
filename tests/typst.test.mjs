@@ -80,6 +80,19 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   await pressShortcut(app, `${mod}+Shift+\\`)
   const source = page.getByRole('textbox', { name: /typst editor/i })
   await source.waitFor()
+  assert.equal(
+    await page
+      .getByRole('button', { name: /^normal$/i, exact: true })
+      .isDisabled(),
+    true,
+  )
+  assert.equal(
+    await page
+      .getByRole('button', { name: /^side-by-side$/i, exact: true })
+      .isEnabled(),
+    true,
+  )
+  await page.getByRole('button', { name: /^bold$/i, exact: true }).waitFor()
   await page.locator('.source-pane .hibi-token-keyword').first().waitFor()
   const updated = `${original}\nsecond paragraph.\n`
   await source.fill(updated)
@@ -279,8 +292,13 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   await tree
     .getByRole('treeitem', { name: /^report\.typ$/i, exact: true })
     .click()
-  await page.locator('.format-unavailable').waitFor()
   await source.waitFor()
+  assert.equal(
+    await page
+      .getByRole('button', { name: /^side-by-side$/i, exact: true })
+      .isDisabled(),
+    true,
+  )
   assert.equal(await source.getAttribute('contenteditable'), 'true')
   assert.deepEqual(errors, [])
 })

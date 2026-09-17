@@ -72,6 +72,8 @@ appearance also controls the text cursor in both editors: line, outline block, f
 
 the optional [typst extension](../editing/typst.md) adds `.typ` documents with live preview and pdf export, plus rendered typst blocks in markdown.
 
+Other [document formats](../editing/formats.md) add native previews, format-aware toolbar tools, and explicit compiler actions. Enable their plugins from Addons; enabled formats appear in Formats settings. Markdown and plain text stay available, and unsupported views are disabled.
+
 see [media and navigation](../editing/media-and-navigation.md) for drag/drop, attachments, shift-click links, back/forward shortcuts, remote opening, and leaving empty formatted blocks.
 
 click the filename, enter a new name, and press enter. escape or clicking away cancels. names without an extension receive `.md`. renaming an unsaved document sets its suggested save name; existing files are renamed in the same folder without replacing another file. unsaved edits remain pending after a rename.

@@ -87,7 +87,7 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
     .filter({ hasText: /math/i })
     .waitFor()
   assert.equal(await page.locator('.tiptap .katex').count(), 0)
-  await choose('enable math')
+  await choose('enable latex')
   await page.waitForFunction(
     () => document.querySelectorAll('.tiptap .katex').length === 2,
   )

@@ -925,53 +925,53 @@ button:disabled {
   color: var(--muted);
   pointer-events: none;
 }
-.tiptap h1,
-.tiptap h2,
-.tiptap h3,
-.tiptap h4,
-.tiptap h5,
-.tiptap h6 {
+:is(.tiptap, .format-content) h1,
+:is(.tiptap, .format-content) h2,
+:is(.tiptap, .format-content) h3,
+:is(.tiptap, .format-content) h4,
+:is(.tiptap, .format-content) h5,
+:is(.tiptap, .format-content) h6 {
   color: var(--syntax-heading);
   line-height: 1.3;
   font-weight: 600;
   margin: 1.4em 0 0.6em;
   letter-spacing: -0.02em;
 }
-.tiptap h1 {
+:is(.tiptap, .format-content) h1 {
   font-size: 30px;
 }
-.tiptap h2 {
+:is(.tiptap, .format-content) h2 {
   font-size: 24px;
 }
-.tiptap h3 {
+:is(.tiptap, .format-content) h3 {
   font-size: 20px;
 }
-.tiptap h4,
-.tiptap h5,
-.tiptap h6 {
+:is(.tiptap, .format-content) h4,
+:is(.tiptap, .format-content) h5,
+:is(.tiptap, .format-content) h6 {
   font-size: 17px;
 }
-.tiptap ul,
-.tiptap ol {
+:is(.tiptap, .format-content) ul,
+:is(.tiptap, .format-content) ol {
   padding-left: 1.5em;
 }
-.tiptap li p {
+:is(.tiptap, .format-content) li p {
   margin-bottom: 0.3em;
 }
-.tiptap blockquote {
+:is(.tiptap, .format-content) blockquote {
   margin-inline: 0;
   padding-left: 20px;
   border-left: 1px solid var(--border);
   color: var(--syntax-quote);
 }
-.tiptap pre {
+:is(.tiptap, .format-content) pre {
   background: var(--code-background);
   color: var(--code-ink);
   padding: var(--space-4);
   border-radius: var(--radius-control);
   overflow: auto;
 }
-.tiptap code {
+:is(.tiptap, .format-content) code {
   font-family: var(--font-mono);
   font-size: 0.85em;
   background: var(--code-background);
@@ -979,11 +979,11 @@ button:disabled {
   border-radius: var(--radius-control);
   padding: 2px 4px;
 }
-.tiptap pre code {
+:is(.tiptap, .format-content) pre code {
   padding: 0;
   background: transparent;
 }
-.tiptap a {
+:is(.tiptap, .format-content) a {
   color: var(--syntax-link);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
@@ -992,31 +992,31 @@ button:disabled {
   color: var(--muted);
   font-size: var(--text-ui);
 }
-.tiptap img,
-.tiptap video {
+:is(.tiptap, .format-content) img,
+:is(.tiptap, .format-content) video {
   max-width: 100%;
 }
 .document-media {
   display: inline-block;
   max-width: 100%;
 }
-.tiptap hr {
+:is(.tiptap, .format-content) hr {
   border: 0;
   border-top: 1px solid var(--border);
   margin-block: 32px;
 }
-.tiptap table {
+:is(.tiptap, .format-content) table {
   border-collapse: collapse;
   width: 100%;
   margin-block: 20px;
 }
-.tiptap th,
-.tiptap td {
+:is(.tiptap, .format-content) th,
+:is(.tiptap, .format-content) td {
   border: 1px solid var(--border);
   padding: 8px 12px;
   text-align: left;
 }
-.tiptap th {
+:is(.tiptap, .format-content) th {
   background: var(--surface);
 }
 .tiptap ul[data-type="taskList"] {

@@ -26,6 +26,7 @@ import type {
   SourceExtension,
 } from '../../addons/api'
 import type { DocumentState } from '../../shared/desktop'
+import type { DocumentView } from '../../shared/document-types'
 import { isMediaFile } from '../../shared/media'
 import { documentImage } from './DocumentImage'
 import { type CursorSettings, EditorCursor } from './EditorCursor'
@@ -48,7 +49,7 @@ const SourceEditor = lazy(() =>
   import('./SourceEditor').then((module) => ({ default: module.SourceEditor })),
 )
 
-export type ViewMode = 'normal' | 'side-by-side' | 'markdown'
+export type ViewMode = DocumentView
 
 export function MarkdownEditor({
   document: documentState,
@@ -146,6 +147,9 @@ export function MarkdownEditor({
   // normal view waits for source layout before beginning the pane transition.
   const paneMode = sourceReady || initialMode !== 'normal' ? mode : 'normal'
   const content = useRef<HTMLDivElement>(null)
+  const [previewToolbar, setPreviewToolbar] = useState<HTMLDivElement | null>(
+    null,
+  )
   const scrollContent = useRef({ source: value, body: projection.content })
   scrollContent.current = { source: value, body: projection.content }
   useEffect(() => {
@@ -497,9 +501,10 @@ export function MarkdownEditor({
         data-source-ready={sourceReady}
         onClickCapture={(event) => {
           const link = (event.target as HTMLElement).closest<HTMLAnchorElement>(
-            '.tiptap a[href]',
+            '.tiptap a[href], .format-content a[href]',
           )
-          if (!link || !event.shiftKey) return
+          if (!link || (!link.closest('.format-content') && !event.shiftKey))
+            return
           event.preventDefault()
           event.stopPropagation()
           onLink(link.getAttribute('href')!)
@@ -538,9 +543,21 @@ export function MarkdownEditor({
             aria-hidden={paneMode === 'markdown'}
             inert={paneMode === 'markdown'}
           >
+            {!markdownDocument && (
+              <div
+                className="preview-toolbar"
+                ref={setPreviewToolbar}
+                role="toolbar"
+                aria-label="Preview actions"
+              />
+            )}
             {!markdownDocument &&
               (format ? (
-                <format.Preview value={value} document={documentState} />
+                <format.Preview
+                  value={value}
+                  document={documentState}
+                  toolbar={previewToolbar}
+                />
               ) : (
                 <p className="format-unavailable">
                   Enable {formatName} for preview. source editing remains
@@ -574,11 +591,15 @@ export function MarkdownEditor({
           >
             {sourceMounted && (
               <Suspense
-                fallback={<LoadingScreen label="Loading Markdown editor" />}
+                fallback={
+                  <LoadingScreen label={`Loading ${formatName} editor`} />
+                }
               >
                 <SourceEditor
                   markdownMode={markdownDocument}
                   sourceLanguage={format?.language}
+                  sourceFormat={format?.formatting}
+                  supportsMedia={!!format?.insertMedia}
                   codeLanguage={format?.codeLanguage}
                   label={formatName}
                   onLink={onLink}

@@ -19,7 +19,9 @@ export function FormatsSettings({
   const [busy, setBusy] = useState(false)
   const toasts = useToasts()
   const formats = addons.filter(
-    ({ manifest }) => manifest.fileExtensions?.length,
+    ({ manifest }) =>
+      manifest.fileExtensions?.length &&
+      states.some((state) => state.id === manifest.id && state.enabled),
   )
   const matching = formats.filter(({ manifest }) =>
     `${manifest.name} ${manifest.fileExtensions?.map((extension) => `.${extension}`).join(' ')}`
@@ -30,6 +32,10 @@ export function FormatsSettings({
   return (
     <>
       <h1>Formats</h1>
+      <p className="plugin-description">
+        Enable more document formats in{' '}
+        <Button onClick={() => open('addons')}>Addons</Button>.
+      </p>
       <SettingsFilter
         id="formats-filter"
         label="Filter formats"
