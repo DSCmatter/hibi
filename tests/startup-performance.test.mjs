@@ -45,6 +45,10 @@ test('blank startup leaves disabled runtimes and closed settings unloaded and so
   await page.evaluate(
     () => new Promise((resolve) => requestIdleCallback(resolve)),
   )
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.matches('.tiptap')),
+    true,
+  )
   assert.equal(await page.locator('.cm-editor').count(), 0)
   const chunks = JSON.parse(
     await readFile('out/renderer/startup-bundle.json', 'utf8'),
