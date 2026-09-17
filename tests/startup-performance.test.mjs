@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
@@ -82,4 +82,30 @@ test('blank startup leaves disabled runtimes and closed settings unloaded and so
     await loadedModules(),
     /src\/addons\/(?:math|typst|mdx)\/index\./,
   )
+})
+
+test('unrelated enabled format engines start after the initial document is editable', async (t) => {
+  const profile = await mkdtemp(join(tmpdir(), 'hibi-startup-formats-'))
+  await writeFile(join(profile, 'addons.json'), JSON.stringify({ rst: true }))
+  const app = await electron.launch({
+    args: [resolve('.'), `--user-data-dir=${profile}`],
+  })
+  t.after(async () => {
+    await app.close()
+    await rm(profile, { recursive: true, force: true })
+  })
+  const page = await app.firstWindow()
+  await page.waitForFunction(
+    () => performance.getEntriesByName('hibi:addon:rst').length,
+  )
+  const order = await page.evaluate(() => ({
+    ready: performance.getEntriesByName('hibi:editing-capabilities')[0]
+      ?.startTime,
+    format: performance.getEntriesByName('hibi:addon:rst')[0]?.startTime,
+    editable:
+      document.querySelector('.tiptap')?.isContentEditable &&
+      !document.querySelector('.tiptap')?.closest('[inert]'),
+  }))
+  assert.equal(order.editable, true)
+  assert.ok(order.format >= order.ready, JSON.stringify(order))
 })

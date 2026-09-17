@@ -112,6 +112,7 @@ export function useAddons(environment: Environment, documentName?: string) {
   const enabledStates = states.filter((state) => state.enabled)
   const ready =
     loaded &&
+    !!documentName &&
     enabledStates.every(
       (state) => !required.has(state.id) || settled.has(state.id),
     )
@@ -192,7 +193,8 @@ export function useAddons(environment: Environment, documentName?: string) {
       })
   }, [])
   useEffect(() => {
-    if (!loaded) return
+    // File metadata must arrive before choosing which format engines block editing.
+    if (!loaded || !documentName) return
     for (const [id, runtime] of running) {
       if (
         !states.some((state) => state.id === id && state.enabled) ||
@@ -774,6 +776,7 @@ export function useAddons(environment: Environment, documentName?: string) {
   }, [
     catalog,
     loaded,
+    documentName,
     states,
     registered,
     running,
