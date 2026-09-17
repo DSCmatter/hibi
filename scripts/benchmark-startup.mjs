@@ -3,12 +3,47 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { electron } from '../tests/electron.mjs'
+import { clickMenu, pressShortcut } from '../tests/keyboard.mjs'
 
 const runs = Number(process.env.HIBI_BENCH_RUNS ?? 5)
 if (!Number.isInteger(runs) || runs < 1 || runs > 50)
   throw new Error('Use 1–50 runs.')
 const temp = await mkdtemp(join(tmpdir(), 'hibi-benchmark-'))
 const samples = []
+const enabledAddons = (process.env.HIBI_BENCH_ADDONS ?? '')
+  .split(',')
+  .filter(Boolean)
+const documents =
+  process.env.HIBI_BENCH_DOCUMENTS === '1'
+    ? [
+        {
+          name: 'large.md',
+          title: 'Large benchmark',
+          source:
+            '# Large benchmark\n\n' +
+            'A paragraph for measuring document layout and keyboard input. **Bold** and _italic_.\n\n'.repeat(
+              180,
+            ),
+        },
+        {
+          name: 'code.md',
+          title: 'Code benchmark',
+          source:
+            '# Code benchmark\n\n' +
+            [
+              '```js\nconst answer = 42;\n```',
+              '```rust\nfn main() { let answer = 42; }\n```',
+              '```python\ndef answer():\n  return 42\n```',
+              '```sql\nSELECT name FROM notes;\n```',
+            ]
+              .join('\n\n')
+              .concat('\n\n')
+              .repeat(20),
+        },
+      ]
+    : []
+for (const document of documents)
+  await writeFile(join(temp, document.name), document.source)
 const minimal = join(temp, 'minimal.cjs')
 await writeFile(
   minimal,
@@ -23,12 +58,26 @@ async function measure(page, start, app, scenario) {
     name: 'Document editor',
     exact: true,
   })
-  await editor.waitFor()
+  // Frame polling avoids locator retry backoff being counted as startup latency.
+  await page.waitForFunction(() => {
+    const editor = document.querySelector(
+      '[role="textbox"][aria-label="Document editor"]',
+    )
+    return (
+      editor?.isContentEditable &&
+      !editor.closest('[inert]') &&
+      editor.getBoundingClientRect().width > 0
+    )
+  })
   const editable = performance.now() - start
+  const previousText = await editor.textContent()
   const beforeInput = performance.now()
   await editor.press('x')
-  await page.waitForFunction(() =>
-    document.querySelector('[role="textbox"]')?.textContent.includes('x'),
+  await page.waitForFunction(
+    (previous) =>
+      document.querySelector('[role="textbox"][aria-label="Document editor"]')
+        ?.textContent !== previous,
+    previousText,
   )
   const firstInput = performance.now() - beforeInput
   const typing = []
@@ -78,6 +127,13 @@ try {
         scenario === 'warm-profile' ? 'warm' : `${scenario}-${run}`,
       )
       await mkdir(profile, { recursive: true })
+      if (scenario !== 'minimal' && enabledAddons.length)
+        await writeFile(
+          join(profile, 'addons.json'),
+          JSON.stringify(
+            Object.fromEntries(enabledAddons.map((id) => [id, true])),
+          ),
+        )
       const start = performance.now()
       const app = await electron.launch({
         args: [
@@ -110,6 +166,50 @@ try {
           const window = app.waitForEvent('window')
           await app.evaluate(({ app }) => app.emit('activate'))
           await measure(await window, reopening, app, 'window-reopen')
+        }
+        if (scenario === 'fresh-profile') {
+          const page = await app.firstWindow()
+          for (const document of documents) {
+            await app.evaluate(
+              ({ dialog }, file) => {
+                dialog.showOpenDialog = async () => ({
+                  canceled: false,
+                  filePaths: [file],
+                })
+              },
+              join(temp, document.name),
+            )
+            const opening = performance.now()
+            await clickMenu(app, 'Open…')
+            await page.waitForFunction(
+              (title) =>
+                [...document.querySelectorAll('.tiptap h1')].some(
+                  (heading) => heading.textContent === title,
+                ),
+              document.title,
+            )
+            await measure(page, opening, app, `document-open:${document.name}`)
+          }
+          if (documents.length) {
+            const switching = performance.now()
+            await pressShortcut(
+              app,
+              `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+]`,
+            )
+            await page.waitForFunction(() => {
+              const pane = document.querySelector('.source-pane')
+              const editor = pane?.querySelector('.cm-content')
+              return (
+                editor?.isContentEditable &&
+                document.querySelector('.editor-panes')?.dataset.sourceReady ===
+                  'true' &&
+                getComputedStyle(pane).visibility === 'visible' &&
+                Number(getComputedStyle(pane).opacity) === 1 &&
+                Number(getComputedStyle(pane.parentElement).opacity) === 1
+              )
+            })
+            samples.at(-1).firstSourceSwitch = performance.now() - switching
+          }
         }
       } finally {
         await app.close()
@@ -162,6 +262,7 @@ try {
         runtime: process.version,
         platform: process.platform,
         arch: process.arch,
+        enabledAddons,
         conditions:
           'Production assets in test Electron; fresh profile is not OS cold-cache; hidden windows; automation latency included.',
         initialBytes: initial.reduce((sum, chunk) => sum + chunk.bytes, 0),
