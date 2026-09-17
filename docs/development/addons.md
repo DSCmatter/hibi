@@ -185,6 +185,8 @@ the host removes registrations when the addon stops, preserves source text while
 
 Register a desktop view with `context.sidebar.register({ id, label, icon, Content })`. Its handle's `open(input?)` reveals the shared sidebar and passes selection data to `Content`. Views appear automatically in the titlebar picker and command palette, support pinning and resizing, and disappear when their addon stops. Existing API v1 addons remain compatible.
 
+Unavailable addon pins do not consume the three visible pin slots. Pinning another view clears unavailable entries while startup preserves pins until addons finish loading.
+
 Content mounts only while its view is visible. Release subscriptions and simulations in effect cleanup; keep drafts that must survive view changes in addon-owned state. Render errors stay inside the view and offer retry. `Sidebar` also accepts optional `content` for a custom body inside the same shared frame.
 
 import `Sidebar` from the UI SDK at `src/addons/ui.ts`. it supports nested tree navigation or a flat tab list, optional headers/footers, keyboard focus, and a sliding selected background. hibi settings, the workspace picker, and exported documentation use this same implementation.

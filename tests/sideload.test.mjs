@@ -125,6 +125,13 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   }
   const rich = page.getByRole('textbox', { name: /document editor/i })
   await rich.waitFor()
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'sidebar-pinned-views',
+      JSON.stringify(['missing.one', 'missing.two', 'missing.three']),
+    ),
+  )
+  await page.reload()
   await rich.fill('keep this draft')
   await pressShortcut(app, `${mod}+Shift+o`)
   await page.getByRole('button', { name: /new workspace file/i }).waitFor()
@@ -163,6 +170,14 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   await choose('show fixture view')
   const view = page.getByRole('complementary', { name: 'Fixture view' })
   await view.getByText('Fixture sidebar content', { exact: true }).waitFor()
+  await page.getByRole('button', { name: /sidebar views/i }).click()
+  await page.getByRole('menuitem', { name: /^pin fixture view$/i }).click()
+  assert.deepEqual(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('sidebar-pinned-views')),
+    ),
+    ['fixture-addon.view'],
+  )
   assert.equal(await page.getByRole('dialog').count(), 0)
   await page.getByRole('button', { name: /^fixture active$/i }).click()
   await view.getByText('Selected fixture', { exact: true }).waitFor()

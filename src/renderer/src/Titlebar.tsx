@@ -100,11 +100,14 @@ export function Titlebar({
   ]
   const currentView =
     sidebarViews.find((view) => view.id === sidebarView) ?? sidebarViews[0]
-  const currentPinned = pinned.includes(sidebarView)
+  const availablePins = pinned.filter((id) =>
+    sidebarViews.some((view) => view.id === id),
+  )
+  const currentPinned = availablePins.includes(sidebarView)
   function togglePin() {
     const next = currentPinned
-      ? pinned.filter((id) => id !== sidebarView)
-      : [...pinned, sidebarView].slice(0, 3)
+      ? availablePins.filter((id) => id !== sidebarView)
+      : [...availablePins, sidebarView].slice(0, 3)
     localStorage.setItem('sidebar-pinned-views', JSON.stringify(next))
     setPinned(next)
   }
@@ -142,7 +145,7 @@ export function Titlebar({
                           id: 'pin-current-view',
                           label: `${currentPinned ? 'Unpin' : 'Pin'} ${currentView?.label ?? 'Workspace'}`,
                           icon: currentPinned ? PinOff : Pin,
-                          disabled: !currentPinned && pinned.length >= 3,
+                          disabled: !currentPinned && availablePins.length >= 3,
                           onSelect: togglePin,
                         },
                         ...orderedViews.map((view, index) => ({
