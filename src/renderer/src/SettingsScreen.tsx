@@ -9,6 +9,7 @@ import {
 } from 'react'
 import type { AddonState } from '../../addons/api'
 import type { AppInfo } from '../../shared/desktop'
+import { type DocumentView, isDocumentView } from '../../shared/document-types'
 import type { Hotkeys } from '../../shared/hotkeys'
 import { ColorschemeSettings } from '../../ui/ColorschemeSettings'
 import { Button, Select, SettingRow, Slider, Toggle } from '../../ui/Controls'
@@ -78,6 +79,8 @@ export function SettingsScreen({
   onShowLineNumbers,
   spellCheck,
   onSpellCheck,
+  defaultView,
+  onDefaultView,
   tabsEnabled,
   tabsBusy,
   onTabsEnabled,
@@ -105,6 +108,8 @@ export function SettingsScreen({
   onShowLineNumbers: (show: boolean) => void
   spellCheck: boolean
   onSpellCheck: (enabled: boolean) => void
+  defaultView: DocumentView
+  onDefaultView: (view: DocumentView) => void
   tabsEnabled: boolean
   tabsBusy: boolean
   onTabsEnabled: (enabled: boolean) => void
@@ -227,6 +232,25 @@ export function SettingsScreen({
             <AutosaveSettings />
             <h2>Layout</h2>
             <div className="settings-group">
+              <SettingRow
+                id="default-view"
+                label="Default view"
+                description="Start in this view. Formats fall back to a supported view."
+              >
+                <Select
+                  id="default-view"
+                  aria-describedby="default-view-description"
+                  value={defaultView}
+                  onChange={(event) => {
+                    const view = event.target.value
+                    if (isDocumentView(view)) onDefaultView(view)
+                  }}
+                >
+                  <option value="normal">Normal</option>
+                  <option value="side-by-side">Side-by-side</option>
+                  <option value="markdown">Source only</option>
+                </Select>
+              </SettingRow>
               <SettingRow
                 id="editor-padding"
                 label="Content padding"

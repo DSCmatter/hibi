@@ -2,6 +2,12 @@
 
 Settings → Editor → Writing → **Spell check** controls native spelling underlines in rich text, including the rendered pane in side-by-side view. It is on by default and persists on this device. Source/code editing keeps spell checking off. Changing the setting does not alter document text.
 
+## default view
+
+Settings → Editor → Layout → **Default view** chooses Normal, Side-by-side, or Source only for startup. Changing it also updates the current view without changing the document. Toolbar switches are temporary and do not overwrite the default; the current view carries across files until you switch again or restart Hibi.
+
+Formats keep their supported-view restrictions. If the selected view is unavailable, Hibi uses side-by-side when supported, otherwise source only. For example, plain text always uses source only. Opening a format that supports your selected view restores it. Normal remains the default for a new installation.
+
 ## file tabs
 
 Opening a file smoothly reveals its entire tab, including the close button; new tabs at the end scroll the strip to the right edge. Closing tabs collapse their width and spacing smoothly, including when the strip overflows. Drag tabs to reorder them, or focus a tab and use Alt+Shift+Left/Right. Reordering keeps documents, drafts, and the active selection intact and survives renderer reloads during the current app session. Reduced motion makes scrolling and position changes immediate.

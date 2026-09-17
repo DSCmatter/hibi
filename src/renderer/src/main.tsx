@@ -218,7 +218,14 @@ function App() {
     )
   }, [])
   const autosaveStatus = useAutosave(document, busy, acknowledgeSave)
-  const [selectedMode, setMode] = useState<ViewMode>('normal')
+  const [defaultView, setDefaultView] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem('default-view')
+    return saved && isDocumentView(saved) ? saved : 'normal'
+  })
+  const [selectedMode, setMode] = useState<ViewMode>(defaultView)
+  useEffect(() => {
+    localStorage.setItem('default-view', defaultView)
+  }, [defaultView])
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [failed, setFailed] = useState(false)
   const editorStarted = useRef(false)
@@ -1451,6 +1458,12 @@ function App() {
             onShowLineNumbers={setShowLineNumbers}
             spellCheck={spellCheck}
             onSpellCheck={setSpellCheck}
+            defaultView={defaultView}
+            onDefaultView={(view) => {
+              setDefaultView(view)
+              setMode(view)
+              dismissWelcome()
+            }}
             cursorSettings={cursorSettings}
             onCursorSettings={setCursorSettings}
             resize={sidebarResize}
