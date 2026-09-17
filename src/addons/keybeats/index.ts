@@ -11,9 +11,14 @@ export default defineAddon({
   ),
   start(context) {
     const run = ++generation
-    void import('./engine')
+    // Warm Chromium's audio service asynchronously; a cold AudioContext can
+    // synchronously block editing while it queries the output device.
+    void navigator.mediaDevices
+      .enumerateDevices()
+      .catch(() => undefined)
+      .then(() => (run === generation ? import('./engine') : undefined))
       .then((module) => {
-        if (run === generation) stop = module.startKeybeats(context)
+        if (module && run === generation) stop = module.startKeybeats(context)
       })
       .catch(() => {
         if (run === generation) context.notify('could not load keybeats.')

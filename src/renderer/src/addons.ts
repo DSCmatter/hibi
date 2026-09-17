@@ -23,6 +23,7 @@ import {
   documentExtension,
   isMarkdownDocument,
 } from '../../shared/document-types'
+import { startupSpan } from '../../shared/startup'
 import { useDialogService } from '../../ui/DialogProvider'
 import { menus } from '../../ui/menu-store'
 import { useToastService } from '../../ui/Sonner'
@@ -739,12 +740,16 @@ export function useAddons(environment: Environment, documentName?: string) {
               if (!disposed) toastScope.api.show({ message })
             },
           })
+        const measuredStart = () =>
+          startupSpan(`addon:${id}`, async () => {
+            await start()
+          })
         const starting = required.has(id)
-          ? Promise.resolve(start())
+          ? measuredStart()
           : new Promise<void>((resolve) =>
               requestIdleCallback(() => resolve(), { timeout: 1000 }),
             ).then(() => {
-              if (!disposed) return start()
+              if (!disposed) return measuredStart()
             })
         void starting
           .then(() => {

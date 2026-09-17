@@ -12,6 +12,8 @@ Measurements use production assets in the test Electron runtime with hidden wind
 
 Main and renderer checkpoints use the `hibi:` performance-entry prefix. Entry checkpoints occur **after static imports**, not at OS process launch. Native startup reads have separate durations. Renderer document availability and required editing capabilities are distinct from window painting. No benchmark telemetry leaves the machine.
 
+Renderer `hibi:addon:<id>` spans include each enabled implementation's import and startup hook. A long span can include another addon's blocking work; use a CPU profile to identify the caller. In particular, a cold `AudioContext` can synchronously query the audio device. keybeats starts permission-free asynchronous device discovery before creating its context, keeping that service preparation off the editor's critical path. No device details are stored. The [Chromium Web Audio documentation](https://developer.chrome.com/blog/audiocontext-setsinkid) describes output-device selection; changing the sink alone did not remove the constructor stall in local measurements.
+
 `out/renderer/startup-bundle.json` records chunk sizes, static/dynamic imports, and module membership. Follow static imports from entry chunks when comparing startup cost; a separate chunk alone does not establish lazy loading.
 
 The `app://` scheme allows V8 code caching. Native addon implementations load on their first authorized call, with shared in-flight imports and a second enabled-state check after loading. Worker entrypoints resolve from the application root so chunk splitting does not change their locations.

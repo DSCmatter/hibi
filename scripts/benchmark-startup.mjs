@@ -113,6 +113,14 @@ async function measure(page, start, app, scenario) {
   }
   const renderer = await page.evaluate(() => ({
     timeOrigin: performance.timeOrigin,
+    spans: performance
+      .getEntriesByType('measure')
+      .filter((entry) => entry.name.startsWith('hibi:'))
+      .map((entry) => ({
+        name: entry.name,
+        ms: entry.startTime,
+        duration: entry.duration,
+      })),
     milestones: performance
       .getEntriesByType('mark')
       .filter((entry) => entry.name.startsWith('hibi:'))
