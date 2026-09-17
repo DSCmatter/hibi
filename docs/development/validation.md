@@ -34,6 +34,8 @@ After document file operations, the explorer rescans the workspace instead of re
 
 Recovery checks terminate only their own renderer process on Linux, avoiding Electron's platform-specific crash-dump path; other platforms use `forcefullyCrashRenderer`. They still verify a real renderer loss, the reload response, and recovered editor/draft state.
 
+Repository installation uses an owned empty Git config file on every platform. Git for Windows rejects Node's namespaced null-device path, so config isolation must not depend on that device. Appearance checks await the queued disk write before asserting persistence.
+
 toolbar and tooltip checks exercise all display modes, visibility, scope cleanup, stale handles, keyboard help, existing descriptions, and help inside native dialogs. keybeats tests decode all 150 local recordings with audio output muted, exercise rich/source input, repeats, search exclusion, profile switching, mute, and disabling the addon. command palette tests sample the selection marker mid-transition and check reduced motion.
 
 colorscheme checks cover all bundled token roles, text contrast, retained upstream notices, rejected CSS expressions, native window persistence, editor/undo preservation, system appearance, addon palette fallback/restoration, CSS override precedence, and exported appearance controls down to 320 px. native Windows/Linux caption rendering needs a check on those platforms.
