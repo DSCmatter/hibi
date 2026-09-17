@@ -56,6 +56,7 @@ const highlighting = HighlightStyle.define([
 export function SourceEditor({
   markdownMode,
   sourceLanguage,
+  codeLanguage,
   label,
   active,
   onReady,
@@ -74,6 +75,7 @@ export function SourceEditor({
 }: {
   markdownMode: boolean
   sourceLanguage: Language | undefined
+  codeLanguage?: string | undefined
   label: string
   active: boolean
   onReady: () => void
@@ -90,13 +92,18 @@ export function SourceEditor({
   onFormatting: (formatting: SourceFormatting | null) => void
   onLink: (href: string) => void
 }) {
-  const parserOptions = useRef({ markdownMode, sourceLanguage, label })
-  parserOptions.current = { markdownMode, sourceLanguage, label }
+  const parserOptions = useRef({
+    markdownMode,
+    sourceLanguage,
+    codeLanguage,
+    label,
+  })
+  parserOptions.current = { markdownMode, sourceLanguage, codeLanguage, label }
   const configureParser = useRef(() => {})
   // biome-ignore lint/correctness/useExhaustiveDependencies: parser configuration reads these current values through parserOptions.
   useEffect(() => {
     configureParser.current()
-  }, [markdownMode, sourceLanguage, label])
+  }, [markdownMode, sourceLanguage, codeLanguage, label])
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const change = useRef(onChange)
@@ -121,11 +128,14 @@ export function SourceEditor({
     if (!host.current) return
     const language = new Compartment()
     const markdown = () => {
-      const { markdownMode, sourceLanguage, label } = parserOptions.current
+      const { markdownMode, sourceLanguage, codeLanguage, label } =
+        parserOptions.current
       return [
         markdownMode
           ? markdownLanguage({ codeLanguages: codeLanguages.resolve })
-          : (sourceLanguage ?? []),
+          : codeLanguage
+            ? (codeLanguages.resolve(codeLanguage) ?? [])
+            : (sourceLanguage ?? []),
         markdownMode ? keymap.of(formattingKeymap) : [],
         EditorView.contentAttributes.of({
           'aria-label': markdownMode ? 'Markdown editor' : `${label} editor`,

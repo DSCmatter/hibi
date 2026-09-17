@@ -30,6 +30,7 @@ import { CodeSyntaxSettings } from './CodeSyntaxSettings'
 import { colorschemes } from './colorschemes'
 import type { CursorSettings } from './EditorCursor'
 import { ToolbarSettings } from './EditorToolbar'
+import { FormatsSettings } from './FormatsSettings'
 import { HibiSettings } from './HibiSettings'
 import { HotkeySettings } from './HotkeySettings'
 import { NotificationSettings } from './NotificationSettings'
@@ -38,6 +39,7 @@ import { SyntaxSettings } from './SyntaxSettings'
 export const settingsCategories = [
   { id: 'hibi', label: 'Hibi', icon: File },
   { id: 'editor', label: 'Editor', icon: FileText },
+  { id: 'formats', label: 'Formats', icon: FileText },
   { id: 'syntax', label: 'Syntax', icon: TextCursorInput },
   { id: 'code-syntax', label: 'Code highlighting', icon: Code },
   { id: 'appearance', label: 'Appearance', icon: PanelTop },
@@ -130,10 +132,11 @@ export function SettingsScreen({
   const casing = useSyncExternalStore(uiCase.subscribe, uiCase.snapshot)
   const pluginPages = addons.filter(
     (addon) =>
-      addon.Settings &&
-      addonStates.some(
-        (state) => state.id === addon.manifest.id && state.enabled,
-      ),
+      !!addon.manifest.fileExtensions?.length ||
+      (addon.Settings &&
+        addonStates.some(
+          (state) => state.id === addon.manifest.id && state.enabled,
+        )),
   )
   const items = [
     ...settingsCategories,
@@ -425,6 +428,19 @@ export function SettingsScreen({
               remove={onRemoveAddon}
             />
           </section>
+          <section
+            id="settings-formats"
+            role="tabpanel"
+            aria-labelledby="category-formats"
+            hidden={category !== 'formats'}
+          >
+            <FormatsSettings
+              addons={addons}
+              states={addonStates}
+              setEnabled={onAddonEnabled}
+              open={onCategory}
+            />
+          </section>
           {pluginPages.map(({ manifest, Settings }) => (
             <section
               key={manifest.id}
@@ -438,6 +454,42 @@ export function SettingsScreen({
                 {manifest.description}
                 <AddonMetadata manifest={manifest} />
               </p>
+              {!!manifest.fileExtensions?.length && (
+                <>
+                  <h2>Format</h2>
+                  <div className="settings-group">
+                    <SettingRow
+                      id={`plugin-format-${manifest.id}`}
+                      label="Enable format"
+                      description={manifest.fileExtensions
+                        .map((extension) => `.${extension}`)
+                        .join(' · ')}
+                    >
+                      <Toggle
+                        id={`plugin-format-${manifest.id}`}
+                        checked={addonStates.some(
+                          (state) => state.id === manifest.id && state.enabled,
+                        )}
+                        onChange={(event) =>
+                          void onAddonEnabled(manifest.id, event.target.checked)
+                        }
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      id={`plugin-controls-${manifest.id}`}
+                      label="Rendering and highlighting"
+                      description="Configure syntax features and source colors."
+                    >
+                      <Button onClick={() => onCategory('syntax')}>
+                        Syntax
+                      </Button>
+                      <Button onClick={() => onCategory('code-syntax')}>
+                        Code highlighting
+                      </Button>
+                    </SettingRow>
+                  </div>
+                </>
+              )}
               {Settings && (
                 <PluginSettingsBoundary key={manifest.id}>
                   <Settings />

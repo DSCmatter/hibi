@@ -29,10 +29,7 @@ import { MenuHost } from '../../ui/MenuHost'
 import { ToastProvider, useToasts } from '../../ui/Sonner'
 import type { ToastHandle } from '../../ui/toasts'
 import './styles.css'
-import {
-  documentExtension,
-  isMarkdownDocument,
-} from '../../shared/document-types'
+import { documentExtension } from '../../shared/document-types'
 import type {
   WorkspaceAction,
   WorkspaceActionResult,
@@ -126,7 +123,8 @@ function App() {
   const documentFormat = document
     ? documentFormats.get(document.name)
     : undefined
-  const markdownDocument = !document || isMarkdownDocument(document.name)
+  const markdownDocument =
+    !document || documentFormats.isMarkdown(document.name)
   useLayoutEffect(() => {
     editorDocument.publish(document)
   }, [document])
@@ -136,12 +134,13 @@ function App() {
     const previous = currentDocument.current
     if (previous?.revision !== next.revision) setOutlineTarget(null)
     if (
-      !isMarkdownDocument(next.name) &&
-      (!previous || isMarkdownDocument(previous.name))
+      !documentFormats.isMarkdown(next.name) &&
+      (!previous || documentFormats.isMarkdown(previous.name))
     ) {
       setMode((mode) =>
         mode === 'normal'
-          ? documentFormats.get(next.name)
+          ? documentFormats.get(next.name) &&
+            documentExtension(next.name) !== 'txt'
             ? 'side-by-side'
             : 'markdown'
           : mode,

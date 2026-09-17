@@ -26,7 +26,6 @@ import type {
   SourceExtension,
 } from '../../addons/api'
 import type { DocumentState } from '../../shared/desktop'
-import { isMarkdownDocument } from '../../shared/document-types'
 import { isMediaFile } from '../../shared/media'
 import { documentImage } from './DocumentImage'
 import { type CursorSettings, EditorCursor } from './EditorCursor'
@@ -102,7 +101,7 @@ export function MarkdownEditor({
   onActiveOutline: (id: string | null) => void
   outlineTarget: OutlineRequest | null
 }) {
-  const markdownDocument = isMarkdownDocument(documentState.name)
+  const markdownDocument = format?.editing === 'markdown'
   const syntaxVersion = useSyncExternalStore(
     markdownSyntax.subscribe,
     markdownSyntax.version,
@@ -580,6 +579,7 @@ export function MarkdownEditor({
                 <SourceEditor
                   markdownMode={markdownDocument}
                   sourceLanguage={format?.language}
+                  codeLanguage={format?.codeLanguage}
                   label={formatName}
                   onLink={onLink}
                   onFormatting={attachSourceFormatting}

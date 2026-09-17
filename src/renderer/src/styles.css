@@ -1458,3 +1458,9 @@ summary {
     gap: 0;
   }
 }
+.plain-text-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: var(--editor-padding, 48px);
+  font: inherit;
+}

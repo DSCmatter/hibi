@@ -199,7 +199,7 @@ export const markdownSyntax = {
   disabledFeature(token: Token) {
     return disabledFeatures.find((feature) => {
       try {
-        return feature.matches(token)
+        return feature.scope !== 'document' && feature.matches?.(token)
       } catch (error) {
         console.error(`syntax matcher failed: ${feature.id}`, error)
         return false
@@ -232,7 +232,7 @@ export const markdownSyntax = {
       typeof feature.group !== 'string' ||
       !feature.group ||
       !['block', 'inline'].includes(feature.level) ||
-      typeof feature.matches !== 'function' ||
+      (feature.scope !== 'document' && typeof feature.matches !== 'function') ||
       (feature.extensions !== undefined &&
         (!Array.isArray(feature.extensions) ||
           feature.extensions.some((name) => typeof name !== 'string')))

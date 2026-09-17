@@ -1,10 +1,29 @@
+import { StreamLanguage } from '@codemirror/language'
+import { createElement } from 'react'
 import type { DocumentFormat } from '../../addons/api'
 import type { DocumentState } from '../../shared/desktop'
 import { documentExtension } from '../../shared/document-types'
 
-const registry = new Map<string, DocumentFormat>()
+const plainText: DocumentFormat = {
+  id: 'core.text',
+  name: 'Plain text',
+  extensions: ['txt'],
+  language: StreamLanguage.define({
+    token(stream) {
+      stream.skipToEnd()
+      return null
+    },
+  }),
+  Preview: ({ value }) =>
+    createElement('pre', { className: 'plain-text-preview' }, value),
+  render: async (source) => ({
+    html: `<pre>${source.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</pre>`,
+    css: '',
+  }),
+}
+const registry = new Map<string, DocumentFormat>([[plainText.id, plainText]])
 const listeners = new Set<() => void>()
-let snapshot: readonly DocumentFormat[] = []
+let snapshot: readonly DocumentFormat[] = [plainText]
 export const documentFormats = {
   snapshot: () => snapshot,
   subscribe(listener: () => void) {
@@ -17,6 +36,9 @@ export const documentFormats = {
     return snapshot.find((format) =>
       format.extensions.includes(documentExtension(name)),
     )
+  },
+  isMarkdown(name: string) {
+    return documentFormats.get(name)?.editing === 'markdown'
   },
   register(owner: string, format: DocumentFormat, declared: readonly string[]) {
     if (

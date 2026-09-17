@@ -1,10 +1,14 @@
 # document formats and compiled markdown
 
-api version 1 remains compatible. formats are optional extension contributions; markdown remains built in. workspace files never become addon modules.
+api version 1 remains compatible. formats are optional extension contributions. markdown is an enabled-by-default format plugin; plain `.txt` is core and never parses markdown. workspace files never become addon modules.
 
 ## file formats
 
-declare `fileExtensions: ['typ']` on an extension manifest before calling `context.editor.registerDocumentFormat({ id, name, extensions, language, Preview, render?, insertMedia? })`. extensions omit the dot and use lowercase letters/digits. built-in markdown extensions cannot be replaced. only one enabled format can own an extension.
+declare `fileExtensions: ['typ']` on an extension manifest before calling `context.editor.registerDocumentFormat({ id, name, extensions, language, Preview, render?, insertMedia? })`. extensions omit the dot and use lowercase letters/digits. `.txt` is reserved for core. only one enabled format can own an extension. `editing: 'markdown'` opts into the existing rich markdown pipeline; other formats preserve source and supply a read-only preview. `codeLanguage` links source highlighting to a registered language's setting.
+
+**settings → formats** lists declared extensions even when disabled. each row opens the plugin's settings page and can enable or disable that plugin. disabling a format never changes its documents.
+
+document-format syntax controls register with `scope: 'document'`; they need no markdown token matcher and use the existing `isSyntaxEnabled` / `onSyntaxChange` API. ordinary markdown features retain their token matchers.
 
 the host uses these declarations in file pickers, rename/move checks, dropped files, workspace scanning, and source fallback. `language` is a codemirror `Language`. `Preview` receives `{ value, document }`; it renders the normal/split preview and must never rewrite the source merely by rendering. source editing and common source addons remain available when the format is disabled. markdown formatting controls are hidden for other document formats.
 

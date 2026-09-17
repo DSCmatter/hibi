@@ -254,6 +254,10 @@ export type DocumentFormat = {
   id: string
   name: string
   extensions: readonly string[]
+  /** Opt into the host's lossless rich Markdown editor. Other formats use source and preview. */
+  editing?: 'markdown'
+  /** Registered code language id. Its highlighting preference also applies to source files. */
+  codeLanguage?: string
   language: import('@codemirror/language').Language
   Preview: ComponentType<DocumentPreviewProps>
   insertMedia?: (

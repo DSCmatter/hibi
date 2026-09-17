@@ -18,7 +18,6 @@ import {
   type SourceExtension,
   type StatusItem,
 } from '../../addons/api'
-import { isMarkdownDocument } from '../../shared/document-types'
 import { useDialogService } from '../../ui/DialogProvider'
 import { menus } from '../../ui/menu-store'
 import { useToastService } from '../../ui/Sonner'
@@ -382,7 +381,7 @@ export function useAddons(environment: Environment) {
             async renderDocument(source, name, documentId) {
               const format = documentFormats.get(name)
               if (format?.render) return format.render(source, documentId)
-              if (!isMarkdownDocument(name))
+              if (format?.editing !== 'markdown')
                 throw new Error(
                   `enable the extension for ${name} before exporting it.`,
                 )
