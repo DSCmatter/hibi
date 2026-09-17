@@ -101,6 +101,20 @@ test('default view persists separately from temporary switches and respects form
     await page.getByLabel('Default view', { exact: true }).inputValue(),
     'side-by-side',
   )
+  await page
+    .getByLabel('Default view', { exact: true })
+    .selectOption('markdown')
+  await close()
+  page = await launch()
+  await page.waitForFunction(
+    () =>
+      document.activeElement?.getAttribute('aria-label') === 'Markdown editor',
+  )
+  await page.keyboard.type('Type immediately')
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    'Type immediately',
+  )
   await page.evaluate(() => localStorage.setItem('default-view', 'invalid'))
   await page.reload()
   await page.getByRole('textbox', { name: /document editor/i }).waitFor()

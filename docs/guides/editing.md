@@ -4,7 +4,7 @@ Settings → Editor → Writing → **Spell check** controls native spelling und
 
 ## default view
 
-Settings → Editor → Layout → **Default view** chooses Normal, Side-by-side, or Source only for startup. Changing it also updates the current view without changing the document. Toolbar switches are temporary and do not overwrite the default; the current view carries across files until you switch again or restart Hibi.
+Settings → Editor → Layout → **Default view** chooses Normal, Side-by-side, or Source only for startup. Changing it also updates the current view without changing the document. Source only focuses the editor when it is ready, so you can type immediately after launch. Toolbar switches are temporary and do not overwrite the default; the current view carries across files until you switch again or restart Hibi.
 
 Formats keep their supported-view restrictions. If the selected view is unavailable, Hibi uses side-by-side when supported, otherwise source only. For example, plain text always uses source only. Opening a format that supports your selected view restores it. Normal remains the default for a new installation.
 

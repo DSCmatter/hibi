@@ -153,7 +153,16 @@ export function MarkdownEditor({
   const scrollContent = useRef({ source: value, body: projection.content })
   scrollContent.current = { source: value, body: projection.content }
   useEffect(() => {
-    if (!markdownDocument && sourceReady && mode !== 'normal') {
+    if (
+      sourceReady &&
+      (mode === 'markdown' || (!markdownDocument && mode !== 'normal'))
+    ) {
+      if (
+        window.document.activeElement?.closest(
+          '.settings-screen, [role="dialog"], input, textarea, select',
+        )
+      )
+        return
       setFocusedPane('source')
       content.current?.querySelector<HTMLElement>('.cm-content')?.focus()
     }
