@@ -817,13 +817,20 @@ button:disabled {
   opacity: 1;
 }
 .editor-content {
-  mask-image: linear-gradient(
+  --editor-mask: linear-gradient(
     to bottom,
     transparent,
     #000 var(--editor-top-fade)
   );
+  mask-image: var(--editor-mask);
   position: absolute;
   inset: 0;
+}
+.editor-content:has(.preview-toolbar:not(:empty)) {
+  mask-image: none;
+}
+.editor-content:has(.preview-toolbar:not(:empty)) .source-pane {
+  mask-image: var(--editor-mask);
 }
 .editor-content:has(.editor-cursor) [contenteditable="true"] {
   caret-color: transparent;

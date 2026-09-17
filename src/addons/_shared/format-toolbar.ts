@@ -314,6 +314,8 @@ const lineRange = ({ source, from, to }: DocumentSelection) => {
   return { from: start, to: newline < 0 ? source.length : newline }
 }
 
+export const formatMarks = (name: string) => rules[name]?.marks ?? {}
+
 /** Format-specific syntax, using the host's common selection, undo, toolbar, and keymap. */
 export function formatToolbar(name: string): 'markdown' | DocumentFormatting {
   const rule = rules[name]

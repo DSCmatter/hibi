@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { highlightTree, tagHighlighter, tags } from '@lezer/highlight'
+import { formatLanguage } from '../src/addons/_shared/format-language.ts'
 import { formatToolbar } from '../src/addons/_shared/format-toolbar.ts'
 
 const apply = (
@@ -17,6 +19,41 @@ const apply = (
     source: source.slice(0, edit.from) + edit.insert + source.slice(edit.to),
   }
 }
+
+test('native source highlighting recognizes the syntax written by its toolbar', () => {
+  const highlighter = tagHighlighter([
+    { tag: tags.strong, class: 'bold' },
+    { tag: tags.emphasis, class: 'italic' },
+    { tag: tags.monospace, class: 'inline-code' },
+  ])
+  for (const reader of [
+    'rst',
+    'asciidoc',
+    'org',
+    'mediawiki',
+    'creole',
+    'djot',
+  ]) {
+    const language = formatLanguage({ reader }, () => null)
+    for (const action of ['bold', 'italic', 'inline-code']) {
+      const { source } = apply(formatToolbar(reader), action, 'word')
+      const spans = []
+      highlightTree(
+        language.parser.parse(source),
+        highlighter,
+        (from, to, classes) => {
+          spans.push({ text: source.slice(from, to), classes })
+        },
+      )
+      assert.ok(
+        spans.some(
+          (span) => span.text.includes('word') && span.classes.includes(action),
+        ),
+        `${reader} ${action}: ${JSON.stringify(spans)}`,
+      )
+    }
+  }
+})
 
 test('native formatting wraps selections and toggles without changing surrounding text', () => {
   for (const name of [

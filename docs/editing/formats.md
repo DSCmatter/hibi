@@ -28,7 +28,7 @@ Plain text has source view only. Formats without a rich editor offer source and 
 
 Toolbar buttons write the selected format's syntax. Markdown variants reuse Markdown tools; other formats map headings, emphasis, lists, links, images, code, and tables to their native notation. Unsupported tools are hidden. Source selection and undo work through the same editor path. LaTeX link, image, and strikethrough actions add missing `hyperref`, `graphicx`, or `ulem` packages after a conventional `\documentclass` declaration. Included snippets without a preamble rely on their parent document's packages.
 
-Compile, run, and export actions stay pinned at the top of the preview panel. Source code and HTML previews use the app's shared highlighting settings. Previews preserve document text and never convert the saved file to Markdown.
+Compile, run, and export actions stay pinned at the top of the preview panel. Editing keeps the current preview visible while its replacement renders, preserving the scroll position. Source code and HTML previews use the app's shared highlighting settings. Previews preserve document text and never convert the saved file to Markdown.
 
 ## Native tools
 

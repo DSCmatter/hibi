@@ -120,6 +120,49 @@ test('format plugins render natively, keep previews inert, and run only on reque
       .count(),
     0,
   )
+  await t.test(
+    'native formatting is undoable and preview actions stay pinned',
+    async () => {
+      const source =
+        '<h1>Heading</h1>\n' + '<p>Scrollable paragraph.</p>\n'.repeat(60)
+      await open('toolbar.html', source, 'HTML')
+      const editor = page.getByRole('textbox', {
+        name: 'HTML editor',
+        exact: true,
+      })
+      await editor.press(`${mod}+a`)
+      await page.getByRole('button', { name: /^bold$/i, exact: true }).click()
+      assert.match(await editor.textContent(), /^<strong><h1>Heading/)
+      await editor.press(`${mod}+z`)
+      assert.equal(
+        (await editor.locator('.cm-line').allTextContents()).join('\n'),
+        source,
+      )
+      await page.waitForFunction(
+        () => document.querySelectorAll('.format-content p').length === 60,
+      )
+      const geometry = await page
+        .locator('.rich-pane')
+        .evaluate(async (pane) => {
+          pane.scrollTop = 400
+          await new Promise(requestAnimationFrame)
+          const toolbar = pane.querySelector('.preview-toolbar')
+          return {
+            scroll: pane.scrollTop,
+            paneTop: pane.getBoundingClientRect().top,
+            toolbarTop: toolbar.getBoundingClientRect().top,
+            mask: getComputedStyle(pane.parentElement).maskImage,
+          }
+        })
+      assert.ok(geometry.scroll > 0)
+      assert.ok(Math.abs(geometry.paneTop - geometry.toolbarTop) < 1)
+      assert.equal(geometry.mask, 'none')
+      await page
+        .getByRole('toolbar', { name: 'Preview actions', exact: true })
+        .getByRole('button', { name: 'Export HTML', exact: true })
+        .waitFor()
+    },
+  )
   for (const [id, extension, label] of [
     ['mdx', 'mdx', 'MDX'],
     ['mdsvex', 'svx', 'MDsveX'],

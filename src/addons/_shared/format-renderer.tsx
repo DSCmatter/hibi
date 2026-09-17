@@ -166,6 +166,7 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
     const [busy, setBusy] = useState(false)
     const [running, setRunning] = useState(false)
     const [version, setVersion] = useState(0)
+    const previewDocument = useRef(document.id)
     const latest = useRef({ value, id: document.id })
     latest.current = { value, id: document.id }
     useEffect(() => {
@@ -180,8 +181,14 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
     // biome-ignore lint/correctness/useExhaustiveDependencies: syntax preference changes invalidate rendering.
     useEffect(() => {
       let active = true
-      setResult(null)
-      setHtml('')
+      if (
+        previewDocument.current !== document.id ||
+        !context.editor.isSyntaxEnabled('preview')
+      ) {
+        setResult(null)
+        setHtml('')
+      }
+      previewDocument.current = document.id
       setError('')
       setBusy(true)
       const timer = setTimeout(() => {
@@ -203,7 +210,11 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
           }
         })()
           .catch((error) => {
-            if (active) setError(errorMessage(error))
+            if (active) {
+              setResult(null)
+              setHtml('')
+              setError(errorMessage(error))
+            }
           })
           .finally(() => {
             if (active) setBusy(false)
@@ -240,23 +251,24 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
             <Button
               disabled={running || busy || !enabled}
               onClick={async () => {
+                const current = () =>
+                  latest.current.value === value &&
+                  latest.current.id === document.id
                 setRunning(true)
                 setError('')
                 try {
                   const next = await run(document)
-                  if (
-                    next &&
-                    latest.current.value === value &&
-                    latest.current.id === document.id
-                  ) {
+                  if (next && current()) {
                     const rendered = next.pdf
                       ? null
                       : await htmlResult(context, next, document.id)
-                    setResult(next)
-                    setHtml(rendered?.html ?? '')
+                    if (current()) {
+                      setResult(next)
+                      setHtml(rendered?.html ?? '')
+                    }
                   }
                 } catch (error) {
-                  setError(errorMessage(error))
+                  if (current()) setError(errorMessage(error))
                 } finally {
                   setRunning(false)
                 }
@@ -287,7 +299,7 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
               : 'Embedded code stays inert until you run this document.'}
           </p>
         )}
-        {(busy || running) && (
+        {(running || (busy && !result && !html)) && (
           <DocumentNotice
             title={running ? 'Running document…' : 'Rendering preview…'}
             busy
