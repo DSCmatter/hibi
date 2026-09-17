@@ -1,6 +1,6 @@
 .sidebar-slot {
   position: relative;
-  width: var(--sidebar-width, 196px);
+  width: var(--sidebar-width, 256px);
   flex-shrink: 0;
   min-height: 0;
   z-index: 1;
@@ -12,7 +12,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: var(--sidebar-width, 196px);
+  width: var(--sidebar-width, 256px);
   flex-shrink: 0;
   min-height: 0;
   height: 100%;

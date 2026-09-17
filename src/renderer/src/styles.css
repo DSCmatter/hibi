@@ -40,7 +40,7 @@
   initial-value: 0px;
 }
 :root {
-  --sidebar-width: 196px;
+  --sidebar-width: 256px;
   --editor-padding: 48px;
   font-family: var(--font-ui);
   font-synthesis: none;
@@ -112,7 +112,7 @@ button:disabled {
   height: 100svh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: clip;
 }
 .titlebar {
   z-index: 2;

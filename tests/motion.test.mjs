@@ -637,10 +637,10 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
       sample()
       return samples
     }, reverse)
-    assert.ok(samples.some(({ x }) => x > -195 && x < -1))
+    assert.ok(samples.some(({ x }) => x > -255 && x < -1))
     assert.ok(
       samples
-        .filter(({ x }) => x > -195 && x < -1)
+        .filter(({ x }) => x > -255 && x < -1)
         .every(({ visibility, onTop }) => visibility === 'visible' && onTop),
     )
     assert.ok(
@@ -650,7 +650,7 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
           titlebarBackground === 'rgba(0, 0, 0, 0)',
       ),
     )
-    assert.deepEqual([...new Set(samples.map(({ width }) => width))], [196])
+    assert.deepEqual([...new Set(samples.map(({ width }) => width))], [256])
     assert.ok(
       samples.every(
         ({ top, bottom, viewportHeight }) =>
@@ -666,16 +666,16 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
         ({ x, width, contentX }) => Math.abs(contentX - x - width) < 1,
       ),
     )
-    assert.equal(samples.at(-1).x, opening ? 0 : -196)
+    assert.equal(samples.at(-1).x, opening ? 0 : -256)
     assert.equal(
       samples.at(-1).toolbarWidth,
-      opening ? 196 : process.platform === 'darwin' ? 116 : 44,
+      opening ? 256 : process.platform === 'darwin' ? 116 : 44,
     )
   }
   await clickMenu(app, 'Settings')
   assert.equal(
     await page.locator('.sidebar-toolbar').evaluate((el) => el.offsetWidth),
-    196,
+    256,
   )
   assert.equal(
     await page.getByRole('button', { name: /^new$/i, exact: true }).count(),
@@ -696,7 +696,7 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
   )
   await page.getByRole('button', { name: /toggle workspace sidebar/i }).click()
   await page.emulateMedia({ reducedMotion: 'no-preference' })
-  await checkSidebarResize(page, 196, '.editor-surface', async () => {
+  await checkSidebarResize(page, 256, '.editor-surface', async () => {
     await Promise.all([
       page.waitForEvent('domcontentloaded'),
       app.evaluate(({ BrowserWindow }) =>
@@ -710,7 +710,7 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
   await clickMenu(app, 'Settings')
   const resize = page.getByRole('separator', { name: /resize sidebar/i })
   await resize.press('ArrowRight')
-  assert.equal(Number(await resize.getAttribute('aria-valuenow')), 204)
+  assert.equal(Number(await resize.getAttribute('aria-valuenow')), 264)
   await page.getByRole('button', { name: /^back to app$/i }).click()
   assert.equal(
     Number(
@@ -719,6 +719,6 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
         .getByRole('separator', { name: /resize sidebar/i })
         .getAttribute('aria-valuenow'),
     ),
-    204,
+    264,
   )
 })

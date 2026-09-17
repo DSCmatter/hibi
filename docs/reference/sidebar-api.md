@@ -46,6 +46,8 @@ export type SidebarProps = {
     maxWidth: number
     onChange: (width: number) => void
     onReset: () => void
+    /** Pointer drags 48px past the minimum collapse a dismissible sidebar. */
+    onCollapse?: () => void
   }
 }
 ```

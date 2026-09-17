@@ -263,7 +263,14 @@ function App() {
     setSidebarOpen(true)
     showTitlebar()
   }
-  const sidebarResize = useSidebarResize(196)
+  const sidebarResize = useSidebarResize(256)
+  const documentSidebarResize = {
+    ...sidebarResize,
+    onCollapse: () => {
+      setSidebarOpen(false)
+      showTitlebar()
+    },
+  }
   const [cursorSettings, setCursorSettings] = useState(loadCursor)
   const [showLineNumbers, setShowLineNumbers] = useState(
     () => localStorage.getItem('line-numbers') === 'true',
@@ -1285,7 +1292,7 @@ function App() {
         dirty={document?.dirty ?? false}
         onAction={runWorkspaceAction}
         onError={(error) => setError(String(error))}
-        resize={sidebarResize}
+        resize={documentSidebarResize}
         open={sidebarOpen && !settingsOpen && sidebarView === 'workspace'}
         workspace={workspace}
         onOpen={() => addonHost.app.runAction('open-workspace')}
@@ -1295,7 +1302,7 @@ function App() {
       />
       <OutlineSidebar
         open={sidebarOpen && !settingsOpen && sidebarView === 'outline'}
-        resize={sidebarResize}
+        resize={documentSidebarResize}
         headings={outline}
         selected={activeOutline}
         onSelect={(id) =>
@@ -1309,7 +1316,7 @@ function App() {
         view={activeAddonView}
         input={sidebarInput}
         open={sidebarOpen && !settingsOpen}
-        resize={sidebarResize}
+        resize={documentSidebarResize}
       />
       <MenuHost />
       <SettingsScreen

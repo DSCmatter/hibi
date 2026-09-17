@@ -57,6 +57,8 @@ export type SidebarProps = {
     maxWidth: number
     onChange: (width: number) => void
     onReset: () => void
+    /** Pointer drags 48px past the minimum collapse a dismissible sidebar. */
+    onCollapse?: () => void
   }
 }
 
@@ -488,7 +490,7 @@ export function Sidebar({
             onPointerDown={(event) => {
               if (event.button !== 0 || !event.isPrimary) return
               event.preventDefault()
-              event.currentTarget.focus()
+              event.currentTarget.focus({ preventScroll: true })
               event.currentTarget.setPointerCapture(event.pointerId)
               drag.current = {
                 x: event.clientX,
@@ -498,13 +500,19 @@ export function Sidebar({
               setDragging(true)
             }}
             onPointerMove={(event) => {
-              if (drag.current?.pointer === event.pointerId)
-                resize.onChange(
-                  drag.current.width + event.clientX - drag.current.x,
-                )
+              if (drag.current?.pointer !== event.pointerId) return
+              const width = drag.current.width + event.clientX - drag.current.x
+              if (resize.onCollapse && width <= MIN_SIDEBAR_WIDTH - 48) {
+                resize.onChange(drag.current.width)
+                event.currentTarget.releasePointerCapture(event.pointerId)
+                drag.current = null
+                setDragging(false)
+                resize.onCollapse()
+              } else resize.onChange(width)
             }}
             onPointerUp={(event) => {
-              event.currentTarget.releasePointerCapture(event.pointerId)
+              if (event.currentTarget.hasPointerCapture(event.pointerId))
+                event.currentTarget.releasePointerCapture(event.pointerId)
             }}
             onPointerCancel={() => {
               if (drag.current) resize.onChange(drag.current.width)
