@@ -289,6 +289,16 @@ test('frontmatter fields preserve comments, types, nested YAML and body edits', 
         await new Promise(requestAnimationFrame)
         result.push(body.getBoundingClientRect().height)
       }
+      await Promise.all(
+        body
+          .getAnimations({ subtree: true })
+          .filter((animation) =>
+            Number.isFinite(animation.effect?.getComputedTiming().iterations),
+          )
+          .map((animation) => animation.finished.catch(() => {})),
+      )
+      await new Promise(requestAnimationFrame)
+      result.push(body.getBoundingClientRect().height)
       return result
     })
   assert.ok(heights.some((height) => height > 0 && height < heights[0]))

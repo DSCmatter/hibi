@@ -106,7 +106,8 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: path })
   }, pdf)
   await choose('export typst pdf')
-  await page.getByText(/exported pdf to/i).waitFor()
+  // PDF export can queue behind a preview; each native compile has a 10s limit.
+  await page.getByText(/exported pdf to/i).waitFor({ timeout: 25000 })
   assert.equal((await readFile(pdf)).subarray(0, 5).toString(), '%PDF-')
   await choose('insert typst block')
   const formatDialog = page.getByRole('dialog', {
