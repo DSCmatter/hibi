@@ -275,6 +275,12 @@ function App() {
   const [showLineNumbers, setShowLineNumbers] = useState(
     () => localStorage.getItem('line-numbers') === 'true',
   )
+  const [spellCheck, setSpellCheck] = useState(
+    () => localStorage.getItem('spell-check') !== 'false',
+  )
+  useEffect(() => {
+    localStorage.setItem('spell-check', String(spellCheck))
+  }, [spellCheck])
   useEffect(() => {
     localStorage.setItem('line-numbers', String(showLineNumbers))
   }, [showLineNumbers])
@@ -1335,6 +1341,8 @@ function App() {
         onCategory={setSettingsCategory}
         showLineNumbers={showLineNumbers}
         onShowLineNumbers={setShowLineNumbers}
+        spellCheck={spellCheck}
+        onSpellCheck={setSpellCheck}
         cursorSettings={cursorSettings}
         onCursorSettings={setCursorSettings}
         resize={sidebarResize}
@@ -1395,6 +1403,7 @@ function App() {
               richExtensions={addonHost.richExtensions}
               documentRevision={document.revision}
               showLineNumbers={showLineNumbers}
+              spellCheck={spellCheck}
               cursorSettings={cursorSettings}
               markdownExtensions={addonHost.markdownExtensions}
               key={`${document.revision}-${resetEditor}-${markdownDocument ? 'markdown' : documentExtension(document.name)}`}

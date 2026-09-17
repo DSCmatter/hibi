@@ -88,6 +88,8 @@ export function SettingsScreen({
   onCursorSettings,
   showLineNumbers,
   onShowLineNumbers,
+  spellCheck,
+  onSpellCheck,
   tabsEnabled,
   tabsBusy,
   onTabsEnabled,
@@ -112,6 +114,8 @@ export function SettingsScreen({
   onCursorSettings: (settings: CursorSettings) => void
   showLineNumbers: boolean
   onShowLineNumbers: (show: boolean) => void
+  spellCheck: boolean
+  onSpellCheck: (enabled: boolean) => void
   tabsEnabled: boolean
   tabsBusy: boolean
   onTabsEnabled: (enabled: boolean) => void
@@ -211,6 +215,21 @@ export function SettingsScreen({
                   onChange={(event) => {
                     if (!tabsBusy) onTabsEnabled(event.target.checked)
                   }}
+                />
+              </SettingRow>
+            </div>
+            <h2>Writing</h2>
+            <div className="settings-group">
+              <SettingRow
+                id="spell-check"
+                label="Spell check"
+                description="Underline possible spelling mistakes in rich text."
+              >
+                <Toggle
+                  id="spell-check"
+                  aria-describedby="spell-check-description"
+                  checked={spellCheck}
+                  onChange={(event) => onSpellCheck(event.target.checked)}
                 />
               </SettingRow>
             </div>

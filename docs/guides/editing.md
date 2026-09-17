@@ -1,8 +1,10 @@
 # editing
 
+Settings → Editor → Writing → **Spell check** controls native spelling underlines in rich text, including the rendered pane in side-by-side view. It is on by default and persists on this device. Source/code editing keeps spell checking off. Changing the setting does not alter document text.
+
 ## file tabs
 
-Opening a file smoothly reveals its entire tab, including the close button; new tabs at the end scroll the strip to the right edge. Drag tabs to reorder them, or focus a tab and use Alt+Shift+Left/Right. Reordering keeps documents, drafts, and the active selection intact and survives renderer reloads during the current app session. Reduced motion makes scrolling and position changes immediate.
+Opening a file smoothly reveals its entire tab, including the close button; new tabs at the end scroll the strip to the right edge. Closing tabs collapse their width and spacing smoothly, including when the strip overflows. Drag tabs to reorder them, or focus a tab and use Alt+Shift+Left/Right. Reordering keeps documents, drafts, and the active selection intact and survives renderer reloads during the current app session. Reduced motion makes scrolling and position changes immediate.
 
 Tabs fade in while sliding right and fade out while sliding left. Reduced motion disables these transitions. Settings → Editor → Documents → **Use tabs** turns the tab bar on or off. Turning it off keeps the active note and asks to save, discard, or cancel for other unsaved tabs. Single-file mode shows the same filename and unsaved indicator as the tab title, without a pill or close button. It replaces the current note when opening or creating another, with the same safeguards; canceling leaves it intact. The preference survives restarting Hibi. Re-enabling tabs restores normal multi-file behavior; closed tabs and their tab-based navigation history are not restored.
 

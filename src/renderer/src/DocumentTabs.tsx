@@ -25,6 +25,7 @@ export function DocumentTabs({
   const strip = useRef<HTMLDivElement>(null)
   const active = useRef<HTMLDivElement>(null)
   const positions = useRef(new Map<string, number>())
+  const wasClosing = useRef(false)
   const dragged = useRef<string | null>(null)
   const keyboardFocus = useRef<string | null>(null)
   const [drop, setDrop] = useState<{
@@ -80,16 +81,21 @@ export function DocumentTabs({
   // biome-ignore lint/correctness/useExhaustiveDependencies: reveal after the retained tab list is mounted, selected, resized, or renamed.
   useLayoutEffect(() => {
     const next = new Map<string, number>()
+    const closing = !!strip.current?.querySelector('[data-closing="true"]')
     for (const tab of strip.current?.querySelectorAll<HTMLElement>(
       '[data-tab-key]',
     ) ?? []) {
       const id = tab.dataset.tabKey!
       const previous = positions.current.get(id)
       const left = tab.offsetLeft
+      if (tab.dataset.closing !== 'true')
+        tab.style.setProperty('--tab-width', `${tab.offsetWidth}px`)
       next.set(id, left)
       if (
         previous !== undefined &&
         previous !== left &&
+        !closing &&
+        !wasClosing.current &&
         !matchMedia('(prefers-reduced-motion: reduce)').matches
       ) {
         tab.animate(
@@ -99,6 +105,7 @@ export function DocumentTabs({
       }
     }
     positions.current = next
+    wasClosing.current = closing
     if (keyboardFocus.current) {
       if (
         window.document.activeElement === window.document.body ||

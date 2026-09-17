@@ -66,6 +66,7 @@ export function MarkdownEditor({
   richExtensions,
   cursorSettings,
   showLineNumbers,
+  spellCheck,
   documentRevision,
   flavors,
   unsupportedFlavor,
@@ -89,6 +90,7 @@ export function MarkdownEditor({
   richExtensions: readonly RichExtension[]
   cursorSettings: CursorSettings
   showLineNumbers: boolean
+  spellCheck: boolean
   documentRevision: number
   flavors: readonly MarkdownFlavor[]
   unsupportedFlavor: boolean
@@ -384,6 +386,10 @@ export function MarkdownEditor({
     if (!editor) return
     editor.setEditable(!sourceOnly && !disabled, false)
   }, [editor, sourceOnly, disabled])
+
+  useEffect(() => {
+    editor?.view.dom.setAttribute('spellcheck', String(spellCheck))
+  }, [editor, spellCheck])
 
   useEffect(() => {
     if (!editor) return

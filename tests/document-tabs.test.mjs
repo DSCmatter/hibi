@@ -154,6 +154,30 @@ test('overflowing tabs reveal close buttons smoothly and reorder without losing 
       .evaluate((strip) => getComputedStyle(strip).scrollBehavior),
     'auto',
   )
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  const closingId = (await page.evaluate(() => window.hibi.getDocument())).tabId
+  await page.locator('.document-tabs').evaluate((strip) => {
+    window.tabWidths = []
+    window.sampleTabWidths = true
+    const sample = () => {
+      window.tabWidths.push(strip.scrollWidth)
+      if (window.sampleTabWidths) requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+  await page.locator(`[data-tab-key="${closingId}"] .tab-close`).click()
+  await page
+    .locator(`[data-tab-key="${closingId}"]`)
+    .waitFor({ state: 'detached' })
+  const widths = await page.evaluate(() => {
+    window.sampleTabWidths = false
+    return window.tabWidths
+  })
+  assert.ok(
+    new Set(widths).size > 2,
+    'closing an overflowing strip must include intermediate widths',
+  )
+  await fullyVisible()
 })
 
 test('single-file mode guards replacement, closes other tabs safely, and persists', {
