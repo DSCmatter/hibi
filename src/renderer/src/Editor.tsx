@@ -203,7 +203,7 @@ export function MarkdownEditor({
       ],
       content: projection.content,
       contentType: 'markdown',
-      autofocus: 'end',
+      autofocus: false,
       injectCSS: false,
       shouldRerenderOnTransaction: false,
       editorProps: {
@@ -236,6 +236,27 @@ export function MarkdownEditor({
     },
     [markdownExtensions, flavors, syntaxVersion],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: initial focus belongs to this editor instance, never subsequent mode or document updates.
+  useLayoutEffect(() => {
+    if (!editor || !markdownDocument || paneMode === 'markdown') return
+    const focus = () => {
+      if (editor.isDestroyed || !editor.view.dom.isConnected) return
+      const active = window.document.activeElement
+      if (active?.closest('.settings-screen, [role="dialog"], .source-pane'))
+        return
+      editor.view.dispatch(
+        editor.state.tr
+          .setSelection(TextSelection.atEnd(editor.state.doc))
+          .setMeta('addToHistory', false),
+      )
+      editor.view.focus()
+    }
+    editor.on('mount', focus)
+    focus()
+    return () => {
+      editor.off('mount', focus)
+    }
+  }, [editor])
   useEffect(() => {
     if (!editor || !markdownDocument) {
       onOutline([])

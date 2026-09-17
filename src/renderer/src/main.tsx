@@ -32,6 +32,7 @@ import { MenuHost } from '../../ui/MenuHost'
 import { ToastProvider, useToasts } from '../../ui/Sonner'
 import type { ToastHandle } from '../../ui/toasts'
 import './styles.css'
+import '../../ui/ui-case'
 import { documentExtension, isDocumentView } from '../../shared/document-types'
 import type {
   WorkspaceAction,
@@ -223,6 +224,7 @@ function App() {
   const editorStarted = useRef(false)
   const [typing, setTyping] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
   const settingsNavigation = useRef({
     current: { open: false, category: 'hibi' },
     back: [] as { open: boolean; category: string }[],
@@ -245,6 +247,9 @@ function App() {
     history.navigating = false
   }, [settingsOpen, settingsCategory])
   const [paletteOpen, setPaletteOpen] = useState(false)
+  useEffect(() => {
+    if (settingsOpen || paletteOpen) setSettingsLoaded(true)
+  }, [settingsOpen, paletteOpen])
   const [findOpen, setFindOpen] = useState(false)
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null)
   const [welcomeDismissed, setWelcomeDismissed] = useState(
@@ -1384,9 +1389,10 @@ function App() {
         resize={documentSidebarResize}
       />
       <MenuHost />
-      {(settingsOpen || paletteOpen) && (
+      {(settingsLoaded || settingsOpen || paletteOpen) && (
         <Suspense fallback={settingsOpen ? <LoadingScreen full /> : null}>
           <SettingsScreen
+            discover={paletteOpen}
             onBack={toggleSettings}
             onInstallAddon={addonHost.install}
             onRemoveAddon={addonHost.remove}
@@ -1473,7 +1479,7 @@ function App() {
               onCloseFind={() => setFindOpen(false)}
             />
           )}
-          {showWelcome && (
+          {showWelcome && addonHost.ready && (
             <StartupPlaceholder
               mode={mode}
               busy={busy}

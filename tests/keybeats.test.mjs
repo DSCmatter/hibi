@@ -79,6 +79,7 @@ test('keybeats uses local audio, editor input, toolbar controls, and clean addon
     await plugin.innerText(),
     /Yug Bhanushali.*original author.*Thomas Lai.*sounds.*may.*hibi port/s,
   )
+  await plugin.getByRole('combobox').waitFor()
   assert.equal(await plugin.locator('select option').count(), 13)
   assert.equal(
     await page.getByLabel(/^volume$/i, { exact: true }).inputValue(),

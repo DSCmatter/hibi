@@ -55,6 +55,7 @@ class PluginSettingsBoundary extends Component<
 }
 
 export function SettingsScreen({
+  discover,
   selected,
   onCategory,
   onBack,
@@ -81,6 +82,7 @@ export function SettingsScreen({
   tabsBusy,
   onTabsEnabled,
 }: {
+  discover: boolean
   selected: string
   onCategory: (category: string) => void
   onBack: () => void
@@ -486,15 +488,19 @@ export function SettingsScreen({
                   </div>
                 </>
               )}
-              {Settings && open && category === `plugin-${manifest.id}` && (
-                <PluginSettingsBoundary key={manifest.id}>
-                  <Suspense
-                    fallback={<DocumentNotice title="Loading settings…" busy />}
-                  >
-                    <Settings />
-                  </Suspense>
-                </PluginSettingsBoundary>
-              )}
+              {Settings &&
+                (discover ||
+                  (open && category === `plugin-${manifest.id}`)) && (
+                  <PluginSettingsBoundary key={manifest.id}>
+                    <Suspense
+                      fallback={
+                        <DocumentNotice title="Loading settings…" busy />
+                      }
+                    >
+                      <Settings />
+                    </Suspense>
+                  </PluginSettingsBoundary>
+                )}
             </section>
           ))}
         </div>

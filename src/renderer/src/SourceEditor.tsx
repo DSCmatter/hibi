@@ -330,7 +330,9 @@ export function SourceEditor({
     let canceled = false
     const editor = view.current
     setExtensionError('')
-    void Promise.all(sourceExtensions.map((extension) => extension.create()))
+    void Promise.all(
+      sourceExtensions.map(async (extension) => extension.create()),
+    )
       .then((extensions) => {
         if (!canceled && editor) {
           editor.dispatch({ effects: addons.current.reconfigure(extensions) })
@@ -338,7 +340,10 @@ export function SourceEditor({
         }
       })
       .catch((error: unknown) => {
-        if (!canceled) setExtensionError(String(error))
+        if (!canceled) {
+          setExtensionError(String(error))
+          ready.current()
+        }
       })
     return () => {
       canceled = true

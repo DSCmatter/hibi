@@ -260,6 +260,7 @@ function createWindow(): void {
       backgroundThrottling: !testing,
     },
   })
+  startupMark('window-created')
   mainWindow = window
   const stopRecording = () => {
     recordingHotkey = false
