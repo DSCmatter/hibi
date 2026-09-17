@@ -1,11 +1,160 @@
 import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
 import { clickMenu, pressShortcut } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
+
+test('overflowing tabs reveal close buttons smoothly and reorder without losing drafts', {
+  timeout: 45000,
+}, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'hibi-tab-overflow-'))
+  const files = Array.from({ length: 8 }, (_, index) =>
+    join(root, `note-${index}-with-a-long-filename.md`),
+  )
+  for (const file of files) await writeFile(file, 'saved note')
+  const app = await electron.launch({
+    args: [resolve('.'), `--user-data-dir=${join(root, 'profile')}`],
+  })
+  t.after(async () => {
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 })
+    })
+    await app.close()
+    await rm(root, { recursive: true, force: true })
+  })
+  const page = await app.firstWindow()
+  page.setDefaultTimeout(6000)
+  await page.getByRole('textbox', { name: /document editor/i }).waitFor()
+  await page.setViewportSize({ width: 720, height: 600 })
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  const open = async (file) => {
+    await app.evaluate(({ dialog }, file) => {
+      dialog.showOpenDialog = async () => ({
+        canceled: false,
+        filePaths: [file],
+      })
+    }, file)
+    await clickMenu(app, 'Open…')
+    await waitForAsync(
+      page,
+      async (name) => (await window.hibi.getDocument()).name === name,
+      basename(file),
+    )
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.app').getAttribute('aria-busy') === 'false',
+    )
+  }
+  for (const file of files.slice(0, -1)) await open(file)
+  await page.locator('.document-tabs').evaluate((strip) => {
+    strip.scrollTo({ left: 0, behavior: 'instant' })
+    window.tabScrollFrames = []
+    window.sampleTabScroll = true
+    const sample = () => {
+      window.tabScrollFrames.push(strip.scrollLeft)
+      if (window.sampleTabScroll) requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+  await open(files.at(-1))
+  await page.waitForFunction(() => {
+    const strip = document.querySelector('.document-tabs')
+    return (
+      strip.scrollWidth > strip.clientWidth &&
+      Math.abs(strip.scrollLeft - strip.scrollWidth + strip.clientWidth) < 1
+    )
+  })
+  const frames = await page.evaluate(() => {
+    window.sampleTabScroll = false
+    return window.tabScrollFrames
+  })
+  assert.ok(
+    new Set(frames.map(Math.round)).size > 2,
+    'scrolling must include intermediate positions',
+  )
+  const fullyVisible = () =>
+    page.waitForFunction(() => {
+      const strip = document
+        .querySelector('.document-tabs')
+        .getBoundingClientRect()
+      const tab = document.querySelector('.document-tab[data-active="true"]')
+      const pill = tab.getBoundingClientRect(),
+        close = tab.querySelector('.tab-close').getBoundingClientRect()
+      return (
+        pill.left >= strip.left - 1 &&
+        pill.right <= strip.right + 1 &&
+        close.right <= strip.right + 1
+      )
+    })
+  await fullyVisible()
+  await open(files[0])
+  await fullyVisible()
+  await page
+    .getByRole('textbox', { name: /document editor/i })
+    .fill('keep this reordered draft')
+  let state = await page.evaluate(() => window.hibi.getDocument())
+  const activeId = state.tabId,
+    neighbor = state.tabs[1].id
+  const active = page.locator(`[data-tab-id="${activeId}"]`)
+  await active.press('Alt+Shift+ArrowRight')
+  await waitForAsync(
+    page,
+    async (id) => (await window.hibi.getDocument()).tabs[1].id === id,
+    activeId,
+  )
+  await page.waitForFunction(
+    (id) =>
+      document.querySelector('.document-tabs').children[1]?.dataset.tabKey ===
+      id,
+    activeId,
+  )
+  await fullyVisible()
+  await active.dragTo(page.locator(`[data-tab-id="${neighbor}"]`), {
+    targetPosition: { x: 8, y: 10 },
+  })
+  await waitForAsync(
+    page,
+    async (id) => (await window.hibi.getDocument()).tabs[0].id === id,
+    activeId,
+  )
+  state = await page.evaluate(() => window.hibi.getDocument())
+  assert.equal(state.tabId, activeId)
+  assert.equal(state.markdown, 'keep this reordered draft')
+  assert.equal(state.tabs.length, files.length)
+  await assert.rejects(
+    page.evaluate(() => window.hibi.moveDocumentTab('missing', null)),
+    /no longer open/,
+  )
+  await assert.rejects(
+    page.evaluate((id) => window.hibi.moveDocumentTab(id, 'missing'), activeId),
+    /no longer open/,
+  )
+  const order = state.tabs.map((tab) => tab.id)
+  await page.reload()
+  await page.getByRole('textbox', { name: /document editor/i }).waitFor()
+  assert.deepEqual(
+    await page
+      .locator('.document-tab')
+      .evaluateAll((tabs) => tabs.map((tab) => tab.dataset.tabKey)),
+    order,
+  )
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    'keep this reordered draft',
+  )
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await open(files.at(-1))
+  await fullyVisible()
+  assert.equal(
+    await page
+      .locator('.document-tabs')
+      .evaluate((strip) => getComputedStyle(strip).scrollBehavior),
+    'auto',
+  )
+})
 
 test('single-file mode guards replacement, closes other tabs safely, and persists', {
   timeout: 45000,

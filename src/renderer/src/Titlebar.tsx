@@ -42,6 +42,7 @@ export function Titlebar({
   onSidebarView,
   onSelectTab,
   onCloseTab,
+  onMoveTab,
   busy,
 }: {
   document: DocumentState | null
@@ -57,6 +58,7 @@ export function Titlebar({
   onSidebarView: (view: string) => void
   onSelectTab: (id: string) => void
   onCloseTab: (id: string) => void
+  onMoveTab: (id: string, beforeId: string | null) => void
   busy: boolean
 }) {
   const menus = useMenus(console.error)
@@ -196,6 +198,7 @@ export function Titlebar({
               busy={busy}
               onSelect={onSelectTab}
               onClose={onCloseTab}
+              onMove={onMoveTab}
             />
           ) : (
             <span>Hibi</span>

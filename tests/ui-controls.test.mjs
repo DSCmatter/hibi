@@ -91,6 +91,10 @@ test('extension and core fields share themes, focus states, and narrow layouts',
         await field.evaluate((el) => getComputedStyle(el).outlineWidth),
         '2px',
       )
+      assert.equal(
+        await field.evaluate((el) => getComputedStyle(el).outlineOffset),
+        '-2px',
+      )
       // Installed extensions using plain native markup receive the same defaults.
       await dialog.locator('.sidebar-content').evaluate((container) => {
         const field = document.createElement('input')

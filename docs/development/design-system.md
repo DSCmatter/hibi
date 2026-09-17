@@ -1,5 +1,7 @@
 # shared ui and theme tokens
 
+Focus indicators sit inside each control's edge, using the accent color and a negative outline offset. Fields, buttons, toggles, links, and addon controls retain visible keyboard focus without a detached outer ring or layout shifts.
+
 Loading and empty states use the same theme and spacing as their surrounding view. `PanelMessage` centers an icon, title, and optional description; `loading` adds a quiet pulse that stops with reduced motion. The startup placeholder stylesheet loads directly from the HTML, before JavaScript, with system light/dark fallbacks until the selected palette is ready.
 
 Hotkey controls wrap within narrow settings panels, including their key badges and reset/clear buttons, so a wider sidebar does not create horizontal overflow.

@@ -2,6 +2,8 @@
 
 ## file tabs
 
+Opening a file smoothly reveals its entire tab, including the close button; new tabs at the end scroll the strip to the right edge. Drag tabs to reorder them, or focus a tab and use Alt+Shift+Left/Right. Reordering keeps documents, drafts, and the active selection intact and survives renderer reloads during the current app session. Reduced motion makes scrolling and position changes immediate.
+
 Tabs fade in while sliding right and fade out while sliding left. Reduced motion disables these transitions. Settings → Editor → Documents → **Use tabs** turns the tab bar on or off. Turning it off keeps the active note and asks to save, discard, or cancel for other unsaved tabs. Single-file mode shows the same filename and unsaved indicator as the tab title, without a pill or close button. It replaces the current note when opening or creating another, with the same safeguards; canceling leaves it intact. The preference survives restarting Hibi. Re-enabling tabs restores normal multi-file behavior; closed tabs and their tab-based navigation history are not restored.
 
 the top bar shows open notes as compact pill tabs. new notes, file opens, local links, and remote imports retain other tabs and their unsaved drafts. clicking a filename selects its tab; it no longer starts renaming. use **rename document…** in the command palette or **rename** in the workspace menu.

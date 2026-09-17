@@ -1273,6 +1273,11 @@ function App() {
         onCloseTab={(id) =>
           void applyDocumentOperation(() => window.hibi.closeDocumentTab(id))
         }
+        onMoveTab={(id, beforeId) =>
+          void applyDocumentOperation(() =>
+            window.hibi.moveDocumentTab(id, beforeId),
+          )
+        }
         sidebarOpen={sidebarOpen}
         onSidebar={() => setSidebarOpen(!sidebarOpen)}
         hotkeys={hotkeys}

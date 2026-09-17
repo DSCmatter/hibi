@@ -99,6 +99,7 @@ test('desktop launch, isolation, offline reload, and recovery', {
         'getDocument',
         'selectDocumentTab',
         'closeDocumentTab',
+        'moveDocumentTab',
         'setTabsEnabled',
         'updateDocument',
         'openDocument',

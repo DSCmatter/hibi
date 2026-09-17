@@ -53,6 +53,7 @@ import {
   getDocumentPath,
   hasUnsavedDocuments,
   loadDocumentPreferences,
+  moveDocumentTab,
   navigateDocument,
   newDocument,
   openDocument,
@@ -624,6 +625,11 @@ if (!app.requestSingleInstanceLock()) {
       )
       ipcMain.handle(DOCUMENT_CHANNELS.closeTab, (event, id: unknown) =>
         runFileOperation(event, (window) => closeDocumentTab(window, id)),
+      )
+      ipcMain.handle(
+        DOCUMENT_CHANNELS.moveTab,
+        (event, id: unknown, beforeId: unknown) =>
+          runFileOperation(event, async () => moveDocumentTab(id, beforeId)),
       )
       ipcMain.handle(DOCUMENT_CHANNELS.tabsEnabled, (event, enabled: unknown) =>
         runFileOperation(event, (window) => setTabsEnabled(window, enabled)),

@@ -215,6 +215,27 @@ export async function closeDocumentTab(window: BrowserWindow, id: unknown) {
   if (!(await confirmTabDiscard(window, id))) return null
   return removeTabs(window, new Set([id]))
 }
+
+export function moveDocumentTab(id: unknown, beforeId: unknown) {
+  storeTab()
+  if (
+    typeof id !== 'string' ||
+    !tabs.has(id) ||
+    (beforeId !== null && (typeof beforeId !== 'string' || !tabs.has(beforeId)))
+  )
+    throw new Error('This tab is no longer open.')
+  if (id === beforeId) return getDocument()
+  const draft = tabs.get(id)!
+  const entries = [...tabs].filter(([key]) => key !== id)
+  const index =
+    beforeId === null
+      ? entries.length
+      : entries.findIndex(([key]) => key === beforeId)
+  entries.splice(index, 0, [id, draft])
+  tabs.clear()
+  for (const [key, value] of entries) tabs.set(key, value)
+  return getDocument()
+}
 export function closeDeletedDocuments(window: BrowserWindow, parent: string) {
   return removeTabs(
     window,
