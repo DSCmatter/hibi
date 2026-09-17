@@ -23,6 +23,12 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   const notes = join(root, 'notes')
   await mkdir(notes)
   await writeFile(join(notes, 'values.typ'), '#let answer = 42')
+  // Unrelated workspace content must not consume the compiler's input budget.
+  await Promise.all(
+    Array.from({ length: 1001 }, (_, index) =>
+      writeFile(join(notes, `unrelated-${index}.json`), 'not a compiler input'),
+    ),
+  )
   const original =
     '#import "values.typ": answer\n= report\n\nanswer: #answer\n\n$ integral_0^1 x dif x = 1/2 $\n'
   await writeFile(join(notes, 'report.typ'), original)
@@ -87,7 +93,7 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
       document.querySelector('.typst-preview')?.getAttribute('aria-busy') ===
       'false',
   )
-  assert.equal(await page.locator('.typst-diagnostics').count(), 0)
+  assert.equal(await page.locator('.typst-preview .document-notice').count(), 0)
   await pressShortcut(app, `${mod}+s`)
   await waitForAsync(page, async () => !(await window.hibi.getDocument()).dirty)
   assert.equal(await readFile(join(notes, 'report.typ'), 'utf8'), updated)
@@ -192,7 +198,14 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   assert.ok((await query('restarted')).svg)
   // Empty/incomplete syntax reports diagnostics without modifying the buffer.
   await source.fill('#let =')
-  await page.locator('.typst-diagnostics').waitFor()
+  await page.locator('.typst-preview .document-notice').waitFor()
+  assert.equal(await page.locator('.rich-editor-host').isVisible(), false)
+  assert.equal(
+    await page
+      .locator('.rich-pane')
+      .evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
+    true,
+  )
   assert.equal((await read()).markdown, '#let =')
   await source.fill(updated)
   await tree

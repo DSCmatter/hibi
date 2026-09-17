@@ -102,7 +102,7 @@ export function getAddonStates(): AddonState[] {
   )
   return manifests().map(({ id, defaultEnabled }) => ({
     id,
-    enabled: enabled[id] ?? defaultEnabled ?? false,
+    enabled: id === 'markdown' || (enabled[id] ?? defaultEnabled ?? false),
   }))
 }
 
@@ -116,7 +116,7 @@ export async function enableAddon(
     typeof value !== 'boolean'
   )
     throw new Error('invalid addon preference.')
-  return saveEnabled(id, value)
+  return saveEnabled(id, id === 'markdown' || value)
 }
 
 async function saveEnabled(id: string, value: boolean): Promise<AddonState[]> {

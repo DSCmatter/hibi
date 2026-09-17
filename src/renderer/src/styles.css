@@ -898,7 +898,7 @@ button:disabled {
     opacity: 0;
   }
 }
-.rich-pane > div {
+.rich-editor-host:not([hidden]) {
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -1463,4 +1463,9 @@ summary {
   overflow-wrap: anywhere;
   padding: var(--editor-padding, 48px);
   font: inherit;
+}
+.setting-availability {
+  color: var(--muted);
+  font: var(--text-sm) var(--font-ui);
+  white-space: nowrap;
 }

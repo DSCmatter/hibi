@@ -289,3 +289,36 @@ span.select-control > svg {
     animation: none;
   }
 }
+.document-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  margin: var(--space-3);
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  font: var(--text-sm) / 1.5 var(--font-ui);
+  overflow-wrap: anywhere;
+}
+.document-notice > svg {
+  flex: none;
+  margin-top: 2px;
+}
+.document-notice > div {
+  min-width: 0;
+}
+.document-notice p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.document-notice .document-notice-title {
+  color: var(--ink);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;
+}

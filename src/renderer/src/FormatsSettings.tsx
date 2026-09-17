@@ -45,7 +45,7 @@ export function FormatsSettings({
             label="Plain text"
             description=".txt · Built in"
           >
-            <span>Always available</span>
+            <span className="setting-availability">Always available</span>
           </SettingRow>
         )}
         {matching.map(({ manifest }) => (
@@ -63,27 +63,31 @@ export function FormatsSettings({
             >
               Settings
             </Button>
-            <Toggle
-              id={`format-${manifest.id}`}
-              disabled={busy}
-              checked={states.some(
-                (state) => state.id === manifest.id && state.enabled,
-              )}
-              onChange={async (event) => {
-                setBusy(true)
-                try {
-                  await setEnabled(manifest.id, event.target.checked)
-                } catch (error) {
-                  toasts.show({
-                    message:
-                      error instanceof Error ? error.message : String(error),
-                    variant: 'error',
-                  })
-                } finally {
-                  setBusy(false)
-                }
-              }}
-            />
+            {manifest.id === 'markdown' ? (
+              <span className="setting-availability">Always available</span>
+            ) : (
+              <Toggle
+                id={`format-${manifest.id}`}
+                disabled={busy}
+                checked={states.some(
+                  (state) => state.id === manifest.id && state.enabled,
+                )}
+                onChange={async (event) => {
+                  setBusy(true)
+                  try {
+                    await setEnabled(manifest.id, event.target.checked)
+                  } catch (error) {
+                    toasts.show({
+                      message:
+                        error instanceof Error ? error.message : String(error),
+                      variant: 'error',
+                    })
+                  } finally {
+                    setBusy(false)
+                  }
+                }}
+              />
+            )}
           </SettingRow>
         ))}
       </div>

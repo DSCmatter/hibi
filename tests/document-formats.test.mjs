@@ -48,22 +48,20 @@ test('plain text stays literal and formats settings retain disabled plugins', {
   await page
     .getByRole('button', { name: 'Markdown settings', exact: true })
     .click()
-  await page
-    .getByRole('checkbox', { name: 'Enable format', exact: true })
-    .click()
-  await page.waitForFunction(
-    () => !document.querySelector('#plugin-format-markdown').checked,
+  assert.equal(
+    await page
+      .getByRole('checkbox', { name: 'Enable format', exact: true })
+      .count(),
+    0,
   )
   assert.equal(
     await page
-      .getByRole('heading', { name: 'Markdown', exact: true })
-      .isVisible(),
-    true,
+      .locator('#settings-plugin-markdown .setting-availability')
+      .textContent(),
+    'Always available',
   )
-  await page
-    .getByRole('checkbox', { name: 'Enable format', exact: true })
-    .click()
-  await page.waitForFunction(
-    () => document.querySelector('#plugin-format-markdown').checked,
+  const states = await page.evaluate(() =>
+    window.hibi.setAddonEnabled('markdown', false),
   )
+  assert.equal(states.find((state) => state.id === 'markdown').enabled, true)
 })

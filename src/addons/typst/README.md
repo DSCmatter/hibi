@@ -40,3 +40,6 @@ automatic package downloads are blocked through a local denying proxy honored by
 settings → syntax can disable typst blocks inside markdown, preserving their fences as editable literal text. this does not disable `.typ` document previews or pdf export. settings → code highlighting independently controls typst source highlighting.
 
 the lightweight source highlighter uses codemirror; the typst compiler validates actual syntax. see [document format api](../../../docs/development/document-formats.md) for the reusable host APIs.
+# Input discovery
+
+The compiler loads local dependencies as it requests them. Unrelated workspace files do not count toward the 1,000-file / 64 MiB dependency limit. Inputs remain confined to the note's workspace, and symlinks cannot escape it. Missing inputs and compiler diagnostics appear in the shared preview notice.

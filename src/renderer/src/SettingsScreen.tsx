@@ -20,6 +20,7 @@ import type { AppInfo } from '../../shared/desktop'
 import type { Hotkeys } from '../../shared/hotkeys'
 import { ColorschemeSettings } from '../../ui/ColorschemeSettings'
 import { Button, Select, SettingRow, Slider, Toggle } from '../../ui/Controls'
+import { DocumentNotice } from '../../ui/DocumentNotice'
 import { Sidebar, type SidebarProps } from '../../ui/Sidebar'
 import { SettingsDiscovery } from '../../ui/settings-index'
 import { uiCase } from '../../ui/ui-case'
@@ -57,12 +58,14 @@ class PluginSettingsBoundary extends Component<
   }
   render() {
     return this.state.failed ? (
-      <p role="alert">
-        These plugin settings could not load.{' '}
+      <DocumentNotice
+        title="Settings unavailable"
+        message="These plugin settings could not load."
+      >
         <button type="button" onClick={() => this.setState({ failed: false })}>
           Retry
         </button>
-      </p>
+      </DocumentNotice>
     ) : (
       this.props.children
     )
@@ -465,15 +468,25 @@ export function SettingsScreen({
                         .map((extension) => `.${extension}`)
                         .join(' · ')}
                     >
-                      <Toggle
-                        id={`plugin-format-${manifest.id}`}
-                        checked={addonStates.some(
-                          (state) => state.id === manifest.id && state.enabled,
-                        )}
-                        onChange={(event) =>
-                          void onAddonEnabled(manifest.id, event.target.checked)
-                        }
-                      />
+                      {manifest.id === 'markdown' ? (
+                        <span className="setting-availability">
+                          Always available
+                        </span>
+                      ) : (
+                        <Toggle
+                          id={`plugin-format-${manifest.id}`}
+                          checked={addonStates.some(
+                            (state) =>
+                              state.id === manifest.id && state.enabled,
+                          )}
+                          onChange={(event) =>
+                            void onAddonEnabled(
+                              manifest.id,
+                              event.target.checked,
+                            )
+                          }
+                        />
+                      )}
                     </SettingRow>
                     <SettingRow
                       id={`plugin-controls-${manifest.id}`}

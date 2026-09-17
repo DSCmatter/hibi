@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { DocumentNotice } from '../../ui/DocumentNotice'
 import type { AddonContext } from '../api'
 import { svgSource } from './syntax'
 import type { TypstResult } from './types'
@@ -85,18 +86,12 @@ export function TypstPreview({
         </figure>
       )}
       {!!result?.diagnostics.length && (
-        <div
-          className="typst-diagnostics"
-          role="status"
-          data-error={result.diagnostics.some(
-            (diagnostic) => diagnostic.severity === 'error',
-          )}
-        >
-          {result.diagnostics.map((diagnostic, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: repeated diagnostics have no interactive state but need distinct keys.
-            <p key={`${index}-${diagnostic.message}`}>{diagnostic.message}</p>
-          ))}
-        </div>
+        <DocumentNotice
+          title={result.svg ? 'Compilation notes' : 'Preview unavailable'}
+          message={result.diagnostics
+            .map((diagnostic) => diagnostic.message)
+            .join('\n')}
+        />
       )}
     </div>
   )

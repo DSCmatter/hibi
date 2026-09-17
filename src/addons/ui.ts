@@ -13,6 +13,7 @@ export {
   TextInput,
   Toggle,
 } from '../ui/Controls'
+export { DocumentNotice } from '../ui/DocumentNotice'
 export { Modal, type ModalProps } from '../ui/Modal'
 export { SettingsFilter } from '../ui/SettingsFilter'
 export { ShortcutKeys } from '../ui/ShortcutKeys'

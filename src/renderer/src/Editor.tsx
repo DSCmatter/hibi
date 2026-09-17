@@ -561,7 +561,7 @@ export function MarkdownEditor({
                   />
                 ) : null,
               )}
-            <div hidden={!markdownDocument}>
+            <div className="rich-editor-host" hidden={!markdownDocument}>
               <EditorContent editor={editor} />
             </div>
           </section>

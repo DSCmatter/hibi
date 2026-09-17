@@ -1,6 +1,6 @@
 # document formats and compiled markdown
 
-api version 1 remains compatible. formats are optional extension contributions. markdown is an enabled-by-default format plugin; plain `.txt` is core and never parses markdown. workspace files never become addon modules.
+api version 1 remains compatible. formats are optional extension contributions. markdown is an always-available bundled format plugin; plain `.txt` is core and never parses markdown. workspace files never become addon modules.
 
 ## file formats
 
