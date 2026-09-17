@@ -7,6 +7,7 @@ import {
   type DesktopApi,
   DOCUMENT_CHANNELS,
 } from '../shared/desktop'
+import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
 import { type AppCommand, HOTKEY_CHANNELS } from '../shared/hotkeys'
 import { MEDIA_CHANNELS } from '../shared/media'
@@ -16,6 +17,9 @@ import { WORKSPACE_CHANNELS, type WorkspaceState } from '../shared/workspace'
 
 if (process.isMainFrame) {
   contextBridge.exposeInMainWorld('hibi', {
+    getFileAssociations: () => ipcRenderer.invoke(ASSOCIATION_CHANNELS.get),
+    setFileAssociation: (format) =>
+      ipcRenderer.invoke(ASSOCIATION_CHANNELS.set, format),
     navigateDocument: (direction) =>
       ipcRenderer.invoke(DOCUMENT_CHANNELS.navigate, direction),
     openDocumentLink: (href, revision) =>

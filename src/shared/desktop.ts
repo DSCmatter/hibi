@@ -53,6 +53,10 @@ export type AppInfo = {
 }
 
 export type DesktopApi = {
+  getFileAssociations: () => Promise<
+    import('./file-associations').FileAssociationState
+  >
+  setFileAssociation: (format: string) => Promise<void>
   navigateDocument: (
     direction: 'back' | 'forward',
   ) => Promise<DocumentState | null>

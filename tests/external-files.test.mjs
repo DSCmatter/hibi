@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
+import { pathToFileURL } from 'node:url'
 import { externalFileArguments } from '../src/main/external-files.ts'
 import { electron } from './electron.mjs'
 
@@ -29,6 +30,20 @@ test('launch arguments exclude flags, their values, executable, and URLs', () =>
   assert.deepEqual(
     externalFileArguments(['hibi', 'a.md', 'a.md'], '/workspace', false),
     [resolve('/workspace/a.md')],
+  )
+  const file = resolve('notes with spaces.md')
+  assert.deepEqual(
+    externalFileArguments(
+      [
+        'hibi',
+        '--no-sandbox',
+        pathToFileURL(file).href,
+        'file://remote/share/note.md',
+      ],
+      '/workspace',
+      false,
+    ),
+    [file],
   )
 })
 
@@ -75,11 +90,19 @@ test('OS file opens survive startup, reuse tabs, and preserve canceled drafts', 
     await window.hibi.setTabsEnabled(false)
     await window.hibi.updateDocument('Unsaved draft')
   })
-  await app.evaluate(({ app, dialog }, path) => {
-    dialog.showMessageBox = async () => ({ response: 2 })
-    app.emit('open-file', { preventDefault() {} }, path)
-  }, second)
-  await page.waitForTimeout(200)
+  await app.evaluate(
+    ({ app, dialog }, path) =>
+      new Promise((resolve) => {
+        dialog.showMessageBox = async () => {
+          resolve(true)
+          return { response: 2 }
+        }
+        app.emit('open-file', { preventDefault() {} }, path)
+      }),
+    second,
+  )
+  // A second drain waits for the first operation to finish, without a timing guess.
+  await page.evaluate(() => window.hibi.openExternalDocuments())
   const draft = await page.evaluate(() => window.hibi.getDocument())
   assert.equal(draft.markdown, 'Unsaved draft')
   assert.equal(draft.name, 'first.md')

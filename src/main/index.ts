@@ -22,6 +22,7 @@ import {
   type AppInfo,
   DOCUMENT_CHANNELS,
 } from '../shared/desktop'
+import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
 import {
   type AppCommand,
@@ -575,6 +576,14 @@ if (!app.requestSingleInstanceLock()) {
           electron: process.versions.electron,
           platform: process.platform,
         }
+      })
+      handle(ASSOCIATION_CHANNELS.get, async (event) => {
+        trustedWindow(event)
+        return (await import('./file-associations')).getFileAssociations()
+      })
+      handle(ASSOCIATION_CHANNELS.set, async (event, format: unknown) => {
+        trustedWindow(event)
+        await (await import('./file-associations')).setFileAssociation(format)
       })
       handle(UI_CASE_CHANNEL, async (event, value: unknown) => {
         trustedWindow(event)

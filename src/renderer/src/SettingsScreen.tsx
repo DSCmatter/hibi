@@ -423,6 +423,7 @@ export function SettingsScreen({
             hidden={category !== 'formats'}
           >
             <FormatsSettings
+              active={open && category === 'formats'}
               addons={addons}
               states={addonStates}
               setEnabled={onAddonEnabled}
