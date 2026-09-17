@@ -7,3 +7,7 @@ Measurements use production assets in the test Electron runtime with hidden wind
 Main and renderer checkpoints use the `hibi:` performance-entry prefix. Entry checkpoints occur **after static imports**, not at OS process launch. Native startup reads have separate durations. Renderer document availability and required editing capabilities are distinct from window painting. No benchmark telemetry leaves the machine.
 
 `out/renderer/startup-bundle.json` records chunk sizes, static/dynamic imports, and module membership. Follow static imports from entry chunks when comparing startup cost; a separate chunk alone does not establish lazy loading.
+
+The `app://` scheme allows V8 code caching. Native addon implementations load on their first authorized call, with shared in-flight imports and a second enabled-state check after loading. Worker entrypoints resolve from the application root so chunk splitting does not change their locations.
+
+Independent native preferences load concurrently. Appearance, protocol security, permission policy, and IPC registration precede navigation; other preference reads overlap renderer loading. IPC waits for those reads before accessing session state or processing edits.
