@@ -185,7 +185,9 @@ export function MarkdownEditor({
     )
   }, [paneMode])
   useEffect(() => {
-    const idle = requestIdleCallback(() => setSourceMounted(true))
+    const idle = requestIdleCallback(() => {
+      void import('./SourceEditor').catch(() => {})
+    })
     return () => cancelIdleCallback(idle)
   }, [])
   useEffect(() => {

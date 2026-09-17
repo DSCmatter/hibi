@@ -46,12 +46,17 @@ async function measure(page, start, app, scenario) {
     paint: performance
       .getEntriesByType('paint')
       .map((entry) => ({ name: entry.name, ms: entry.startTime })),
-    scripts: performance
-      .getEntriesByType('resource')
-      .filter((entry) => /\.js(?:\?|$)/.test(entry.name))
-      .map((entry) => entry.name),
     sourceMounted: !!document.querySelector('.cm-editor'),
   }))
+  // Custom-scheme scripts are absent from Resource Timing on some Electron versions.
+  // Attach only after latency samples so debugger work does not affect those timings.
+  const session = await page.context().newCDPSession(page)
+  renderer.scripts = []
+  session.on('Debugger.scriptParsed', ({ url }) => {
+    if (url.startsWith('app://hibi/')) renderer.scripts.push(url)
+  })
+  await session.send('Debugger.enable')
+  await session.detach()
   const main = await app.evaluate(() =>
     performance
       .getEntries()
@@ -93,11 +98,14 @@ try {
             : scenario,
         )
         if (scenario === 'fresh-profile' && process.platform === 'darwin') {
-          const closed = (await app.firstWindow()).waitForEvent('close')
-          await app.evaluate(({ BrowserWindow }) =>
-            BrowserWindow.getAllWindows()[0].close(),
+          await app.evaluate(
+            ({ BrowserWindow }) =>
+              new Promise((resolve) => {
+                const window = BrowserWindow.getAllWindows()[0]
+                window.once('closed', () => resolve())
+                window.close()
+              }),
           )
-          await closed
           const reopening = performance.now()
           const window = app.waitForEvent('window')
           await app.evaluate(({ app }) => app.emit('activate'))

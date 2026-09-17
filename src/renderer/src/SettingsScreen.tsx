@@ -1,16 +1,8 @@
-import {
-  ArrowLeft,
-  Code,
-  File,
-  FileText,
-  Keyboard,
-  PanelTop,
-  Puzzle,
-  TextCursorInput,
-} from 'lucide-react'
+import { ArrowLeft, Puzzle } from 'lucide-react'
 import {
   Component,
   type ReactNode,
+  Suspense,
   useLayoutEffect,
   useRef,
   useSyncExternalStore,
@@ -36,17 +28,7 @@ import { HibiSettings } from './HibiSettings'
 import { HotkeySettings } from './HotkeySettings'
 import { NotificationSettings } from './NotificationSettings'
 import { SyntaxSettings } from './SyntaxSettings'
-
-export const settingsCategories = [
-  { id: 'hibi', label: 'Hibi', icon: File },
-  { id: 'editor', label: 'Editor', icon: FileText },
-  { id: 'formats', label: 'Formats', icon: FileText },
-  { id: 'syntax', label: 'Syntax', icon: TextCursorInput },
-  { id: 'code-syntax', label: 'Code highlighting', icon: Code },
-  { id: 'appearance', label: 'Appearance', icon: PanelTop },
-  { id: 'hotkeys', label: 'Hotkeys', icon: Keyboard },
-  { id: 'addons', label: 'Addons', icon: Puzzle },
-] as const
+import { settingsCategories } from './settings-categories'
 
 class PluginSettingsBoundary extends Component<
   { children: ReactNode },
@@ -504,9 +486,13 @@ export function SettingsScreen({
                   </div>
                 </>
               )}
-              {Settings && (
+              {Settings && open && category === `plugin-${manifest.id}` && (
                 <PluginSettingsBoundary key={manifest.id}>
-                  <Settings />
+                  <Suspense
+                    fallback={<DocumentNotice title="Loading settings…" busy />}
+                  >
+                    <Settings />
+                  </Suspense>
                 </PluginSettingsBoundary>
               )}
             </section>

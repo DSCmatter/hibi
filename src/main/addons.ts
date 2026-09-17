@@ -88,7 +88,21 @@ export function getAddonLicenses() {
 }
 
 export async function loadAddons(): Promise<void> {
-  await loadInstalledAddons(bundledManifests.map((manifest) => manifest.id))
+  const [, stored] = await Promise.all([
+    loadInstalledAddons(bundledManifests.map((manifest) => manifest.id)),
+    readFile(join(app.getPath('userData'), 'addons.json'), 'utf8')
+      .then((text): Record<string, unknown> => {
+        const value: unknown = JSON.parse(text)
+        if (!value || typeof value !== 'object' || Array.isArray(value))
+          throw new Error('invalid addon preferences')
+        return value as Record<string, unknown>
+      })
+      .catch((error: unknown): Record<string, unknown> => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+          console.error('could not load addon preferences:', error)
+        return {}
+      }),
+  ])
   const ids = new Set<string>()
   for (const manifest of manifests()) {
     if (
@@ -104,19 +118,11 @@ export async function loadAddons(): Promise<void> {
   setDocumentExtensions(
     manifests().flatMap((manifest) => manifest.fileExtensions ?? []),
   )
-  try {
-    const stored = JSON.parse(
-      await readFile(join(app.getPath('userData'), 'addons.json'), 'utf8'),
-    ) as Record<string, unknown>
-    enabled = Object.fromEntries(
-      manifests()
-        .filter(({ id }) => typeof stored[id] === 'boolean')
-        .map(({ id }) => [id, stored[id] as boolean]),
-    )
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
-      console.error('could not load addon preferences:', error)
-  }
+  enabled = Object.fromEntries(
+    manifests()
+      .filter(({ id }) => typeof stored[id] === 'boolean')
+      .map(({ id }) => [id, stored[id] as boolean]),
+  )
 }
 
 export function getAddonStates(): AddonState[] {

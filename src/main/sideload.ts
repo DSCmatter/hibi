@@ -99,6 +99,9 @@ function manifest(value: unknown): {
     version: data.version,
     authors: data.authors,
     defaultEnabled: false,
+    ...(data.startup === 'background'
+      ? { startup: 'background' as const }
+      : {}),
     ...(data.fileExtensions !== undefined
       ? {
           fileExtensions: data.fileExtensions,
@@ -188,10 +191,12 @@ export async function loadInstalledAddons(builtinIds: readonly string[]) {
       continue
     try {
       const folder = join(root(), entry.name)
-      const data = await readManifest(folder)
-      const record = JSON.parse(
-        await readFile(join(folder, '.hibi-install.json'), 'utf8'),
-      )
+      const [data, record] = await Promise.all([
+        readManifest(folder),
+        readFile(join(folder, '.hibi-install.json'), 'utf8').then((text) =>
+          JSON.parse(text),
+        ),
+      ])
       if (
         data.manifest.id !== entry.name ||
         !/^[a-f\d]{64}$/.test(record.hash) ||
