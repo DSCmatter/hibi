@@ -1,5 +1,7 @@
 # development and validation
 
+Desktop checks run once per pull request and on pushes to `main`. Feature-branch pushes do not start a duplicate matrix.
+
 use node 24 lts, or node 22.18 or newer. install dependencies with `npm ci`.
 
 ```sh
