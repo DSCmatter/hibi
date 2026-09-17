@@ -111,25 +111,45 @@ function App() {
     if (!settingTarget) return
     let frame = 0
     const reveal = () => {
-      const target = window.document.getElementById(settingTarget)
-      if (!target) return
+      const panel = window.document.getElementById(
+        `settings-${settingsCategory}`,
+      )
+      panel?.dispatchEvent(new Event('hibi:reveal-setting', { bubbles: true }))
+      const row = panel?.querySelector<HTMLElement>(
+        `[data-setting-id="${CSS.escape(settingTarget)}"]`,
+      )
+      const target =
+        panel?.querySelector<HTMLElement>(`#${CSS.escape(settingTarget)}`) ??
+        row
+      if (!target?.getClientRects().length) return
       observer.disconnect()
-      const row = target.closest('.setting-row') ?? target
-      target.dispatchEvent(new Event('hibi:reveal-setting', { bubbles: true }))
       frame = requestAnimationFrame(() => {
-        row.scrollIntoView({ block: 'center', behavior: 'smooth' })
-        target.focus({ preventScroll: true })
+        ;(row ?? target).scrollIntoView({ block: 'center', behavior: 'smooth' })
+        const control =
+          target === row
+            ? (row.querySelector<HTMLElement>(
+                'input:not(:disabled), textarea:not(:disabled), select:not(:disabled), button:not(:disabled)',
+              ) ?? row)
+            : target
+        ;(control.matches(':disabled') ? (row ?? control) : control).focus({
+          preventScroll: true,
+        })
         setSettingTarget(null)
       })
     }
     const observer = new MutationObserver(reveal)
-    observer.observe(window.document.body, { childList: true, subtree: true })
+    observer.observe(window.document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['hidden'],
+    })
     reveal()
     return () => {
       observer.disconnect()
       cancelAnimationFrame(frame)
     }
-  }, [settingTarget])
+  }, [settingTarget, settingsCategory])
   const dialogs = useDialogs()
   const toasts = useToasts()
   const errorNotice = useRef<ToastHandle | null>(null)
@@ -1345,6 +1365,13 @@ function App() {
       onInputCapture={(event) => noteTyping(event.target)}
       onKeyDownCapture={(event) => {
         if (
+          event.key === 'Escape' &&
+          event.target instanceof HTMLInputElement &&
+          event.target.closest('search') &&
+          event.target.value
+        )
+          return
+        if (
           (event.target as HTMLElement).closest(
             'dialog[open], .hotkey-recorder[aria-pressed="true"]',
           )
@@ -1462,6 +1489,7 @@ function App() {
             onRemoveAddon={addonHost.remove}
             selected={settingsCategory}
             onCategory={setSettingsCategory}
+            onSetting={openSetting}
             showLineNumbers={showLineNumbers}
             onShowLineNumbers={setShowLineNumbers}
             spellCheck={spellCheck}

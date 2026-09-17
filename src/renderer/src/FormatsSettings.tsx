@@ -130,21 +130,23 @@ export function FormatsSettings({
       />
       <h2>Document formats</h2>
       <div className="settings-group">
-        {plainText && (
-          <SettingRow
-            id="format-text"
-            label="Plain text"
-            description=".txt · Built in"
-          >
-            {defaultButton('text')}
-            <span className="setting-availability">Always available</span>
-          </SettingRow>
-        )}
-        {matching.map(({ manifest }) => (
+        <SettingRow
+          id="format-text"
+          label="Plain text"
+          hidden={!plainText}
+          description=".txt · Built in"
+        >
+          {defaultButton('text')}
+          <span className="setting-availability">Always available</span>
+        </SettingRow>
+        {formats.map(({ manifest }) => (
           <SettingRow
             key={manifest.id}
             id={`format-${manifest.id}`}
             label={manifest.name}
+            hidden={
+              !matching.some((addon) => addon.manifest.id === manifest.id)
+            }
             description={manifest.fileExtensions
               ?.map((extension) => `.${extension}`)
               .join(' · ')}

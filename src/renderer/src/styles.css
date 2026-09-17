@@ -495,6 +495,41 @@ button:disabled {
 .settings-sidebar .sidebar-header button:hover {
   background: var(--hover);
 }
+.settings-search {
+  position: relative;
+  margin: var(--space-3) var(--space-2) 0;
+}
+.settings-search > svg {
+  position: absolute;
+  left: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.settings-search .ui-input {
+  width: 100%;
+  padding-inline: 30px;
+}
+.settings-search .icon-button {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.settings-searching .sidebar-chevron {
+  display: none;
+}
+.settings-searching [aria-level="1"][aria-expanded] {
+  color: var(--muted);
+}
+.settings-searching [aria-level="2"] .sidebar-label {
+  margin-left: var(--space-2);
+}
+.settings-search-empty {
+  color: var(--muted);
+  padding: var(--space-3) var(--space-4);
+}
 /* Each page covers its own scrolled content beneath the titlebar. Keeping this
    in the page's layer shares its position and opacity with the sidebar. */
 .editor-surface::before,
