@@ -2,7 +2,7 @@
 
 ## sidebar views
 
-view shortcuts sit beside the window controls while the sidebar is expanded. the sidebar toggle always keeps its sidebar icon and sits at the right edge of the expanded sidebar. shortcuts that fit appear before it; the views dropdown keeps every view available at narrower widths. collapsing the sidebar hides the shortcuts and dropdown, leaving only the toggle.
+view shortcuts sit beside the window controls while the sidebar is expanded. the sidebar toggle always keeps its sidebar icon and sits at the right edge of the expanded sidebar, separated from the views dropdown by a 4 px gap. shortcuts that fit appear before it; the views dropdown keeps every view available at narrower widths. collapsing the sidebar hides the shortcuts and dropdown, leaving only the toggle.
 
 the first dropdown item pins or unpins the current view. up to three pins are remembered and appear first in the shortcuts and dropdown. **In this page** nests headings by level and highlights the section containing the cursor in every editor mode.
 

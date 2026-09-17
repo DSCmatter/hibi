@@ -197,6 +197,7 @@ button:disabled {
   --sidebar-action-size: 28px;
   display: flex;
   align-items: center;
+  gap: var(--space-1);
   height: 100%;
   width: calc(var(--window-controls-width) + 36px);
   padding-left: var(--window-controls-width);
