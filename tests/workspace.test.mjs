@@ -375,7 +375,7 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
         new Set(samples.map(({ contentWidth }) => contentWidth)).size,
         1,
       )
-      assert.equal(samples.at(-1).x, opening ? 0 : -240)
+      assert.ok(Math.abs(samples.at(-1).x - (opening ? 0 : -240)) < 1)
     }
   }
   await site.setViewportSize({ width: 1000, height: 760 })

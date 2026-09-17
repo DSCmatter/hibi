@@ -8,7 +8,8 @@ export const electron = {
       ...options,
       args: [...options.args, '--hibi-test'],
     })
-    if (process.env.GITHUB_ACTIONS === 'true')
+    if (process.env.GITHUB_ACTIONS === 'true') {
+      await application.firstWindow()
       await application.evaluate(({ app, BrowserWindow }) => {
         const show = (window) => {
           window.setFocusable(true)
@@ -20,6 +21,7 @@ export const electron = {
         })
         for (const window of BrowserWindow.getAllWindows()) show(window)
       })
+    }
     return application
   },
 }

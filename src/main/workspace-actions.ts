@@ -105,6 +105,12 @@ async function unique(parent: string, name: string) {
 }
 async function moveEntry(source: string, destination: string, folder: boolean) {
   if (folder) {
+    // Windows refuses to replace even an empty directory, so rename itself
+    // reserves the destination there without overwriting an existing folder.
+    if (process.platform === 'win32') {
+      await rename(source, destination)
+      return
+    }
     // Reserve the destination first: never replace a pre-existing directory.
     await mkdir(destination)
     try {

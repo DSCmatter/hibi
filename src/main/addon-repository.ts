@@ -19,7 +19,11 @@ export function repositoryUrl(value: unknown) {
 }
 
 /** Bare clone + archive: no checkout filters, hooks, submodules, or build scripts. */
-export async function downloadRepository(value: unknown, temporary: string) {
+export async function downloadRepository(
+  value: unknown,
+  temporary: string,
+  run = execute,
+) {
   const url = addonPackageUrl(value)
   if (['github.com', 'gitlab.com', 'codeberg.org'].includes(url.hostname))
     url.pathname = `${url.pathname.replace(/\/$/, '').replace(/\.git$/, '')}.git`
@@ -94,7 +98,7 @@ export async function downloadRepository(value: unknown, temporary: string) {
       })
   }, 200)
   try {
-    await execute(
+    await run(
       'git',
       [
         ...config,
@@ -118,7 +122,7 @@ export async function downloadRepository(value: unknown, temporary: string) {
     )
     clearInterval(monitor)
     await checkSize()
-    const { stdout } = await execute(
+    const { stdout } = await run(
       'git',
       [...config, '-C', repository, 'archive', '--format=zip', 'HEAD'],
       {

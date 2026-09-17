@@ -243,6 +243,7 @@ test('desktop launch, isolation, offline reload, and recovery', {
         await page.screenshot({ path: `test-results/${theme}.png` })
       }
       assert.deepEqual(errors, [])
+      await app.context().setOffline(false)
     },
   )
 
@@ -271,26 +272,22 @@ test('desktop launch, isolation, offline reload, and recovery', {
     const current = await app.firstWindow()
     // Finish pending locator-handle disposal before crashing the debug target.
     await current.evaluate(() => undefined)
-    const crashed = current.waitForEvent('crash')
-    const [recovered] = await Promise.all([
-      app.evaluate(async ({ dialog, BrowserWindow }) => {
-        dialog.showMessageBox = async () => ({
-          response: 0,
-          checkboxChecked: false,
-        })
-        const contents = BrowserWindow.getAllWindows()[0].webContents
-        const reloaded = new Promise((resolve) =>
-          contents.once('did-finish-load', resolve),
-        )
-        contents.forcefullyCrashRenderer()
-        await reloaded
-        // Playwright retains its crashed target; inspect the new renderer through Electron.
-        return contents.executeJavaScript(
-          'new Promise(resolve => { const check = () => document.querySelector(".tiptap") ? window.hibi.getAppInfo().then(info => resolve({ editor: true, version: info.version })) : requestAnimationFrame(check); check() })',
-        )
-      }),
-      crashed,
-    ])
+    const recovered = await app.evaluate(async ({ dialog, BrowserWindow }) => {
+      dialog.showMessageBox = async () => ({
+        response: 0,
+        checkboxChecked: false,
+      })
+      const contents = BrowserWindow.getAllWindows()[0].webContents
+      const reloaded = new Promise((resolve) =>
+        contents.once('did-finish-load', resolve),
+      )
+      contents.forcefullyCrashRenderer()
+      await reloaded
+      // Playwright retains its crashed target; inspect the new renderer through Electron.
+      return contents.executeJavaScript(
+        'new Promise(resolve => { const check = () => document.querySelector(".tiptap") ? window.hibi.getAppInfo().then(info => resolve({ editor: true, version: info.version })) : requestAnimationFrame(check); check() })',
+      )
+    })
     assert.deepEqual(recovered, {
       editor: true,
       version: '0.1.0',

@@ -1,16 +1,10 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import {
-  chmod,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  writeFile,
-} from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { execFile, execFileSync } from 'node:child_process'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { devNull, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { promisify } from 'node:util'
 import { downloadAddon, unpackAddon } from '../src/main/addon-download.ts'
 import {
   downloadRepository,
@@ -130,19 +124,16 @@ test('repository installs archive without checkout, hooks, or inherited git conf
   timeout: 30000,
 }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'hibi-repo-package-'))
-  const git = execFileSync('which', ['git'], { encoding: 'utf8' }).trim()
-  const source = join(root, 'source'),
-    bin = join(root, 'bin'),
-    log = join(root, 'commands.jsonl')
+  const git = 'git'
+  const source = join(root, 'source')
   await mkdir(source)
-  await mkdir(bin)
   for (const file of packageFiles)
     await writeFile(join(source, file.name), file.content)
   execFileSync(git, ['-c', 'init.defaultBranch=main', 'init', source])
   const run = (args) =>
     execFileSync(git, [
       '-c',
-      'core.hooksPath=/dev/null',
+      `core.hooksPath=${devNull}`,
       '-c',
       'commit.gpgSign=false',
       '-c',
@@ -155,32 +146,34 @@ test('repository installs archive without checkout, hooks, or inherited git conf
     ])
   run(['add', '.'])
   run(['commit', '-m', 'fixture'])
-  const wrapper = join(bin, 'git')
-  await writeFile(
-    wrapper,
-    `#!${process.execPath}\nconst cp=require('node:child_process'),fs=require('node:fs');const args=process.argv.slice(2);fs.appendFileSync(${JSON.stringify(log)},JSON.stringify({args,global:process.env.GIT_CONFIG_GLOBAL,system:process.env.GIT_CONFIG_NOSYSTEM})+'\\n');const index=args.indexOf('https://github.com/example/addon.git');if(index>=0)args[index]=${JSON.stringify(source)};const result=cp.spawnSync(${JSON.stringify(git)},['-c','protocol.file.allow=always',...args],{stdio:'inherit'});process.exit(result.status??1)\n`,
-  )
-  await chmod(wrapper, 0o700)
-  const previous = process.env.PATH
-  process.env.PATH = `${bin}:${previous}`
   t.after(async () => {
-    process.env.PATH = previous
     await rm(root, { recursive: true, force: true })
   })
   const temporary = join(root, 'download')
   await mkdir(temporary)
+  const commands = []
   const archive = await downloadRepository(
     'https://github.com/example/addon',
     temporary,
+    (command, args, options) => {
+      commands.push({
+        args: [...args],
+        system: options.env.GIT_CONFIG_NOSYSTEM,
+      })
+      const local = args.map((argument) =>
+        argument === 'https://github.com/example/addon.git' ? source : argument,
+      )
+      return promisify(execFile)(
+        command,
+        ['-c', 'protocol.file.allow=always', ...local],
+        options,
+      )
+    },
   )
   const folder = join(root, 'package')
   await mkdir(folder)
   await unpackAddon(archive.zip, folder)
   assert.equal(await readFile(join(folder, 'README.md'), 'utf8'), 'fixture')
-  const commands = (await readFile(log, 'utf8'))
-    .trim()
-    .split('\n')
-    .map(JSON.parse)
   assert.equal(commands.length, 2)
   assert.ok(commands[0].args.includes('--bare'))
   assert.ok(commands[0].args.includes('--depth=1'))

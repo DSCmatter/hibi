@@ -95,31 +95,35 @@ test('local images resolve from the note, validate content, and retain their Mar
   })
   await app.evaluate(({ dialog }, first) => {
     dialog.showOpenDialog = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 180))
+      await new Promise((resolve) => {
+        globalThis.finishImageOpen = resolve
+      })
       return { canceled: false, filePaths: [first] }
     }
   }, first)
   const page = await app.firstWindow()
   page.setDefaultTimeout(6500)
   await page.getByRole('textbox', { name: /document editor/i }).waitFor()
-  const [toolbar] = await Promise.all([
-    page.evaluate(async () => {
-      const header = document.querySelector('.titlebar')
-      const button = header.querySelector('.sidebar-toggle')
-      const frames = []
-      const start = performance.now()
-      while (performance.now() - start < 450) {
-        await new Promise(requestAnimationFrame)
-        frames.push({
-          same: header === document.querySelector('.titlebar'),
-          opacity: getComputedStyle(button).opacity,
-          busy: header.getAttribute('aria-busy'),
-        })
-      }
-      return frames
-    }),
-    clickMenu(app, 'Open…'),
-  ])
+  await clickMenu(app, 'Open…')
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.titlebar')?.getAttribute('aria-busy') === 'true',
+  )
+  const toolbar = await page.evaluate(async () => {
+    const header = document.querySelector('.titlebar')
+    const button = header.querySelector('.sidebar-toggle')
+    const frames = []
+    for (let frame = 0; frame < 3; frame++) {
+      await new Promise(requestAnimationFrame)
+      frames.push({
+        same: header === document.querySelector('.titlebar'),
+        opacity: getComputedStyle(button).opacity,
+        busy: header.getAttribute('aria-busy'),
+      })
+    }
+    return frames
+  })
+  await app.evaluate(() => globalThis.finishImageOpen())
   assert.ok(toolbar.some((frame) => frame.busy === 'true'))
   assert.ok(
     toolbar.every((frame) => frame.same && frame.opacity === '1'),
