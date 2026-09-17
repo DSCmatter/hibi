@@ -11,10 +11,55 @@ export function useWorkspaceSnapshot(context: AddonContext) {
     loading: boolean
     error: string
   }>({ workspace: null, snapshot: null, loading: true, error: '' })
-  useEffect(
-    () => window.hibi.onWorkspaceChanged(() => refresh((value) => value + 1)),
-    [],
-  )
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    const remove = window.hibi.onWorkspaceChanged(() => {
+      clearTimeout(timer)
+      timer = setTimeout(() => refresh((value) => value + 1), 150)
+    })
+    return () => {
+      clearTimeout(timer)
+      remove()
+    }
+  }, [])
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    const remove = context.editor.onDocumentChange((document) => {
+      clearTimeout(timer)
+      // Update the active draft in memory; typing must not reread the workspace.
+      timer = setTimeout(
+        () =>
+          setState((value) => {
+            const page = value.snapshot?.pages.find(
+              (page) => page.id === document.id,
+            )
+            if (!page || !value.snapshot || !value.workspace) return value
+            if (
+              page.markdown === document.markdown &&
+              value.workspace.activePath === page.path
+            )
+              return value
+            return {
+              ...value,
+              workspace: { ...value.workspace, activePath: page.path },
+              snapshot: {
+                ...value.snapshot,
+                pages: value.snapshot.pages.map((entry) =>
+                  entry === page
+                    ? { ...entry, markdown: document.markdown }
+                    : entry,
+                ),
+              },
+            }
+          }),
+        150,
+      )
+    })
+    return () => {
+      clearTimeout(timer)
+      remove()
+    }
+  }, [context])
   // biome-ignore lint/correctness/useExhaustiveDependencies: revision explicitly refreshes workspace contents.
   useEffect(() => {
     let active = true

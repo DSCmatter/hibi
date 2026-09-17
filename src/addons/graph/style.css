@@ -1,20 +1,28 @@
+.graph-panel {
+  flex: 1;
+}
+.graph-controls > input.ui-field {
+  flex-basis: 100%;
+}
+.graph-controls > .ui-button {
+  flex: 1;
+}
 .graph-summary,
 .graph-help {
   color: var(--muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 .graph-canvas {
   position: relative;
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
+  flex: 1;
+  min-height: 220px;
   overflow: hidden;
 }
 .graph-canvas > svg {
   display: block;
   width: 100%;
-  height: min(55vh, 460px);
-  min-height: 260px;
+  height: 100%;
+  min-height: 220px;
   touch-action: none;
   cursor: grab;
 }

@@ -1,22 +1,35 @@
-import { useMemo, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import type { AddonContext } from '../api'
-import { Button, ControlRow, Panel, TextInput } from '../ui'
+import { Button, ControlRow, IconButton, Panel, TextInput } from '../ui'
 import { useWorkspaceSnapshot } from '../workspace-snapshot'
 import { GraphCanvas } from './Canvas'
 import { noteGraph } from './model'
 
-export function GraphPanel({
-  context,
-  close,
-}: {
-  context: AddonContext
-  close: () => void
-}) {
+export function GraphPanel({ context }: { context: AddonContext }) {
   const { snapshot, workspace, loading, error, refresh } =
     useWorkspaceSnapshot(context)
   const [query, setQuery] = useState('')
   const [local, setLocal] = useState(false)
-  const full = useMemo(() => noteGraph(snapshot?.pages ?? []), [snapshot])
+  const previous = useRef<ReturnType<typeof noteGraph> | null>(null)
+  const full = useMemo(() => {
+    const next = noteGraph(snapshot?.pages ?? [])
+    const last = previous.current
+    if (
+      last &&
+      last.nodes.length === next.nodes.length &&
+      last.edges.length === next.edges.length &&
+      last.nodes.every((node, index) => node.id === next.nodes[index]?.id) &&
+      last.edges.every(
+        (edge, index) =>
+          edge.source === next.edges[index]?.source &&
+          edge.target === next.edges[index]?.target,
+      )
+    )
+      return last
+    previous.current = next
+    return next
+  }, [snapshot])
   const graph = useMemo(() => {
     const neighbors = new Set([workspace?.activePath])
     for (const edge of full.edges)
@@ -44,7 +57,6 @@ export function GraphPanel({
     }
   }, [full, query, local, workspace?.activePath])
   const open = (path: string) => {
-    close()
     void context.workspace.openFile(path)
   }
   return (
@@ -64,12 +76,17 @@ export function GraphPanel({
         >
           Current note
         </Button>
-        <Button onClick={refresh} disabled={loading}>
-          Refresh
-        </Button>
+        <IconButton
+          aria-label="Refresh graph"
+          title="Refresh graph"
+          onClick={refresh}
+          disabled={loading}
+        >
+          <RefreshCw size={14} />
+        </IconButton>
       </ControlRow>
       {error && <p role="alert">{error}</p>}
-      {loading ? (
+      {loading && !snapshot ? (
         <p role="status">Reading workspace…</p>
       ) : !workspace ? (
         <Button onClick={() => void context.workspace.open().then(refresh)}>

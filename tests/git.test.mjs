@@ -110,8 +110,16 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
   assert.equal((await invoke('state')).files[0].worktree, 'M')
   await invoke('stage', 'note.md')
   await page.getByRole('button', { name: /^git$/i, exact: true }).click()
-  const panel = page.getByRole('dialog', { name: /^git$/i, exact: true })
+  const panel = page.getByRole('complementary', { name: /^git$/i, exact: true })
   await panel.getByLabel(/commit staged changes/i).fill('local commit')
+  assert.equal(await page.getByRole('dialog').count(), 0)
+  await page.getByRole('button', { name: /toggle workspace sidebar/i }).click()
+  await panel.waitFor({ state: 'hidden' })
+  await page.getByRole('button', { name: /^git$/i, exact: true }).click()
+  assert.equal(
+    await panel.getByLabel(/commit staged changes/i).inputValue(),
+    'local commit',
+  )
   await panel.getByRole('button', { name: /^commit$/i, exact: true }).click()
   await panel.getByText(/working tree clean\./i).waitFor()
   await panel.getByRole('button', { name: /^push/i }).click()
@@ -156,7 +164,10 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     'remote change',
   )
-  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: /sidebar views/i }).click()
+  await page
+    .getByRole('menuitem', { name: /^workspace$/i, exact: true })
+    .click()
   await panel.waitFor({ state: 'hidden' })
   await page.evaluate(() => {
     window.gitBusyChanges = 0

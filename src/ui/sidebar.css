@@ -60,6 +60,8 @@
   font-size: var(--text-ui);
 }
 .sidebar-content > .ui-panel {
+  display: flex;
+  flex-direction: column;
   padding: 0 var(--space-3);
   gap: var(--space-3);
   min-width: 0;

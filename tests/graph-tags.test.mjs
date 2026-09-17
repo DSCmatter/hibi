@@ -30,6 +30,8 @@ test('graph resolves only existing local note links and deduplicates connections
   assert.equal(graph.nodes.length, 4)
   assert.equal(graph.edges.length, 2)
   assert.equal(graph.nodes.find((node) => node.id === 'a.md').degree, 2)
+  pages[3].markdown = '[a](a.md)'
+  assert.equal(noteGraph(pages).edges.length, 3)
   const paths = new Set(pages.map((page) => page.path))
   assert.equal(localTarget('folder/b.md', '/a.md', paths), 'a.md')
   for (const link of [
@@ -106,7 +108,8 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
   await rich
     .locator('.hibi-tag[data-tag="work"]')
     .click({ modifiers: ['Shift'] })
-  let dialog = page.getByRole('dialog', { name: /^tags$/i, exact: true })
+  let dialog = page.getByRole('complementary', { name: /^tags$/i, exact: true })
+  assert.equal(await page.getByRole('dialog').count(), 0)
   const tagRow = dialog.getByRole('button', { name: /^#work 2$/i, exact: true })
   assert.equal(await tagRow.getAttribute('data-variant'), 'row')
   const tagLayout = await tagRow.evaluate((row) => ({
@@ -120,7 +123,12 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
   }))
   assert.ok(Math.abs(tagLayout.row - tagLayout.group) < 1)
   assert.equal(tagLayout.countColor, tagLayout.color)
-  assert.ok(tagLayout.gap < 12, 'tag counts align at the row end')
+  assert.ok(tagLayout.gap <= 16, 'tag counts use the native row inset')
+  await dialog.getByRole('button', { name: /^#日本語 1$/i }).click()
+  await rich
+    .locator('.hibi-tag[data-tag="work"]')
+    .click({ modifiers: ['Shift'] })
+  await dialog.getByRole('region', { name: 'Notes tagged #work' }).waitFor()
   await dialog.getByRole('button', { name: /^b\.md$/i, exact: true }).click()
   await waitForAsync(
     page,
@@ -135,14 +143,14 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
     .filter({ hasText: /tags · 2/i })
     .waitFor()
   await choose('browse tags')
-  dialog = page.getByRole('dialog', { name: /^tags$/i, exact: true })
+  dialog = page.getByRole('complementary', { name: /^tags$/i, exact: true })
   await dialog
     .getByRole('button', { name: /^#newtag 1$/i, exact: true })
     .click()
   await dialog.getByRole('button', { name: /^b\.md$/i, exact: true }).waitFor()
   await page.keyboard.press('Escape')
   await choose('open workspace graph')
-  let graph = page.getByRole('dialog', {
+  let graph = page.getByRole('complementary', {
     name: /^workspace graph$/i,
     exact: true,
   })
@@ -196,7 +204,7 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
     .getByRole('button', { name: /^open a\.md$/i, exact: true })
     .focus()
   await page.keyboard.press('Enter')
-  await graph.waitFor({ state: 'hidden' })
+  assert.equal(await graph.isVisible(), true)
   await page.waitForFunction(
     () => document.querySelector('.app').getAttribute('aria-busy') === 'false',
   )
@@ -218,7 +226,10 @@ test('tags and graph plugins browse/open notes, honor drafts, and clean up when 
     dialog.showMessageBox = async () => ({ response: 1 })
   })
   await choose('open workspace graph')
-  graph = page.getByRole('dialog', { name: /^workspace graph$/i, exact: true })
+  graph = page.getByRole('complementary', {
+    name: /^workspace graph$/i,
+    exact: true,
+  })
   await graph
     .getByRole('button', { name: /^open a\.md$/i, exact: true })
     .focus()

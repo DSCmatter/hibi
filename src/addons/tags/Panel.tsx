@@ -1,32 +1,48 @@
-import { useMemo, useState } from 'react'
+import { FileText, RefreshCw } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { isMarkdownDocument } from '../../shared/document-types'
+import type { WorkspacePage } from '../../shared/workspace'
 import type { AddonContext } from '../api'
-import { Button, ControlRow, Panel, TextInput } from '../ui'
+import { Button, ControlRow, IconButton, Panel, TextInput } from '../ui'
 import { useWorkspaceSnapshot } from '../workspace-snapshot'
 import { noteTags } from './syntax'
 
 export function TagsPanel({
   context,
-  initialTag,
-  close,
+  selection,
 }: {
   context: AddonContext
-  initialTag?: string | undefined
-  close: () => void
+  selection: unknown
 }) {
   const { snapshot, workspace, loading, error, refresh } =
     useWorkspaceSnapshot(context)
   const [query, setQuery] = useState('')
-  const [selected, select] = useState(initialTag ?? '')
+  const [selected, select] = useState('')
+  const parsed = useRef(new WeakMap<WorkspacePage, string[]>()).current
+  useEffect(() => {
+    const tag =
+      selection && typeof selection === 'object' && 'tag' in selection
+        ? selection.tag
+        : undefined
+    if (typeof tag === 'string') {
+      select(tag)
+      setQuery('')
+    }
+  }, [selection])
   const index = useMemo(() => {
     const tags = new Map<string, string[]>()
     for (const page of snapshot?.pages ?? []) {
       if (!isMarkdownDocument(page.path)) continue
-      for (const tag of noteTags(page.markdown))
+      let pageTags = parsed.get(page)
+      if (!pageTags) {
+        pageTags = noteTags(page.markdown)
+        parsed.set(page, pageTags)
+      }
+      for (const tag of pageTags)
         tags.set(tag, [...(tags.get(tag) ?? []), page.path])
     }
     return [...tags].sort(([a], [b]) => a.localeCompare(b))
-  }, [snapshot])
+  }, [snapshot, parsed])
   const matches = index.filter(([tag]) =>
     tag.includes(query.trim().replace(/^#/, '').toLowerCase()),
   )
@@ -41,12 +57,17 @@ export function TagsPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <Button onClick={refresh} disabled={loading}>
-          Refresh
-        </Button>
+        <IconButton
+          aria-label="Refresh tags"
+          title="Refresh tags"
+          onClick={refresh}
+          disabled={loading}
+        >
+          <RefreshCw size={14} />
+        </IconButton>
       </ControlRow>
       {error && <p role="alert">{error}</p>}
-      {loading ? (
+      {loading && !snapshot ? (
         <p role="status">Reading tags…</p>
       ) : !workspace ? (
         <Button onClick={() => void context.workspace.open().then(refresh)}>
@@ -84,11 +105,11 @@ export function TagsPanel({
                 variant="row"
                 key={path}
                 onClick={() => {
-                  close()
                   void context.workspace.openFile(path)
                 }}
               >
-                {path}
+                <FileText size={14} aria-hidden="true" />
+                <span title={path}>{path}</span>
               </Button>
             ))}
           </section>

@@ -150,6 +150,7 @@ async function changedPath(
 export default {
   id: manifest.id,
   queries: {
+    state: (_input, context) => state(context),
     async decorations(_input, context) {
       const id = context.workspace.id()
       if (!id) return null

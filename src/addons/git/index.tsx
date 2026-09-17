@@ -1,3 +1,4 @@
+import { GitBranch } from 'lucide-react'
 import { defineAddon } from '../api'
 import { gitDecorations } from './decorations'
 import manifest from './manifest'
@@ -19,13 +20,14 @@ export default defineAddon({
           : []
       },
     })
-    const open = () => {
-      context.dialogs.open({
-        title: 'Git',
-        size: 'wide',
-        content: () => <GitPanel context={context} />,
-      })
-    }
+    const draft = { message: '' }
+    const view = context.sidebar.register({
+      id: 'repository',
+      label: 'Git',
+      icon: GitBranch,
+      Content: () => <GitPanel context={context} draft={draft} />,
+    })
+    const open = () => view.open()
     context.statusBar.register({
       id: 'repository',
       label: 'Git',
