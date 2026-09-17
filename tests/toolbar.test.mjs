@@ -85,7 +85,15 @@ test('toolbar auto-hide defaults on, shares top-bar timing, and moves content sm
     hiding.some((value) => value.height > 1 && value.height < expanded - 1),
   )
   assert.equal(hiding.at(-1).height, 0)
-  assert.equal(hiding.at(-1).top, 36)
+  assert.equal(hiding.at(-1).top, 0)
+  const insets = await page
+    .locator('.tiptap p')
+    .first()
+    .evaluate((paragraph) => {
+      const rect = paragraph.getBoundingClientRect()
+      return { top: rect.top, left: rect.left }
+    })
+  assert.ok(Math.abs(insets.top - insets.left) < 1, JSON.stringify(insets))
   assert.equal(hiding.at(-1).title, 0)
   assert.equal(hiding.at(-1).toolbar, 0)
   assert.ok(

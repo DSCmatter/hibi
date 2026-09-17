@@ -127,11 +127,17 @@ button:disabled {
   -webkit-app-region: drag;
   user-select: none;
   opacity: 1;
-  transition: opacity var(--motion-feedback) ease-out;
+  transition:
+    opacity var(--motion-feedback) ease-out,
+    margin-bottom var(--motion-feedback) ease-out;
 }
 .app[data-typing="true"] .titlebar {
   opacity: 0;
   pointer-events: none;
+}
+.app[data-typing="true"]:has(.toolbar-slot[data-hidden="true"])
+  .titlebar:not(:focus-within) {
+  margin-bottom: -36px;
 }
 .app[data-typing="true"] {
   --editor-top-fade: var(--space-5);
