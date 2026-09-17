@@ -10,6 +10,8 @@ Actions uses the shared `.github/actions/ci` action for regular checks and night
 
 Missing caches, unavailable history, config changes, or unknown inputs fall back to full checks. The `clean` checkbox under Actions → check/nightly → Run workflow ignores caches, removes generated build/typecheck state, and runs every test. `CI_CLEAN=true npm run check:ci` provides the same full-check override from a shell. The run summary records its base revision, rebuild decision, and test count.
 
+Local incremental runs also include uncommitted edits and untracked files. Dirty checkouts never write a successful revision checkpoint.
+
 use node 24 lts, or node 22.18 or newer. install dependencies with `npm ci`.
 
 ```sh

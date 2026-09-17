@@ -81,4 +81,7 @@ test('incremental checks select dependencies and fall back safely for cold, clea
       previousTests: [...previousTests, 'tests/dynamic.test.mjs'],
     }).tests.includes('tests/dynamic.test.mjs'),
   )
+  writeFileSync(join(root, 'src/shared/new.ts'), 'export const added = 3')
+  assert.equal(plan([]).build, true)
+  assert.ok(plan([]).tests.includes('tests/desktop.test.mjs'))
 })

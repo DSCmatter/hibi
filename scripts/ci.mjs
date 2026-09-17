@@ -26,6 +26,10 @@ export function planChecks(
   root,
   { changed, previousTests, force = false, outputAvailable = true },
 ) {
+  const untracked = paths(
+    git(root, 'ls-files', '-z', '--others', '--exclude-standard'),
+  )
+  if (changed) changed = [...new Set([...changed, ...untracked])]
   const files = new Set(
     paths(
       git(root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard'),
