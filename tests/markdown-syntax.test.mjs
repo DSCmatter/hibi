@@ -159,6 +159,16 @@ test('syntax settings preserve edits, update rich formatting, and discover addon
     .locator('h1')
     .filter({ hasText: /^changed$/ })
     .waitFor()
+    .catch(async (cause) => {
+      const state = await page.evaluate(async () => ({
+        markdown: (await window.hibi.getDocument()).markdown,
+        disabled: localStorage.getItem('hibi:markdown-syntax-disabled'),
+        rich: document.querySelector('.tiptap')?.innerHTML,
+      }))
+      throw new Error(`syntax did not settle: ${JSON.stringify(state)}`, {
+        cause,
+      })
+    })
   assert.equal(
     await rich.locator('h1').innerText(),
     'changed',

@@ -63,6 +63,7 @@ test('hibi opens first, sponsor uses a fixed URL, and license dialogs stay reada
   })
   const page = await app.firstWindow()
   page.setDefaultTimeout(5000)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
   await clickMenu(app, 'Settings')
@@ -80,6 +81,7 @@ test('hibi opens first, sponsor uses a fixed URL, and license dialogs stay reada
     .getByRole('button')
     .filter({ has: page.locator('.license-name', { hasText: /^react19/ }) })
   await react.waitFor()
+  await page.evaluate(() => document.fonts.ready)
   await react.hover()
   assert.deepEqual(
     await react.evaluate((element) => {

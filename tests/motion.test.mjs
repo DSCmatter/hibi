@@ -374,6 +374,16 @@ test('panes move horizontally and sidebar selection slides without fading settin
         await new Promise(requestAnimationFrame)
         samples.push(sample())
       }
+      await Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) =>
+            Number.isFinite(animation.effect?.getComputedTiming().iterations),
+          )
+          .map((animation) => animation.finished.catch(() => {})),
+      )
+      await new Promise(requestAnimationFrame)
+      samples.push(sample())
       return samples
     }, to)
   }
