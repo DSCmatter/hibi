@@ -226,6 +226,14 @@ function App() {
   useEffect(() => {
     localStorage.setItem('default-view', defaultView)
   }, [defaultView])
+  const [focusOutlines, setFocusOutlines] = useState(
+    () => localStorage.getItem('focus-outlines') === 'true',
+  )
+  useLayoutEffect(() => {
+    window.document.documentElement.dataset.focusOutlines =
+      String(focusOutlines)
+    localStorage.setItem('focus-outlines', String(focusOutlines))
+  }, [focusOutlines])
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [failed, setFailed] = useState(false)
   const editorStarted = useRef(false)
@@ -1458,6 +1466,8 @@ function App() {
             onShowLineNumbers={setShowLineNumbers}
             spellCheck={spellCheck}
             onSpellCheck={setSpellCheck}
+            focusOutlines={focusOutlines}
+            onFocusOutlines={setFocusOutlines}
             defaultView={defaultView}
             onDefaultView={(view) => {
               setDefaultView(view)

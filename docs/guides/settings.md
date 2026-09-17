@@ -6,6 +6,10 @@ view shortcuts sit beside the window controls while the sidebar is expanded. the
 
 the first dropdown item pins or unpins the current view. up to three pins are remembered and appear first in the shortcuts and dropdown. **In this page** nests headings by level and highlights the section containing the cursor in every editor mode.
 
+## keyboard focus
+
+**appearance → focus → non-input focus outlines** restores focus outlines on buttons, links, and navigation. It is off by default and persists on this device. Keyboard focus still has a background cue; inputs, selects, and editable text keep their existing focus indicators. The preference also covers addon UI, menus, and dialogs.
+
 ## interface text
 
 the interface uses sentence case by default. enable **Lowercase interface** under **Appearance** to display built-in screens, extension panels, tooltips, notifications, and app menus in lowercase. the preference persists across launches. document content, typed field values, code, and case-sensitive Vim commands keep their original spelling.

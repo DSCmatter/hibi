@@ -101,6 +101,36 @@ button:disabled {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
+/* Scope the desktop preference to the document, including menus and dialogs. */
+:root[data-focus-outlines="false"]
+:focus-visible:not(
+  :where(
+    input,
+    textarea,
+    select,
+    [contenteditable]:not([contenteditable="false"]),
+    [role="textbox"],
+    [role="searchbox"],
+    [role="combobox"]
+  )
+) {
+  outline: none !important;
+}
+:root[data-focus-outlines="false"]
+  :where(
+    button,
+    a,
+    [role="tab"],
+    [role="treeitem"],
+    [role="menuitem"]
+  ):focus-visible:not(
+    [aria-selected="true"],
+    [aria-pressed="true"],
+    [aria-checked="true"]
+  ) {
+  background-color: var(--hover);
+  color: var(--ink);
+}
 ::selection {
   background: var(--selection);
   color: var(--selection-ink);

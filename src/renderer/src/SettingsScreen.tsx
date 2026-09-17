@@ -79,6 +79,8 @@ export function SettingsScreen({
   onShowLineNumbers,
   spellCheck,
   onSpellCheck,
+  focusOutlines,
+  onFocusOutlines,
   defaultView,
   onDefaultView,
   tabsEnabled,
@@ -108,6 +110,8 @@ export function SettingsScreen({
   onShowLineNumbers: (show: boolean) => void
   spellCheck: boolean
   onSpellCheck: (enabled: boolean) => void
+  focusOutlines: boolean
+  onFocusOutlines: (enabled: boolean) => void
   defaultView: DocumentView
   onDefaultView: (view: DocumentView) => void
   tabsEnabled: boolean
@@ -326,6 +330,20 @@ export function SettingsScreen({
                   onChange={(event) =>
                     uiCase.set(event.target.checked ? 'lowercase' : 'sentence')
                   }
+                />
+              </SettingRow>
+            </div>
+            <h2>Focus</h2>
+            <div className="settings-group">
+              <SettingRow
+                id="focus-outlines"
+                label="Non-input focus outlines"
+                description="Show outlines on focused buttons, links, and navigation. Input fields keep their focus indicators."
+              >
+                <Toggle
+                  id="focus-outlines"
+                  checked={focusOutlines}
+                  onChange={(event) => onFocusOutlines(event.target.checked)}
                 />
               </SettingRow>
             </div>
