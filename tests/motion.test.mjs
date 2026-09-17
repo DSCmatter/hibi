@@ -576,14 +576,7 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
       const samples = []
       let reversed = false
       const start = performance.now()
-      while (performance.now() - start < 320) {
-        await new Promise(requestAnimationFrame)
-        if (reverse && !reversed && performance.now() - start > 64) {
-          document
-            .querySelector('[aria-label="toggle workspace sidebar" i]')
-            .click()
-          reversed = true
-        }
+      const sample = () => {
         // Allow hit testing during dismissal to catch panes painting over the sidebar.
         const slot = sidebar.parentElement
         slot.inert = false
@@ -612,6 +605,26 @@ test('workspace sidebar slides at a fixed width and the titlebar follows its sta
             .backgroundColor,
         })
       }
+      while (performance.now() - start < 320) {
+        await new Promise(requestAnimationFrame)
+        if (reverse && !reversed && performance.now() - start > 64) {
+          document
+            .querySelector('[aria-label="toggle workspace sidebar" i]')
+            .click()
+          reversed = true
+        }
+        sample()
+      }
+      await Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) =>
+            Number.isFinite(animation.effect?.getComputedTiming().iterations),
+          )
+          .map((animation) => animation.finished.catch(() => {})),
+      )
+      await new Promise(requestAnimationFrame)
+      sample()
       return samples
     }, reverse)
     assert.ok(samples.some(({ x }) => x > -195 && x < -1))
