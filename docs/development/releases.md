@@ -1,5 +1,7 @@
 # Nightly releases
 
+Hibi is licensed under AGPL-3.0-only. Its root `LICENSE` is included in packaged applications.
+
 The `nightly` GitHub Actions workflow runs from `main` daily at 18:00 UTC (02:00 Manila time). It can also be started from Actions → nightly → Run workflow. GitHub may delay scheduled runs. Unchanged revisions are skipped.
 
 Each release has a dated `nightly-YYYY-MM-DD-<commit>` tag and a prerelease version. Its changelog lists actual commits since the previous reachable nightly tag, with commit and comparison links. The first nightly includes history since the most recent reachable release tag, or all commits if none exists. Notes live with the release, so publishing does not create another source commit.

@@ -5,6 +5,7 @@ directories:
 files:
   - out/**/*
   - package.json
+  - LICENSE
 asar: true
 extraResources:
   - from: build
