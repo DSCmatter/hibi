@@ -40,6 +40,7 @@ import type {
 } from '../../shared/workspace'
 import { settingsIndex } from '../../ui/settings-index'
 import { useSidebarResize } from '../../ui/useSidebarResize'
+import { AddonSidebar, builtInViews, viewShortcut } from './AddonSidebar'
 import { addonRegistry } from './addon-registry'
 import { addons, useAddons } from './addons'
 import { useAutosave } from './autosave'
@@ -64,7 +65,6 @@ import {
   type OutlineHeading,
   type OutlineRequest,
   OutlineSidebar,
-  type SidebarView,
 } from './OutlineSidebar'
 import { RecoveryBoundary } from './RecoveryScreen'
 import { SettingsScreen, settingsCategories } from './SettingsScreen'
@@ -246,18 +246,19 @@ function App() {
   }
   const [workspaceRename, setWorkspaceRename] = useState<WorkspaceRename>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarView, setSidebarView] = useState<SidebarView>(() =>
-    localStorage.getItem('sidebar-view') === 'outline'
-      ? 'outline'
-      : 'workspace',
+  const [sidebarView, setSidebarView] = useState(
+    () => localStorage.getItem('sidebar-view') ?? 'workspace',
   )
+  const [sidebarInput, setSidebarInput] = useState<unknown>()
   const [outline, setOutline] = useState<OutlineHeading[]>([])
   const [activeOutline, setActiveOutline] = useState<string | null>(null)
   const [outlineTarget, setOutlineTarget] = useState<OutlineRequest | null>(
     null,
   )
-  function selectSidebarView(view: SidebarView) {
+  function selectSidebarView(view: string, input?: unknown) {
     setSidebarView(view)
+    setSidebarInput(input)
+    setSettingsOpen(false)
     localStorage.setItem('sidebar-view', view)
     setSidebarOpen(true)
     showTitlebar()
@@ -274,6 +275,7 @@ function App() {
     localStorage.setItem('cursor-settings', JSON.stringify(cursorSettings))
   }, [cursorSettings])
   const addonHost = useAddons({
+    openSidebar: selectSidebarView,
     getMarkdown: () => document?.markdown ?? '',
     runAction: (command) => runAction(command),
     runCommand: (command) => runCommand(command),
@@ -317,6 +319,23 @@ function App() {
     error: (error) =>
       setError(error instanceof Error ? error.message : 'addon failed.'),
   })
+  const sidebarViews = [
+    ...builtInViews,
+    ...addonHost.sidebarViews.map(viewShortcut),
+  ]
+  const activeAddonView = addonHost.sidebarViews.find(
+    (view) => view.id === sidebarView,
+  )
+  useEffect(() => {
+    if (
+      addonHost.ready &&
+      !builtInViews.some((view) => view.id === sidebarView) &&
+      !addonHost.sidebarViews.some((view) => view.id === sidebarView)
+    ) {
+      setSidebarView('workspace')
+      localStorage.setItem('sidebar-view', 'workspace')
+    }
+  }, [addonHost.ready, addonHost.sidebarViews, sidebarView])
   useEffect(() => {
     localStorage.removeItem('sidebar-open')
   }, [])
@@ -917,14 +936,13 @@ function App() {
       run: () => addonHost.app.runAction(id),
     }))
   paletteCommands.push(
-    ...(['workspace', 'outline'] as const).map((view) => ({
-      id: `sidebar.${view}`,
+    ...sidebarViews.map((view) => ({
+      id: `sidebar.${view.id}`,
       category: 'view' as const,
-      label:
-        view === 'workspace' ? 'Show workspace sidebar' : 'Show in this page',
+      label: `Show ${view.label.toLowerCase()}${view.id === 'workspace' ? ' sidebar' : ''}`,
       run: () => {
         setSettingsOpen(false)
-        selectSidebarView(view)
+        selectSidebarView(view.id)
       },
     })),
     {
@@ -1236,6 +1254,7 @@ function App() {
       <Titlebar
         busy={busy}
         sidebarView={sidebarView}
+        sidebarViews={sidebarViews}
         onSidebarView={selectSidebarView}
         onSelectTab={(id) =>
           void applyDocumentOperation(() => window.hibi.selectDocumentTab(id))
@@ -1284,6 +1303,12 @@ function App() {
             request: (previous?.request ?? 0) + 1,
           }))
         }
+      />
+      <AddonSidebar
+        view={activeAddonView}
+        input={sidebarInput}
+        open={sidebarOpen && !settingsOpen}
+        resize={sidebarResize}
       />
       <MenuHost />
       <SettingsScreen

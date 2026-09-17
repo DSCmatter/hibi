@@ -48,10 +48,25 @@
   display: flex;
   padding: var(--space-1);
 }
-.sidebar-scroll {
+.sidebar-scroll,
+.sidebar-content {
   flex: 1;
   overflow: auto;
   min-height: 0;
+}
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-ui);
+}
+.sidebar-content > .ui-panel {
+  padding: 0 var(--space-3);
+  gap: var(--space-3);
+  min-width: 0;
+}
+.sidebar-content p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 .sidebar-items {
   position: relative;

@@ -3,8 +3,6 @@ import {
   Code,
   Columns2,
   FileText,
-  FolderOpen,
-  ListTree,
   PanelLeft,
   Pin,
   PinOff,
@@ -15,14 +13,9 @@ import { isMarkdownDocument } from '../../shared/document-types'
 import { type Hotkeys, shortcutLabels } from '../../shared/hotkeys'
 import { IconButton } from '../../ui/Controls'
 import { useMenus } from '../../ui/MenuHost'
+import type { viewShortcut } from './AddonSidebar'
 import { DocumentTabs } from './DocumentTabs'
 import type { ViewMode } from './Editor'
-import type { SidebarView } from './OutlineSidebar'
-
-const sidebarViews = [
-  { id: 'workspace', label: 'Workspace', icon: FolderOpen },
-  { id: 'outline', label: 'In this page', icon: ListTree },
-] as const
 
 const icons = {
   normal: FileText,
@@ -45,6 +38,7 @@ export function Titlebar({
   sidebarOpen,
   onSidebar,
   sidebarView,
+  sidebarViews,
   onSidebarView,
   onSelectTab,
   onCloseTab,
@@ -58,23 +52,22 @@ export function Titlebar({
   platform: string
   sidebarOpen: boolean
   onSidebar: () => void
-  sidebarView: SidebarView
-  onSidebarView: (view: SidebarView) => void
+  sidebarView: string
+  sidebarViews: ReturnType<typeof viewShortcut>[]
+  onSidebarView: (view: string) => void
   onSelectTab: (id: string) => void
   onCloseTab: (id: string) => void
   busy: boolean
 }) {
   const menus = useMenus(console.error)
-  const [pinned, setPinned] = useState<SidebarView[]>(() => {
+  const [pinned, setPinned] = useState<string[]>(() => {
     try {
       const saved: unknown = JSON.parse(
         localStorage.getItem('sidebar-pinned-views') ?? '[]',
       )
       return Array.isArray(saved)
         ? [...new Set(saved)]
-            .filter((id): id is SidebarView =>
-              sidebarViews.some((view) => view.id === id),
-            )
+            .filter((id): id is string => typeof id === 'string')
             .slice(0, 3)
         : []
     } catch {
@@ -131,7 +124,7 @@ export function Titlebar({
                       aria-pressed={sidebarOpen && sidebarView === view.id}
                       onClick={() => onSidebarView(view.id)}
                     >
-                      <view.icon size={16} strokeWidth={1.5} />
+                      <view.icon size={16} />
                     </IconButton>
                   ))}
                 </div>
@@ -147,7 +140,7 @@ export function Titlebar({
                       items: [
                         {
                           id: 'pin-current-view',
-                          label: `${currentPinned ? 'Unpin' : 'Pin'} ${currentView.label}`,
+                          label: `${currentPinned ? 'Unpin' : 'Pin'} ${currentView?.label ?? 'Workspace'}`,
                           icon: currentPinned ? PinOff : Pin,
                           disabled: !currentPinned && pinned.length >= 3,
                           onSelect: togglePin,

@@ -39,7 +39,12 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     `export default ({ React, ui, codeMirror }) => ({
     start(context) {
       window.fixtureStarts = (window.fixtureStarts || 0) + 1;
-      context.statusBar.register({id:'status',label:'fixture active'});
+      const view = context.sidebar.register({id:'view',label:'Fixture view',Content({input}) {
+        React.useEffect(() => { window.fixtureViewMounted = true; return () => { window.fixtureViewMounted = false; }; }, []);
+        return React.createElement('p', null, input || 'Fixture sidebar content');
+      }});
+      window.fixtureSidebar = view;
+      context.statusBar.register({id:'status',label:'fixture active',onClick:()=>view.open('Selected fixture')});
       context.editor.registerCodeLanguage({id:'fixture-code',language:codeMirror.language.StreamLanguage.define({token(stream) { stream.skipToEnd(); return 'keyword'; }})});
       context.styles.register('fixture', ':root { --fixture-enabled: yes; }');
       context.commands.register({id:'append',label:'fixture: append',run:()=>context.editor.updateMarkdown(text=>text+'\\nfixture')});
@@ -154,6 +159,16 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   )
   await page.getByRole('button', { name: /^back to app$/i }).click()
   await page.getByText(/^fixture active$/i, { exact: true }).waitFor()
+  assert.notEqual(await page.evaluate(() => window.fixtureViewMounted), true)
+  await choose('show fixture view')
+  const view = page.getByRole('complementary', { name: 'Fixture view' })
+  await view.getByText('Fixture sidebar content', { exact: true }).waitFor()
+  assert.equal(await page.getByRole('dialog').count(), 0)
+  await page.getByRole('button', { name: /^fixture active$/i }).click()
+  await view.getByText('Selected fixture', { exact: true }).waitFor()
+  await choose('show workspace sidebar')
+  await page.waitForFunction(() => window.fixtureViewMounted === false)
+  await choose('show fixture view')
   await choose('fixture: append')
   await waitForAsync(page, async () =>
     (await window.hibi.getDocument()).markdown.includes('fixture'),
@@ -178,6 +193,13 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     window.syntaxRich = document.querySelector('.tiptap')
   })
   await choose('disable fixture addon')
+  await page.waitForFunction(() => window.fixtureViewMounted === false)
+  await page.evaluate(() => window.fixtureSidebar.open('Disposed view'))
+  assert.equal(
+    await page.getByRole('complementary', { name: 'Fixture view' }).count(),
+    0,
+  )
+  assert.equal(await page.locator('.app').getAttribute('data-sidebar'), 'true')
   await page.waitForFunction(
     () =>
       ![...document.querySelectorAll('.hibi-token-keyword')].some(

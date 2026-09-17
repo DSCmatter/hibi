@@ -27,6 +27,8 @@ export type SidebarProps = {
   panelPrefix?: string
   header?: ReactNode
   footer?: ReactNode
+  /** Custom view content in the shared sidebar frame instead of tree rows. */
+  content?: ReactNode
   empty?: ReactNode
   onMenu?: (id: string, anchor: HTMLElement) => void
   /** Move a tree item into a folder; null targets the tree root. */

@@ -38,6 +38,8 @@ export type SidebarProps = {
   panelPrefix?: string
   header?: ReactNode
   footer?: ReactNode
+  /** Custom view content in the shared sidebar frame instead of tree rows. */
+  content?: ReactNode
   empty?: ReactNode
   onMenu?: (id: string, anchor: HTMLElement) => void
   /** Move a tree item into a folder; null targets the tree root. */
@@ -109,6 +111,7 @@ export function Sidebar({
   panelPrefix = '',
   header,
   footer,
+  content,
   empty,
   onMenu,
   onMove,
@@ -199,9 +202,13 @@ export function Sidebar({
     >
       <aside className="sidebar" aria-label={label}>
         {header && <div className="sidebar-header">{header}</div>}
+        {content !== undefined && (
+          <div className="sidebar-content">{content}</div>
+        )}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop supplements the keyboard-accessible move menu. */}
         <div
           className="sidebar-scroll"
+          hidden={content !== undefined}
           data-drop-target={dropTarget === ''}
           onDragOver={(event) => {
             if (!onMove || !draggedItem.current) return

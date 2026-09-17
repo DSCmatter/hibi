@@ -274,6 +274,24 @@ export type MarkdownEditorProps = {
   disabled: boolean
 }
 
+export type SidebarView = {
+  /** Local id; the host prefixes it with the addon id. */
+  id: string
+  label: string
+  icon?: import('../ui/toolbar').ToolbarItem['icon']
+  /** Mounted only while this view is visible. Keep durable drafts in addon state. */
+  Content: ComponentType<{ input: unknown }>
+}
+export type SidebarHandle = {
+  /** Reveal this view, optionally passing selection data to its content. */
+  open: (input?: unknown) => void
+  dispose: () => void
+}
+export type SidebarApi = {
+  /** Views appear in the titlebar picker and command palette; cleanup is automatic. */
+  register: (view: SidebarView) => SidebarHandle
+}
+
 export type AddonContext = {
   colorschemes: {
     register: (scheme: ColorschemeInput) => () => void
@@ -282,6 +300,7 @@ export type AddonContext = {
     setPreferences: (preferences: Partial<ThemePreferences>) => void
   }
   dialogs: DialogApi
+  sidebar: SidebarApi
   toasts: ToastApi
   menus: MenuApi
   toolbar: ToolbarApi

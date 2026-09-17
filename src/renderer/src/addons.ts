@@ -14,6 +14,7 @@ import {
   type AddonState,
   type MarkdownExtension,
   type RichExtension,
+  type SidebarView,
   type SourceExtension,
   type StatusItem,
 } from '../../addons/api'
@@ -47,6 +48,7 @@ type Environment = Omit<
   | 'styles'
   | 'patches'
   | 'dialogs'
+  | 'sidebar'
   | 'toasts'
   | 'notify'
   | 'workspace'
@@ -62,6 +64,7 @@ type Environment = Omit<
   runCommand: AddonContext['editor']['runCommand']
   runAction: AddonApp['runAction']
   getMarkdown: () => string
+  openSidebar: (id: string, input?: unknown) => void
 }
 
 export function useAddons(environment: Environment) {
@@ -85,6 +88,8 @@ export function useAddons(environment: Environment) {
     new Map<string, StatusItem & { addonId: string }>(),
   ).current
   const [statusItems, setStatusItems] = useState<StatusItem[]>([])
+  const views = useRef(new Map<string, SidebarView>()).current
+  const [sidebarViews, setSidebarViews] = useState<SidebarView[]>([])
   const registered = useRef(new Map<string, RegisteredCommand>()).current
   const extensions = useRef(
     new Map<string, MarkdownExtension & { addonId: string }>(),
@@ -236,6 +241,31 @@ export function useAddons(environment: Environment) {
             },
           },
           dialogs: dialogScope.api,
+          sidebar: {
+            register(view) {
+              if (disposed) return { open() {}, dispose() {} }
+              const key = `${id}.${view.id}`
+              if (!/^[a-z][a-z0-9-]*$/.test(view.id) || views.has(key))
+                throw new Error(`duplicate or invalid sidebar view: ${key}`)
+              const entry = { ...view, id: key }
+              views.set(key, entry)
+              setSidebarViews([...views.values()])
+              const remove = () => {
+                if (views.get(key) !== entry) return
+                views.delete(key)
+                if (mounted.current) setSidebarViews([...views.values()])
+                cleanups.delete(remove)
+              }
+              cleanups.add(remove)
+              return {
+                open(input) {
+                  if (!disposed && views.get(key) === entry)
+                    latest.current.openSidebar(key, input)
+                },
+                dispose: remove,
+              }
+            },
+          },
           toasts: toastScope.api,
           toolbar: toolbarScope.api,
           tooltips: tooltipScope.api,
@@ -656,6 +686,7 @@ export function useAddons(environment: Environment) {
     rich,
     dialogService,
     toastService,
+    views,
   ])
   async function setEnabled(id: string, enabled: boolean) {
     try {
@@ -700,6 +731,7 @@ export function useAddons(environment: Environment) {
     richExtensions,
     sourceExtensions,
     statusItems,
+    sidebarViews,
     setEnabled,
     install,
     remove,
