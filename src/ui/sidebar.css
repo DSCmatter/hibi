@@ -91,7 +91,8 @@
   flex-direction: column;
   font-size: var(--text-ui);
 }
-.sidebar-content > .ui-panel {
+.sidebar-content > .ui-panel,
+.sidebar-content > .addon-view-content > .ui-panel {
   display: flex;
   flex-direction: column;
   padding: 0 var(--space-3);

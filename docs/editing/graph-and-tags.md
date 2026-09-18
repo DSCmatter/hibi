@@ -6,6 +6,8 @@ Enable **Graph** or **Tags** under **Settings → Addons**, then choose it from 
 
 Run **Open workspace graph** to see notes connected by local Markdown links, such as `[Next](notes/next.md)`. Click a node to open and center its note. Drag the background to pan, scroll to zoom, or choose **Expand** for a larger view.
 
+The graph fits the available space when opened or filtered. **Fit graph** returns to that overview and keeps it fitted as you resize the view. Dense graphs show labels when you zoom in or filter to fewer notes; hover over a node to see its full path.
+
 Filter by filename or path, and use **Connections** to see links to and from the current note. Moving nodes changes only the graph layout, not your files. Keyboard users can Tab to a node and press Enter or Space; arrow keys pan when the background has focus.
 
 The graph shows up to 500 matching nodes, so filter larger workspaces. It uses links to existing local notes; `[[wikilinks]]` are unsupported.

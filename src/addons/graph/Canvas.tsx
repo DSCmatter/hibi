@@ -17,12 +17,62 @@ import type { noteGraph } from './model'
 type Node = ReturnType<typeof noteGraph>['nodes'][number] & SimulationNodeDatum
 type Edge = { source: Node; target: Node }
 type View = { x: number; y: number; scale: number; centered: string | null }
+type Size = { width: number; height: number }
+const radius = (node: Node) => 5 + Math.min(7, Math.sqrt(node.degree) * 2)
+const label = (node: Node) => {
+  const characters = Array.from(node.label)
+  return characters.length > 32
+    ? `${characters.slice(0, 31).join('')}…`
+    : node.label
+}
 
-function cameraPosition(view: View, nodes: Node[]) {
+function cameraPosition(view: View | null, nodes: Node[], size: Size): View {
+  if (!view) {
+    if (!nodes.length) return { x: 0, y: 0, scale: 1, centered: null }
+    let left = Infinity,
+      right = -Infinity,
+      top = Infinity,
+      bottom = -Infinity
+    for (const node of nodes) {
+      const extent =
+        nodes.length <= 80
+          ? Math.max(
+              radius(node),
+              Array.from(label(node)).reduce(
+                (width, character) =>
+                  width + (character.charCodeAt(0) > 127 ? 12 : 8),
+                0,
+              ) / 2,
+            )
+          : radius(node)
+      left = Math.min(left, (node.x ?? 0) - extent)
+      right = Math.max(right, (node.x ?? 0) + extent)
+      top = Math.min(
+        top,
+        (node.y ?? 0) - (nodes.length <= 80 ? 28 : radius(node)),
+      )
+      bottom = Math.max(bottom, (node.y ?? 0) + radius(node))
+    }
+    const scale = Math.min(
+      1,
+      Math.max(1, size.width - 64) / Math.max(1, right - left),
+      Math.max(1, size.height - 64) / Math.max(1, bottom - top),
+    )
+    return {
+      scale,
+      centered: null,
+      x: (-(left + right) / 2) * scale,
+      y: (-(top + bottom) / 2) * scale,
+    }
+  }
   const node = nodes.find((node) => node.id === view.centered)
   return node
-    ? { x: -(node.x ?? 0) * view.scale, y: -(node.y ?? 0) * view.scale }
-    : { x: view.x, y: view.y }
+    ? {
+        ...view,
+        x: -(node.x ?? 0) * view.scale,
+        y: -(node.y ?? 0) * view.scale,
+      }
+    : view
 }
 export function GraphCanvas({
   graph,
@@ -38,12 +88,9 @@ export function GraphCanvas({
   const svg = useRef<SVGSVGElement>(null)
   const simulation = useRef<Simulation<Node, undefined> | null>(null)
   const [size, setSize] = useState({ width: 640, height: 400 })
-  const [view, setView] = useState<View>({
-    x: 0,
-    y: 0,
-    scale: 1,
-    centered: active,
-  })
+  // Null keeps the overview fitted while the layout settles or the viewport resizes.
+  const [view, setView] = useState<View | null>(null)
+  const previousSelection = useRef({ graph, active })
   const [layout, setLayout] = useState<{ nodes: Node[]; edges: Edge[] }>({
     nodes: [],
     edges: [],
@@ -60,9 +107,16 @@ export function GraphCanvas({
   useEffect(() => {
     const element = svg.current
     if (!element) return
-    const resize = new ResizeObserver(() =>
-      setSize({ width: element.clientWidth, height: element.clientHeight }),
-    )
+    const resize = new ResizeObserver(() => {
+      const width = element.clientWidth,
+        height = element.clientHeight
+      if (width && height)
+        setSize((old) =>
+          old.width === width && old.height === height
+            ? old
+            : { width, height },
+        )
+    })
     resize.observe(element)
     const wheel = (event: WheelEvent) => {
       event.preventDefault()
@@ -70,16 +124,20 @@ export function GraphCanvas({
       const x = event.clientX - bounds.left - bounds.width / 2
       const y = event.clientY - bounds.top - bounds.height / 2
       setView((old) => {
-        const scale = Math.max(
-          0.15,
-          Math.min(4, old.scale * Math.exp(-event.deltaY * 0.002)),
+        const position = cameraPosition(
+          old,
+          simulation.current?.nodes() ?? [],
+          { width: element.clientWidth, height: element.clientHeight },
         )
-        const position = cameraPosition(old, simulation.current?.nodes() ?? [])
+        const scale = Math.max(
+          Math.min(0.01, position.scale),
+          Math.min(4, position.scale * Math.exp(-event.deltaY * 0.002)),
+        )
         return {
           scale,
           centered: null,
-          x: x - ((x - position.x) * scale) / old.scale,
-          y: y - ((y - position.y) * scale) / old.scale,
+          x: x - ((x - position.x) * scale) / position.scale,
+          y: y - ((y - position.y) * scale) / position.scale,
         }
       })
     }
@@ -113,50 +171,49 @@ export function GraphCanvas({
       engine.on('tick', publish)
       publish()
     }
-    setView((old) => ({
-      x: 0,
-      y: 0,
-      centered: old.centered,
-      scale: Math.min(1, 8 / Math.sqrt(Math.max(1, nodes.length))),
-    }))
+    setView(null)
     return () => {
       engine.stop()
       simulation.current = null
     }
   }, [graph])
   useEffect(() => {
-    setView((old) => ({ ...old, centered: active }))
-  }, [active])
-  const position = cameraPosition(view, layout.nodes)
+    const previous = previousSelection.current
+    previousSelection.current = { graph, active }
+    if (previous.graph === graph && previous.active !== active) {
+      if (active && graph.nodes.some((node) => node.id === active))
+        setView((old) => ({
+          ...cameraPosition(old, simulation.current?.nodes() ?? [], size),
+          centered: active,
+        }))
+      else setView(null)
+    }
+  }, [active, graph, size])
+  const position = cameraPosition(view, layout.nodes, size)
   function activate(node: Node) {
-    setView((old) => ({ ...old, centered: node.id }))
+    setView({ ...position, centered: node.id })
     open(node.id)
   }
-  function fit() {
-    if (!layout.nodes.length) return
-    const xs = layout.nodes.map((node) => node.x ?? 0),
-      ys = layout.nodes.map((node) => node.y ?? 0)
-    const left = Math.min(...xs),
-      right = Math.max(...xs),
-      top = Math.min(...ys),
-      bottom = Math.max(...ys)
-    const scale = Math.max(
-      0.15,
-      Math.min(
-        2,
-        (size.width - 100) / Math.max(1, right - left),
-        (size.height - 80) / Math.max(1, bottom - top),
-      ),
-    )
-    setView({
-      scale,
-      centered: null,
-      x: (-(left + right) / 2) * scale,
-      y: (-(top + bottom) / 2) * scale,
+  function zoom(factor: number) {
+    setView((old) => {
+      const current = cameraPosition(old, layout.nodes, size)
+      const scale = Math.max(
+        Math.min(0.01, current.scale),
+        Math.min(4, current.scale * factor),
+      )
+      return {
+        ...current,
+        scale,
+        x: (current.x * scale) / current.scale,
+        y: (current.y * scale) / current.scale,
+      }
     })
   }
   return (
-    <div className="graph-canvas">
+    <div
+      className="graph-canvas"
+      data-labels={layout.nodes.length <= 80 || position.scale >= 0.8}
+    >
       {expand && (
         <IconButton
           className="graph-expand"
@@ -183,17 +240,17 @@ export function GraphCanvas({
           const step = steps[event.key]
           if (step) {
             event.preventDefault()
-            setView((old) => ({
-              ...old,
+            setView({
+              ...position,
               centered: null,
               x: position.x + step[0],
               y: position.y + step[1],
-            }))
+            })
           }
         }}
         onPointerDown={(event) => {
           if (event.button !== 0) return
-          setView((old) => ({ ...old, ...position, centered: null }))
+          setView({ ...position, centered: null })
           const id =
             event.target instanceof Element
               ? event.target.closest('[data-node]')?.getAttribute('data-node')
@@ -229,15 +286,19 @@ export function GraphCanvas({
           current.x = event.clientX
           current.y = event.clientY
           if (current.node) {
-            current.node.fx = (current.node.fx ?? 0) + dx / view.scale
-            current.node.fy = (current.node.fy ?? 0) + dy / view.scale
+            current.node.fx = (current.node.fx ?? 0) + dx / position.scale
+            current.node.fy = (current.node.fy ?? 0) + dy / position.scale
             current.node.x = current.node.fx
             current.node.y = current.node.fy
             if (matchMedia('(prefers-reduced-motion: reduce)').matches)
               simulation.current?.tick(30)
             else simulation.current?.alpha(0.15).restart()
             setLayout((old) => ({ ...old }))
-          } else setView((old) => ({ ...old, x: old.x + dx, y: old.y + dy }))
+          } else
+            setView((old) => {
+              const current = cameraPosition(old, layout.nodes, size)
+              return { ...current, x: current.x + dx, y: current.y + dy }
+            })
         }}
         onPointerUp={(event) => {
           const current = drag.current
@@ -252,7 +313,7 @@ export function GraphCanvas({
       >
         <title>Workspace note connections</title>
         <g
-          transform={`translate(${position.x} ${position.y}) scale(${view.scale})`}
+          transform={`translate(${position.x} ${position.y}) scale(${position.scale})`}
         >
           {layout.edges.map((edge) => (
             <line
@@ -283,35 +344,22 @@ export function GraphCanvas({
               <title>
                 {node.id} · {node.degree} connections
               </title>
-              <circle r={5 + Math.min(7, Math.sqrt(node.degree) * 2)} />
+              <circle r={Math.max(radius(node), 2.5 / position.scale)} />
               <text y={-14} textAnchor="middle">
-                {node.label}
+                {label(node)}
               </text>
             </g>
           ))}
         </g>
       </svg>
       <div className="graph-zoom">
-        <IconButton
-          aria-label="Zoom in"
-          onClick={() =>
-            setView((old) => ({ ...old, scale: Math.min(4, old.scale * 1.25) }))
-          }
-        >
+        <IconButton aria-label="Zoom in" onClick={() => zoom(1.25)}>
           <Plus size={16} />
         </IconButton>
-        <IconButton
-          aria-label="Zoom out"
-          onClick={() =>
-            setView((old) => ({
-              ...old,
-              scale: Math.max(0.15, old.scale / 1.25),
-            }))
-          }
-        >
+        <IconButton aria-label="Zoom out" onClick={() => zoom(1 / 1.25)}>
           <Minus size={16} />
         </IconButton>
-        <IconButton aria-label="Fit graph" onClick={fit}>
+        <IconButton aria-label="Fit graph" onClick={() => setView(null)}>
           <Focus size={16} />
         </IconButton>
       </div>

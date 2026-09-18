@@ -1,11 +1,15 @@
 .graph-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 .graph-controls > input.ui-field {
   flex-basis: 100%;
 }
-.graph-summary {
+.graph-panel .graph-summary {
   color: var(--muted);
   font-size: var(--text-xs);
 }
@@ -15,6 +19,8 @@
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
 }
 .graph-expanded-placeholder {
   aspect-ratio: 1;
@@ -33,13 +39,15 @@
   top: var(--space-1);
   right: var(--space-1);
   z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 .graph-connections {
   margin-inline: calc(-1 * var(--space-3));
 }
 .graph-connections h3,
 .graph-connections p {
-  padding-inline: var(--space-4);
+  padding-inline: var(--space-3);
   color: var(--muted);
   font-size: var(--text-xs);
 }
@@ -75,7 +83,8 @@
 }
 .graph-canvas line {
   stroke: var(--border);
-  stroke-width: 1.5;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 .graph-canvas [data-node] {
   cursor: pointer;
@@ -84,12 +93,16 @@
 .graph-canvas circle {
   fill: var(--muted);
   stroke: var(--background);
-  stroke-width: 2;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 .graph-canvas text {
   fill: var(--muted);
   font: var(--text-xs) var(--font-ui);
   user-select: none;
+}
+.graph-canvas[data-labels="false"] text {
+  display: none;
 }
 .graph-canvas
   [data-node]:is(:hover, :focus-visible, [data-active="true"])
@@ -108,4 +121,8 @@
   bottom: var(--space-2);
   display: flex;
   gap: var(--space-1);
+  padding: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
 }

@@ -16,7 +16,7 @@ Hibi creates a new folder for each static export. It does not replace previous e
 
 Set the site title, logo, and favicon in the export dialog. Choose light and dark themes, or use **CSS overrides** to change styles. **Lock theme** hides the reader’s appearance picker and keeps your selected themes.
 
-Enable the **Graph** addon before exporting to include the note graph. You can turn **Include graph** off for an individual export.
+Enable the **Graph** addon before exporting to include the [note graph](../editing/graph-and-tags.md). You can turn **Include graph** off for an individual export.
 
 ## Search and sharing
 
