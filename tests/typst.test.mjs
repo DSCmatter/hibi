@@ -255,7 +255,7 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   await app.evaluate(({ dialog }, path) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: path })
   }, output)
-  await choose('export documentation')
+  await choose('export workspace to html')
   await page.getByText(/exported 3 pages/i).waitFor()
   const html = await readFile(output, 'utf8')
   assert.match(html, /data:image\/svg\+xml;base64,/)

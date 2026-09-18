@@ -656,7 +656,6 @@
     "src/renderer/src/Editor.tsx"
   ],
   "c205924de0fe": [
-    "src/addons/documentation/manifest.ts",
     "src/site/main.tsx"
   ],
   "a6a233872858": [
@@ -858,7 +857,8 @@
     "src/addons/frontmatter/Settings.tsx"
   ],
   "3664895579f0": [
-    "src/addons/_shared/format-renderer.tsx"
+    "src/addons/_shared/format-renderer.tsx",
+    "src/addons/documentation/manifest.ts"
   ],
   "7aad9d490352": [
     "src/addons/typst/Preview.tsx"
@@ -869,14 +869,7 @@
   "94b16a7c8bcf": [
     "src/addons/typst/Block.tsx"
   ],
-  "6d06cfc6af15": [
-    "src/addons/documentation/manifest.ts"
-  ],
   "a5c1b2b5e1d5": [
-    "src/main/addons.ts"
-  ],
-  "20b26a43bdbe": [
-    "src/addons/documentation/index.ts",
     "src/main/addons.ts"
   ],
   "423a85dca9b6": [
@@ -887,6 +880,13 @@
   ],
   "1be2e5ce4ccb": [
     "src/addons/typst/Preview.tsx"
+  ],
+  "c48ede563ddf": [
+    "src/addons/documentation/index.ts",
+    "src/main/addons.ts"
+  ],
+  "2ca838317ae1": [
+    "src/addons/documentation/manifest.ts"
   ],
   "616f48c1db19": [
     "src/addons/frontmatter/Properties.tsx"

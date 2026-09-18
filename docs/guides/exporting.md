@@ -1,12 +1,12 @@
-# Export documentation
+# Export a workspace to HTML
 
-Use the Documentation addon to share a folder of notes as one HTML file.
+Use the Export addon to share a folder of notes as one HTML file.
 
 ## Export a folder
 
-1. Open your documentation folder as a workspace.
-2. Enable **Documentation** under **Settings → Addons**.
-3. Run **Export documentation** from the command palette.
+1. Open the folder as a workspace.
+2. Enable **Export** under **Settings → Addons**.
+3. Run **Export workspace to HTML** from the command palette.
 4. Choose where to save the `.html` file.
 
 Open the result from disk, or upload it to a static website host, usually as `index.html`.

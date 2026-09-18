@@ -169,7 +169,7 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: /^addons$/i, exact: true }).click()
   const enabled = page.getByRole('checkbox', {
-    name: /^documentation$/i,
+    name: /^export$/i,
     exact: true,
   })
   await enabled.click()
@@ -214,7 +214,7 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
     process.platform === 'darwin' ? 'Meta+k' : 'Control+k',
   )
   const exportSearch = page.getByRole('combobox', { name: /search commands/i })
-  await exportSearch.fill('export documentation')
+  await exportSearch.fill('export workspace to html')
   await exportSearch.press('Enter')
   await page
     .getByRole('status')

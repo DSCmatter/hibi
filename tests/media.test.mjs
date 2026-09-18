@@ -171,7 +171,7 @@ test('file picker and drops attach media safely, stream videos, and move/open wo
     },
     join(root, 'site.html'),
   )
-  await choose('export documentation')
+  await choose('export workspace to html')
   await page.getByText(/exported .*pages/i).waitFor()
   const nextWindow = app.waitForEvent('window')
   const exported = await app.evaluateHandle(

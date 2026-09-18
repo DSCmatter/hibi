@@ -6,7 +6,7 @@ export default defineAddon({
   start(context) {
     context.commands.register({
       id: 'export',
-      label: 'Export documentation',
+      label: 'Export workspace to HTML',
       async run() {
         const workspace =
           (await context.workspace.get()) ?? (await context.workspace.open())

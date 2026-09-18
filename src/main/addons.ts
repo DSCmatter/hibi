@@ -334,7 +334,7 @@ export async function invokeAddon(
     },
     async exportHtml(html, suggestedName, pages) {
       const result = await dialog.showSaveDialog(window, {
-        title: 'Export documentation',
+        title: 'Export workspace to HTML',
         defaultPath: basename(suggestedName),
         filters: [{ name: 'HTML', extensions: ['html'] }],
       })

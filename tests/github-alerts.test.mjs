@@ -135,7 +135,7 @@ test('github alerts edit in rich/split view, keep markers, and export with theme
   await pressShortcut(app, `${mod}+k`)
   await page
     .getByRole('combobox', { name: /search commands/i })
-    .fill('export documentation')
+    .fill('export workspace to html')
   await page.getByRole('option').first().click()
   await page.getByText(/exported 1 page\b/i).waitFor()
   const next = app.waitForEvent('window')
