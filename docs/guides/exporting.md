@@ -8,7 +8,7 @@ Review the folder before sharing it. The export includes its supported documents
 
 **Single HTML file** is on by default. Open the file from disk or upload it as `index.html`. Its pages use `#page=` links, and search engines see the starting page.
 
-Turn off **Single HTML file** to create a static folder. Each document gets a pre-rendered page with a URL such as `/development/README.md/`. Upload the whole folder to your website host. Links also work without the trailing slash on hosts that redirect directory URLs. The export includes separate JavaScript and CSS files, making it easier to edit after exporting.
+Turn off **Single HTML file** to use the experimental static-folder export. Each document gets a pre-rendered page with a URL such as `/development/README.md/`. Upload the whole folder to your website host. Links also work without the trailing slash on hosts that redirect directory URLs. The export includes separate JavaScript and CSS files, making it easier to edit after exporting.
 
 Hibi creates a new folder for each static export. It does not replace previous exports. A root `README.md` or `index.md` becomes the starting page.
 

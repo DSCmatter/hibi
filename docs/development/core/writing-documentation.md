@@ -23,7 +23,7 @@ npm run export:docs
 
 Open `out/docs/index.html` in a browser. Check navigation, links, code samples, and narrow layouts. Markdown files under `docs/` are included automatically, except `ai-agents/`.
 
-For a static folder with pre-rendered pages and clean URLs, choose a new output directory and pass the published site URL:
+For the experimental static-folder export with pre-rendered pages and clean URLs, choose a new output directory and pass the published site URL:
 
 ```sh
 node scripts/export-docs.mjs docs out/docs-site --static --url https://example.com/docs/

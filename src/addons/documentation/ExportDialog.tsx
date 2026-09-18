@@ -115,6 +115,12 @@ export function ExportDialog({
               : 'A folder with clean URLs and a separate HTML page for each document.',
           )}
         </div>
+        {!options.singleFile && (
+          <DocumentNotice
+            variant="warning"
+            title="Static-folder export is experimental."
+          />
+        )}
         <details className="ui-disclosure" open>
           <summary>
             <ChevronRight size={14} aria-hidden />

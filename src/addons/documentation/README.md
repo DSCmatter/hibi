@@ -1,6 +1,6 @@
 # Export
 
-Export your workspace as a website. Keep it in one HTML file, or create a static folder with clean page URLs.
+Export your workspace as a website. Keep it in one HTML file, or use the experimental static-folder export for clean page URLs.
 
 Turn on **Export** in **Settings → Addons** and open a workspace. Choose **Export workspace to HTML** from the command palette to set the site’s title, logo, favicon, themes, SEO, CSS overrides, and password protection. The note graph is available when **Graph** is enabled.
 
