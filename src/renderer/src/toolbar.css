@@ -10,10 +10,10 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
   background: var(--surface);
+  -webkit-app-region: no-drag;
 }
 .editor-toolbar .ui-button {
   position: relative;
-  cursor: grab;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -110,22 +110,6 @@
   .toolbar-menu {
     transition: none;
   }
-}
-.editor-toolbar [data-drop]::before {
-  content: "";
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  border-radius: 0;
-  background: var(--accent);
-  pointer-events: none;
-}
-.editor-toolbar [data-drop="before"]::before {
-  left: -3px;
-}
-.editor-toolbar [data-drop="after"]::before {
-  right: -3px;
 }
 .toolbar-order {
   margin-top: var(--space-3);

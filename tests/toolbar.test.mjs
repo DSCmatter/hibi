@@ -167,7 +167,7 @@ test('toolbar auto-hide defaults on, shares top-bar timing, and moves content sm
   )
 })
 
-test('markdown toolbar formats both panes, preserves undo, and persists drag ordering', {
+test('markdown toolbar formats both panes without dragging and reorders only in settings', {
   timeout: 60000,
 }, async (t) => {
   const profile = await mkdtemp(join(tmpdir(), 'hibi-toolbar-'))
@@ -392,46 +392,59 @@ test('markdown toolbar formats both panes, preserves undo, and persists drag ord
     animations: 'disabled',
   })
 
-  // Real native drag on the toolbar, then drag and keyboard moves in settings.
-  const transfer = await page.evaluateHandle(() => new DataTransfer())
-  await action('bold').dispatchEvent('dragstart', { dataTransfer: transfer })
-  const targetBounds = await action('undo').boundingBox()
-  await action('undo').dispatchEvent('dragover', {
-    dataTransfer: transfer,
-    clientX: targetBounds.x + 1,
-    clientY: targetBounds.y + 10,
+  const toolbarOrder = () =>
+    bar
+      .locator(':scope > button[data-toolbar-id]')
+      .evaluateAll((buttons) =>
+        buttons.map((button) => button.dataset.toolbarId),
+      )
+  const originalOrder = await toolbarOrder()
+  assert.equal(await bar.locator('[draggable="true"]').count(), 0)
+  assert.equal(
+    await bar.evaluate((element) =>
+      getComputedStyle(element).getPropertyValue('-webkit-app-region'),
+    ),
+    'no-drag',
+  )
+  for (const target of [action('bold'), action('bold').locator('svg')]) {
+    await target.hover()
+    assert.equal(
+      await target.evaluate((element) => getComputedStyle(element).cursor),
+      'pointer',
+    )
+  }
+  await bar.evaluate((element) => {
+    window.toolbarDragStarts = 0
+    element.addEventListener('dragstart', () => window.toolbarDragStarts++)
   })
-  await page.waitForFunction(
-    () =>
-      document.querySelector('.editor-toolbar [data-toolbar-id="format.undo"]')
-        .dataset.drop === 'before',
-  )
-  assert.deepEqual(
-    await action('undo').evaluate((element) => {
-      const marker = getComputedStyle(element, '::before')
-      return {
-        width: marker.width,
-        radius: marker.borderRadius,
-        shadow: getComputedStyle(element).boxShadow,
-      }
-    }),
-    { width: '2px', radius: '0px', shadow: 'none' },
-  )
-  await action('bold').dispatchEvent('dragend', { dataTransfer: transfer })
-  await transfer.dispose()
   await action('italic').dragTo(action('undo'), {
     targetPosition: { x: 1, y: 10 },
   })
   assert.equal(await read(), '*split text*')
+  assert.deepEqual(await toolbarOrder(), originalOrder)
+  assert.equal(await page.evaluate(() => window.toolbarDragStarts), 0)
   assert.equal(
-    await bar.getByRole('button').first().getAttribute('data-toolbar-id'),
-    'format.italic',
+    await action('bold').evaluate((button) => {
+      const event = new DragEvent('dragstart', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: new DataTransfer(),
+      })
+      button.dispatchEvent(event)
+      return event.defaultPrevented
+    }),
+    true,
   )
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: /^appearance$/i, exact: true }).click()
   await page.locator('.toolbar-order summary').click()
   const order = page.getByRole('list', { name: /toolbar order/i })
   const row = (id) => order.locator(`[data-toolbar-id="format.${id}"]`)
+  await row('italic').dragTo(row('undo'), { targetPosition: { x: 1, y: 10 } })
+  assert.equal(
+    await order.locator('li').first().getAttribute('data-toolbar-id'),
+    'format.italic',
+  )
   await row('bold').dragTo(row('italic'), { targetPosition: { x: 10, y: 1 } })
   assert.equal(
     await order.locator('li').first().getAttribute('data-toolbar-id'),

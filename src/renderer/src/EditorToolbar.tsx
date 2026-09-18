@@ -26,29 +26,19 @@ import type { ViewMode } from './Editor'
 import { toolbar } from './toolbar'
 import './toolbar.css'
 
-function useReorder(axis: 'x' | 'y') {
+function useReorder() {
   const dragged = useRef('')
-  const returnFocus = useRef<HTMLElement | null>(null)
   const [target, setTarget] = useState<{ id: string; after: boolean } | null>(
     null,
   )
   const clear = () => {
     dragged.current = ''
     setTarget(null)
-    returnFocus.current?.focus()
-    returnFocus.current = null
   }
   return {
     target,
     props: (id: string) => ({
       draggable: true,
-      onPointerDown() {
-        if (axis === 'x')
-          returnFocus.current =
-            document.activeElement?.closest<HTMLElement>(
-              '.cm-content, .tiptap',
-            ) ?? null
-      },
       onDragStart(event: DragEvent<HTMLElement>) {
         dragged.current = id
         event.dataTransfer.setData('application/x-hibi-toolbar-item', id)
@@ -59,10 +49,7 @@ function useReorder(axis: 'x' | 'y') {
         event.preventDefault()
         event.dataTransfer.dropEffect = 'move'
         const rect = event.currentTarget.getBoundingClientRect()
-        const after =
-          axis === 'x'
-            ? event.clientX > rect.left + rect.width / 2
-            : event.clientY > rect.top + rect.height / 2
+        const after = event.clientX > rect.left + rect.width / 2
         setTarget({ id, after })
       },
       onDrop(event: DragEvent<HTMLElement>) {
@@ -85,7 +72,6 @@ export function EditorToolbar({
   mode: ViewMode
   typing?: boolean
 }) {
-  const reorder = useReorder('x')
   const row = useRef<HTMLElement>(null)
   const probe = useRef<HTMLDivElement>(null)
   const more = useRef<HTMLButtonElement>(null)
@@ -176,13 +162,13 @@ export function EditorToolbar({
           className="editor-toolbar"
           aria-label="Editor toolbar"
           data-mode={preferences.mode}
+          onDragStart={(event) => event.preventDefault()}
         >
           {visible.slice(0, count).map((item) => {
             return (
               <Button
                 key={item.id}
                 data-toolbar-id={item.id}
-                {...reorder.props(item.id)}
                 aria-label={item.label}
                 aria-pressed={item.pressed}
                 disabled={item.disabled}
@@ -298,7 +284,7 @@ function ActionContent({
 }
 
 export function ToolbarSettings() {
-  const reorder = useReorder('x')
+  const reorder = useReorder()
   const [selected, setSelected] = useState<string | null>(null)
   const help = useId()
   const { preferences, items } = useSyncExternalStore(
