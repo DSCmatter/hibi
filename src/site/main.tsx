@@ -83,7 +83,14 @@ for (const page of pages) {
     else {
       let folder = siblings.find((item) => item.id === path)
       if (!folder) {
-        folder = { id: path, label: name, icon: Folder, children: [] }
+        const overview =
+          byPath.get(`${path}/README.md`) ?? byPath.get(`${path}/index.md`)
+        folder = {
+          id: path,
+          label: overview?.title ?? name,
+          icon: Folder,
+          children: [],
+        }
         siblings.push(folder)
       }
       siblings = folder.children ?? []

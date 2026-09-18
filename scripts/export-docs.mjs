@@ -1,10 +1,24 @@
 import { mkdir, readdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { Marked } from 'marked'
 import {
   imageSources,
   readDocumentImage,
   resolveDocumentMediaPath,
 } from '../src/main/images.ts'
+import { codeHtml, codeLanguages } from '../src/renderer/src/code-languages.ts'
+
+const markdownParser = new Marked({
+  async: true,
+  walkTokens(token) {
+    if (token.type === 'code') return codeLanguages.ensure(token.lang ?? '')
+  },
+  renderer: {
+    code({ text, lang }) {
+      return `<pre><code>${codeHtml(text, lang ?? '')}</code></pre>`
+    },
+  },
+})
 
 const root = await realpath(resolve(process.argv[2] ?? 'docs'))
 const output = resolve(process.argv[3] ?? 'out/docs/index.html')
@@ -34,6 +48,7 @@ for (const file of files) {
   pages.push({
     path: relative(root, file).split(sep).join('/'),
     markdown,
+    html: await markdownParser.parse(markdown),
     images,
   })
 }

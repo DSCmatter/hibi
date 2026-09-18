@@ -25,9 +25,9 @@ Start with [editing](guides/editing.md), or choose a topic below.
 
 ## Share your work
 
-- [Export documentation as HTML](guides/exporting.md)
+- [Export a workspace to HTML](guides/exporting.md)
 - [Typst documents and PDF export](editing/typst.md)
 
 ## Build or extend Hibi
 
-[Developer and agent notes](https://github.com/schmayterling/hibi/blob/main/docs/ai-agents/README.md) cover the source code, builds, tests, addon APIs, and contribution rules.
+[Development guides](development/README.md) cover building addons and contributing to Hibi. Look up types and methods in the [addon API reference](development/addon-api-reference/README.md).

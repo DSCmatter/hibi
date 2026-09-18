@@ -1,7 +1,7 @@
 # Development instructions
 
 - Keep core code, the renderer, shared UI, and addons separate. Never run workspace content as addon code.
-- Put user help in `docs/` and development notes in `docs/ai-agents/`. Every addon needs a user-facing `README.md`.
+- Put user help in `docs/` and contributor guides in `docs/development/`. Keep internal agent instructions and investigation notes in `docs/ai-agents/`. Every addon needs a user-facing `README.md`.
 - Update documentation when behavior changes. After a public API change, run `npm run docs` and `npm run docs:check`.
 - Write user-facing explanations in complete sentences and paragraphs. Include only what helps someone use the feature; keep implementation details in technical documentation. Labels and buttons can be short. Terse working-chat styles do not apply to product copy or documentation.
 - Preserve API compatibility. Breaking SDK changes need an API version bump and addon migrations.

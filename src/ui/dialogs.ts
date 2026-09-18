@@ -32,12 +32,18 @@ export type PromptDialogOptions = MessageDialogOptions & {
   validate?: (value: string) => string | null
 }
 
+/** Open dialogs that share the app's focus handling and keyboard controls. */
 export type DialogApi = {
+  /** Open custom content and receive a handle for closing it or awaiting its result. */
   open: <T = void>(options: DialogOptions<T>) => DialogHandle<T>
+  /** Show a message and wait for dismissal. */
   alert: (options: MessageDialogOptions) => Promise<void>
+  /** Ask for confirmation. Cancellation returns false. */
   confirm: (
     options: MessageDialogOptions & { cancelLabel?: string },
   ) => Promise<boolean>
+  /** Ask for a text value. Cancellation returns null. */
   prompt: (options: PromptDialogOptions) => Promise<string | null>
+  /** Report whether a shared dialog is currently open. */
   isOpen: () => boolean
 }

@@ -190,15 +190,15 @@ test('development watches renderer, preload, addons, and generators', {
     )
   }
   t.diagnostic('preload updated, draft retained, other navigation blocked')
-  await replace('scripts/docs.mjs', '[Source:', '[Updated source:')
+  await replace('scripts/addon-reference.mjs', '[Source]', '[Updated source]')
   await until(
     async () =>
       (
         await readFile(
-          join(root, 'docs/ai-agents/reference/sidebar-api.md'),
+          join(root, 'docs/development/addon-api-reference/Sidebar.md'),
           'utf8',
         )
-      ).includes('[Updated source:'),
+      ).includes('[Updated source]'),
     'documentation generator reloads',
   )
   t.diagnostic('documentation generator updated')

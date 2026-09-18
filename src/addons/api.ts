@@ -83,6 +83,7 @@ export function compatibleAddonManifest(manifest: {
   )
 }
 
+/** Metadata used to list an addon before its code loads. */
 export type AddonManifest = {
   id: string
   name: string
@@ -337,6 +338,7 @@ export type SidebarApi = {
   register: (view: SidebarView) => SidebarHandle
 }
 
+/** APIs available while your renderer addon is enabled. Registrations are removed when it stops. */
 export type AddonContext = {
   colorschemes: {
     register: (scheme: ColorschemeInput) => () => void
@@ -355,14 +357,17 @@ export type AddonContext = {
   patches: PatchApi
   statusBar: { register: (item: StatusItem) => StatusHandle }
   editor: {
+    /** Read the active document, or null when no editor document is available. */
     getDocument: () => Readonly<
       import('../shared/desktop').DocumentState
     > | null
+    /** Subscribe to active-document changes. Returns a function that removes the listener. */
     onDocumentChange: (
       listener: (
         document: Readonly<import('../shared/desktop').DocumentState>,
       ) => void,
     ) => () => void
+    /** Add a format's editor, preview, and export behavior. Returns a function that unregisters it. */
     registerDocumentFormat: (format: DocumentFormat) => () => void
     /** Async document export, including registered format renderers and flavor transforms. */
     renderDocument: (
@@ -431,6 +436,7 @@ export type AddonContext = {
   notify: (message: string) => void
 }
 
+/** A renderer addon and its lifecycle hooks. Use defineAddon to check this contract in source addons. */
 export type Addon = {
   manifest: AddonManifest
   start: (context: AddonContext) => void | Promise<void>
@@ -470,6 +476,7 @@ export type NativeAddonContext = {
   ) => Promise<ExportResult | null>
 }
 
+/** Native handlers compiled with Hibi. Sideloaded renderer packages cannot register these handlers. */
 export type NativeAddon = {
   id: string
   stop?: () => void
@@ -484,6 +491,11 @@ export type NativeAddon = {
   >
 }
 
+/**
+ * Check an addon definition without changing it.
+ * @param addon The manifest, lifecycle hooks, and optional settings component.
+ * @returns The same addon definition.
+ */
 export function defineAddon(addon: Addon): Addon {
   return addon
 }
