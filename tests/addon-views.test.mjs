@@ -145,7 +145,10 @@ test('scoped views preserve sessions, pin documents, contain lazy failures, and 
   assert.equal(await page.locator('.addon-panel:not([hidden])').count(), 0)
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: 'Addons', exact: true }).click()
-  await page.locator('#addon-view-fixture').uncheck()
+  await page.locator('#addon-view-fixture').click()
+  await page.waitForFunction(
+    () => document.querySelector('#addon-view-fixture')?.checked === false,
+  )
   await page.getByRole('button', { name: 'Back to app', exact: true }).click()
   assert.equal(await page.locator('[data-addon-view]').count(), 0)
   assert.equal(await editor.textContent(), 'still editable')
