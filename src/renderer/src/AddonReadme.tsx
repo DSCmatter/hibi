@@ -111,6 +111,12 @@ export default function AddonReadme({ id }: { id: string }) {
           continue
         }
         if (/^https?:\/\//i.test(source) || source.startsWith('//')) {
+          if (image.closest('a')) {
+            image.replaceWith(
+              window.document.createTextNode(image.alt || 'View image'),
+            )
+            continue
+          }
           const link = window.document.createElement('a')
           link.href = source.startsWith('//') ? `https:${source}` : source
           link.textContent = image.alt || 'View image'
@@ -120,8 +126,13 @@ export default function AddonReadme({ id }: { id: string }) {
         const resource = imageData.test(source)
           ? source
           : !external.test(source)
-            ? await window.hibi
-                .getAddonDocumentation(id, localPath(path, source))
+            ? await Promise.resolve()
+                .then(() =>
+                  window.hibi.getAddonDocumentation(
+                    id,
+                    localPath(path, source),
+                  ),
+                )
                 .then((value) =>
                   value.kind === 'image' ? value.content : null,
                 )

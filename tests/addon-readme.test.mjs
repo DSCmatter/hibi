@@ -29,7 +29,10 @@ test('addon readmes render safely without activation, and settings headers have 
     'hibi-addon.json',
     'escape.md',
   ]
-  await writeFile(join(folder, 'README.md'), source)
+  await writeFile(
+    join(folder, 'README.md'),
+    `${source}\n\n![Malformed image](bad%zz.png)\n\n[![CI](https://example.com/badge.svg)](https://example.com/build)`,
+  )
   await writeFile(
     join(folder, 'guide.md'),
     '# More help\n\n[Back to readme](README.md)',
@@ -146,6 +149,7 @@ test('addon readmes render safely without activation, and settings headers have 
   assert.equal(await modal.locator('table td').count(), 2)
   assert.equal(await modal.getByRole('checkbox').isChecked(), true)
   assert.equal(await modal.getByRole('checkbox').isDisabled(), true)
+  await modal.getByText('Malformed image', { exact: true }).waitFor()
   await page.waitForFunction(
     () => document.querySelector('.addon-readme img')?.naturalWidth > 0,
   )
@@ -155,6 +159,11 @@ test('addon readmes render safely without activation, and settings headers have 
   )
   assert.equal(await page.evaluate(() => window.readmeAttack), undefined)
   assert.equal(await page.evaluate(() => window.readmeAddonExecuted), undefined)
+  await modal.getByRole('link', { name: 'CI', exact: true }).click()
+  assert.equal(
+    await app.evaluate(() => globalThis.readmeLink),
+    'https://example.com/build',
+  )
   await modal.getByRole('link', { name: 'Website' }).click()
   assert.equal(
     await app.evaluate(() => globalThis.readmeLink),
@@ -214,6 +223,23 @@ test('addon readmes render safely without activation, and settings headers have 
   await keyReadme.screenshot({ path: '.cache/addon-readme.png' })
   await page.keyboard.press('Escape')
   await keyReadme.waitFor({ state: 'hidden' })
+  await app.evaluate(({ BrowserWindow, nativeTheme }) => {
+    BrowserWindow.getAllWindows()[0].setSize(480, 720)
+    nativeTheme.themeSource = 'dark'
+  })
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  await page.waitForFunction(() => innerWidth === 480)
+  await page.getByRole('tab', { name: 'Addons', exact: true }).click()
+  await filter.fill('readme fixture')
+  const bounds = await row.evaluate((element) => {
+    const row = element.getBoundingClientRect()
+    const actions = element
+      .querySelector('.addon-actions')
+      .getBoundingClientRect()
+    return { left: actions.left - row.left, right: row.right - actions.right }
+  })
+  assert.ok(bounds.left >= -1 && bounds.right >= -1, JSON.stringify(bounds))
+  await row.screenshot({ path: '.cache/addon-preview-narrow-dark.png' })
   assert.equal(
     JSON.parse(await readFile(join(root, 'addons.json'), 'utf8'))[
       'readme-fixture'
