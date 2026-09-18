@@ -182,12 +182,15 @@ export function SettingRow({
   description,
   children,
   hidden = false,
+  details,
 }: {
   id: string
   label: string
   description?: ReactNode
   children: ReactNode
   hidden?: boolean
+  /** Open a detail dialog from the row while leaving its controls independent. */
+  details?: { label: string; onOpen: () => void }
 }) {
   const row = useRef<HTMLDivElement>(null)
   const displayLabel = sentenceCase(label)
@@ -198,22 +201,41 @@ export function SettingRow({
   }, [discover, id, displayLabel])
   return (
     <div
-      className="setting-row"
+      className={`setting-row${details ? ' setting-row-openable' : ''}`}
       data-setting-id={id}
       tabIndex={-1}
       ref={row}
       hidden={hidden}
     >
-      <div className="setting-copy">
-        <label htmlFor={id}>{displayLabel}</label>
-        {description != null && (
-          <p id={`${id}-description`}>
-            {typeof description === 'string'
-              ? sentenceCase(description)
-              : description}
-          </p>
-        )}
-      </div>
+      {details ? (
+        <button
+          type="button"
+          className="setting-copy setting-row-action"
+          aria-label={details.label}
+          aria-haspopup="dialog"
+          onClick={details.onOpen}
+        >
+          <span className="setting-label">{displayLabel}</span>
+          {description != null && (
+            <span className="setting-description" id={`${id}-description`}>
+              {typeof description === 'string'
+                ? sentenceCase(description)
+                : description}
+            </span>
+          )}
+        </button>
+      ) : (
+        <div className="setting-copy">
+          <label htmlFor={id}>{displayLabel}</label>
+          {description != null && (
+            <p id={`${id}-description`}>
+              {typeof description === 'string'
+                ? sentenceCase(description)
+                : description}
+            </p>
+          )}
+        </div>
+      )}
       {children}
     </div>
   )

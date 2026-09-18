@@ -4,7 +4,7 @@ Use Hibi's shared controls so your addon follows the app's spacing, colors, and 
 
 ## Add a settings page
 
-An addon can provide a `Settings` component. Hibi supplies the page title, description, metadata, and readme button. Put your controls inside the component without repeating that heading.
+An addon can provide a `Settings` component. Hibi supplies the page title, description, and metadata. The title opens the addon’s readme. Put your controls inside the component without repeating that heading.
 
 This local example stores a greeting for the command from the first guide. Rename `index.ts` to `index.tsx` to use JSX.
 

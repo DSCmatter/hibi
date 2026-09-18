@@ -14,6 +14,7 @@ test('plain text stays literal and disabled addons stay out of formats', {
   await writeFile(file, '# plain **text**\n$x^2$')
   const app = await electron.launch({
     args: [resolve('.'), `--user-data-dir=${join(temp, 'profile')}`],
+    colorScheme: 'dark',
   })
   t.after(async () => {
     await app.evaluate(({ dialog }) => {
@@ -61,6 +62,32 @@ test('plain text stays literal and disabled addons stay out of formats', {
     0,
   )
   await pressShortcut(app, `${mod}+,`)
+  await page.getByRole('tab', { name: 'Formats', exact: true }).click()
+  const intro = page.locator('.formats-intro')
+  await intro.getByRole('status').waitFor()
+  assert.equal(
+    await intro.locator('.document-notice').getAttribute('data-variant'),
+    'warning',
+  )
+  assert.match(
+    await intro.getByRole('status').innerText(),
+    /Install Hibi to choose it as your default app/,
+  )
+  assert.ok(await intro.locator('svg.lucide-triangle-alert').count())
+  const gaps = await intro.evaluate((element) => {
+    const description = element.querySelector('p').getBoundingClientRect()
+    const notice = element
+      .querySelector('.document-notice')
+      .getBoundingClientRect()
+    const filter = document
+      .querySelector('#formats-filter')
+      .getBoundingClientRect()
+    return [notice.top - description.bottom, filter.top - notice.bottom]
+  })
+  assert.ok(gaps.every((gap) => gap >= 12))
+  await page.screenshot({ path: 'test-results/formats-warning.png' })
+  await intro.getByRole('link', { name: 'Addons', exact: true }).click()
+  await page.getByRole('tabpanel', { name: 'Addons', exact: true }).waitFor()
   await page.getByRole('tab', { name: 'Formats', exact: true }).click()
   assert.equal(
     await page

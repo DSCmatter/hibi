@@ -2614,9 +2614,6 @@
   "dcc839a4015c": [
     "src/main/index.ts"
   ],
-  "a0c4152d1416": [
-    "src/renderer/src/AddonSettings.tsx"
-  ],
   "c71ba099f440": [
     "src/addons/vim/manifest.ts"
   ],
@@ -2842,6 +2839,10 @@
   ],
   "d25d00eae8e4": [
     "src/addons/_shared/format-renderer.tsx"
+  ],
+  "e544c8790998": [
+    "src/renderer/src/AddonSettings.tsx",
+    "src/renderer/src/SettingsScreen.tsx"
   ],
   "6fd89f885213": [
     "src/renderer/src/NotificationSettings.tsx"

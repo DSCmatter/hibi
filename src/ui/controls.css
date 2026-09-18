@@ -318,6 +318,14 @@ span.select-control > svg {
   font-weight: 500;
   margin-bottom: 4px;
 }
+.document-notice .document-notice-title:last-child {
+  margin-bottom: 0;
+}
+.document-notice[data-variant="warning"] {
+  color: var(--status-warning);
+  background: color-mix(in srgb, var(--status-warning) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--status-warning) 40%, var(--border));
+}
 * {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;

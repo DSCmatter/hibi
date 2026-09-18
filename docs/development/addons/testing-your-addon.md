@@ -25,4 +25,4 @@ Use `tests/electron.mjs` for Electron tests. Give each test a temporary profile 
 
 Install the compiled package in a separate profile, then run its features, disable it, replace it, and remove it. This catches missing assets and imports that work in the source tree but not in an installed package.
 
-Check the readme in Hibi's **View readme** dialog. Its relative images and documentation links should stay within the package.
+Click your addon’s row in **Settings → Addons** to check its readme. Its relative images and documentation links should stay within the package.

@@ -6,6 +6,7 @@ import {
   fileAssociations,
 } from '../../shared/file-associations'
 import { Button, SettingRow, Toggle } from '../../ui/Controls'
+import { DocumentNotice } from '../../ui/DocumentNotice'
 import { SettingsFilter } from '../../ui/SettingsFilter'
 import { useToasts } from '../../ui/Sonner'
 
@@ -110,15 +111,28 @@ export function FormatsSettings({
   return (
     <>
       <h1>Formats</h1>
-      <p className="plugin-description">
-        Enable more document formats in{' '}
-        <Button onClick={() => open('addons')}>Addons</Button>.
-      </p>
-      {associations && !associations.available && (
+      <div className="formats-intro">
         <p className="plugin-description">
-          Install Hibi to choose it as your default app.
+          Enable more document formats in{' '}
+          {/* biome-ignore lint/a11y/useValidAnchor: this link selects its settings panel instead of scrolling to the hidden panel. */}
+          <a
+            href="#settings-addons"
+            onClick={(event) => {
+              event.preventDefault()
+              open('addons')
+            }}
+          >
+            Addons
+          </a>
+          .
         </p>
-      )}
+        {associations && !associations.available && (
+          <DocumentNotice
+            variant="warning"
+            title="Install Hibi to choose it as your default app."
+          />
+        )}
+      </div>
       <SettingsFilter
         id="formats-filter"
         label="Filter formats"

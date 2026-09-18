@@ -128,6 +128,29 @@ test('addon readmes render safely without activation, and settings headers have 
           .top - panel.querySelector('h1').getBoundingClientRect().bottom,
     )
   assert.ok(gap >= 12, `heading gap: ${gap}`)
+  const keyInsets = await page
+    .locator('.hotkey-recorder:has(kbd)')
+    .evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const last = button
+          .querySelector('kbd:last-child')
+          .getBoundingClientRect()
+        return Math.abs(
+          button.getBoundingClientRect().right -
+            last.right -
+            Number.parseFloat(getComputedStyle(button).paddingRight),
+        )
+      }),
+    )
+  assert.ok(
+    keyInsets.every((inset) => inset < 1),
+    'shortcut keys align with the right padding',
+  )
+  await mkdir('.cache', { recursive: true })
+  await page.locator('.settings-content').evaluate((element) => {
+    element.scrollTop = 0
+  })
+  await page.screenshot({ path: '.cache/hotkeys-aligned.png' })
   await page.getByRole('tab', { name: 'Addons', exact: true }).click()
   const filter = page.getByRole('searchbox', {
     name: 'Filter addons',
@@ -136,8 +159,14 @@ test('addon readmes render safely without activation, and settings headers have 
   await filter.fill('readme fixture')
   const row = page.locator('[data-setting-id="addon-readme-fixture"]')
   assert.equal(await row.getByRole('checkbox').isChecked(), false)
-  const button = row.getByRole('button', { name: 'View readme', exact: true })
-  await button.click()
+  const button = row.getByRole('button', {
+    name: 'Readme fixture readme',
+    exact: true,
+  })
+  const rowBounds = await row.boundingBox()
+  await row.click({
+    position: { x: rowBounds.width - 8, y: rowBounds.height - 8 },
+  })
   const modal = page.getByRole('dialog', {
     name: 'Readme fixture',
     exact: true,
@@ -185,10 +214,20 @@ test('addon readmes render safely without activation, and settings headers have 
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     before.markdown,
   )
+  await button.press('Enter')
+  await modal.waitFor()
+  await page.keyboard.press('Escape')
+  await modal.waitFor({ state: 'hidden' })
+  assert.equal(await row.getByRole('checkbox').isChecked(), false)
+  assert.equal(
+    await row.getByRole('button', { name: 'View readme', exact: true }).count(),
+    0,
+  )
   await filter.fill('keybeats')
   const keybeats = page.locator('[data-setting-id="addon-keybeats"]')
   if (!(await keybeats.getByRole('checkbox').isChecked()))
     await keybeats.getByRole('checkbox').click()
+  assert.equal(await page.getByRole('dialog').count(), 0)
   await page.getByRole('tab', { name: /^keybeats$/i, exact: true }).click()
   const panel = page.getByRole('tabpanel', { name: /^keybeats$/i, exact: true })
   const pills = await panel
@@ -207,12 +246,19 @@ test('addon readmes render safely without activation, and settings headers have 
   assert.ok(
     pills.every(
       (pill) =>
-        pill.radius === '999px' && pill.border === '1px' && pill.height >= 20,
+        pill.radius === '6px' && pill.border === '1px' && pill.height >= 20,
     ),
   )
   await mkdir('.cache', { recursive: true })
+  await panel
+    .getByText('Loading settings…', { exact: true })
+    .waitFor({ state: 'hidden' })
   await panel.screenshot({ path: '.cache/addon-preview.png' })
-  await panel.getByRole('button', { name: 'View readme', exact: true }).click()
+  const title = panel
+    .getByRole('heading', { level: 1 })
+    .getByRole('button', { name: /keybeats readme/i })
+  assert.equal(await title.locator('svg.lucide-external-link').count(), 1)
+  await title.click()
   const keyReadme = page.getByRole('dialog', {
     name: /^keybeats$/i,
     exact: true,
@@ -223,6 +269,10 @@ test('addon readmes render safely without activation, and settings headers have 
   await keyReadme.screenshot({ path: '.cache/addon-readme.png' })
   await page.keyboard.press('Escape')
   await keyReadme.waitFor({ state: 'hidden' })
+  assert.equal(
+    await title.evaluate((element) => element === document.activeElement),
+    true,
+  )
   await page.setViewportSize({ width: 480, height: 720 })
   await app.evaluate(({ nativeTheme }) => {
     nativeTheme.themeSource = 'dark'

@@ -18,37 +18,29 @@ import { addonRegistry } from './addon-registry'
 
 const AddonReadme = lazy(() => import('./AddonReadme'))
 
-export function AddonReadmeButton({ manifest }: { manifest: AddonManifest }) {
+export function useAddonReadme() {
   const dialogs = useDialogs()
-  return (
-    <Button
-      aria-haspopup="dialog"
-      onClick={() =>
-        dialogs.open({
-          title: manifest.name,
-          description: 'Readme',
-          size: 'wide',
-          content: () => (
-            <Suspense
-              fallback={
-                <Panel>
-                  <PanelMessage
-                    icon={<FileText size={28} />}
-                    title="Loading readme…"
-                    loading
-                  />
-                </Panel>
-              }
-            >
-              <AddonReadme id={manifest.id} />
-            </Suspense>
-          ),
-        })
-      }
-    >
-      View readme
-    </Button>
-  )
+  return (manifest: AddonManifest) =>
+    dialogs.open({
+      title: manifest.name,
+      description: 'Readme',
+      size: 'wide',
+      content: () => (
+        <Suspense
+          fallback={
+            <Panel>
+              <PanelMessage
+                icon={<FileText size={28} />}
+                title="Loading readme…"
+                loading
+              />
+            </Panel>
+          }
+        >
+          <AddonReadme id={manifest.id} />
+        </Suspense>
+      ),
+    })
 }
 
 export function AddonMetadata({ manifest }: { manifest: AddonManifest }) {
@@ -119,6 +111,7 @@ export function AddonSettings({
     }
   })
   const dialogs = useDialogs()
+  const openReadme = useAddonReadme()
   const toasts = useToasts()
   const enabled = (id: string) =>
     states.some((state) => state.id === id && state.enabled)
@@ -207,6 +200,12 @@ export function AddonSettings({
             key={manifest.id}
             id={`addon-${manifest.id}`}
             label={manifest.name}
+            details={{
+              label: `${manifest.name} readme`,
+              onOpen: () => {
+                openReadme(manifest)
+              },
+            }}
             hidden={!matches(manifest, query)}
             description={
               <>
@@ -216,7 +215,6 @@ export function AddonSettings({
             }
           >
             <div className="addon-actions">
-              <AddonReadmeButton manifest={manifest} />
               {addonRegistry.isInstalled(manifest.id) && (
                 <Button
                   disabled={busy}
@@ -230,6 +228,7 @@ export function AddonSettings({
               ) : (
                 <Toggle
                   id={`addon-${manifest.id}`}
+                  aria-label={manifest.name}
                   aria-describedby={`addon-${manifest.id}-description`}
                   disabled={busy}
                   checked={enabled(manifest.id)}

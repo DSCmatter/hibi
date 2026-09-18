@@ -36,7 +36,7 @@ Use **Syntax** to enable or disable formatting features, and **Code highlighting
 
 Enable or disable plugins and themes in the alphabetical **Addons** list. Enabling a plugin makes its settings and formats available. **Reset all** restores the default enabled addons without removing installed packages.
 
-Choose **View readme** in the addon list or a plugin’s settings to read its documentation.
+Click an addon row to read its documentation. On a plugin’s settings page, click its title. The row’s enable switch and remove button work separately.
 
 ### Install an addon
 

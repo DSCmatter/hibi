@@ -11,6 +11,8 @@ function SettingRow(props: {
   description?: ReactNode
   children: ReactNode
   hidden?: boolean
+  /** Open a detail dialog from the row while leaving its controls independent. */
+  details?: { label: string; onOpen: () => void }
 })
 ```
 
@@ -18,4 +20,4 @@ function SettingRow(props: {
 
 | Name | Type |
 | --- | --- |
-| <code>props</code> | <code>{ id: string label: string description?: ReactNode children: ReactNode hidden?: boolean }</code> |
+| <code>props</code> | <code>{ id: string label: string description?: ReactNode children: ReactNode hidden?: boolean details?: { label: string; onOpen: () =&gt; void } }</code> |

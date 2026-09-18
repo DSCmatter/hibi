@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleX, Puzzle, Search } from 'lucide-react'
+import { ArrowLeft, CircleX, ExternalLink, Puzzle, Search } from 'lucide-react'
 import {
   Component,
   type ReactNode,
@@ -28,11 +28,7 @@ import { DocumentNotice } from '../../ui/DocumentNotice'
 import { Sidebar, type SidebarItem, type SidebarProps } from '../../ui/Sidebar'
 import { SettingsDiscovery, settingsIndex } from '../../ui/settings-index'
 import { uiCase } from '../../ui/ui-case'
-import {
-  AddonMetadata,
-  AddonReadmeButton,
-  AddonSettings,
-} from './AddonSettings'
+import { AddonMetadata, AddonSettings, useAddonReadme } from './AddonSettings'
 import { AutosaveSettings } from './AutosaveSettings'
 import { addons } from './addons'
 import { CodeSyntaxSettings } from './CodeSyntaxSettings'
@@ -142,6 +138,7 @@ export function SettingsScreen({
   onTabsEnabled: (enabled: boolean) => void
 }) {
   const screen = useRef<HTMLElement>(null)
+  const openReadme = useAddonReadme()
   const wasOpen = useRef(false)
   const search = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
@@ -612,13 +609,21 @@ export function SettingsScreen({
               aria-label={manifest.name}
               hidden={category !== `plugin-${manifest.id}`}
             >
-              <h1>{manifest.name}</h1>
+              <h1>
+                <button
+                  type="button"
+                  className="plugin-readme-title"
+                  aria-label={`${manifest.name} readme`}
+                  aria-haspopup="dialog"
+                  onClick={() => openReadme(manifest)}
+                >
+                  <span>{manifest.name}</span>
+                  <ExternalLink size={16} aria-hidden />
+                </button>
+              </h1>
               <div className="plugin-summary">
                 <p className="plugin-description">{manifest.description}</p>
                 <AddonMetadata manifest={manifest} />
-                <div>
-                  <AddonReadmeButton manifest={manifest} />
-                </div>
               </div>
               {!!manifest.fileExtensions?.length && (
                 <>
