@@ -106,6 +106,8 @@ export function SettingsScreen({
   onShowLineNumbers,
   spellCheck,
   onSpellCheck,
+  showMarkdownMarkers,
+  onShowMarkdownMarkers,
   focusOutlines,
   onFocusOutlines,
   defaultView,
@@ -147,6 +149,8 @@ export function SettingsScreen({
   onShowLineNumbers: (show: boolean) => void
   spellCheck: boolean
   onSpellCheck: (enabled: boolean) => void
+  showMarkdownMarkers: boolean
+  onShowMarkdownMarkers: (enabled: boolean) => void
   focusOutlines: boolean
   onFocusOutlines: (enabled: boolean) => void
   defaultView: DocumentView
@@ -410,6 +414,20 @@ export function SettingsScreen({
                   aria-describedby="spell-check-description"
                   checked={spellCheck}
                   onChange={(event) => onSpellCheck(event.target.checked)}
+                />
+              </SettingRow>
+              <SettingRow
+                id="markdown-markers"
+                label="Show Markdown markers"
+                description="Show formatting hints in the active block while editing formatted text."
+              >
+                <Toggle
+                  id="markdown-markers"
+                  aria-describedby="markdown-markers-description"
+                  checked={showMarkdownMarkers}
+                  onChange={(event) =>
+                    onShowMarkdownMarkers(event.target.checked)
+                  }
                 />
               </SettingRow>
             </div>

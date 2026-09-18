@@ -2908,6 +2908,9 @@
   "0df6f1cad36c": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
+  "6f5976e6606b": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
   "b5fff62bc50a": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
@@ -2916,6 +2919,9 @@
   ],
   "2ebca79ee1b1": [
     "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "ef9e0ecfed5f": [
+    "src/renderer/src/SettingsScreen.tsx"
   ],
   "d939dc73e46c": [
     "src/renderer/src/EditorToolbar.tsx"

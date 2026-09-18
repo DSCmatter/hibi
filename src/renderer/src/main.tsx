@@ -393,6 +393,12 @@ function App() {
   const [spellCheck, setSpellCheck] = useState(
     () => localStorage.getItem('spell-check') !== 'false',
   )
+  const [showMarkdownMarkers, setShowMarkdownMarkers] = useState(
+    () => localStorage.getItem('markdown-markers') !== 'false',
+  )
+  useEffect(() => {
+    localStorage.setItem('markdown-markers', String(showMarkdownMarkers))
+  }, [showMarkdownMarkers])
   useEffect(() => {
     localStorage.setItem('spell-check', String(spellCheck))
   }, [spellCheck])
@@ -1750,6 +1756,8 @@ function App() {
             onShowLineNumbers={setShowLineNumbers}
             spellCheck={spellCheck}
             onSpellCheck={setSpellCheck}
+            showMarkdownMarkers={showMarkdownMarkers}
+            onShowMarkdownMarkers={setShowMarkdownMarkers}
             focusOutlines={focusOutlines}
             onFocusOutlines={setFocusOutlines}
             defaultView={defaultView}
@@ -1827,6 +1835,7 @@ function App() {
               documentRevision={document.revision}
               showLineNumbers={showLineNumbers}
               spellCheck={spellCheck}
+              showMarkdownMarkers={showMarkdownMarkers}
               cursorSettings={cursorSettings}
               markdownExtensions={editorConfiguration.current.projections}
               key={`${document.revision}-${resetEditor}-${markdownDocument ? 'markdown' : documentExtension(document.name)}`}

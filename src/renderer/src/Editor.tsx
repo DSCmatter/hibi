@@ -51,7 +51,9 @@ import {
   needsSourceEditing,
   projectMarkdown,
 } from './markdown'
+import { observeMarkdownMarkers } from './markdown-markers'
 import { markdownPositions } from './markdown-positions'
+import './markdown-markers.css'
 import { markdownSerializer } from './markdown-serialization'
 import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
@@ -82,6 +84,7 @@ export function MarkdownEditor({
   cursorSettings,
   showLineNumbers,
   spellCheck,
+  showMarkdownMarkers,
   documentRevision,
   flavors,
   unsupportedFlavor,
@@ -107,6 +110,7 @@ export function MarkdownEditor({
   cursorSettings: CursorSettings
   showLineNumbers: boolean
   spellCheck: boolean
+  showMarkdownMarkers: boolean
   documentRevision: number
   flavors: readonly MarkdownFlavor[]
   unsupportedFlavor: boolean
@@ -696,6 +700,18 @@ export function MarkdownEditor({
   useEffect(() => {
     editor?.view.dom.setAttribute('spellcheck', String(spellCheck))
   }, [editor, spellCheck])
+
+  useLayoutEffect(() => {
+    if (
+      !editor ||
+      !showMarkdownMarkers ||
+      !markdownDocument ||
+      sourceOnly ||
+      mode === 'markdown'
+    )
+      return
+    return observeMarkdownMarkers(editor)
+  }, [editor, showMarkdownMarkers, markdownDocument, sourceOnly, mode])
 
   useLayoutEffect(() => {
     if (!editor) return
