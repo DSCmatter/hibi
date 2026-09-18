@@ -23,4 +23,4 @@ npm run export:docs
 
 Open `out/docs/index.html` in a browser. Check navigation, links, code samples, and narrow layouts. Markdown files under `docs/` are included automatically, except `ai-agents/`.
 
-Use relative links between guides. Put images within `docs/` and reference them with relative paths. The docs synchronization workflow runs when changes under `docs/` reach `main`.
+Use relative links between guides. Put images within `docs/` and reference them with relative paths. The docs synchronization workflow runs when changes under `docs/` reach `main`. To publish manually, open **Actions → sync documentation → Run workflow** on GitHub.
