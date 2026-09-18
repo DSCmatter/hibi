@@ -70,6 +70,27 @@ Content mounts only while the view is visible. Keep anything that must survive c
 
 Hibi displays sidebar views as drawers in narrow windows. For a separate layout built with `Sidebar`, set `overlay` and supply `onDismiss` to use the same backdrop and Escape handling. Keep covered content inert while the drawer is open and return focus to its toggle when dismissing it.
 
+## Bind a view to a document
+
+`context.views.register()` supports sidebars and a panel below the editor. Its `Content` receives `document`, `input`, `instanceId`, `binding`, `visible`, `close()`, and `focusDocument()`. Follow views receive the active document. Open with `binding: 'pinned'` to retain the current document snapshot, including its version, when the user switches tabs or continues editing. A pinned snapshot does not grant permission to edit an inactive document; normal edit validation still applies.
+
+```tsx
+const report = context.views.register({
+  id: 'report',
+  label: 'My report',
+  location: 'panel',
+  lifetime: 'session',
+  Content: ({ document }) => <p>{document?.name}</p>,
+})
+const instance = report.open({ id: 'comparison', binding: 'pinned' })
+```
+
+Opening the same instance ID reuses it. `hide()` keeps the instance; `show()` reveals it; `close()` releases it. The default `lifetime: 'visible'` unmounts content when hidden. Session views retain React state until closed or until their addon stops. Pause timers and analysis when `visible` is false. The host allows eight instances per addon and 32 across the window.
+
+Opening a view focuses its first control unless `focus: false` is supplied. `focusDocument()` activates the bound tab and returns false if that tab has closed. It never reopens files by path. Local loading and error boundaries keep a suspended or failed view from replacing the editor. The Review addon demonstrates a following sidebar and a pinned report panel.
+
+The existing `context.sidebar` API uses the same host with one default instance and remains compatible.
+
 ## Open a dialog
 
 Use `context.dialogs.prompt()` for a text value or `confirm()` for a decision. For custom content, use `open()` with a React component and choose `size: 'wide'` when needed. The [dialog API](../addon-api-reference/DialogApi.md) handles dismissal and returns the result.

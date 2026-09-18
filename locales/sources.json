@@ -470,6 +470,10 @@
   "8be57fbed5f6": [
     "src/renderer/src/CommandPalette.tsx"
   ],
+  "bbb4c0822ee7": [
+    "src/renderer/src/addon-views.ts",
+    "src/renderer/src/addons.ts"
+  ],
   "5d3b18dbef3a": [
     "src/renderer/src/CommandPalette.tsx"
   ],
@@ -657,8 +661,8 @@
   "893ffc1eb568": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
-  "f929e30decff": [
-    "src/renderer/src/AddonSidebar.tsx"
+  "45e0434567cb": [
+    "src/renderer/src/AddonViewContent.tsx"
   ],
   "ab4f0719fbd3": [
     "src/renderer/src/main.tsx"
@@ -1198,6 +1202,9 @@
   "9d3cab2b5efe": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
+  "cd533847a0a4": [
+    "src/renderer/src/AddonPanel.tsx"
+  ],
   "384706288140": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
@@ -1335,6 +1342,9 @@
   ],
   "227cee0db498": [
     "src/renderer/src/ImportDialog.tsx"
+  ],
+  "40cd6293d193": [
+    "src/renderer/src/AddonPanel.tsx"
   ],
   "460e661f4720": [
     "src/renderer/src/EditorToolbar.tsx"
@@ -1533,6 +1543,9 @@
   "d09eb4ceda72": [
     "src/main/document.ts"
   ],
+  "9a9bb3ad8cbc": [
+    "src/renderer/src/addon-views.ts"
+  ],
   "38f048094b0e": [
     "src/main/workspace-settings.ts"
   ],
@@ -1630,6 +1643,9 @@
   ],
   "9780e2c99c1b": [
     "src/renderer/src/VersionHistory.tsx"
+  ],
+  "a91ca23dc6a9": [
+    "src/renderer/src/AddonViewContent.tsx"
   ],
   "a1f7f8733bfc": [
     "src/renderer/src/Editor.tsx"
@@ -2114,6 +2130,12 @@
   "a4f17dfc576b": [
     "src/addons/vim/engine.ts"
   ],
+  "49bac35016ed": [
+    "src/addons/review/index.tsx"
+  ],
+  "771cbda3796a": [
+    "src/addons/review/index.tsx"
+  ],
   "fdb600f6535a": [
     "src/renderer/src/FlavorPicker.tsx"
   ],
@@ -2380,7 +2402,7 @@
     "src/renderer/src/VersionHistory.tsx"
   ],
   "942087cc2d41": [
-    "src/renderer/src/AddonSidebar.tsx",
+    "src/renderer/src/AddonViewContent.tsx",
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/main.tsx"
   ],
@@ -2547,6 +2569,9 @@
   ],
   "d03262ba19b0": [
     "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "96b54560eeca": [
+    "src/addons/review/index.tsx"
   ],
   "0e53b6d8c928": [
     "src/renderer/src/NotificationSettings.tsx"
@@ -3078,14 +3103,14 @@
   "19dc472ec4b9": [
     "src/renderer/src/addons.ts"
   ],
-  "efa320a3364d": [
-    "src/renderer/src/addons.ts"
-  ],
   "27b640a56729": [
     "src/renderer/src/addons.ts"
   ],
   "59af8df20d60": [
     "src/renderer/src/addons.ts"
+  ],
+  "ea8cb2860d16": [
+    "src/renderer/src/addon-views.ts"
   ],
   "37e97cc501e5": [
     "src/renderer/src/addons.ts"
@@ -3125,6 +3150,10 @@
   ],
   "d3a986ab8faa": [
     "src/main/appearance.ts"
+  ],
+  "cf536ea00613": [
+    "src/renderer/src/addon-views.ts",
+    "src/renderer/src/addons.ts"
   ],
   "78c4a3ab448e": [
     "src/main/workspace.ts"
@@ -3241,6 +3270,9 @@
   ],
   "8ec60d63a791": [
     "src/addons/keybeats/engine.ts"
+  ],
+  "ee3c71613054": [
+    "src/addons/review/index.tsx"
   ],
   "a710c2b90913": [
     "src/renderer/src/DocumentTabs.tsx",

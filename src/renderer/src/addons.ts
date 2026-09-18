@@ -1,4 +1,5 @@
 import {
+  createElement,
   useCallback,
   useEffect,
   useMemo,
@@ -16,9 +17,11 @@ import {
   compatibleAddonManifest,
   type MarkdownExtension,
   type RichExtension,
-  type SidebarView,
   type SourceExtension,
   type StatusItem,
+  type ViewApi,
+  type ViewInstance,
+  type ViewRegistration,
 } from '../../addons/api'
 import {
   documentExtension,
@@ -36,6 +39,7 @@ import { useToastService } from '../../ui/Sonner'
 import { createTooltipScope } from '../../ui/tooltip-store'
 import { createAddonOverrides } from './addon-overrides'
 import { addonRegistry } from './addon-registry'
+import { addonViews } from './addon-views'
 import { codeHtml, codeLanguages } from './code-languages'
 import { colorschemes } from './colorschemes'
 import { disposeAll } from './dispose'
@@ -65,6 +69,7 @@ type Environment = Omit<
   | 'patches'
   | 'dialogs'
   | 'sidebar'
+  | 'views'
   | 'toasts'
   | 'notify'
   | 'workspace'
@@ -82,6 +87,8 @@ type Environment = Omit<
   runAction: AddonApp['runAction']
   getMarkdown: () => string
   openSidebar: (id: string, input?: unknown) => void
+  closeSidebar: () => void
+  focusDocument: (tabId: string) => Promise<boolean>
 }
 
 export function useAddons(
@@ -169,8 +176,14 @@ export function useAddons(
     new Map<string, StatusItem & { addonId: string }>(),
   ).current
   const [statusItems, setStatusItems] = useState<StatusItem[]>([])
-  const views = useRef(new Map<string, SidebarView>()).current
-  const [sidebarViews, setSidebarViews] = useState<SidebarView[]>([])
+  const viewState = useSyncExternalStore(
+    addonViews.subscribe,
+    addonViews.snapshot,
+  )
+  const sidebarViews = useMemo(
+    () => viewState.definitions.filter((view) => view.location !== 'panel'),
+    [viewState.definitions],
+  )
   const registered = useRef(new Map<string, RegisteredCommand>()).current
   const started = useRef(new Set<string>()).current
   const activation = useRef(
@@ -349,6 +362,56 @@ export function useAddons(
       const editScope = documentEdits.scope(() => latest.current.isBusy())
       const annotationScope = editorAnnotations.scope(id)
       const batch = registrationBatch(addon.manifest.capabilities !== undefined)
+      const registerView: ViewApi['register'] = (view) => {
+        let registered: ViewRegistration | undefined
+        let removed = false
+        const pending = new Map<
+          string,
+          {
+            options: Parameters<ViewRegistration['open']>[0]
+            handle?: ViewInstance
+          }
+        >()
+        const remove = batch.register(`view:${view.id}`, () => {
+          registered = addonViews.register(id, view, {
+            openSidebar: (key) => latest.current.openSidebar(key),
+            closeSidebar: () => latest.current.closeSidebar(),
+            focusDocument: (tabId) => latest.current.focusDocument(tabId),
+          })
+          for (const entry of pending.values())
+            entry.handle = registered.open(entry.options)
+          return registered.dispose
+        })
+        return {
+          open(options = {}) {
+            if (disposed || removed)
+              throw new Error('This view is no longer available.')
+            if (registered) return registered.open(options)
+            const key = options.id ?? 'default'
+            if (pending.size >= 8 && !pending.has(key))
+              throw new Error('Close a plugin view before opening another.')
+            const entry = { options } as {
+              options: typeof options
+              handle?: ViewInstance
+            }
+            pending.set(key, entry)
+            return {
+              id: `${id}.${view.id}:${key}`,
+              show: () => entry.handle?.show(),
+              hide: () =>
+                entry.handle ? entry.handle.hide() : pending.delete(key),
+              close: () =>
+                entry.handle ? entry.handle.close() : pending.delete(key),
+              focus: () => entry.handle?.focus(),
+            }
+          },
+          dispose() {
+            removed = true
+            pending.clear()
+            remove()
+          },
+        }
+      }
       const assertSchemaActivation = () => {
         if (
           addon.manifest.activation ||
@@ -480,40 +543,20 @@ export function useAddons(
               },
             },
             dialogs: dialogScope.api,
+            views: { register: registerView },
             sidebar: {
               register(view) {
                 if (disposed) return { open() {}, dispose() {} }
-                const key = `${id}.${view.id}`
-                if (!/^[a-z][a-z0-9-]*$/.test(view.id) || views.has(key))
-                  throw new Error(
-                    `This plugin supplied a duplicate or invalid sidebar view: ${key}.`,
-                  )
-                const entry = { ...view, id: key }
-                let pendingOpen = false,
-                  pendingInput: unknown
-                const remove = batch.register(`view:${view.id}`, () => {
-                  views.set(key, entry)
-                  setSidebarViews([...views.values()])
-                  if (pendingOpen) latest.current.openSidebar(key, pendingInput)
-                  return () => {
-                    if (views.get(key) !== entry) return
-                    views.delete(key)
-                    if (mounted.current) setSidebarViews([...views.values()])
-                    cleanups.delete(remove)
-                  }
+                const registration = registerView({
+                  ...view,
+                  Content: ({ input }) =>
+                    createElement(view.Content, { input }),
                 })
-                cleanups.add(remove)
                 return {
                   open(input) {
-                    if (disposed) return
-                    if (views.get(key) === entry)
-                      latest.current.openSidebar(key, input)
-                    else {
-                      pendingOpen = true
-                      pendingInput = input
-                    }
+                    if (!disposed) registration.open({ input, focus: false })
                   },
-                  dispose: remove,
+                  dispose: registration.dispose,
                 }
               },
             },
@@ -1133,7 +1176,6 @@ export function useAddons(
     publishRich,
     dialogService,
     toastService,
-    views,
     ready,
     required,
     settled,

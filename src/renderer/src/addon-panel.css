@@ -1,0 +1,33 @@
+.addon-panel {
+  flex: 0 1 260px;
+  min-height: 100px;
+  max-height: 45%;
+  border-top: 1px solid var(--border);
+  background: var(--sidebar);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.addon-panel[hidden],
+.addon-view-content[hidden] {
+  display: none;
+}
+.addon-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+.addon-panel-header > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.addon-view-content {
+  min-height: 0;
+  overflow: auto;
+  flex: 1;
+}

@@ -384,6 +384,45 @@ export type SidebarApi = {
   register: (view: SidebarView) => SidebarHandle
 }
 
+export type AddonViewProps = {
+  instanceId: string
+  input: unknown
+  /** Follow views receive the current document. Pinned views retain their opening snapshot. */
+  document: Readonly<import('../shared/desktop').DocumentState> | null
+  binding: 'follow' | 'pinned'
+  visible: boolean
+  close: () => void
+  /** Activate the bound tab if it still exists, then focus its editor. */
+  focusDocument: () => Promise<boolean>
+}
+export type AddonView = {
+  id: string
+  label: string
+  icon?: SidebarView['icon']
+  location?: 'sidebar' | 'panel'
+  /** Visible views unmount when hidden; session views retain local state until closed or disposed. */
+  lifetime?: 'visible' | 'session'
+  Content: ComponentType<AddonViewProps>
+}
+export type ViewInstance = {
+  id: string
+  show: () => void
+  hide: () => void
+  close: () => void
+  focus: () => void
+}
+export type ViewRegistration = {
+  /** Reuse a local instance ID, or omit it for the default instance. At most eight instances per addon. */
+  open: (options?: {
+    id?: string
+    input?: unknown
+    binding?: 'follow' | 'pinned'
+    focus?: boolean
+  }) => ViewInstance
+  dispose: () => void
+}
+export type ViewApi = { register: (view: AddonView) => ViewRegistration }
+
 /** APIs available while your renderer addon is enabled. Registrations are removed when it stops. */
 export type AddonContext = {
   colorschemes: {
@@ -394,6 +433,7 @@ export type AddonContext = {
   }
   dialogs: DialogApi
   sidebar: SidebarApi
+  views: ViewApi
   toasts: ToastApi
   menus: MenuApi
   toolbar: ToolbarApi

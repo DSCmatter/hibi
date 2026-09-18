@@ -48,6 +48,7 @@ import {
   SIDEBAR_OVERLAY_WIDTH,
   useSidebarResize,
 } from '../../ui/useSidebarResize'
+import { AddonPanel } from './AddonPanel'
 import { AddonSidebar, builtInViews, viewShortcut } from './AddonSidebar'
 import { addonRegistry } from './addon-registry'
 import { addons, useAddons } from './addons'
@@ -390,6 +391,25 @@ function App() {
   const addonHost = useAddons(
     {
       openSidebar: selectSidebarView,
+      closeSidebar: () => closeSidebar(false),
+      async focusDocument(tabId) {
+        if (!currentDocument.current?.tabs.some((tab) => tab.id === tabId))
+          return false
+        if (currentDocument.current.tabId !== tabId)
+          await applyDocumentOperation(() =>
+            window.hibi.selectDocumentTab(tabId),
+          )
+        if (currentDocument.current?.tabId !== tabId) return false
+        setSettingsOpen(false)
+        requestAnimationFrame(() =>
+          window.document
+            .querySelector<HTMLElement>(
+              mode === 'normal' ? '.tiptap' : '.cm-content',
+            )
+            ?.focus({ preventScroll: true }),
+        )
+        return true
+      },
       isBusy: () => busyRef.current,
       getMarkdown: () => currentDocument.current?.markdown ?? '',
       runAction: (command) => runAction(command),
@@ -1791,6 +1811,7 @@ function App() {
             />
           )}
         </div>
+        <AddonPanel hidden={settingsOpen} />
       </div>
       {failed && (
         <p role="alert">

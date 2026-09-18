@@ -20,6 +20,8 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 - [AddonSlashCommand](AddonSlashCommand.md)
 - [AddonState](AddonState.md)
 - [AddonSyntaxDescriptor](AddonSyntaxDescriptor.md)
+- [AddonView](AddonView.md)
+- [AddonViewProps](AddonViewProps.md)
 - [compatibleAddonManifest](compatibleAddonManifest.md)
 - [defineAddon](defineAddon.md)
 - [DocumentEdit](DocumentEdit.md)
@@ -50,6 +52,9 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 - [StatusHandle](StatusHandle.md)
 - [StatusItem](StatusItem.md)
 - [StyleHandle](StyleHandle.md)
+- [ViewApi](ViewApi.md)
+- [ViewInstance](ViewInstance.md)
+- [ViewRegistration](ViewRegistration.md)
 
 ## Sideloading
 

@@ -1,10 +1,10 @@
-import { Check, CheckCheck, RefreshCw, SpellCheck } from 'lucide-react'
+import { Check, CheckCheck, Pin, RefreshCw, SpellCheck } from 'lucide-react'
 import { useEffect, useSyncExternalStore } from 'react'
 import {
   projectionRange,
   type TextProjection,
 } from '../../shared/document-projection'
-import { defineAddon } from '../api'
+import { type AddonViewProps, defineAddon, type ViewInstance } from '../api'
 import {
   Button,
   ControlRow,
@@ -111,6 +111,37 @@ export default defineAddon({
     }
     context.editor.onDocumentChange(refresh)
     context.editor.onProjectionChange(refresh)
+    let pinned: ViewInstance | undefined
+    const report = context.views.register({
+      id: 'report',
+      label: 'Pinned review',
+      location: 'panel',
+      lifetime: 'session',
+      Content({ input, close }: AddonViewProps) {
+        const findings = input as Finding[]
+        return (
+          <div className="review-panel">
+            <ControlRow>
+              <Button onClick={close}>Unpin</Button>
+            </ControlRow>
+            {findings.length ? (
+              <ul className="review-findings">
+                {findings.map((finding) => (
+                  <li key={finding.id}>
+                    <span className="review-finding">{finding.message}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <PanelMessage
+                icon={<CheckCheck size={28} />}
+                title="No suggestions"
+              />
+            )}
+          </div>
+        )
+      },
+    })
     function Content() {
       const current = useSyncExternalStore(subscribe, () => state)
       useEffect(() => {
@@ -159,6 +190,19 @@ export default defineAddon({
       return (
         <div className="review-panel">
           <ControlRow>
+            <IconButton
+              aria-label="Pin review"
+              disabled={!current.projection || current.busy}
+              onClick={() => {
+                pinned?.close()
+                pinned = report.open({
+                  binding: 'pinned',
+                  input: current.findings,
+                })
+              }}
+            >
+              <Pin size={16} />
+            </IconButton>
             <Button onClick={refresh} disabled={current.busy}>
               <RefreshCw size={14} />
               Check again
@@ -225,6 +269,14 @@ export default defineAddon({
       label: 'Review document',
       keywords: 'typos repeated words proofreading',
       run: open,
+    })
+    context.commands.register({
+      id: 'show-report',
+      label: 'Show pinned review',
+      run: () => {
+        pinned?.show()
+        pinned?.focus()
+      },
     })
     context.toolbar.register({
       id: 'open',

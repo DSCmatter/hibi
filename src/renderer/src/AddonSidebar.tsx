@@ -1,36 +1,17 @@
 import { FolderOpen, ListTree, PanelLeft } from 'lucide-react'
-import { Component, type ReactNode } from 'react'
-import type { SidebarView } from '../../addons/api'
-import { Button } from '../../ui/Controls'
+import { useEffect, useSyncExternalStore } from 'react'
+import type { AddonView } from '../../addons/api'
 import { Sidebar, type SidebarProps } from '../../ui/Sidebar'
+import { AddonViewContent } from './AddonViewContent'
+import { addonViews } from './addon-views'
 
 export const builtInViews = [
   { id: 'workspace', label: 'Workspace', icon: FolderOpen },
   { id: 'outline', label: 'On this page', icon: ListTree },
 ]
 
-export function viewShortcut(view: SidebarView) {
+export function viewShortcut(view: AddonView) {
   return { id: view.id, label: view.label, icon: view.icon ?? PanelLeft }
-}
-
-class ViewBoundary extends Component<
-  { children: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false }
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
-  render() {
-    return this.state.failed ? (
-      <div className="sidebar-empty" role="alert">
-        <p>Could not load this view. Try again.</p>
-        <Button onClick={() => this.setState({ failed: false })}>Retry</Button>
-      </div>
-    ) : (
-      this.props.children
-    )
-  }
 }
 
 export function AddonSidebar({
@@ -41,13 +22,17 @@ export function AddonSidebar({
   onDismiss,
   resize,
 }: {
-  view: SidebarView | undefined
+  view: AddonView | undefined
   input: unknown
   open: boolean
   overlay: boolean
   onDismiss: () => void
   resize: NonNullable<SidebarProps['resize']>
 }) {
+  const state = useSyncExternalStore(addonViews.subscribe, addonViews.snapshot)
+  useEffect(() => {
+    if (open && view) addonViews.selectSidebar(view.id, input)
+  }, [open, view, input])
   return (
     <Sidebar
       className="document-sidebar addon-sidebar"
@@ -60,13 +45,19 @@ export function AddonSidebar({
       overlay={overlay}
       onDismiss={onDismiss}
       resize={resize}
-      content={
-        open && view ? (
-          <ViewBoundary key={view.id}>
-            <view.Content input={input} />
-          </ViewBoundary>
-        ) : null
-      }
+      content={state.instances
+        .filter((entry) => entry.definition.location !== 'panel')
+        .map((entry) => (
+          <AddonViewContent
+            key={entry.id}
+            entry={entry}
+            visible={
+              open &&
+              view?.id === entry.definition.id &&
+              state.activeSidebar === entry.id
+            }
+          />
+        ))}
     />
   )
 }
