@@ -363,6 +363,10 @@ export type AddonContext = {
   patches: PatchApi
   statusBar: { register: (item: StatusItem) => StatusHandle }
   editor: {
+    /** Apply version-checked UTF-16 source edits as one undo operation. Rich view is not supported. */
+    applySourceEdits: (
+      request: import('../shared/document-edits').SourceEditRequest,
+    ) => import('../shared/document-edits').SourceEditResult
     /** Read the active document, or null when no editor document is available. */
     getDocument: () => Readonly<
       import('../shared/desktop').DocumentState

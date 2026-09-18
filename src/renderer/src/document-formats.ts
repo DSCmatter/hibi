@@ -91,10 +91,13 @@ export const documentFormats = {
 }
 
 let active: DocumentState | null = null
+let published: DocumentState | null = null
 const observers = new Set<(document: Readonly<DocumentState>) => void>()
 export const editorDocument = {
   get: () => active,
   publish(document: DocumentState | null) {
+    if (document === published) return
+    published = document
     active = document ? Object.freeze({ ...document }) : null
     if (active) for (const observer of observers) observer(active)
   },

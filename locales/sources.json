@@ -131,6 +131,9 @@
   "b7209017b20b": [
     "src/main/sideload.ts"
   ],
+  "9ade719b95a9": [
+    "src/renderer/src/document-edits.ts"
+  ],
   "bcd26bd0c90a": [
     "src/main/import-files.ts"
   ],
@@ -844,6 +847,9 @@
   "7bc860ccf5e3": [
     "src/addons/frontmatter/manifest.ts"
   ],
+  "0daa134af314": [
+    "src/shared/document-edits.ts"
+  ],
   "c7bf14938074": [
     "src/addons/asciidoc/manifest.ts"
   ],
@@ -876,6 +882,7 @@
     "src/renderer/src/settings-categories.ts"
   ],
   "78c769f21aa4": [
+    "src/renderer/src/Editor.tsx",
     "src/renderer/src/SourceEditor.tsx"
   ],
   "9da3210f6338": [
@@ -1075,6 +1082,9 @@
   ],
   "0657af78ec64": [
     "src/renderer/src/FindBar.tsx"
+  ],
+  "954d05631f82": [
+    "src/renderer/src/SourceEditor.tsx"
   ],
   "358fbe3b898f": [
     "src/addons/graph/Canvas.tsx"
@@ -1379,6 +1389,15 @@
   ],
   "440c06b497b1": [
     "src/main/file-associations.ts"
+  ],
+  "194c34611a1c": [
+    "src/shared/document-edits.ts"
+  ],
+  "21871dd078be": [
+    "src/shared/document-edits.ts"
+  ],
+  "b09a8754e304": [
+    "src/shared/document-edits.ts"
   ],
   "c461546e018b": [
     "src/addons/_shared/format-native.ts"
@@ -1826,6 +1845,10 @@
   "1a1b83db3be8": [
     "src/renderer/src/HibiSettings.tsx",
     "src/renderer/src/main.tsx"
+  ],
+  "2b249c749333": [
+    "src/renderer/src/SourceEditor.tsx",
+    "src/renderer/src/document-edits.ts"
   ],
   "80cb8a06e27d": [
     "src/addons/git/native.ts"
@@ -2513,6 +2536,10 @@
   "602cad822b0c": [
     "src/main/document.ts"
   ],
+  "2a4bec529492": [
+    "src/renderer/src/SourceEditor.tsx",
+    "src/renderer/src/document-edits.ts"
+  ],
   "e9876edd08d2": [
     "src/addons/_shared/format-native.ts"
   ],
@@ -2520,6 +2547,7 @@
     "src/main/media.ts"
   ],
   "a5aedb8a518f": [
+    "src/renderer/src/document-edits.ts",
     "src/renderer/src/main.tsx"
   ],
   "53a9d03e9663": [
@@ -2530,6 +2558,21 @@
   ],
   "6d78247b2a33": [
     "src/main/links.ts"
+  ],
+  "23b54a5e62e2": [
+    "src/shared/document-edits.ts"
+  ],
+  "a6cea19581d6": [
+    "src/shared/document-edits.ts"
+  ],
+  "aab4c81b2baa": [
+    "src/shared/document-edits.ts"
+  ],
+  "4ef953980674": [
+    "src/renderer/src/SourceEditor.tsx"
+  ],
+  "b813945dd20c": [
+    "src/renderer/src/SourceEditor.tsx"
   ],
   "c9e161d3f3c3": [
     "src/renderer/src/RecoveryScreen.tsx"
@@ -2566,6 +2609,12 @@
   ],
   "f6be6c1fe3f5": [
     "src/addons/_shared/format-native.ts"
+  ],
+  "e16af0263168": [
+    "src/renderer/src/document-edits.ts"
+  ],
+  "bee50784d023": [
+    "src/shared/document-edits.ts"
   ],
   "70ccfc9c9dd2": [
     "src/main/index.ts"
@@ -2608,6 +2657,9 @@
   ],
   "b287a1312556": [
     "src/main/addons.ts"
+  ],
+  "0d3f68fa85cf": [
+    "src/renderer/src/document-edits.ts"
   ],
   "c58889003b80": [
     "src/main/addons.ts"
@@ -2746,6 +2798,9 @@
   ],
   "73003d179a64": [
     "src/main/addon-repository.ts"
+  ],
+  "77a1eca0b3d2": [
+    "src/renderer/src/document-edits.ts"
   ],
   "3736ab092410": [
     "src/addons/_shared/format-renderer.tsx"
@@ -3108,6 +3163,9 @@
   "d8a4351e1a76": [
     "src/renderer/src/Editor.tsx"
   ],
+  "77ebec0d0b40": [
+    "src/renderer/src/code-languages.ts"
+  ],
   "57a1579f83d3": [
     "src/renderer/src/code-languages.ts"
   ],
@@ -3180,6 +3238,12 @@
   ],
   "229213386c16": [
     "src/renderer/src/main.tsx"
+  ],
+  "f82d8c5475b7": [
+    "src/renderer/src/addons.ts"
+  ],
+  "386c2c478548": [
+    "src/renderer/src/addons.ts"
   ],
   "d44b2d82471e": [
     "src/renderer/src/FormatsSettings.tsx"

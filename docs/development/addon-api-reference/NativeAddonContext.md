@@ -2,7 +2,7 @@
 
 # NativeAddonContext
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L457)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L461)
 
 Native modules are trusted application code, never loaded from a workspace.
 
@@ -60,7 +60,7 @@ type NativeAddonContext = {
 
 ### document.get
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L459)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L463)
 
 ```typescript
 document.get: () => import('../shared/desktop').DocumentState
@@ -72,7 +72,7 @@ Related: [DocumentState](DocumentState.md).
 
 ### document.path
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L461)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L465)
 
 Current document or a document in the selected workspace, addressed by opaque id.
 
@@ -90,7 +90,7 @@ document.path: (id?: string) => Promise<string | null>
 
 ### document.create
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L462)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L466)
 
 ```typescript
 document.create: (name: string, source: string) => Promise<boolean>
@@ -107,7 +107,7 @@ document.create: (name: string, source: string) => Promise<boolean>
 
 ### exportFile
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L464)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L468)
 
 ```typescript
 exportFile: (
@@ -129,7 +129,7 @@ exportFile: (
 
 ### workspace.id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L470)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L474)
 
 ```typescript
 workspace.id: () => string | null
@@ -139,7 +139,7 @@ workspace.id: () => string | null
 
 ### workspace.snapshot
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L471)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L475)
 
 ```typescript
 workspace.snapshot: () => Promise<WorkspaceSnapshot>
@@ -151,7 +151,7 @@ Related: [WorkspaceSnapshot](WorkspaceSnapshot.md).
 
 ### workspace.directory
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L473)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L477)
 
 Trusted native modules only. Never exposed to workspace markdown.
 
@@ -163,7 +163,7 @@ workspace.directory: () => string | null
 
 ### workspace.hasUnsavedChanges
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L474)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L478)
 
 ```typescript
 workspace.hasUnsavedChanges: () => boolean
@@ -173,7 +173,7 @@ workspace.hasUnsavedChanges: () => boolean
 
 ### workspace.reload
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L476)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L480)
 
 Reload the active saved file after native operations; rejects dirty buffers.
 
@@ -185,7 +185,7 @@ workspace.reload: () => Promise<void>
 
 ### exportHtml
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L478)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L482)
 
 ```typescript
 exportHtml: (

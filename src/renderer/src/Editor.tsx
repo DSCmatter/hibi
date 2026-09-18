@@ -643,6 +643,8 @@ export function MarkdownEditor({
                 }
               >
                 <SourceEditor
+                  document={documentState}
+                  editTarget={findTarget === 'source'}
                   markdownMode={markdownDocument}
                   sourceLanguage={format?.language}
                   sourceFormat={format?.formatting}

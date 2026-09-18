@@ -387,10 +387,12 @@ function App() {
   const addonHost = useAddons(
     {
       openSidebar: selectSidebarView,
-      getMarkdown: () => document?.markdown ?? '',
+      isBusy: () => busyRef.current,
+      getMarkdown: () => currentDocument.current?.markdown ?? '',
       runAction: (command) => runAction(command),
       runCommand: (command) => runCommand(command),
       updateMarkdown(transform, options) {
+        const document = currentDocument.current
         if (busyRef.current || !document)
           throw new Error('The document is busy. Try again in a moment.')
         const source = options
@@ -779,17 +781,7 @@ function App() {
       setResetEditor((value) => value + 1)
       return
     }
-    setDocument((current) =>
-      current
-        ? {
-            ...current,
-            markdown,
-            contentVersion:
-              current.contentVersion + Number(current.markdown !== markdown),
-            dirty: markdown !== savedText.current || current.ephemeral,
-          }
-        : current,
-    )
+    // Queue native persistence before synchronous addon observers can request a save.
     void window.hibi
       .updateDocument(markdown)
       .catch((error: unknown) =>
@@ -799,6 +791,19 @@ function App() {
             : 'Could not keep your latest changes.',
         ),
       )
+    const current = currentDocument.current
+    if (current) {
+      const next = {
+        ...current,
+        markdown,
+        contentVersion:
+          current.contentVersion + Number(current.markdown !== markdown),
+        dirty: markdown !== savedText.current || current.ephemeral,
+      }
+      currentDocument.current = next
+      setDocument(next)
+      editorDocument.publish(next)
+    }
   }
 
   async function runWorkspaceAction(

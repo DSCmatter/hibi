@@ -34,6 +34,12 @@ export const referenceSources = [
     ['DocumentState', 'DocumentCommand'],
   ],
   ['src/shared/document-types.ts', 'Documents', null, ['DocumentView']],
+  [
+    'src/shared/document-edits.ts',
+    'Document edits',
+    null,
+    ['SourceEdit', 'SourceEditRequest', 'SourceEditResult'],
+  ],
   ['src/shared/hotkeys.ts', 'Commands', null, ['AppCommand']],
   ['src/shared/media.ts', 'Media', null, ['MediaAttachment']],
   ['src/addons/authors.ts', 'Authors', 'authors'],

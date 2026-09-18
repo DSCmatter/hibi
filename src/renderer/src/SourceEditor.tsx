@@ -2,6 +2,7 @@ import {
   defaultKeymap,
   history,
   historyKeymap,
+  isolateHistory,
   selectAll,
 } from '@codemirror/commands'
 import { markdown as markdownLanguage } from '@codemirror/lang-markdown'
@@ -33,8 +34,12 @@ import { tags } from '@lezer/highlight'
 import { marked } from 'marked'
 import { useEffect, useRef, useState } from 'react'
 import type { DocumentFormat, SourceExtension } from '../../addons/api'
+import { type DocumentState, MAX_DOCUMENT_BYTES } from '../../shared/desktop'
+import { editedSource, sourceEditMatches } from '../../shared/document-edits'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { codeHighlighter, codeLanguages } from './code-languages'
+import { documentEdits } from './document-edits'
+import { editorDocument } from './document-formats'
 import type { FindMove, FindStatus } from './FindBar'
 import {
   formattingKeymap,
@@ -56,6 +61,8 @@ const highlighting = HighlightStyle.define([
 ])
 
 export function SourceEditor({
+  document,
+  editTarget,
   markdownMode,
   sourceLanguage,
   codeLanguage,
@@ -77,6 +84,8 @@ export function SourceEditor({
   onFormatting,
   onLink,
 }: {
+  document: DocumentState
+  editTarget: boolean
   markdownMode: boolean
   sourceLanguage: Language | undefined
   codeLanguage?: string | undefined
@@ -136,6 +145,8 @@ export function SourceEditor({
   const [languageError, setLanguageError] = useState('')
   const [languageReady, setLanguageReady] = useState(!codeLanguage)
   const inputReady = installedExtensions === sourceExtensions && languageReady
+  const editContext = useRef({ document, editTarget, disabled, inputReady })
+  editContext.current = { document, editTarget, disabled, inputReady }
   const change = useRef(onChange)
   const initialValue = useRef(value)
   const appliedRevision = useRef(externalRevision)
@@ -295,6 +306,60 @@ export function SourceEditor({
       }),
     })
     view.current = editor
+    const unregisterEdits = documentEdits.register((request) => {
+      const context = editContext.current
+      const current = editorDocument.get()
+      if (
+        !current ||
+        !sourceEditMatches(request, current) ||
+        current.tabId !== context.document.tabId ||
+        current.revision !== context.document.revision
+      )
+        return {
+          status: 'stale',
+          message: 'The document changed. Review the edits again.',
+        }
+      if (context.disabled || !context.inputReady)
+        return {
+          status: 'busy',
+          message: 'The editor is not ready for changes.',
+        }
+      if (!context.editTarget)
+        return {
+          status: 'unsupported-view',
+          message: 'Open source view to apply these edits.',
+        }
+      if (editor.composing)
+        return {
+          status: 'composing',
+          message: 'Finish composing text before applying edits.',
+        }
+      const source = editor.state.doc.toString()
+      if (source !== current.markdown)
+        return {
+          status: 'stale',
+          message: 'The editor is synchronizing. Review the edits again.',
+        }
+      try {
+        if (
+          editedSource(source, request.changes, MAX_DOCUMENT_BYTES) === source
+        )
+          return { status: 'applied', contentVersion: current.contentVersion }
+      } catch (error) {
+        return { status: 'invalid', message: String(error) }
+      }
+      editor.dispatch({
+        changes: request.changes,
+        annotations: [
+          isolateHistory.of('full'),
+          Transaction.userEvent.of('input.addon'),
+        ],
+      })
+      return {
+        status: 'applied',
+        contentVersion: editorDocument.get()!.contentVersion,
+      }
+    })
     let disposed = false
     const unregister = registerSourceView(editor, (anchor) =>
       editor.dispatch({
@@ -351,6 +416,7 @@ export function SourceEditor({
       formatting.current = null
       reportFormatting.current(null)
       unregister()
+      unregisterEdits()
       editor.destroy()
       view.current = null
     }

@@ -189,6 +189,12 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 - [DocumentTab](DocumentTab.md)
 - [DocumentView](DocumentView.md)
 
+## Document edits
+
+- [SourceEdit](SourceEdit.md)
+- [SourceEditRequest](SourceEditRequest.md)
+- [SourceEditResult](SourceEditResult.md)
+
 ## Commands
 
 - [AppCommand](AppCommand.md)

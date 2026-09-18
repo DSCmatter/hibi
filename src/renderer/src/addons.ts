@@ -33,6 +33,7 @@ import { addonRegistry } from './addon-registry'
 import { codeHtml, codeLanguages } from './code-languages'
 import { colorschemes } from './colorschemes'
 import { disposeAll } from './dispose'
+import { documentEdits } from './document-edits'
 import { documentFormats, editorDocument } from './document-formats'
 import { onEditorInput, onEditorKeyEvent } from './editor-events'
 import { explorerDecorations } from './explorer-decorations'
@@ -66,6 +67,7 @@ type Environment = Omit<
   workspace: Omit<AddonContext['workspace'], 'registerDecorations'>
   invoke: (id: string, method: string, input?: unknown) => Promise<unknown>
   error: (error: unknown) => void
+  isBusy: () => boolean
   updateMarkdown: AddonContext['editor']['updateMarkdown']
   runCommand: AddonContext['editor']['runCommand']
   runAction: AddonApp['runAction']
@@ -222,6 +224,8 @@ export function useAddons(environment: Environment, documentName?: string) {
       )
       const tooltipScope = createTooltipScope()
       const cleanups = new Set<() => void>()
+      const editScope = documentEdits.scope(() => latest.current.isBusy())
+      cleanups.add(() => editScope.dispose())
       const observe = (
         subscribe: (listener: () => void) => () => void,
         listener: () => void,
@@ -437,6 +441,7 @@ export function useAddons(environment: Environment, documentName?: string) {
                 observe(codeLanguages.subscribe, listener),
               renderCode: codeHtml,
               getDocument: () => editorDocument.get(),
+              applySourceEdits: (request) => editScope.apply(request),
               onDocumentChange(listener) {
                 if (disposed) return () => {}
                 const remove = editorDocument.subscribe((document) => {

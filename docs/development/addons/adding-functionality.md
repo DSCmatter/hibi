@@ -20,6 +20,26 @@ The transform receives the current source. Return the replacement text, or `null
 
 `getDocument()` includes `tabId`, `revision`, and `contentVersion`. The revision identifies a replacement editor; the content version advances when text changes, including undo and redo. If you calculate a result asynchronously, compare all three before using it. A matching file name alone does not mean the document is unchanged.
 
+For edits calculated from an earlier snapshot, use `applySourceEdits()` in source view. It validates the version and exact text before applying all changes in one undo operation. Offsets count UTF-16 code units in the complete document source, including frontmatter. Rich view returns `unsupported-view`; navigation position maps must not be used to build edit ranges.
+
+```typescript
+const document = context.editor.getDocument()
+if (document) {
+  const result = context.editor.applySourceEdits({
+    requestId: crypto.randomUUID(),
+    tabId: document.tabId,
+    revision: document.revision,
+    contentVersion: document.contentVersion,
+    changes: [{ from: 0, to: 0, insert: '# Heading\n\n', expectedText: '' }],
+  })
+  if (result.status !== 'applied') context.notify(result.message)
+}
+```
+
+Handle `stale` by calculating a new proposal from the latest snapshot, and `composing` by waiting until text composition finishes. A stopped addon receives `disposed`. Reusing a request ID with different edits is invalid. Retries with the same payload return the original result while it remains in the addon's bounded cache: at most 128 requests and 8 Mi UTF-16 units of serialized payloads. After eviction, the version check still prevents an old content-changing edit from being applied again.
+
+A request can contain up to 256 non-overlapping changes. Each change must include its exact `expectedText`; insertions use an empty string. Edits cannot split a surrogate pair or share an insertion boundary. Inserted and expected text together are limited to 4 Mi UTF-16 units, the serialized request to 8 Mi units, and the resulting document to Hibi's 2 MiB UTF-8 limit. The API retains the current immediate save and recovery path; it does not add a background edit journal.
+
 ## Add a toolbar action
 
 Commands and toolbar buttons are separate registrations. Reuse the same function when both should do the same thing.
