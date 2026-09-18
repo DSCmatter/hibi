@@ -1,5 +1,11 @@
 # editing
 
+## optional writing tools
+
+enable **word count** in settings → addons for live document word/character totals. markdown counts exclude formatting markers and frontmatter; other formats count source text. unicode characters, including joined emoji, count as single characters. counting runs locally in a worker.
+
+enable **block dragging** for a grip beside rich-text blocks. drag paragraphs, headings, lists, and nested list items to reorder them. click the grip for **move block up/down**, also available through the command palette. moves keep formatting and support undo/redo. both plugins are disabled by default and use the existing addon APIs.
+
 Settings → Editor → Writing → **Spell check** controls native spelling underlines in rich text, including the rendered pane in side-by-side view. It is on by default and persists on this device. Source/code editing keeps spell checking off. Changing the setting does not alter document text.
 
 ## default view

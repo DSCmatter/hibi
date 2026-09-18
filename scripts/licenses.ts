@@ -9,6 +9,8 @@ type Package = {
   license?: string
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>
 }
 
 // All other direct dependencies are application code or assets. Electron's npm
@@ -21,6 +23,7 @@ const buildTools = new Set([
   '@vitejs/plugin-react',
   'electron-builder',
   'electron-vite',
+  'next',
   'playwright',
   'typescript',
   'vite',
@@ -33,7 +36,7 @@ export async function collectLicenses(root = resolve('.')) {
   )
   const entries = new Map<string, LicenseInfo & { text: string }>()
   async function visit(name: string, from = root): Promise<void> {
-    if (name.startsWith('@types/')) return
+    if (name.startsWith('@types/') || buildTools.has(name)) return
     let folder: string, pkg: Package
     for (;;) {
       folder = join(from, 'node_modules', name)
@@ -93,7 +96,12 @@ export async function collectLicenses(root = resolve('.')) {
       text,
     })
     if (name !== 'electron')
-      for (const dependency of Object.keys(pkg.dependencies ?? {}))
+      for (const dependency of new Set([
+        ...Object.keys(pkg.dependencies ?? {}),
+        ...Object.keys(pkg.peerDependencies ?? {}).filter(
+          (name) => !pkg.peerDependenciesMeta?.[name]?.optional,
+        ),
+      ]))
         await visit(dependency, folder)
   }
   for (const name of Object.keys({

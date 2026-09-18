@@ -22,6 +22,13 @@ test('license catalog retains dependency and palette notices, excluding build to
     'dompurify',
     '@codemirror/view',
     '@tiptap/core',
+    '@tiptap/extension-drag-handle',
+    '@tiptap/extension-node-range',
+    '@tiptap/extension-collaboration',
+    '@tiptap/y-tiptap',
+    'yjs',
+    'y-protocols',
+    'lib0',
     '@replit/codemirror-vim',
     'catppuccin colorscheme',
   ])
@@ -31,6 +38,8 @@ test('license catalog retains dependency and palette notices, excluding build to
     'playwright',
     'electron-builder',
     '@electron/get',
+    'next',
+    '@next/env',
   ])
     assert.equal(
       entries.some((entry) => entry.name === name),

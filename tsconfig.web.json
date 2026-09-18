@@ -10,6 +10,7 @@
     "src/site/**/*.tsx",
     "src/addons/*/index.ts",
     "src/addons/*/index.tsx",
+    "src/addons/*/*.worker.ts",
     "src/useraddons/*/index.ts",
     "src/useraddons/*/index.tsx",
     "src/renderer/**/*.ts",

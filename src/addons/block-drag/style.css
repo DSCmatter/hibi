@@ -1,0 +1,26 @@
+.block-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 26px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border-radius: var(--radius-control);
+  cursor: grab;
+  -webkit-app-region: no-drag;
+}
+.block-drag-handle:hover,
+.block-drag-handle:focus-visible {
+  color: var(--ink);
+  background: var(--hover);
+}
+.block-drag-handle[data-dragging="true"] {
+  cursor: grabbing;
+}
+.rich-editor-host[hidden] .block-drag-handle,
+[inert] .block-drag-handle {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

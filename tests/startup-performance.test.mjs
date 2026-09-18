@@ -69,7 +69,7 @@ test('blank startup leaves disabled runtimes and closed settings unloaded and so
   assert.match(initial, /src\/renderer\/src\/main\.tsx/)
   assert.doesNotMatch(
     initial,
-    /src\/addons\/(?:math|typst|mdx|graph|git)\/index\./,
+    /src\/addons\/(?:math|typst|mdx|graph|git|word-count|block-drag)\/index\./,
   )
   assert.doesNotMatch(
     initial,

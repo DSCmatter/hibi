@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
@@ -115,9 +115,11 @@ test('keybeats uses local audio, editor input, toolbar controls, and clean addon
     name: /^keybeats$/i,
     exact: true,
   })
+  assert.match(await plugin.innerText(), /may.*hibi port/s)
+  assert.doesNotMatch(await plugin.innerText(), /Yug Bhanushali|Thomas Lai/)
   assert.match(
-    await plugin.innerText(),
-    /Yug Bhanushali.*original author.*Thomas Lai.*sounds.*may.*hibi port/s,
+    await readFile('src/addons/keybeats/README.md', 'utf8'),
+    /## credits[\s\S]*Yug Bhanushali[\s\S]*Thomas Lai/,
   )
   await plugin.getByRole('combobox').waitFor()
   assert.equal(await plugin.locator('select option').count(), 13)
