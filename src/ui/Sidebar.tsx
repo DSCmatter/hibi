@@ -95,6 +95,9 @@ function RenameInput({
       value={editing.value}
       disabled={editing.disabled}
       onChange={(event) => editing.onChange(event.target.value)}
+      onBlur={() => {
+        if (!editing.disabled) editing.onCommit()
+      }}
       onKeyDown={(event) => {
         event.stopPropagation()
         if (event.key === 'Enter') {

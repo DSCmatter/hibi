@@ -513,7 +513,11 @@ export function MarkdownEditor({
     const focus = () => {
       if (editor.isDestroyed || !editor.view.dom.isConnected) return
       const active = window.document.activeElement
-      if (active?.closest('.settings-screen, [role="dialog"], .source-pane'))
+      if (
+        active?.closest(
+          '.settings-screen, [role="dialog"], .source-pane, input, textarea, select',
+        )
+      )
         return
       editor.view.dispatch(
         editor.state.tr

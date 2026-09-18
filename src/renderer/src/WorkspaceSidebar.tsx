@@ -10,6 +10,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react'
@@ -61,6 +62,7 @@ export function WorkspaceSidebar({
   const menu = useMenus(onError)
   const dialogs = useDialogs()
   const [renaming, setRenaming] = useState(false)
+  const committing = useRef(false)
   const decorations = useSyncExternalStore(
     explorerDecorations.subscribe,
     explorerDecorations.snapshot,
@@ -77,19 +79,14 @@ export function WorkspaceSidebar({
   }, [workspace])
   async function create(kind: 'new-file' | 'new-folder', parent = '') {
     try {
-      const result = await onAction({ action: kind, path: parent })
-      if (result)
-        setEditing({
-          id: result.path,
-          value: result.path.split('/').at(-1) ?? '',
-          selectExtension: kind === 'new-file',
-        })
+      await onAction({ action: kind, path: parent })
     } catch (error) {
       onError(error)
     }
   }
   async function commitRename() {
-    if (!editing || renaming) return
+    if (!editing || committing.current) return
+    committing.current = true
     setRenaming(true)
     try {
       if (
@@ -103,6 +100,7 @@ export function WorkspaceSidebar({
     } catch (error) {
       onError(error)
     } finally {
+      committing.current = false
       setRenaming(false)
     }
   }

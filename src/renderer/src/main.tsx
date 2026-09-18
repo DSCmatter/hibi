@@ -890,6 +890,7 @@ function App() {
           setWorkspaceRename({
             id: result.path,
             value: result.path.split('/').at(-1) ?? '',
+            selectExtension: action.action === 'new-file',
           })
         }
       }
