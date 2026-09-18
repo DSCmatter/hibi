@@ -22,4 +22,26 @@ test('public documentation exports exclude agent notes', async (t) => {
     ['README.md'],
   )
   assert.equal(data.pages[0].markdown, '# User guide')
+  const staticOutput = join(folder, 'website')
+  const args = [
+    'scripts/export-docs.mjs',
+    folder,
+    staticOutput,
+    '--static',
+    '--url',
+    'https://example.com/docs/',
+  ]
+  execFileSync(process.execPath, args)
+  assert.match(
+    await readFile(join(staticOutput, 'README.md', 'index.html'), 'utf8'),
+    /<h1[^>]*>User guide<\/h1>/,
+  )
+  assert.match(
+    await readFile(join(staticOutput, 'sitemap.xml'), 'utf8'),
+    /<loc>https:\/\/example.com\/docs\/<\/loc>/,
+  )
+  assert.throws(
+    () => execFileSync(process.execPath, args, { stdio: 'pipe' }),
+    /new output folder/i,
+  )
 })

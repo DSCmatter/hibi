@@ -1,18 +1,38 @@
-# Export a workspace to HTML
+# Export a workspace
 
-Use the Export addon to share a folder of notes as one HTML file.
+Open a workspace and choose **Export workspace to HTML** from the command palette. The export dialog lets you change the site’s appearance and publishing options before choosing where to save it. Hibi remembers these settings for the workspace.
 
-## Export a folder
+Review the folder before sharing it. The export includes its supported documents and local attachments, including unsaved edits in the current note.
 
-1. Open the folder as a workspace.
-2. Enable **Export** under **Settings → Addons**.
-3. Run **Export workspace to HTML** from the command palette.
-4. Choose where to save the `.html` file.
+## Choose an output
 
-Open the result from disk, or upload it to a static website host, usually as `index.html`.
+**Single HTML file** is on by default. Open the file from disk or upload it as `index.html`. Its pages use `#page=` links, and search engines see the starting page.
 
-Review the folder before sharing it. The export includes its supported documents and their local attachments. Unsaved edits in the current workspace note are included without saving them to the original file.
+Turn off **Single HTML file** to create a static folder. Each document gets a pre-rendered page with a URL such as `/development/README.md/`. Upload the whole folder to your website host. Links also work without the trailing slash on hosts that redirect directory URLs. The export includes separate JavaScript and CSS files, making it easier to edit after exporting.
 
-To choose the starting page, name a document `README.md` or `index.md` in the workspace root. Choose a built-in [colorscheme](colorschemes.md) before exporting if you want it included; custom addon palettes are not exported.
+Hibi creates a new folder for each static export. It does not replace previous exports. A root `README.md` or `index.md` becomes the starting page.
 
-Check the exported file before publishing, especially links and media.
+## Customize the site
+
+Set the site title, logo, and favicon in the export dialog. Choose light and dark themes, or use **CSS overrides** to change styles. **Lock theme** hides the reader’s appearance picker and keeps your selected themes.
+
+Enable the **Graph** addon before exporting to include the note graph. You can turn **Include graph** off for an individual export.
+
+## Search and sharing
+
+**Automatic SEO** uses document headings and opening paragraphs for page titles and descriptions. To override them for a page, add `title` and `description` to its frontmatter:
+
+```yaml
+---
+title: Getting started
+description: Set up your first Hibi workspace.
+---
+```
+
+Set **Site URL** to the published address, including a path such as `https://example.com/docs/`. Static-folder exports use it for canonical links and a sitemap. **Social image URL** must point to a publicly hosted image. You can also set the author, language, and whether search engines may index the site.
+
+## Password protection
+
+Turn on **Require a password** to encrypt the exported content. Hibi remembers that protection is enabled but asks for the password each time you export. Readers can unlock the result locally or on an HTTPS website.
+
+Protected exports use hash-based links and cannot be indexed. Their page names, content, attachments, and custom styles remain encrypted until the reader enters the password.

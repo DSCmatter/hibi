@@ -2,6 +2,11 @@ import { mkdir, readdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { Marked } from 'marked'
 import {
+  exportOptions,
+  validateExportOptions,
+} from '../src/addons/documentation/options.ts'
+import { prepareSite, siteFiles } from '../src/addons/documentation/site.ts'
+import {
   imageSources,
   readDocumentImage,
   resolveDocumentMediaPath,
@@ -20,8 +25,20 @@ const markdownParser = new Marked({
   },
 })
 
-const root = await realpath(resolve(process.argv[2] ?? 'docs'))
-const output = resolve(process.argv[3] ?? 'out/docs/index.html')
+const args = process.argv.slice(2)
+const staticFolder = args.includes('--static')
+const urlIndex = args.indexOf('--url')
+const url = urlIndex >= 0 ? (args[urlIndex + 1] ?? '') : ''
+const positional = args.filter(
+  (arg, index) =>
+    arg !== '--static' &&
+    arg !== '--url' &&
+    (urlIndex < 0 || index !== urlIndex + 1),
+)
+const root = await realpath(resolve(positional[0] ?? 'docs'))
+const output = resolve(
+  positional[1] ?? (staticFolder ? 'out/docs' : 'out/docs/index.html'),
+)
 const files = (await readdir(root, { recursive: true, withFileTypes: true }))
   .filter((entry) => entry.isFile() && /\.md$/i.test(entry.name))
   .map((entry) => join(entry.parentPath, entry.name))
@@ -53,13 +70,24 @@ for (const file of files) {
   })
 }
 const template = await readFile('out/site/template.html', 'utf8')
-const data = JSON.stringify({ name: 'hibi documentation', pages })
-  .replaceAll('<', '\\u003c')
-  .replaceAll('\u2028', '\\u2028')
-  .replaceAll('\u2029', '\\u2029')
-await mkdir(dirname(output), { recursive: true })
-await writeFile(
-  output,
-  template.replace('__HIBI_WORKSPACE_DATA__', () => data),
-)
+const options = validateExportOptions({
+  ...exportOptions({}, 'hibi documentation'),
+  singleFile: !staticFolder,
+  graph: false,
+  url,
+})
+const site = prepareSite({ name: 'hibi documentation', pages }, options)
+if (staticFolder) {
+  await mkdir(dirname(output), { recursive: true })
+  await mkdir(output).catch((error) => {
+    if (error.code === 'EEXIST')
+      throw new Error('Choose a new output folder for a static export.')
+    throw error
+  })
+}
+for (const [path, contents] of await siteFiles(template, site)) {
+  const destination = staticFolder ? join(output, path) : output
+  await mkdir(dirname(destination), { recursive: true })
+  await writeFile(destination, contents)
+}
 console.log(`Exported ${pages.length} documentation pages to ${output}`)

@@ -217,6 +217,10 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
   await exportSearch.fill('export workspace to html')
   await exportSearch.press('Enter')
   await page
+    .getByRole('dialog', { name: /^export workspace$/i })
+    .getByRole('button', { name: /^export$/i, exact: true })
+    .click()
+  await page
     .getByRole('status')
     .filter({ hasText: /exported 2 pages/i })
     .waitFor()

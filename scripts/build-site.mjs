@@ -16,6 +16,10 @@ const licensePaths = [
   'lucide-react/LICENSE',
   'marked/LICENSE',
   'katex/LICENSE',
+  'd3-force/LICENSE',
+  'd3-dispatch/LICENSE',
+  'd3-quadtree/LICENSE',
+  'd3-timer/LICENSE',
 ]
 const licenses = (
   await Promise.all([
@@ -74,7 +78,7 @@ const result = await build({
     outDir: resolve('out/site'),
     emptyOutDir: !watching,
     lib: {
-      entry: resolve('src/site/main.tsx'),
+      entry: resolve('src/site/bootstrap.tsx'),
       formats: ['iife'],
       name: 'HibiDocumentation',
     },

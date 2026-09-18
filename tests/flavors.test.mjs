@@ -139,6 +139,10 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
   await pressShortcut(app, `${mod}+Shift+o`)
   await page.getByRole('button', { name: /new workspace file/i }).waitFor()
   await choose('export workspace to html')
+  await page
+    .getByRole('dialog', { name: /^export workspace$/i })
+    .getByRole('button', { name: /^export$/i })
+    .click()
   await page.getByText(/exported 1 page\b/i).waitFor()
   const html = await readFile(output, 'utf8')
   assert.match(html, /Khan Academy/)

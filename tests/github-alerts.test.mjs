@@ -137,6 +137,10 @@ test('github alerts edit in rich/split view, keep markers, and export with theme
     .getByRole('combobox', { name: /search commands/i })
     .fill('export workspace to html')
   await page.getByRole('option').first().click()
+  await page
+    .getByRole('dialog', { name: /^export workspace$/i })
+    .getByRole('button', { name: /^export$/i })
+    .click()
   await page.getByText(/exported 1 page\b/i).waitFor()
   const next = app.waitForEvent('window')
   await app.evaluate(({ BrowserWindow }, output) => {

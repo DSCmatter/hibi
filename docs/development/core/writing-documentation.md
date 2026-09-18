@@ -23,4 +23,12 @@ npm run export:docs
 
 Open `out/docs/index.html` in a browser. Check navigation, links, code samples, and narrow layouts. Markdown files under `docs/` are included automatically, except `ai-agents/`.
 
+For a static folder with pre-rendered pages and clean URLs, choose a new output directory and pass the published site URL:
+
+```sh
+node scripts/export-docs.mjs docs out/docs-site --static --url https://example.com/docs/
+```
+
+Serve the output with a static web server. The single-file export remains the default. The exporter refuses to reuse a static output directory so removed pages cannot remain published by accident.
+
 Use relative links between guides. Put images within `docs/` and reference them with relative paths. The docs synchronization workflow runs when changes under `docs/` reach `main`. To publish manually, open **Actions → sync documentation → Run workflow** on GitHub.
