@@ -46,7 +46,7 @@ import { AddonSidebar, builtInViews, viewShortcut } from './AddonSidebar'
 import { addonRegistry } from './addon-registry'
 import { addons, useAddons } from './addons'
 import { useAutosave } from './autosave'
-import type { PaletteCommand } from './CommandPalette'
+import { CommandPalette, type PaletteCommand } from './CommandPalette'
 import { colorschemes } from './colorschemes'
 import { documentFormats, editorDocument } from './document-formats'
 import { MarkdownEditor, type ViewMode } from './Editor'
@@ -81,11 +81,6 @@ startupMark('renderer-entry')
 const SettingsScreen = lazy(() =>
   import('./SettingsScreen').then((module) => ({
     default: module.SettingsScreen,
-  })),
-)
-const CommandPalette = lazy(() =>
-  import('./CommandPalette').then((module) => ({
-    default: module.CommandPalette,
   })),
 )
 const VersionHistory = lazy(() =>
@@ -1450,13 +1445,11 @@ function App() {
         onMode={(view) => addonHost.app.runAction(view)}
       />
       {paletteOpen && (
-        <Suspense fallback={<LoadingScreen />}>
-          <CommandPalette
-            platform={info?.platform ?? 'darwin'}
-            commands={paletteCommands}
-            onClose={() => setPaletteOpen(false)}
-          />
-        </Suspense>
+        <CommandPalette
+          platform={info?.platform ?? 'darwin'}
+          commands={paletteCommands}
+          onClose={() => setPaletteOpen(false)}
+        />
       )}
       <WorkspaceSidebar
         editing={workspaceRename}

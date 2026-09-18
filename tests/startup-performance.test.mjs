@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { codeHtml, codeLanguages } from '../src/renderer/src/code-languages.ts'
 import { electron } from './electron.mjs'
-import { clickMenu } from './keyboard.mjs'
+import { clickMenu, pressShortcut } from './keyboard.mjs'
 
 test('language loading deduplicates aliases and respects disabled preferences during import', async () => {
   assert.equal(codeLanguages.resolve('rust'), null)
@@ -73,12 +73,62 @@ test('blank startup leaves disabled runtimes and closed settings unloaded and so
   )
   assert.doesNotMatch(
     initial,
-    /src\/renderer\/src\/(?:SettingsScreen|VersionHistory|CommandPalette)\.tsx/,
+    /src\/renderer\/src\/(?:SettingsScreen|VersionHistory)\.tsx/,
   )
   assert.doesNotMatch(
     initial,
     /@codemirror\/(?:lang-rust|lang-python|lang-java|lang-sql)\//,
   )
+  await page.evaluate(() => {
+    const editor = document.querySelector('.editor-surface')
+    const height = editor.getBoundingClientRect().height
+    window.paletteLayout = { resized: false, loading: false }
+    window.paletteResize = new ResizeObserver(() => {
+      if (editor.getBoundingClientRect().height !== height)
+        window.paletteLayout.resized = true
+    })
+    window.paletteResize.observe(editor)
+    window.paletteMutations = new MutationObserver((records) => {
+      if (
+        records.some((record) =>
+          [...record.addedNodes].some(
+            (node) => node.nodeType === 1 && node.matches('.loading-screen'),
+          ),
+        )
+      )
+        window.paletteLayout.loading = true
+    })
+    window.paletteMutations.observe(document.querySelector('.app'), {
+      childList: true,
+    })
+  })
+  await pressShortcut(
+    app,
+    process.platform === 'darwin' ? 'Meta+k' : 'Control+k',
+  )
+  const search = page.getByRole('combobox', { name: 'Search commands' })
+  await search.waitFor()
+  await page
+    .locator('.command-palette')
+    .evaluate((element) =>
+      Promise.all(
+        element.getAnimations().map((animation) => animation.finished),
+      ),
+    )
+  assert.deepEqual(
+    await page.evaluate(() => {
+      window.paletteResize.disconnect()
+      window.paletteMutations.disconnect()
+      return window.paletteLayout
+    }),
+    { resized: false, loading: false },
+  )
+  await search.fill('properties by default')
+  await page
+    .getByRole('option', { name: /expand properties by default/i })
+    .waitFor()
+  await search.press('Escape')
+  await page.locator('.command-palette').waitFor({ state: 'hidden' })
   await clickMenu(app, 'Settings')
   assert.match(await loadedModules(), /src\/renderer\/src\/SettingsScreen\.tsx/)
   await page.getByRole('tab', { name: 'Addons', exact: true }).click()
