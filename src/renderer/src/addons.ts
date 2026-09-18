@@ -91,8 +91,8 @@ type Environment = Omit<
   runCommand: AddonContext['editor']['runCommand']
   runAction: AddonApp['runAction']
   getMarkdown: () => string
-  openSidebar: (id: string, input?: unknown) => void
-  closeSidebar: () => void
+  openSidebar: (id: string, input?: unknown, side?: 'left' | 'right') => void
+  closeSidebar: (side: 'left' | 'right') => void
   focusDocument: (tabId: string) => Promise<boolean>
 }
 
@@ -380,8 +380,9 @@ export function useAddons(
         >()
         const remove = batch.register(`view:${view.id}`, () => {
           registered = addonViews.register(id, view, {
-            openSidebar: (key) => latest.current.openSidebar(key),
-            closeSidebar: () => latest.current.closeSidebar(),
+            openSidebar: (key, side) =>
+              latest.current.openSidebar(key, undefined, side),
+            closeSidebar: (side) => latest.current.closeSidebar(side),
             focusDocument: (tabId) => latest.current.focusDocument(tabId),
           })
           for (const entry of pending.values())
@@ -393,7 +394,12 @@ export function useAddons(
             if (disposed || removed)
               throw new Error('This view is no longer available.')
             if (registered) return registered.open(options)
-            const key = options.id ?? 'default'
+            const side =
+              view.location === 'panel'
+                ? 'left'
+                : (options.side ?? view.side ?? 'left')
+            const instanceId = `${id}.${view.id}:${side === 'right' ? 'right:' : ''}${options.id ?? 'default'}`
+            const key = instanceId
             const previous = pending.get(key)
             if (previous?.proxy) {
               previous.options = options
@@ -409,7 +415,7 @@ export function useAddons(
             let closed = false
             pending.set(key, entry)
             entry.proxy = {
-              id: `${id}.${view.id}:${key}`,
+              id: instanceId,
               show() {
                 if (disposed || removed || closed) return
                 if (!entry.handle) {
@@ -624,8 +630,13 @@ export function useAddons(
                     createElement(view.Content, { input }),
                 })
                 return {
-                  open(input) {
-                    if (!disposed) registration.open({ input, focus: false })
+                  open(input, side) {
+                    if (!disposed)
+                      registration.open({
+                        input,
+                        focus: false,
+                        ...(side ? { side } : {}),
+                      })
                   },
                   dispose: registration.dispose,
                 }

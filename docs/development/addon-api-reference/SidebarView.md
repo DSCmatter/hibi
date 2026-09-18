@@ -13,6 +13,8 @@ type SidebarView = {
   id: string
   label: string
   icon?: import('../ui/toolbar').ToolbarItem['icon']
+  /** Preferred side when opened by the addon. Defaults to left. */
+  side?: 'left' | 'right'
   /** Mounted only while this view is visible. Keep durable drafts in addon state. */
   Content: ComponentType<{ input: unknown }>
 }
@@ -27,6 +29,7 @@ type SidebarView = {
 - [id](#id)
 - [label](#label)
 - [icon](#icon)
+- [side](#side)
 - [Content](#content)
 
 ## Properties
@@ -59,9 +62,19 @@ icon?: import('../ui/toolbar').ToolbarItem['icon']
 
 Related: [ToolbarItem](ToolbarItem.md).
 
+### side
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L386)
+
+Preferred side when opened by the addon. Defaults to left.
+
+```typescript
+side?: 'left' | 'right'
+```
+
 ### Content
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L386)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L388)
 
 Mounted only while this view is visible. Keep durable drafts in addon state.
 

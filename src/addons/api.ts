@@ -382,12 +382,14 @@ export type SidebarView = {
   id: string
   label: string
   icon?: import('../ui/toolbar').ToolbarItem['icon']
+  /** Preferred side when opened by the addon. Defaults to left. */
+  side?: 'left' | 'right'
   /** Mounted only while this view is visible. Keep durable drafts in addon state. */
   Content: ComponentType<{ input: unknown }>
 }
 export type SidebarHandle = {
   /** Reveal this view, optionally passing selection data to its content. */
-  open: (input?: unknown) => void
+  open: (input?: unknown, side?: 'left' | 'right') => void
   dispose: () => void
 }
 export type SidebarApi = {
@@ -411,6 +413,8 @@ export type AddonView = {
   label: string
   icon?: SidebarView['icon']
   location?: 'sidebar' | 'panel'
+  /** Preferred side for sidebar views. Users can choose either side in its picker. */
+  side?: 'left' | 'right'
   /** Visible views unmount when hidden; session views retain local state until closed or disposed. */
   lifetime?: 'visible' | 'session'
   Content: ComponentType<AddonViewProps>
@@ -429,6 +433,8 @@ export type ViewRegistration = {
     input?: unknown
     binding?: 'follow' | 'pinned'
     focus?: boolean
+    /** Override the sidebar's preferred side. Instances are independent on each side. */
+    side?: 'left' | 'right'
   }) => ViewInstance
   dispose: () => void
 }

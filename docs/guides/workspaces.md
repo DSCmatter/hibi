@@ -41,3 +41,11 @@ Press `Cmd/Ctrl+/` or use the sidebar button to show or hide it. Drag its right 
 With the resize edge focused, use Left/Right to adjust it, hold Shift for larger steps, and press Enter to reset it. Escape cancels a drag. Workspace and settings sidebars share your chosen width.
 
 In a narrow window, the sidebar opens over the editor. Selecting a file or heading closes it so you can read the full-width note. Press Escape or click outside to dismiss it. Widening the window restores your previous sidebar layout.
+
+## Use the right sidebar
+
+Use **Toggle right sidebar** at the top of the window or in the command palette. It starts collapsed with no view selected. Open **Right sidebar views** to choose the page outline or an enabled addon view, or choose **No view** to leave it empty. Workspace files remain in the left sidebar.
+
+Drag the right sidebar's left edge to resize it. Drag toward the right past its minimum width to collapse it. Double-click the edge or press Enter while it is focused to reset the width. Its width and selected view are remembered independently; both document sidebars start collapsed when you reopen Hibi.
+
+Both sidebars can stay open in a wide window. In narrow windows, opening one drawer closes the other. Settings and zen mode hide the right sidebar until you return to the editor.

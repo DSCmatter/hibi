@@ -1847,6 +1847,9 @@
   "ea7cb8d5da6c": [
     "src/main/ui-case.ts"
   ],
+  "965a8cfa61e5": [
+    "src/renderer/src/addon-views.ts"
+  ],
   "6917f99d1cef": [
     "src/shared/preservation.ts"
   ],
@@ -2246,6 +2249,12 @@
   ],
   "b57d852b14d2": [
     "src/addons/tags/Panel.tsx"
+  ],
+  "51c5cbe9c435": [
+    "src/renderer/src/Titlebar.tsx"
+  ],
+  "7610dfb3eb04": [
+    "src/renderer/src/AddonSidebar.tsx"
   ],
   "50d5797e87c0": [
     "src/addons/graph/Panel.tsx",
@@ -2800,6 +2809,9 @@
   "46f6013774d6": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
+  "78f6821c3cf6": [
+    "src/ui/Sidebar.tsx"
+  ],
   "243854b4d0c7": [
     "src/ui/Sidebar.tsx"
   ],
@@ -2820,6 +2832,9 @@
   ],
   "8612007e996d": [
     "src/addons/review/index.tsx"
+  ],
+  "e6cc8441ae78": [
+    "src/renderer/src/Titlebar.tsx"
   ],
   "a6334b558b9f": [
     "src/renderer/src/FormattingToolbar.tsx"
@@ -3670,6 +3685,10 @@
   ],
   "dfc1e6d16ba5": [
     "src/site/main.tsx"
+  ],
+  "25d09afe28c1": [
+    "src/renderer/src/Titlebar.tsx",
+    "src/shared/hotkeys.ts"
   ],
   "82a908b889c8": [
     "src/renderer/src/Titlebar.tsx"

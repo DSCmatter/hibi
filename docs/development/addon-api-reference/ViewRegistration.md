@@ -2,7 +2,7 @@
 
 # ViewRegistration
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L425)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L429)
 
 <details>
 <summary>Declaration</summary>
@@ -15,6 +15,8 @@ type ViewRegistration = {
     input?: unknown
     binding?: 'follow' | 'pinned'
     focus?: boolean
+    /** Override the sidebar's preferred side. Instances are independent on each side. */
+    side?: 'left' | 'right'
   }) => ViewInstance
   dispose: () => void
 }
@@ -33,7 +35,7 @@ type ViewRegistration = {
 
 ### open
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L427)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L431)
 
 Reuse a local instance ID, or omit it for the default instance. At most eight instances per addon.
 
@@ -43,6 +45,8 @@ open: (options?: {
     input?: unknown
     binding?: 'follow' | 'pinned'
     focus?: boolean
+    /** Override the sidebar's preferred side. Instances are independent on each side. */
+    side?: 'left' | 'right'
   }) => ViewInstance
 ```
 
@@ -52,13 +56,13 @@ Related: [ViewInstance](ViewInstance.md).
 
 | Name | Type |
 | --- | --- |
-| <code>options?</code> | <code>{ id?: string input?: unknown binding?: 'follow' &#124; 'pinned' focus?: boolean }</code> |
+| <code>options?</code> | <code>{ id?: string input?: unknown binding?: 'follow' &#124; 'pinned' focus?: boolean side?: 'left' &#124; 'right' }</code> |
 
 **Returns:** <code><a href="ViewInstance.md">ViewInstance</a></code>
 
 ### dispose
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L433)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L439)
 
 ```typescript
 dispose: () => void

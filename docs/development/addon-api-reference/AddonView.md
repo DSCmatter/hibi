@@ -2,7 +2,7 @@
 
 # AddonView
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L409)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L411)
 
 <details>
 <summary>Declaration</summary>
@@ -13,6 +13,8 @@ type AddonView = {
   label: string
   icon?: SidebarView['icon']
   location?: 'sidebar' | 'panel'
+  /** Preferred side for sidebar views. Users can choose either side in its picker. */
+  side?: 'left' | 'right'
   /** Visible views unmount when hidden; session views retain local state until closed or disposed. */
   lifetime?: 'visible' | 'session'
   Content: ComponentType<AddonViewProps>
@@ -29,6 +31,7 @@ type AddonView = {
 - [label](#label)
 - [icon](#icon)
 - [location](#location)
+- [side](#side)
 - [lifetime](#lifetime)
 - [Content](#content)
 
@@ -36,7 +39,7 @@ type AddonView = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L410)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L412)
 
 ```typescript
 id: string
@@ -44,7 +47,7 @@ id: string
 
 ### label
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L411)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L413)
 
 ```typescript
 label: string
@@ -52,7 +55,7 @@ label: string
 
 ### icon
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L412)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L414)
 
 ```typescript
 icon?: SidebarView['icon']
@@ -62,15 +65,25 @@ Related: [SidebarView](SidebarView.md).
 
 ### location
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L413)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L415)
 
 ```typescript
 location?: 'sidebar' | 'panel'
 ```
 
+### side
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L417)
+
+Preferred side for sidebar views. Users can choose either side in its picker.
+
+```typescript
+side?: 'left' | 'right'
+```
+
 ### lifetime
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L415)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L419)
 
 Visible views unmount when hidden; session views retain local state until closed or disposed.
 
@@ -80,7 +93,7 @@ lifetime?: 'visible' | 'session'
 
 ### Content
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L416)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L420)
 
 ```typescript
 Content: ComponentType<AddonViewProps>

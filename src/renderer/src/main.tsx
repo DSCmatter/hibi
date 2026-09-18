@@ -323,24 +323,52 @@ function App() {
     () => localStorage.getItem('sidebar-view') ?? 'workspace',
   )
   const [sidebarInput, setSidebarInput] = useState<unknown>()
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
+  const [rightSidebarView, setRightSidebarView] = useState(
+    () => localStorage.getItem('right-sidebar-view') ?? 'none',
+  )
+  const [rightSidebarInput, setRightSidebarInput] = useState<unknown>()
   const [outline, setOutline] = useState<OutlineHeading[]>([])
   const [activeOutline, setActiveOutline] = useState<string | null>(null)
   const [outlineTarget, setOutlineTarget] = useState<OutlineRequest | null>(
     null,
   )
-  function selectSidebarView(view: string, input?: unknown) {
+  function selectSidebarView(
+    view: string,
+    input?: unknown,
+    side: 'left' | 'right' = 'left',
+  ) {
     setZen(false)
-    setSidebarView(view)
-    setSidebarInput(input)
+    if (side === 'right') {
+      setRightSidebarView(view)
+      setRightSidebarInput(input)
+      localStorage.setItem('right-sidebar-view', view)
+      setRightSidebarOpen(true)
+      if (sidebarResize.overlay) setSidebarOpen(false)
+    } else {
+      setSidebarView(view)
+      setSidebarInput(input)
+      localStorage.setItem('sidebar-view', view)
+      setSidebarOpen(true)
+      if (sidebarResize.overlay) setRightSidebarOpen(false)
+    }
     setSettingsOpen(false)
-    localStorage.setItem('sidebar-view', view)
-    setSidebarOpen(true)
     showTitlebar()
   }
-  const sidebarResize = useSidebarResize(256)
+  const sidebarResize = useSidebarResize(
+    256,
+    'sidebar-width',
+    rightSidebarOpen && !settingsOpen ? 0.35 : 0.6,
+  )
+  const rightSidebarResize = useSidebarResize(
+    256,
+    'right-sidebar-width',
+    sidebarOpen ? 0.35 : 0.6,
+  )
   const previousOverlay = useRef(sidebarResize.overlay)
   const wideSidebars = useRef({
     workspace: sidebarOpen,
+    right: rightSidebarOpen,
     settings: settingsSidebarOpen,
   })
   useLayoutEffect(() => {
@@ -349,9 +377,11 @@ function App() {
     if (sidebarResize.overlay) {
       wideSidebars.current = {
         workspace: sidebarOpen,
+        right: rightSidebarOpen,
         settings: settingsSidebarOpen,
       }
       setSidebarOpen(false)
+      setRightSidebarOpen(false)
       setSettingsSidebarOpen(false)
       if (window.document.activeElement?.closest('.sidebar-slot'))
         window.document
@@ -359,9 +389,32 @@ function App() {
           ?.focus({ preventScroll: true })
     } else {
       setSidebarOpen(wideSidebars.current.workspace)
+      setRightSidebarOpen(wideSidebars.current.right)
       setSettingsSidebarOpen(wideSidebars.current.settings)
     }
-  }, [sidebarResize.overlay, sidebarOpen, settingsSidebarOpen])
+  }, [
+    sidebarResize.overlay,
+    sidebarOpen,
+    rightSidebarOpen,
+    settingsSidebarOpen,
+  ])
+  function closeRightSidebar() {
+    setRightSidebarOpen(false)
+    showTitlebar()
+    window.document
+      .querySelector<HTMLElement>('.right-sidebar-toggle')
+      ?.focus({ preventScroll: true })
+  }
+  function toggleRightSidebar() {
+    if (rightSidebarOpen && !zen && !settingsOpen) closeRightSidebar()
+    else {
+      setZen(false)
+      setSettingsOpen(false)
+      setRightSidebarOpen(true)
+      if (sidebarResize.overlay) setSidebarOpen(false)
+      showTitlebar()
+    }
+  }
   function closeSidebar(settings = settingsOpen) {
     if (settings) setSettingsSidebarOpen(false)
     else setSidebarOpen(false)
@@ -371,6 +424,7 @@ function App() {
       ?.focus({ preventScroll: true })
   }
   function toggleSidebar() {
+    if (sidebarResize.overlay) setRightSidebarOpen(false)
     if (zen && !settingsOpen) {
       setZen(false)
       setSidebarOpen(true)
@@ -385,6 +439,10 @@ function App() {
   const documentSidebarResize = {
     ...sidebarResize,
     onCollapse: () => closeSidebar(false),
+  }
+  const documentRightSidebarResize = {
+    ...rightSidebarResize,
+    onCollapse: closeRightSidebar,
   }
   const [cursorSettings, setCursorSettings] = useState(loadCursor)
   const [showLineNumbers, setShowLineNumbers] = useState(
@@ -412,7 +470,12 @@ function App() {
     {
       openDependencySettings: () => openSetting('dependencies'),
       openSidebar: selectSidebarView,
-      closeSidebar: () => {
+      closeSidebar: (side) => {
+        if (side === 'right') {
+          if (rightSidebarOpen && !settingsOpen) closeRightSidebar()
+          else setRightSidebarOpen(false)
+          return
+        }
         if (sidebarOpen && !settingsOpen) closeSidebar(false)
         else setSidebarOpen(false)
       },
@@ -520,6 +583,9 @@ function App() {
   const activeAddonView = addonHost.sidebarViews.find(
     (view) => view.id === sidebarView,
   )
+  const activeRightAddonView = addonHost.sidebarViews.find(
+    (view) => view.id === rightSidebarView,
+  )
   useEffect(() => {
     if (
       addonHost.allReady &&
@@ -530,6 +596,16 @@ function App() {
       localStorage.setItem('sidebar-view', 'workspace')
     }
   }, [addonHost.allReady, addonHost.sidebarViews, sidebarView])
+  useEffect(() => {
+    if (
+      addonHost.allReady &&
+      !['none', 'outline'].includes(rightSidebarView) &&
+      !addonHost.sidebarViews.some((view) => view.id === rightSidebarView)
+    ) {
+      setRightSidebarView('none')
+      localStorage.setItem('right-sidebar-view', 'none')
+    }
+  }, [addonHost.allReady, addonHost.sidebarViews, rightSidebarView])
   useEffect(() => {
     localStorage.removeItem('sidebar-open')
   }, [])
@@ -1124,6 +1200,9 @@ function App() {
       case 'toggle-sidebar':
         toggleSidebar()
         break
+      case 'toggle-right-sidebar':
+        toggleRightSidebar()
+        break
       case 'toggle-zen':
         setZen(!zen)
         setSettingsOpen(false)
@@ -1283,7 +1362,12 @@ function App() {
         label: `Show ${view.label.toLowerCase()}${view.id === 'workspace' ? ' sidebar' : ''}`,
         run: () => {
           setSettingsOpen(false)
-          selectSidebarView(view.id)
+          selectSidebarView(
+            view.id,
+            undefined,
+            addonHost.sidebarViews.find((entry) => entry.id === view.id)
+              ?.side ?? 'left',
+          )
         },
       })),
       {
@@ -1547,12 +1631,18 @@ function App() {
     <div
       className="app"
       aria-busy={busy}
-      style={{ '--sidebar-width': `${sidebarResize.width}px` } as CSSProperties}
+      style={
+        {
+          '--sidebar-width': `${sidebarResize.width}px`,
+          '--right-sidebar-width': `${rightSidebarResize.width}px`,
+        } as CSSProperties
+      }
       data-platform={info?.platform}
       data-screen={settingsOpen ? 'settings' : 'editor'}
       data-zen={zen && !settingsOpen}
       data-typing={typing && hideTitlebar}
       data-sidebar={sidebarOpen && !zen}
+      data-right-sidebar={rightSidebarOpen && !zen && !settingsOpen}
       data-sidebar-overlay={sidebarResize.overlay}
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes('Files')) {
@@ -1601,12 +1691,15 @@ function App() {
         if (
           event.key === 'Escape' &&
           sidebarResize.overlay &&
-          (settingsOpen ? settingsSidebarOpen : sidebarOpen && !zen) &&
+          (settingsOpen
+            ? settingsSidebarOpen
+            : (sidebarOpen || rightSidebarOpen) && !zen) &&
           !paletteOpen &&
           !dialogs.isOpen()
         ) {
           event.preventDefault()
-          closeSidebar()
+          if (!settingsOpen && rightSidebarOpen) closeRightSidebar()
+          else closeSidebar()
           return
         }
         if (
@@ -1660,6 +1753,12 @@ function App() {
         sidebarView={sidebarView}
         sidebarViews={sidebarViews}
         onSidebarView={selectSidebarView}
+        rightSidebarOpen={rightSidebarOpen}
+        rightSidebarView={rightSidebarView}
+        onRightSidebar={toggleRightSidebar}
+        onRightSidebarView={(view) =>
+          selectSidebarView(view, undefined, 'right')
+        }
         onSelectTab={(id) =>
           void applyDocumentOperation(() => window.hibi.selectDocumentTab(id))
         }
@@ -1732,6 +1831,37 @@ function App() {
         resize={documentSidebarResize}
       />
       <MenuHost />
+      <OutlineSidebar
+        side="right"
+        overlay={rightSidebarResize.overlay}
+        onDismiss={closeRightSidebar}
+        open={
+          rightSidebarOpen &&
+          !zen &&
+          !settingsOpen &&
+          rightSidebarView === 'outline'
+        }
+        resize={documentRightSidebarResize}
+        headings={outline}
+        selected={activeOutline}
+        onSelect={(id) => {
+          if (rightSidebarResize.overlay) setRightSidebarOpen(false)
+          setOutlineTarget((previous) => ({
+            id,
+            request: (previous?.request ?? 0) + 1,
+          }))
+        }}
+      />
+      <AddonSidebar
+        side="right"
+        overlay={rightSidebarResize.overlay}
+        onDismiss={closeRightSidebar}
+        view={activeRightAddonView}
+        input={rightSidebarInput}
+        open={rightSidebarOpen && !zen && !settingsOpen}
+        empty={rightSidebarView === 'none'}
+        resize={documentRightSidebarResize}
+      />
       {(settingsLoaded || settingsOpen || paletteOpen) && (
         <Suspense fallback={settingsOpen ? <LoadingScreen full /> : null}>
           <SettingsScreen
@@ -1796,7 +1926,10 @@ function App() {
       <div
         className="editor-surface"
         aria-hidden={settingsOpen}
-        inert={settingsOpen || (sidebarResize.overlay && sidebarOpen && !zen)}
+        inert={
+          settingsOpen ||
+          (sidebarResize.overlay && (sidebarOpen || rightSidebarOpen) && !zen)
+        }
       >
         <EditorToolbar mode={mode} typing={typing} />
         {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: tabpanel and region both support accessible names. */}
@@ -1819,7 +1952,10 @@ function App() {
             <MarkdownEditor
               onOutline={setOutline}
               outlineActive={
-                sidebarOpen && sidebarView === 'outline' && !settingsOpen
+                !settingsOpen &&
+                !zen &&
+                ((sidebarOpen && sidebarView === 'outline') ||
+                  (rightSidebarOpen && rightSidebarView === 'outline'))
               }
               onActiveOutline={setActiveOutline}
               outlineTarget={outlineTarget}

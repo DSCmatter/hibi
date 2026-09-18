@@ -5,6 +5,7 @@ import {
   Columns2,
   FileText,
   PanelLeft,
+  PanelRight,
   Pin,
   PinOff,
 } from 'lucide-react'
@@ -43,6 +44,10 @@ export function Titlebar({
   sidebarView,
   sidebarViews,
   onSidebarView,
+  rightSidebarOpen,
+  rightSidebarView,
+  onRightSidebar,
+  onRightSidebarView,
   onSelectTab,
   onCloseTab,
   onMoveTab,
@@ -62,6 +67,10 @@ export function Titlebar({
   sidebarView: string
   sidebarViews: ReturnType<typeof viewShortcut>[]
   onSidebarView: (view: string) => void
+  rightSidebarOpen: boolean
+  rightSidebarView: string
+  onRightSidebar: () => void
+  onRightSidebarView: (view: string) => void
   onSelectTab: (id: string) => void
   onCloseTab: (id: string) => void
   onMoveTab: (id: string, beforeId: string | null) => void
@@ -125,6 +134,7 @@ export function Titlebar({
         className="sidebar-toolbar"
         data-open={sidebarOpen}
         data-settings={settingsOpen}
+        inert={!settingsOpen && sidebarOverlay && rightSidebarOpen}
       >
         {!settingsOpen && (
           <>
@@ -199,7 +209,12 @@ export function Titlebar({
           <PanelLeft size={16} strokeWidth={1.5} />
         </IconButton>
       </div>
-      <div className="document-toolbar" inert={sidebarOverlay && sidebarOpen}>
+      <div
+        className="document-toolbar"
+        inert={
+          sidebarOverlay && (sidebarOpen || (!settingsOpen && rightSidebarOpen))
+        }
+      >
         <div className="document-title">
           {settingsOpen ? (
             <span>Settings</span>
@@ -253,6 +268,59 @@ export function Titlebar({
           </nav>
         )}
       </div>
+      {!settingsOpen && (
+        <div
+          className="right-sidebar-toolbar"
+          data-open={rightSidebarOpen}
+          inert={sidebarOverlay && sidebarOpen}
+        >
+          <IconButton
+            className="right-sidebar-toggle"
+            aria-label="Toggle right sidebar"
+            title="Toggle right sidebar"
+            aria-pressed={rightSidebarOpen}
+            aria-expanded={rightSidebarOpen}
+            onClick={onRightSidebar}
+          >
+            <PanelRight size={16} strokeWidth={1.5} />
+          </IconButton>
+          {rightSidebarOpen && (
+            <div className="right-sidebar-view-controls">
+              <span>
+                {sidebarViews.find((view) => view.id === rightSidebarView)
+                  ?.label ?? 'No view'}
+              </span>
+              <IconButton
+                aria-label="Right sidebar views"
+                title="Right sidebar views"
+                aria-haspopup="menu"
+                onClick={(event) =>
+                  menus.open({
+                    label: 'Right sidebar views',
+                    anchor: event.currentTarget,
+                    items: [
+                      {
+                        id: 'none',
+                        label: 'No view',
+                        onSelect: () => onRightSidebarView('none'),
+                      },
+                      ...sidebarViews
+                        .filter((view) => view.id !== 'workspace')
+                        .map((view, index) => ({
+                          ...view,
+                          separatorBefore: index === 0,
+                          onSelect: () => onRightSidebarView(view.id),
+                        })),
+                    ],
+                  })
+                }
+              >
+                <ChevronDown size={12} />
+              </IconButton>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   )
 }

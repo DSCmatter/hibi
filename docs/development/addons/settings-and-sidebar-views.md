@@ -92,7 +92,11 @@ context.commands.register({
 
 Content mounts only while the view is visible. Keep anything that must survive closing the sidebar in addon state. Use the shared [Sidebar](../addon-api-reference/Sidebar.md) component for lists and trees.
 
+Set `side: 'right'` when registering a view to make addon-triggered opens and its command-palette entry use the right sidebar. The default is `'left'`. Registration alone does not open or select a view; the right sidebar starts collapsed and empty. Users can select addon views in either sidebar's picker. `view.open(input, 'right')` overrides the preferred side for that call.
+
 Hibi displays sidebar views as drawers in narrow windows. For a separate layout built with `Sidebar`, set `overlay` and supply `onDismiss` to use the same backdrop and Escape handling. Keep covered content inert while the drawer is open and return focus to its toggle when dismissing it.
+
+The shared `Sidebar` also accepts `side: 'right'` to mirror its collapse motion and resize edge. Wide layouts allow both sidebars; narrow layouts display one drawer at a time.
 
 ## Bind a view to a document
 
@@ -109,11 +113,13 @@ const report = context.views.register({
 const instance = report.open({ id: 'comparison', binding: 'pinned' })
 ```
 
-Opening the same instance ID reuses it. `hide()` keeps the instance; `show()` reveals it; `close()` releases it. The default `lifetime: 'visible'` unmounts content when hidden. Session views retain React state until closed or until their addon stops. Pause timers and analysis when `visible` is false. The host allows eight instances per addon and 32 across the window.
+Opening the same instance ID on the same side reuses it. For sidebar views, `side: 'left' | 'right'` is accepted both at registration and in `open()` options; the open option overrides the registration default. Each side keeps independent instances, so the same view can appear in both sidebars without sharing component state. Panel views ignore `side`. Treat `instanceId` as an opaque identifier.
+
+`hide()` keeps the instance; `show()` reveals it; `close()` releases it. The default `lifetime: 'visible'` unmounts content when hidden. Session views retain React state until closed or until their addon stops. Pause timers and analysis when `visible` is false. The host allows eight instances per addon and 32 across the window, counting instances on both sides.
 
 Opening a view focuses its first control unless `focus: false` is supplied. `focusDocument()` activates the bound tab and returns false if that tab has closed. It never reopens files by path. Local loading and error boundaries keep a suspended or failed view from replacing the editor. The Review addon demonstrates a following sidebar and a pinned report panel.
 
-The existing `context.sidebar` API uses the same host with one default instance and remains compatible.
+The existing `context.sidebar` API uses the same host with one default instance per side and remains compatible. Removing an addon clears its instances on both sides. The left sidebar falls back to workspace navigation; the right sidebar returns to its empty view.
 
 ## Open a dialog
 

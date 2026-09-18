@@ -61,6 +61,16 @@
   visibility: hidden;
   transition-delay: 0s, var(--motion-pane);
 }
+.sidebar-slot[data-side="right"][data-open="false"] > .sidebar {
+  transform: translateX(100%);
+}
+.sidebar-slot[data-side="right"] > .sidebar {
+  margin-left: calc(100% - var(--sidebar-width, 256px));
+}
+.sidebar-slot[data-side="right"] .sidebar-resizer {
+  left: -3px;
+  right: auto;
+}
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -285,6 +295,7 @@ html:has(.sidebar-resizer:is([data-dragging="true"], :focus-visible))
   :is(
     .sidebar,
     .sidebar-toolbar,
+    .right-sidebar-toolbar,
     .editor-surface,
     .site-content,
     .site-navigation-controls

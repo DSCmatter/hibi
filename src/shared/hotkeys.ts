@@ -31,6 +31,12 @@ export const actions = [
     key: '',
   },
   { id: 'toggle-sidebar', label: 'Toggle sidebar', category: 'view', key: '/' },
+  {
+    id: 'toggle-right-sidebar',
+    label: 'Toggle right sidebar',
+    category: 'view',
+    key: '',
+  },
   { id: 'toggle-zen', label: 'Toggle zen mode', category: 'view', key: '' },
   { id: 'normal', label: 'Normal view', category: 'view', key: 'shift+[' },
   {

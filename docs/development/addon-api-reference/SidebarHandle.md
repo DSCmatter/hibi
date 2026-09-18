@@ -2,7 +2,7 @@
 
 # SidebarHandle
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L388)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L390)
 
 <details>
 <summary>Declaration</summary>
@@ -10,7 +10,7 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addon
 ```typescript
 type SidebarHandle = {
   /** Reveal this view, optionally passing selection data to its content. */
-  open: (input?: unknown) => void
+  open: (input?: unknown, side?: 'left' | 'right') => void
   dispose: () => void
 }
 ```
@@ -28,12 +28,12 @@ type SidebarHandle = {
 
 ### open
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L390)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L392)
 
 Reveal this view, optionally passing selection data to its content.
 
 ```typescript
-open: (input?: unknown) => void
+open: (input?: unknown, side?: 'left' | 'right') => void
 ```
 
 **Parameters**
@@ -41,12 +41,13 @@ open: (input?: unknown) => void
 | Name | Type |
 | --- | --- |
 | <code>input?</code> | <code>unknown</code> |
+| <code>side?</code> | <code>'left' &#124; 'right'</code> |
 
 **Returns:** <code>void</code>
 
 ### dispose
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L391)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L393)
 
 ```typescript
 dispose: () => void

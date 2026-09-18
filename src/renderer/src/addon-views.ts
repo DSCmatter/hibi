@@ -8,8 +8,8 @@ import type { DocumentState } from '../../shared/desktop'
 import { editorDocument } from './document-formats'
 
 type Environment = {
-  openSidebar: (id: string) => void
-  closeSidebar: () => void
+  openSidebar: (id: string, side: 'left' | 'right') => void
+  closeSidebar: (side: 'left' | 'right') => void
   focusDocument: (tabId: string) => Promise<boolean>
 }
 export type RegisteredView = AddonView & {
@@ -18,6 +18,7 @@ export type RegisteredView = AddonView & {
 }
 export type ViewEntry = {
   id: string
+  side: 'left' | 'right'
   definition: RegisteredView
   input: unknown
   binding: AddonViewProps['binding']
@@ -29,20 +30,30 @@ const instances = new Map<string, ViewEntry>()
 const listeners = new Set<() => void>()
 let activePanel: string | null = null
 let activeSidebar: string | null = null
+let activeRightSidebar: string | null = null
 let focusTarget: string | null = null
 let snapshot: {
   definitions: RegisteredView[]
   instances: ViewEntry[]
   activePanel: string | null
   activeSidebar: string | null
+  activeRightSidebar: string | null
   focusTarget: string | null
-} = { definitions: [], instances: [], activePanel, activeSidebar, focusTarget }
+} = {
+  definitions: [],
+  instances: [],
+  activePanel,
+  activeSidebar,
+  activeRightSidebar,
+  focusTarget,
+}
 const publish = () => {
   snapshot = {
     definitions: [...definitions.values()],
     instances: [...instances.values()],
     activePanel,
     activeSidebar,
+    activeRightSidebar,
     focusTarget,
   }
   for (const listener of listeners) listener()
@@ -63,17 +74,25 @@ function open(
 ): ViewInstance {
   if (definitions.get(definition.id) !== definition)
     throw new Error('This view is no longer available.')
+  const panel = definition.location === 'panel'
+  const side = panel ? 'left' : (options.side ?? definition.side ?? 'left')
+  if (!['left', 'right'].includes(side))
+    throw new Error('Invalid sidebar side.')
   const localId = options.id ?? 'default'
   if (!/^[a-zA-Z0-9_-]{1,80}$/.test(localId))
     throw new Error('Invalid view instance ID.')
-  const id = `${definition.id}:${localId}`
+  const id = `${definition.id}:${side === 'right' ? 'right:' : ''}${localId}`
+  const select = () => {
+    if (side === 'right') activeRightSidebar = id
+    else activeSidebar = id
+  }
   const existing = instances.get(id)
   if (existing) {
     if ('input' in options)
       instances.set(id, { ...existing, input: options.input })
     if (reveal) existing.handle.show()
     else {
-      activeSidebar = id
+      select()
       publish()
     }
     if (options.focus !== false) existing.handle.focus()
@@ -86,7 +105,6 @@ function open(
     instances.size >= 32
   )
     throw new Error('Close a addon view before opening another.')
-  const panel = definition.location === 'panel'
   const returnFocus =
     window.document.activeElement instanceof HTMLElement
       ? window.document.activeElement
@@ -96,9 +114,9 @@ function open(
     show() {
       if (!instances.has(id)) return
       if (panel) activePanel = id
-      else activeSidebar = id
+      else select()
       publish()
-      if (!panel) definition.environment.openSidebar(definition.id)
+      if (!panel) definition.environment.openSidebar(definition.id, side)
     },
     hide() {
       if (!instances.has(id)) return
@@ -115,9 +133,13 @@ function open(
         target?.focus({ preventScroll: true })
       }
       if (panel && activePanel === id) activePanel = null
-      else if (!panel && activeSidebar === id) {
-        activeSidebar = null
-        definition.environment.closeSidebar()
+      else if (
+        !panel &&
+        (side === 'right' ? activeRightSidebar : activeSidebar) === id
+      ) {
+        if (side === 'right') activeRightSidebar = null
+        else activeSidebar = null
+        definition.environment.closeSidebar(side)
       }
       if (focusTarget === id) focusTarget = null
       publish()
@@ -136,6 +158,7 @@ function open(
   }
   instances.set(id, {
     id,
+    side,
     definition,
     input: options.input,
     binding: options.binding ?? 'follow',
@@ -144,7 +167,7 @@ function open(
   })
   if (reveal) handle.show()
   else {
-    activeSidebar = id
+    select()
     publish()
   }
   if (options.focus !== false) handle.focus()
@@ -168,6 +191,7 @@ export const addonViews = {
       !/^[a-z][a-z0-9-]*$/.test(view.id) ||
       definitions.has(id) ||
       (view.location && !['sidebar', 'panel'].includes(view.location)) ||
+      (view.side && !['left', 'right'].includes(view.side)) ||
       (view.lifetime && !['visible', 'session'].includes(view.lifetime))
     )
       throw new Error(`This addon supplied a duplicate or invalid view: ${id}.`)
@@ -184,6 +208,7 @@ export const addonViews = {
           if (entry.definition.location === 'panel') entry.handle.close()
           else {
             if (activeSidebar === entry.id) activeSidebar = null
+            if (activeRightSidebar === entry.id) activeRightSidebar = null
             if (focusTarget === entry.id) focusTarget = null
             instances.delete(entry.id)
           }
@@ -193,18 +218,20 @@ export const addonViews = {
       },
     }
   },
-  selectSidebar(id: string, input?: unknown) {
+  selectSidebar(id: string, input?: unknown, side: 'left' | 'right' = 'left') {
+    const selected = side === 'right' ? activeRightSidebar : activeSidebar
     const definition = definitions.get(id)
     if (!definition || definition.location === 'panel') {
-      if (activeSidebar) {
-        activeSidebar = null
+      if (selected) {
+        if (side === 'right') activeRightSidebar = null
+        else activeSidebar = null
         publish()
       }
       return
     }
-    const current = activeSidebar && instances.get(activeSidebar)
+    const current = selected && instances.get(selected)
     if (current && current.definition === definition) return
-    open(definition, { input, focus: false }, false)
+    open(definition, { input, focus: false, side }, false)
   },
   focusHandled(id: string) {
     if (focusTarget === id) {

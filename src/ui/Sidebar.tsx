@@ -34,6 +34,8 @@ export type SidebarProps = {
   /** False keeps every branch open and lets parent rows select content. */
   collapsible?: boolean
   open?: boolean
+  /** Dock edge; resize gestures and overlay motion follow this side. */
+  side?: 'left' | 'right'
   /** Show a dismissible drawer over the content, keeping desktop-sized controls. */
   overlay?: boolean
   onDismiss?: () => void
@@ -132,6 +134,7 @@ export function Sidebar({
   editing,
   resize,
   overlay = false,
+  side = 'left',
   onDismiss,
 }: SidebarProps) {
   const container = useRef<HTMLDivElement>(null)
@@ -226,6 +229,7 @@ export function Sidebar({
       className={`sidebar-slot ${className}`}
       data-open={open}
       data-overlay={overlay}
+      data-side={side}
       inert={!open}
       aria-hidden={!open}
       onKeyDown={(event) => {
@@ -541,7 +545,9 @@ export function Sidebar({
           <hr
             className="sidebar-resizer"
             data-dragging={dragging}
-            aria-label="Resize sidebar"
+            aria-label={
+              side === 'right' ? 'Resize right sidebar' : 'Resize sidebar'
+            }
             aria-orientation="vertical"
             aria-valuemin={MIN_SIDEBAR_WIDTH}
             aria-valuemax={resize.maxWidth}
@@ -563,7 +569,9 @@ export function Sidebar({
             }}
             onPointerMove={(event) => {
               if (drag.current?.pointer !== event.pointerId) return
-              const width = drag.current.width + event.clientX - drag.current.x
+              const width =
+                drag.current.width +
+                (event.clientX - drag.current.x) * (side === 'right' ? -1 : 1)
               if (resize.onCollapse && width <= MIN_SIDEBAR_WIDTH - 48) {
                 resize.onChange(drag.current.width)
                 event.currentTarget.releasePointerCapture(event.pointerId)
@@ -587,10 +595,14 @@ export function Sidebar({
               const step = event.shiftKey ? 24 : 8
               switch (event.key) {
                 case 'ArrowLeft':
-                  resize.onChange(resize.width - step)
+                  resize.onChange(
+                    resize.width + (side === 'right' ? step : -step),
+                  )
                   break
                 case 'ArrowRight':
-                  resize.onChange(resize.width + step)
+                  resize.onChange(
+                    resize.width + (side === 'right' ? -step : step),
+                  )
                   break
                 case 'Home':
                   resize.onChange(MIN_SIDEBAR_WIDTH)

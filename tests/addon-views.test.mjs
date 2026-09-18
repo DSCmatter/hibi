@@ -53,10 +53,14 @@ test('scoped views preserve sessions, pin documents, contain lazy failures, and 
     if (panel.open({id:'staged'}) !== staged) throw Error('staged instance was not reused');
     staged.hide();
     const follow = context.views.register({ id:'follow', label:'Following view', Content });
+    const right = context.views.register({ id:'right', label:'Right session', side:'right', lifetime:'session', Content });
+    const queuedRight = right.open({id:'queued'});
+    if (right.open({id:'queued'}) !== queuedRight) throw Error('right staged instance was not reused');
+    queuedRight.hide();
     const lazy = React.lazy(() => new Promise(resolve => { window.finishView = () => resolve({default:Content}); }));
     const slow = context.views.register({ id:'slow', label:'Slow panel', location:'panel', Content:lazy });
     const broken = context.views.register({ id:'broken', label:'Broken panel', location:'panel', Content() { throw Error('view failure'); } });
-    window.viewsFixture = { context, panel, follow, slow, broken, staged, handles: {} };
+    window.viewsFixture = { context, panel, follow, right, queuedRight, slow, broken, staged, handles: {} };
   }});`,
   )
   const app = await electron.launch({
@@ -143,6 +147,41 @@ test('scoped views preserve sessions, pin documents, contain lazy failures, and 
   await panel.waitFor({ state: 'hidden' })
   await page.evaluate(() => window.viewsFixture.handles.pinned.show())
   assert.equal(await page.locator('.addon-panel:not([hidden])').count(), 0)
+  await page.evaluate(() => window.viewsFixture.queuedRight.show())
+  const right = page.locator('.addon-sidebar[data-side="right"]')
+  await right.getByRole('button', { name: 'Count 0' }).click()
+  assert.equal(await sidebar.isVisible(), true)
+  assert.equal(
+    await page.evaluate(() => window.viewsFixture.queuedRight.id),
+    'view-fixture.right:right:queued',
+  )
+  await page
+    .getByRole('button', { name: 'Toggle right sidebar', exact: true })
+    .click()
+  await right.waitFor({ state: 'hidden' })
+  await page.evaluate(() => window.viewsFixture.queuedRight.show())
+  await right.getByRole('button', { name: 'Count 1' }).waitFor()
+  await page.evaluate(() => {
+    window.viewsFixture.handles.rightFollow = window.viewsFixture.follow.open({
+      side: 'right',
+    })
+  })
+  assert.equal(
+    await page
+      .locator('.addon-sidebar[data-side="left"]')
+      .getByRole('button', { name: 'Count 0' })
+      .isVisible(),
+    true,
+  )
+  await right.getByRole('button', { name: 'Count 0' }).waitFor()
+  await page.evaluate(() => window.viewsFixture.handles.rightFollow.hide())
+  assert.equal(await page.locator('.app').getAttribute('data-sidebar'), 'true')
+  assert.equal(
+    await page.locator('.app').getAttribute('data-right-sidebar'),
+    'false',
+  )
+  await page.evaluate(() => window.viewsFixture.queuedRight.show())
+  await right.getByRole('button', { name: 'Count 1' }).waitFor()
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: 'Addons', exact: true }).click()
   await page.locator('#addon-view-fixture').click()
@@ -153,4 +192,5 @@ test('scoped views preserve sessions, pin documents, contain lazy failures, and 
   assert.equal(await page.locator('[data-addon-view]').count(), 0)
   assert.equal(await editor.textContent(), 'still editable')
   assert.equal(await sidebar.count(), 0)
+  await page.getByText(/no view selected/i).waitFor()
 })

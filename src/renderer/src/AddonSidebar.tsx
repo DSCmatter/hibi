@@ -21,6 +21,8 @@ export function AddonSidebar({
   overlay,
   onDismiss,
   resize,
+  side = 'left',
+  empty = false,
 }: {
   view: AddonView | undefined
   input: unknown
@@ -28,36 +30,53 @@ export function AddonSidebar({
   overlay: boolean
   onDismiss: () => void
   resize: NonNullable<SidebarProps['resize']>
+  side?: 'left' | 'right'
+  empty?: boolean
 }) {
   const state = useSyncExternalStore(addonViews.subscribe, addonViews.snapshot)
   useEffect(() => {
-    if (open) addonViews.selectSidebar(view?.id ?? 'workspace', input)
-  }, [open, view, input])
+    if (open) addonViews.selectSidebar(view?.id ?? 'none', input, side)
+  }, [open, view, input, side])
   return (
     <Sidebar
       className="document-sidebar addon-sidebar"
-      label={view?.label ?? 'Addon view'}
-      header={<span>{view?.label}</span>}
+      side={side}
+      label={view?.label ?? (empty ? 'Right sidebar' : 'Addon view')}
+      header={side === 'left' ? <span>{view?.label}</span> : null}
       items={[]}
       selected={null}
       onSelect={() => {}}
-      open={open && !!view}
+      open={open && (!!view || empty)}
       overlay={overlay}
       onDismiss={onDismiss}
       resize={resize}
-      content={state.instances
-        .filter((entry) => entry.definition.location !== 'panel')
-        .map((entry) => (
-          <AddonViewContent
-            key={entry.id}
-            entry={entry}
-            visible={
-              open &&
-              view?.id === entry.definition.id &&
-              state.activeSidebar === entry.id
-            }
-          />
-        ))}
+      content={
+        <>
+          {empty && (
+            <div className="sidebar-empty">
+              No view selected. Choose a view from the menu above.
+            </div>
+          )}
+          {state.instances
+            .filter(
+              (entry) =>
+                entry.definition.location !== 'panel' && entry.side === side,
+            )
+            .map((entry) => (
+              <AddonViewContent
+                key={entry.id}
+                entry={entry}
+                visible={
+                  open &&
+                  view?.id === entry.definition.id &&
+                  (side === 'right'
+                    ? state.activeRightSidebar
+                    : state.activeSidebar) === entry.id
+                }
+              />
+            ))}
+        </>
+      }
     />
   )
 }
