@@ -32,6 +32,7 @@ import { createAddonOverrides } from './addon-overrides'
 import { addonRegistry } from './addon-registry'
 import { codeHtml, codeLanguages } from './code-languages'
 import { colorschemes } from './colorschemes'
+import { disposeAll } from './dispose'
 import { documentFormats, editorDocument } from './document-formats'
 import { onEditorInput, onEditorKeyEvent } from './editor-events'
 import { explorerDecorations } from './explorer-decorations'
@@ -264,18 +265,21 @@ export function useAddons(environment: Environment, documentName?: string) {
         if (mounted.current) publishExtensions()
         if (mounted.current) publishSources()
         try {
-          try {
-            addon.stop?.()
-          } finally {
-            for (const remove of cleanups) remove()
-            cleanups.clear()
-            dialogScope.dispose()
-            toastScope.dispose()
-            menuScope.dispose()
-            toolbarScope.dispose()
-            tooltipScope.dispose()
-            overrides.dispose()
-          }
+          const callbacks = [...cleanups]
+          cleanups.clear()
+          disposeAll(
+            [
+              () => addon.stop?.(),
+              ...callbacks,
+              () => dialogScope.dispose(),
+              () => toastScope.dispose(),
+              () => menuScope.dispose(),
+              () => toolbarScope.dispose(),
+              () => tooltipScope.dispose(),
+              () => overrides.dispose(),
+            ],
+            `Could not fully stop ${addon.manifest.name}.`,
+          )
         } catch (error) {
           latest.current.error(error)
         }
@@ -556,8 +560,10 @@ export function useAddons(environment: Environment, documentName?: string) {
                         }
                       }
                     } catch (error) {
-                      latest.current.error(error)
-                      return () => {}
+                      throw new Error(
+                        `${addon.manifest.name} could not start its rich editor feature.`,
+                        { cause: error },
+                      )
                     }
                   },
                 })
@@ -588,8 +594,10 @@ export function useAddons(environment: Environment, documentName?: string) {
                       const result = await extension.create()
                       return disposed ? [] : result
                     } catch (error) {
-                      latest.current.error(error)
-                      return []
+                      throw new Error(
+                        `${addon.manifest.name} could not start its source editor feature.`,
+                        { cause: error },
+                      )
                     }
                   },
                 })

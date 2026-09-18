@@ -28,6 +28,7 @@ import type {
 import type { DocumentState } from '../../shared/desktop'
 import type { DocumentView } from '../../shared/document-types'
 import { isMediaFile } from '../../shared/media'
+import { DocumentNotice } from '../../ui/DocumentNotice'
 import { documentImage } from './DocumentImage'
 import { type CursorSettings, EditorCursor } from './EditorCursor'
 import { emitEditorKeyEvent } from './editor-events'
@@ -122,6 +123,7 @@ export function MarkdownEditor({
     [projection, unsupportedFlavor],
   )
   const [richRevision, setRichRevision] = useState(0)
+  const [richExtensionError, setRichExtensionError] = useState('')
   const [findQuery, setFindQuery] = useState('')
   const [findStatus, setFindStatus] = useState<FindStatus>({
     current: 0,
@@ -142,10 +144,11 @@ export function MarkdownEditor({
         : focusedPane
   const [sourceMounted, setSourceMounted] = useState(mode !== 'normal')
   const [sourceReady, setSourceReady] = useState(false)
+  const [sourceSettled, setSourceSettled] = useState(false)
   const [initialMode] = useState(mode)
   // A new document starts in the selected view. Only a first opening from
   // normal view waits for source layout before beginning the pane transition.
-  const paneMode = sourceReady || initialMode !== 'normal' ? mode : 'normal'
+  const paneMode = sourceSettled || initialMode !== 'normal' ? mode : 'normal'
   const content = useRef<HTMLDivElement>(null)
   const [previewToolbar, setPreviewToolbar] = useState<HTMLDivElement | null>(
     null,
@@ -416,22 +419,24 @@ export function MarkdownEditor({
       editor,
       paneMode,
       focusedPane,
-      disabled || mode !== paneMode || (findTarget === 'rich' && sourceOnly),
+      disabled ||
+        mode !== paneMode ||
+        (findTarget === 'rich' && (sourceOnly || !!richExtensionError)),
       onAttach,
       markdownDocument,
       format,
     )
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!editor) return
-    editor.setEditable(!sourceOnly && !disabled, false)
-  }, [editor, sourceOnly, disabled])
+    editor.setEditable(!sourceOnly && !disabled && !richExtensionError, false)
+  }, [editor, sourceOnly, disabled, richExtensionError])
 
   useEffect(() => {
     editor?.view.dom.setAttribute('spellcheck', String(spellCheck))
   }, [editor, spellCheck])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!editor) return
     let detach: (() => void)[] = []
     const cleanup = () => {
@@ -440,8 +445,16 @@ export function MarkdownEditor({
     }
     const attach = () => {
       cleanup()
-      if (!editor.isDestroyed)
-        detach = richExtensions.map((extension) => extension.attach(editor))
+      setRichExtensionError('')
+      if (editor.isDestroyed) return
+      try {
+        for (const extension of richExtensions)
+          detach.push(extension.attach(editor))
+      } catch (error) {
+        cleanup()
+        editor.setEditable(false, false)
+        setRichExtensionError(String(error))
+      }
     }
     editor.on('mount', attach)
     editor.on('unmount', cleanup)
@@ -616,6 +629,12 @@ export function MarkdownEditor({
                 ) : null,
               )}
             <div className="rich-editor-host" hidden={!markdownDocument}>
+              {richExtensionError && (
+                <DocumentNotice
+                  title="Editor plugin unavailable"
+                  message={richExtensionError}
+                />
+              )}
               <EditorContent editor={editor} />
             </div>
           </section>
@@ -644,7 +663,10 @@ export function MarkdownEditor({
                   sourceExtensions={sourceExtensions}
                   showLineNumbers={showLineNumbers}
                   active={mode !== 'normal'}
-                  onReady={() => setSourceReady(true)}
+                  onReady={(status) => {
+                    setSourceReady(status === 'ready')
+                    if (status !== 'loading') setSourceSettled(true)
+                  }}
                   value={value}
                   externalRevision={richRevision}
                   onChange={updateFromSource}

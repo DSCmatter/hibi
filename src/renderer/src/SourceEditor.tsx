@@ -83,7 +83,7 @@ export function SourceEditor({
   supportsMedia: boolean
   label: string
   active: boolean
-  onReady: () => void
+  onReady: (status: 'loading' | 'ready' | 'failed') => void
   value: string
   onChange: (value: string) => void
   disabled: boolean
@@ -330,6 +330,7 @@ export function SourceEditor({
     let canceled = false
     const editor = view.current
     setExtensionError('')
+    ready.current('loading')
     void Promise.all(
       sourceExtensions.map(async (extension) => extension.create()),
     )
@@ -342,7 +343,7 @@ export function SourceEditor({
       .catch((error: unknown) => {
         if (!canceled) {
           setExtensionError(String(error))
-          ready.current()
+          ready.current('failed')
         }
       })
     return () => {
@@ -350,7 +351,7 @@ export function SourceEditor({
     }
   }, [sourceExtensions])
   useEffect(() => {
-    if (inputReady && measured) ready.current()
+    if (inputReady && measured) ready.current('ready')
   }, [inputReady, measured])
 
   useEffect(() => {

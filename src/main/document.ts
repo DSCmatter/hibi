@@ -39,6 +39,7 @@ let saved = ''
 let path: string | null = null
 let pendingPath: string | null = null
 let revision = 0
+let contentVersion = 0
 let untitledName = 'untitled.md'
 let draftId = randomUUID()
 let back: string[] = []
@@ -75,7 +76,15 @@ export async function setTabsEnabled(window: BrowserWindow, enabled: unknown) {
 }
 
 function snapshot() {
-  return { markdown, saved, path, pendingPath, untitledName, draftId }
+  return {
+    markdown,
+    saved,
+    path,
+    pendingPath,
+    untitledName,
+    draftId,
+    contentVersion,
+  }
 }
 function storeTab() {
   tabs.set(activeTab, snapshot())
@@ -84,7 +93,15 @@ function activateTab(id: string) {
   const draft = tabs.get(id)
   if (!draft) throw new Error('This tab is no longer open.')
   activeTab = id
-  ;({ markdown, saved, path, pendingPath, untitledName, draftId } = draft)
+  ;({
+    markdown,
+    saved,
+    path,
+    pendingPath,
+    untitledName,
+    draftId,
+    contentVersion,
+  } = draft)
 }
 async function startTab(window: BrowserWindow, reuseEmpty = false) {
   if (!tabsEnabled) {
@@ -139,6 +156,7 @@ export async function selectDocumentTab(
     const content = await readMarkdown(draft.path)
     if (markdown !== current)
       throw new Error('The document changed while switching tabs. Try again.')
+    if (draft.markdown !== content) draft.contentVersion++
     draft.markdown = draft.saved = content
   }
   if (remember && id !== activeTab) rememberLocation()
@@ -275,7 +293,7 @@ export async function importDocument(
   if (!(await startTab(window, true))) return null
   clearDocument(window, false)
   untitledName = name
-  markdown = content
+  updateDocument(content)
   window.setDocumentEdited(hasUnsavedDocuments())
   return getDocument()
 }
@@ -299,6 +317,7 @@ export function getDocument(): DocumentState {
     dirty: markdown !== saved || !!pendingPath,
     ephemeral: !!pendingPath,
     revision,
+    contentVersion,
     canAutosave: path !== null,
   }
 }
@@ -306,6 +325,7 @@ export function getDocument(): DocumentState {
 export function discardChanges(): void {
   storeTab()
   for (const draft of tabs.values()) {
+    if (draft.markdown !== draft.saved) draft.contentVersion++
     draft.markdown = draft.saved
     draft.pendingPath = null
   }
@@ -315,6 +335,7 @@ export function discardChanges(): void {
 
 export function updateDocument(value: unknown): void {
   validateMarkdown(value)
+  if (markdown !== value) contentVersion++
   markdown = value
 }
 
@@ -416,7 +437,7 @@ export function restoreDocument(
   content: string,
 ): DocumentState {
   validateMarkdown(content)
-  markdown = content
+  updateDocument(content)
   revision += 1
   window.setDocumentEdited(hasUnsavedDocuments())
   return getDocument()
@@ -451,6 +472,7 @@ export function clearDocument(
 ): DocumentState {
   if (remember) rememberLocation()
   markdown = saved = ''
+  contentVersion = 0
   draftId = randomUUID()
   path = null
   pendingPath = null
@@ -615,6 +637,7 @@ export async function loadDocument(
   path = chosen
   pendingPath = null
   markdown = saved = content
+  contentVersion = 0
   revision += 1
   window.setDocumentEdited(hasUnsavedDocuments())
   return getDocument()

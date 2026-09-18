@@ -2,7 +2,7 @@
 
 # DocumentCommand
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L47)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L49)
 
 ```typescript
 type DocumentCommand = 'new' | 'open' | 'save' | 'saveAs'

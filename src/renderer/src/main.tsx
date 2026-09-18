@@ -784,6 +784,8 @@ function App() {
         ? {
             ...current,
             markdown,
+            contentVersion:
+              current.contentVersion + Number(current.markdown !== markdown),
             dirty: markdown !== savedText.current || current.ephemeral,
           }
         : current,

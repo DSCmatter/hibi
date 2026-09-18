@@ -36,6 +36,8 @@ export type DocumentState = {
   name: string
   dirty: boolean
   revision: number
+  /** Advances on text changes within this tab and revision, including undo and redo. */
+  contentVersion: number
   /** True only after this document has a real local save destination. */
   canAutosave: boolean
 }

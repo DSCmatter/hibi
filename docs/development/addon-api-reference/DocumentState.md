@@ -23,6 +23,8 @@ type DocumentState = {
   name: string
   dirty: boolean
   revision: number
+  /** Advances on text changes within this tab and revision, including undo and redo. */
+  contentVersion: number
   /** True only after this document has a real local save destination. */
   canAutosave: boolean
 }
@@ -44,6 +46,7 @@ type DocumentState = {
 - [name](#name)
 - [dirty](#dirty)
 - [revision](#revision)
+- [contentVersion](#contentversion)
 - [canAutosave](#canautosave)
 
 ## Properties
@@ -138,9 +141,19 @@ dirty: boolean
 revision: number
 ```
 
-### canAutosave
+### contentVersion
 
 [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L40)
+
+Advances on text changes within this tab and revision, including undo and redo.
+
+```typescript
+contentVersion: number
+```
+
+### canAutosave
+
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L42)
 
 True only after this document has a real local save destination.
 
