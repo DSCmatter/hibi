@@ -8,7 +8,7 @@ import { clickMenu, pressShortcut } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 import { zipFiles } from './zip.mjs'
 
-test('compact filters reset preferences, group addons, and install reviewed url packages disabled', {
+test('compact filters reset preferences, keep addon rows stable, and install reviewed url packages disabled', {
   timeout: 45000,
 }, async (t) => {
   const temp = await mkdtemp(join(tmpdir(), 'hibi-addon-settings-'))
@@ -76,12 +76,72 @@ test('compact filters reset preferences, group addons, and install reviewed url 
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: /^addons$/i, exact: true }).click()
   const addons = page.locator('#settings-addons')
-  assert.equal(
-    await addons
-      .locator('.addon-state-group[data-enabled="true"] #addon-frontmatter')
-      .isChecked(),
-    true,
-  )
+  assert.equal(await addons.locator('#addon-frontmatter').isChecked(), true)
+  const vim = addons.locator('#addon-vim')
+  await vim.scrollIntoViewIfNeeded()
+  for (const checked of [true, false]) {
+    await page.evaluate(() => {
+      const content = document.querySelector('.settings-content')
+      const row = document.querySelector('[data-setting-id="addon-vim"]')
+      const probe = {
+        row,
+        order: [...document.querySelectorAll('.addon-list > .setting-row')].map(
+          (item) => item.dataset.settingId,
+        ),
+        scroll: content.scrollTop,
+        top: row.getBoundingClientRect().top,
+        movement: 0,
+        frame: 0,
+      }
+      window.addonToggleProbe = probe
+      const sample = () => {
+        probe.movement = Math.max(
+          probe.movement,
+          Math.abs(content.scrollTop - probe.scroll),
+        )
+        probe.frame = requestAnimationFrame(sample)
+      }
+      probe.frame = requestAnimationFrame(sample)
+    })
+    await vim.click()
+    await page.waitForFunction((checked) => {
+      const input = document.querySelector('#addon-vim')
+      return (
+        input.checked === checked &&
+        !input.disabled &&
+        document.activeElement === input
+      )
+    }, checked)
+    const state = await page.evaluate(() => {
+      const probe = window.addonToggleProbe
+      cancelAnimationFrame(probe.frame)
+      const row = document.querySelector('[data-setting-id="addon-vim"]')
+      return {
+        sameRow: row === probe.row,
+        sameOrder:
+          JSON.stringify(probe.order) ===
+          JSON.stringify(
+            [...document.querySelectorAll('.addon-list > .setting-row')].map(
+              (item) => item.dataset.settingId,
+            ),
+          ),
+        movement: Math.max(
+          probe.movement,
+          Math.abs(
+            document.querySelector('.settings-content').scrollTop -
+              probe.scroll,
+          ),
+        ),
+        rowMovement: Math.abs(row.getBoundingClientRect().top - probe.top),
+      }
+    })
+    assert.equal(state.sameRow, true)
+    assert.equal(state.sameOrder, true)
+    assert.ok(
+      state.movement <= 1 && state.rowMovement <= 1,
+      JSON.stringify(state),
+    )
+  }
   await addons.getByRole('searchbox', { name: /filter addons/i }).fill('vim')
   assert.equal(await addons.locator('.setting-row:visible').count(), 1)
   assert.match(
@@ -89,16 +149,14 @@ test('compact filters reset preferences, group addons, and install reviewed url 
     /Built-in/,
   )
   await addons.locator('#addon-vim').click()
-  await addons
-    .locator('.addon-state-group[data-enabled="true"] #addon-vim')
-    .waitFor()
+  await page.waitForFunction(() => document.querySelector('#addon-vim').checked)
   await page.waitForFunction(() => document.activeElement?.id === 'addon-vim')
   await addons
     .getByRole('button', { name: /^reset all$/i, exact: true })
     .click()
-  await addons
-    .locator('.addon-state-group[data-enabled="false"] #addon-vim')
-    .waitFor()
+  await page.waitForFunction(
+    () => !document.querySelector('#addon-vim').checked,
+  )
   await addons.getByRole('button', { name: /hibi garden/i }).click()
   assert.deepEqual(await app.evaluate(() => globalThis.openedAddonLinks), [
     'https://hibi.garden/addons',
@@ -123,9 +181,7 @@ test('compact filters reset preferences, group addons, and install reviewed url 
   await addons
     .getByRole('searchbox', { name: /filter addons/i })
     .fill('url fixture')
-  const installed = addons.locator(
-    '.addon-state-group[data-enabled="false"] #addon-url-fixture',
-  )
+  const installed = addons.locator('#addon-url-fixture')
   await installed.waitFor()
   assert.equal(await installed.isChecked(), false)
   assert.match(

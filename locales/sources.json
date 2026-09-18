@@ -618,9 +618,6 @@
   "187581a4c6c3": [
     "src/addons/git/Panel.tsx"
   ],
-  "75081b593d15": [
-    "src/renderer/src/AddonSettings.tsx"
-  ],
   "f5b084a14162": [
     "src/renderer/src/NotificationSettings.tsx"
   ],
@@ -820,9 +817,6 @@
   ],
   "a4f6e36d4826": [
     "src/addons/_shared/format-renderer.tsx"
-  ],
-  "92c1cdfdf4cb": [
-    "src/renderer/src/AddonSettings.tsx"
   ],
   "a68ae936a898": [
     "src/renderer/src/markdown-syntax.ts"

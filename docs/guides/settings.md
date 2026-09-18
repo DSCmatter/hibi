@@ -32,7 +32,7 @@ Use **Syntax** to enable or disable formatting features, and **Code highlighting
 
 ## Addons
 
-Enable or disable plugins and themes under **Addons**. Enabling a plugin makes its settings and formats available. **Reset all** restores the default enabled addons without removing installed packages.
+Enable or disable plugins and themes in the alphabetical **Addons** list. Enabling a plugin makes its settings and formats available. **Reset all** restores the default enabled addons without removing installed packages.
 
 Choose **View readme** in the addon list or a plugin’s settings to read its documentation.
 

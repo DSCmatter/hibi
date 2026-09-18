@@ -109,7 +109,12 @@ export function AddonSettings({
   const restoreFocus = useRef<string | null>(null)
   useEffect(() => {
     if (!busy && restoreFocus.current) {
-      document.getElementById(restoreFocus.current)?.focus()
+      const control = document.getElementById(restoreFocus.current)
+      if (
+        document.activeElement === document.body ||
+        document.activeElement === control
+      )
+        control?.focus({ preventScroll: true })
       restoreFocus.current = null
     }
   })
@@ -120,7 +125,13 @@ export function AddonSettings({
   const changed = addons.some(
     ({ manifest }) => enabled(manifest.id) !== !!manifest.defaultEnabled,
   )
-  const matching = addons.filter(({ manifest }) => matches(manifest, query))
+  const ordered = addons.toSorted(
+    (a, b) =>
+      a.manifest.name.localeCompare(b.manifest.name, undefined, {
+        sensitivity: 'base',
+      }) || a.manifest.id.localeCompare(b.manifest.id),
+  )
+  const matching = ordered.filter(({ manifest }) => matches(manifest, query))
   async function run(action: () => Promise<void>) {
     if (busy) return
     setBusy(true)
@@ -190,66 +201,49 @@ export function AddonSettings({
           })
         }
       />
-      {[true, false].map((active) => {
-        const group = addons.filter(
-          ({ manifest }) => enabled(manifest.id) === active,
-        )
-        return (
-          <div
-            key={String(active)}
-            className="addon-state-group"
-            data-enabled={active}
-            hidden={!group.some((addon) => matching.includes(addon))}
+      <div className="settings-group addon-list" hidden={!matching.length}>
+        {ordered.map(({ manifest }) => (
+          <SettingRow
+            key={manifest.id}
+            id={`addon-${manifest.id}`}
+            label={manifest.name}
+            hidden={!matches(manifest, query)}
+            description={
+              <>
+                {manifest.description}
+                <AddonMetadata manifest={manifest} />
+              </>
+            }
           >
-            <h2>{active ? 'Enabled' : 'Disabled'}</h2>
-            <div className="settings-group">
-              {group.map(({ manifest }) => (
-                <SettingRow
-                  key={manifest.id}
-                  id={`addon-${manifest.id}`}
-                  label={manifest.name}
-                  hidden={!matches(manifest, query)}
-                  description={
-                    <>
-                      {manifest.description}
-                      <AddonMetadata manifest={manifest} />
-                    </>
-                  }
+            <div className="addon-actions">
+              <AddonReadmeButton manifest={manifest} />
+              {addonRegistry.isInstalled(manifest.id) && (
+                <Button
+                  disabled={busy}
+                  onClick={() => void run(() => remove(manifest.id))}
                 >
-                  <div className="addon-actions">
-                    <AddonReadmeButton manifest={manifest} />
-                    {addonRegistry.isInstalled(manifest.id) && (
-                      <Button
-                        disabled={busy}
-                        onClick={() => void run(() => remove(manifest.id))}
-                      >
-                        Remove
-                      </Button>
-                    )}
-                    {manifest.id === 'markdown' ? (
-                      <span className="setting-availability">
-                        Always available
-                      </span>
-                    ) : (
-                      <Toggle
-                        id={`addon-${manifest.id}`}
-                        aria-describedby={`addon-${manifest.id}-description`}
-                        disabled={busy}
-                        checked={active}
-                        onChange={(event) => {
-                          restoreFocus.current = event.target.id
-                          const next = event.target.checked
-                          void run(() => setEnabled(manifest.id, next))
-                        }}
-                      />
-                    )}
-                  </div>
-                </SettingRow>
-              ))}
+                  Remove
+                </Button>
+              )}
+              {manifest.id === 'markdown' ? (
+                <span className="setting-availability">Always available</span>
+              ) : (
+                <Toggle
+                  id={`addon-${manifest.id}`}
+                  aria-describedby={`addon-${manifest.id}-description`}
+                  disabled={busy}
+                  checked={enabled(manifest.id)}
+                  onChange={(event) => {
+                    restoreFocus.current = event.target.id
+                    const next = event.target.checked
+                    void run(() => setEnabled(manifest.id, next))
+                  }}
+                />
+              )}
             </div>
-          </div>
-        )
-      })}
+          </SettingRow>
+        ))}
+      </div>
       {!matching.length && <p>No matching addons.</p>}
     </>
   )
