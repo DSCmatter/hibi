@@ -15,6 +15,7 @@ const runs = Number(process.env.HIBI_INPUT_RUNS ?? 5)
 if (!Number.isInteger(runs) || runs < 1 || runs > 50)
   throw new Error('Use 1–50 runs.')
 const foreground = process.env.HIBI_BENCH_FOREGROUND === '1'
+const analysisLoad = process.env.HIBI_INPUT_ANALYSIS === '1'
 const directory = await mkdtemp(join(tmpdir(), 'hibi-input-bench-'))
 const fixtures = [
   { name: 'blank.md', title: '', source: '' },
@@ -32,6 +33,45 @@ try {
     for (let run = 0; run < runs; run++) {
       const profile = join(directory, `${fixture.name}-${run}`)
       await mkdir(profile)
+      if (analysisLoad) {
+        const addon = join(profile, 'installed-addons', 'analysis-load')
+        await mkdir(addon, { recursive: true })
+        await writeFile(
+          join(profile, 'addons.json'),
+          JSON.stringify({ 'analysis-load': true }),
+        )
+        await writeFile(
+          join(addon, 'hibi-addon.json'),
+          JSON.stringify({
+            id: 'analysis-load',
+            name: 'Analysis benchmark',
+            description: 'Benchmark-only analysis load',
+            kind: 'extension',
+            apiVersion: 2,
+            version: '1.0.0',
+            authors: [{ displayName: 'Hibi benchmark' }],
+            capabilities: [],
+            entry: 'index.js',
+            analysis: { entry: 'analysis.js' },
+          }),
+        )
+        await writeFile(
+          join(addon, '.hibi-install.json'),
+          JSON.stringify({
+            hash: 'a'.repeat(64),
+            files: ['index.js', 'analysis.js', 'hibi-addon.json'],
+            source: 'local',
+          }),
+        )
+        await writeFile(
+          join(addon, 'index.js'),
+          'export default () => ({start(context) { window.__hibiAnalysisBenchmark = context; }})',
+        )
+        await writeFile(
+          join(addon, 'analysis.js'),
+          'export function analyze() { const end = performance.now() + 2000; while (performance.now() < end) {} return null; }',
+        )
+      }
       const app = await launchBenchmarkApp(profile)
       try {
         const page = await app.firstWindow()
@@ -52,6 +92,29 @@ try {
           await openBenchmarkDocument(app, page, fixture.title)
         }
         // Test-only instrumentation: none of these wrappers ship in Hibi.
+        if (analysisLoad) {
+          await page.waitForFunction(() => window.__hibiAnalysisBenchmark)
+          await page.evaluate(() => {
+            const context = window.__hibiAnalysisBenchmark
+            window.__hibiAnalysisRun = context.analysis.run(
+              context.editor.getTextProjection(),
+            )
+          })
+          // A ready host has sent the job to the isolated worker before typing begins.
+          for (let attempt = 0; attempt < 100; attempt++) {
+            const ready = await app.evaluate(({ BrowserWindow }) =>
+              BrowserWindow.getAllWindows().some(
+                (window) =>
+                  window.webContents.getURL().startsWith('hibi-analysis:') &&
+                  !window.webContents.isLoading(),
+              ),
+            )
+            if (ready) break
+            if (attempt === 99)
+              throw new Error('Analysis benchmark did not start.')
+            await new Promise((resolve) => setTimeout(resolve, 20))
+          }
+        }
         await page.evaluate(() => {
           const element = document.querySelector('.tiptap')
           const editor = element.editor
@@ -123,6 +186,11 @@ try {
           () => window.__hibiInputMeasurements,
         )
         samples.push({ fixture: fixture.name, run, driver, ...measured })
+        if (analysisLoad) {
+          const result = await page.evaluate(() => window.__hibiAnalysisRun)
+          if (!['stale', 'complete'].includes(result.status))
+            throw new Error(`Analysis benchmark failed: ${result.message}`)
+        }
       } finally {
         await app.close()
       }
@@ -135,6 +203,7 @@ try {
         platform: process.platform,
         arch: process.arch,
         foreground,
+        analysisLoad,
         endpoints: {
           driver:
             'locator.press through changed editor DOM text; identical endpoint for first and subsequent keys',

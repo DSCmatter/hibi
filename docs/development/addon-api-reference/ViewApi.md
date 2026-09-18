@@ -2,7 +2,7 @@
 
 # ViewApi
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L424)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L426)
 
 <details>
 <summary>Declaration</summary>
@@ -23,7 +23,7 @@ type ViewApi = { register: (view: AddonView) => ViewRegistration }
 
 ### register
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L424)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L426)
 
 ```typescript
 register: (view: AddonView) => ViewRegistration

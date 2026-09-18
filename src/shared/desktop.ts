@@ -62,6 +62,11 @@ export type AppInfo = {
 }
 
 export type DesktopApi = {
+  analyzeDocument: (
+    owner: string,
+    projection: import('./document-projection').TextProjection,
+  ) => Promise<import('./analysis').AnalysisResult>
+  cancelAnalysis: (owner: string) => Promise<void>
   /** Independent snapshots requested by preload while renderer modules load. */
   bootstrap: {
     document: () => Promise<{

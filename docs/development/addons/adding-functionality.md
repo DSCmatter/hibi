@@ -54,6 +54,16 @@ Use `setDecorations(projection.id, decorations)` to underline up to 32 analysis 
 
 Listen to `onDocumentChange()` for text changes and `onProjectionChange()` for view or schema changes. The built-in Review addon demonstrates asynchronous checks, annotations, stale-result handling, and one-step fixes.
 
+### Run isolated analysis
+
+Declare `analysis: { entry: 'analysis.js' }` in the manifest and ship a self-contained ES module exporting `analyze(projection)`. Bundle its dependencies into that file. Bundled addons instead provide `analysis.ts` beside their manifest; Hibi builds it separately. Call `context.analysis.run(projection)` from your renderer entry. The result is either `complete` with a JSON value and projection ID, or `stale`, `cancelled`, or `failed` with a message. Validate your result shape before using it to change the document.
+
+The host sends only an exact projection of the active document. An analyzer cannot request another document, use the app bridge, access the DOM or filesystem, or connect to the network. Its worker runs in a separate sandboxed renderer process. This boundary applies to the analysis entry; ordinary renderer addons remain trusted code.
+
+Each addon gets one active request and one replaceable queued request. Replacing queued work resolves it as `cancelled`. Call `cancel()` when the view closes or a result is no longer wanted. Disabling the addon, reloading the app renderer, or closing the window revokes its process and pending work. Compare the returned projection ID before applying results; editor or syntax changes can invalidate it even if the source text has not changed.
+
+The host allows four analyzer processes, up to 10,000 projection spans, and 256 Ki UTF-16 units of JSON output per result. Each request has a three-second deadline, including process startup. A 256 MiB working-set guard is sampled every 500 ms; it is a termination threshold, not an operating-system memory quota. Idle processes stop after 30 seconds. A later request starts a fresh process after failure or cancellation. Diagnostics records analysis as asynchronous addon activity.
+
 ## Add a toolbar action
 
 Commands and toolbar buttons are separate registrations. Route the toolbar action through `commands.execute()` to use the command's lifecycle checks and diagnostics.

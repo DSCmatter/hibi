@@ -70,6 +70,7 @@ type Environment = Omit<
   | 'dialogs'
   | 'sidebar'
   | 'views'
+  | 'analysis'
   | 'toasts'
   | 'notify'
   | 'workspace'
@@ -459,6 +460,7 @@ export function useAddons(
           ?.reject(new Error('The addon stopped before its command could run.'))
         editScope.dispose()
         annotationScope.dispose()
+        void window.hibi.cancelAnalysis(id).catch(() => {})
         running.delete(id)
         if (mounted.current)
           setSettled((current) => {
@@ -544,6 +546,18 @@ export function useAddons(
             },
             dialogs: dialogScope.api,
             views: { register: registerView },
+            analysis: {
+              async run(projection) {
+                if (disposed)
+                  return { status: 'cancelled', message: 'The addon stopped.' }
+                return performanceDiagnostics.measure(id, 'analysis', () =>
+                  window.hibi.analyzeDocument(id, projection),
+                )
+              },
+              cancel() {
+                void window.hibi.cancelAnalysis(id).catch(() => {})
+              },
+            },
             sidebar: {
               register(view) {
                 if (disposed) return { open() {}, dispose() {} }

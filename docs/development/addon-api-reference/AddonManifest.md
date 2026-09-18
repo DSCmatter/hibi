@@ -32,6 +32,8 @@ type AddonManifest = {
   commands?: readonly AddonCommandDescriptor[]
   /** Inert ownership metadata protects source even when an installed addon has never been loaded. */
   syntax?: readonly AddonSyntaxDescriptor[]
+  /** Self-contained ES module exporting analyze(projection). Runs without app, filesystem, or network access. */
+  analysis?: { entry: string }
   /** Required plugin release version, separate from the host API version. */
   version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
@@ -65,6 +67,7 @@ type AddonManifest = {
 - [activation](#activation)
 - [commands](#commands)
 - [syntax](#syntax)
+- [analysis](#analysis)
 - [version](#version)
 - [fileExtensions](#fileextensions)
 - [authors](#authors)
@@ -194,9 +197,19 @@ syntax?: readonly AddonSyntaxDescriptor[]
 
 Related: [AddonSyntaxDescriptor](AddonSyntaxDescriptor.md).
 
+### analysis
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L125)
+
+Self-contained ES module exporting analyze(projection). Runs without app, filesystem, or network access.
+
+```typescript
+analysis?: { entry: string }
+```
+
 ### version
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L125)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L127)
 
 Required plugin release version, separate from the host API version.
 
@@ -206,7 +219,7 @@ version: string
 
 ### fileExtensions
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L127)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L129)
 
 Additional source-file extensions, without dots. Files remain openable when disabled.
 
@@ -216,7 +229,7 @@ fileExtensions?: readonly string[]
 
 ### authors
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L128)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L130)
 
 ```typescript
 authors?: readonly AddonAuthor[]
@@ -226,7 +239,7 @@ Related: [AddonAuthor](AddonAuthor.md).
 
 ### licenses
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L130)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L132)
 
 Shipped third-party notices, shown under hibi's open source licenses.
 

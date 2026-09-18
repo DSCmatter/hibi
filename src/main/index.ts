@@ -18,6 +18,7 @@ import {
 } from 'electron'
 import { ADDON_CHANNELS } from '../addons/api'
 import { ABOUT_CHANNELS, SPONSOR_URL } from '../shared/about'
+import { ANALYSIS_CHANNELS } from '../shared/analysis'
 import { APPEARANCE_CHANNEL } from '../shared/colorschemes'
 import {
   APP_INFO_CHANNEL,
@@ -52,6 +53,7 @@ import {
   readAddonDocumentation,
   removeAddon,
 } from './addons'
+import { analysisService } from './analysis'
 import { appearanceColors, loadAppearance, saveAppearance } from './appearance'
 import {
   autosaveDocument,
@@ -137,6 +139,10 @@ if (testing)
 if (testing && process.platform === 'darwin')
   app.setActivationPolicy('accessory')
 protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'hibi-analysis',
+    privileges: { standard: true, secure: true, corsEnabled: true },
+  },
   {
     scheme: 'app',
     privileges: {
@@ -318,6 +324,9 @@ function createWindow(): void {
   }
   window.on('blur', stopRecording)
   window.webContents.on('did-start-loading', stopRecording)
+  window.webContents.on('did-start-loading', () => analysisService.cancel())
+  window.webContents.on('render-process-gone', () => analysisService.cancel())
+  window.on('closed', () => analysisService.cancel())
   window.webContents.on('before-input-event', (event, input) => {
     if (recordingHotkey || input.type !== 'keyDown' || input.isComposing) return
     const shortcut = shortcutFromEvent({
@@ -765,6 +774,19 @@ if (!app.requestSingleInstanceLock()) {
         trustedWindow(event)
         return getAddonStates()
       })
+      handle(
+        ANALYSIS_CHANNELS.run,
+        (event, owner: unknown, projection: unknown) =>
+          analysisService.run(event.sender, owner, projection),
+        addonsReady,
+      )
+      handle(
+        ANALYSIS_CHANNELS.cancel,
+        (_event, owner: unknown) => {
+          if (typeof owner === 'string') analysisService.cancel(owner)
+        },
+        Promise.resolve(),
+      )
       handle(SIDELOAD_CHANNELS.list, (event) => {
         trustedWindow(event)
         return installedAddons()
@@ -781,10 +803,17 @@ if (!app.requestSingleInstanceLock()) {
         return shell.openExternal('https://hibi.garden/addons')
       })
       handle(SIDELOAD_CHANNELS.remove, (event, id: unknown) =>
-        runFileOperation(event, () => removeAddon(id)),
+        runFileOperation(event, async () => {
+          await removeAddon(id)
+          analysisService.cancel(id)
+        }),
       )
       handle(ADDON_CHANNELS.enable, (event, id: unknown, enabled: unknown) =>
-        runFileOperation(event, () => enableAddon(id, enabled)),
+        runFileOperation(event, async () => {
+          const states = await enableAddon(id, enabled)
+          if (enabled === false) analysisService.cancel(id)
+          return states
+        }),
       )
       handle(
         ADDON_CHANNELS.invoke,

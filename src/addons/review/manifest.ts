@@ -10,5 +10,6 @@ export default {
   defaultEnabled: false,
   startup: 'background',
   capabilities: ['ui'],
+  analysis: { entry: 'analysis.js' },
   authors: [authors.may],
 } satisfies AddonManifest

@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer as transport, webUtils } from 'electron'
 import { ADDON_CHANNELS } from '../addons/api'
 import { ABOUT_CHANNELS } from '../shared/about'
+import { ANALYSIS_CHANNELS } from '../shared/analysis'
 import { APPEARANCE_CHANNEL } from '../shared/colorschemes'
 import {
   APP_INFO_CHANNEL,
@@ -49,6 +50,10 @@ if (process.isMainFrame) {
   for (const pending of [startupDocument, startupAddons, startupRecent])
     void pending.catch(() => {})
   contextBridge.exposeInMainWorld('hibi', {
+    analyzeDocument: (owner, projection) =>
+      ipcRenderer.invoke(ANALYSIS_CHANNELS.run, owner, projection),
+    cancelAnalysis: (owner) =>
+      ipcRenderer.invoke(ANALYSIS_CHANNELS.cancel, owner),
     appendDocumentChange: journal.append,
     flushDocumentChanges: journal.flush,
     bootstrap: {

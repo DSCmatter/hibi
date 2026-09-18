@@ -2,7 +2,7 @@
 
 # MarkdownProjection
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L268)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L270)
 
 <details>
 <summary>Declaration</summary>
@@ -35,7 +35,7 @@ type MarkdownProjection = {
 
 ### content
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L269)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L271)
 
 ```typescript
 content: string
@@ -43,7 +43,7 @@ content: string
 
 ### sourceOffset
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L271)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L273)
 
 Exact start of an unchanged contiguous body in the input source. Omit for non-identity projections.
 
@@ -53,7 +53,7 @@ sourceOffset?: number
 
 ### readOnly
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L273)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L275)
 
 ```typescript
 readOnly?: boolean
@@ -63,7 +63,7 @@ readOnly?: boolean
 
 ### serialize
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L272)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L274)
 
 ```typescript
 serialize: (content: string) => string

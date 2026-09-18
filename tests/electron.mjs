@@ -12,6 +12,7 @@ export const electron = {
       await application.firstWindow()
       await application.evaluate(({ app, BrowserWindow }) => {
         const show = (window) => {
+          if (window.webContents.getURL().startsWith('hibi-analysis:')) return
           window.setFocusable(true)
           window.show()
           window.focus()

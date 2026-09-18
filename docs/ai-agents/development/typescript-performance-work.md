@@ -60,7 +60,7 @@ The continuation starts at `30984ba`. Complete these stages with progressive com
 - [x] Add capability-specific SDK loading and deterministic staged activation.
 - [x] Add preservation contracts and validate syntax transitions.
 - [x] Add scoped document views and shared command invocation where the review workflow needs them.
-- [ ] Run the review analyzer in a bounded isolated service with cancellation and revocation tests.
+- [x] Run the review analyzer in a bounded isolated service with cancellation and revocation tests.
 - [ ] Complete correctness, performance, documentation, and repository checks; record measured results.
 
 Bootstrap now overlaps renderer evaluation with independent document, addon, and recent-workspace reads. The main-process document read waits only for document and shortcut preferences; recent-workspace and app-info reads do not wait for addon discovery. Preload retains early external-file notifications, and a blank launch skips the empty drain. The built app passed startup, module-loading, external-file, workspace-settings, and actual development-reload tests (seven tests).
@@ -77,4 +77,6 @@ Preservation contracts distinguish semantic serialization from verbatim source. 
 
 Scoped views now share a host for the existing sidebar API and a panel below the editor. Instances can follow the active document or retain an immutable pinned snapshot, with explicit hide/close and visible/session lifetime. Loading and render failures stay within each view. Review can pin its current report while its sidebar follows another tab. A real sideloaded fixture passed state retention, document switching, focus, lazy loading, local failure, closed handles, and addon cleanup; existing Review and deferred activation checks also passed. Commands and toolbar actions use the same dispatcher. Type and generated documentation checks passed.
 
-The unchecked continuation stages above are the remaining work. Context-dependent serializers still use a full rebuild, and rich fixes intentionally reject unproven ranges. No Rust ports or runtime snapshot experiments are included.
+Review now runs through the shared analysis service. Each addon receives a worker in a separate sandboxed renderer, a private in-memory session, and an allowlisted module origin. The worker has no DOM, preload bridge, Node, WebRTC, or network access. Native grants validate exact source spans and document identity; completions bind to the sender and request, not claimed payload identities. Limits cover queue depth, process count, result size, request deadline, idle lifetime, and sampled working-set memory. Real Electron tests passed denied-capability probes, forged messages alongside another addon, queue replacement, oversized output, stale tabs, infinite-loop termination while typing, cancellation, process-crash recovery, disable/re-enable, and reload. Existing Review and scoped-view tests passed against the service. The input benchmark now has an opt-in two-second analysis-load profile; the default core benchmark remains unchanged.
+
+The unchecked continuation stage above is the remaining work. Context-dependent serializers still use a full rebuild, and rich fixes intentionally reject unproven ranges. No Rust ports or runtime snapshot experiments are included.

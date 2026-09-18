@@ -121,6 +121,8 @@ export type AddonManifest = {
   commands?: readonly AddonCommandDescriptor[]
   /** Inert ownership metadata protects source even when an installed addon has never been loaded. */
   syntax?: readonly AddonSyntaxDescriptor[]
+  /** Self-contained ES module exporting analyze(projection). Runs without app, filesystem, or network access. */
+  analysis?: { entry: string }
   /** Required plugin release version, separate from the host API version. */
   version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
@@ -434,6 +436,7 @@ export type AddonContext = {
   dialogs: DialogApi
   sidebar: SidebarApi
   views: ViewApi
+  analysis: import('../shared/analysis').AnalysisApi
   toasts: ToastApi
   menus: MenuApi
   toolbar: ToolbarApi

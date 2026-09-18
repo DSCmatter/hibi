@@ -1,12 +1,16 @@
 import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
+import { analysisBundles, analysisPreload } from './scripts/analysis-bundles'
 import { writeLicenses } from './scripts/licenses'
 import { startupBundle } from './scripts/startup-bundle'
 
 export default defineConfig({
   main: {
-    plugins: [{ name: 'app-licenses', buildStart: writeLicenses }],
+    plugins: [
+      { name: 'app-licenses', buildStart: writeLicenses },
+      analysisBundles(),
+    ],
     build: {
       // unzipper's optional S3 adapter must stay lazy; hibi only opens local buffers.
       commonjsOptions: { ignore: ['@aws-sdk/client-s3'] },
@@ -20,6 +24,7 @@ export default defineConfig({
     },
   },
   preload: {
+    plugins: [analysisPreload()],
     build: {
       externalizeDeps: false,
       rollupOptions: { output: { format: 'cjs', entryFileNames: 'index.cjs' } },

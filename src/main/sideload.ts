@@ -142,6 +142,9 @@ function manifest(value: unknown): {
     version: data.version,
     authors: data.authors,
     defaultEnabled: false,
+    ...(data.analysis === undefined
+      ? {}
+      : { analysis: parseAnalysis(data.analysis) }),
     ...(data.syntax === undefined
       ? {}
       : { syntax: parseSyntaxDescriptors(data.syntax)! }),
@@ -176,6 +179,7 @@ function manifest(value: unknown): {
   }
   if (base.kind === 'theme') {
     if (
+      data.analysis !== undefined ||
       data.syntax !== undefined ||
       data.capabilities !== undefined ||
       data.activation !== undefined ||
@@ -219,6 +223,17 @@ function manifest(value: unknown): {
       'The extension entry must point to a .js or .mjs file inside the addon folder.',
     )
   return { manifest: base, entry: data.entry, themes: [] }
+}
+function parseAnalysis(value: unknown): { entry: string } {
+  const entry =
+    value && typeof value === 'object'
+      ? (value as { entry?: unknown }).entry
+      : undefined
+  if (!validPath(entry) || !/\.m?js$/.test(entry))
+    throw new Error(
+      'The analysis entry must be a JavaScript module inside the addon folder.',
+    )
+  return { entry }
 }
 async function readManifest(folder: string) {
   const path = join(folder, 'hibi-addon.json')
@@ -448,7 +463,8 @@ async function installDirectory(
     await copy(source)
     if (
       !files.includes('README.md') ||
-      (data.entry && !files.includes(data.entry))
+      (data.entry && !files.includes(data.entry)) ||
+      (data.manifest.analysis && !files.includes(data.manifest.analysis.entry))
     )
       throw new Error(
         'The addon needs README.md and the entry file listed in hibi-addon.json.',

@@ -21,12 +21,10 @@ export default defineAddon({
   manifest,
   start(context) {
     context.styles.register('review', css)
-    let worker: Worker | undefined
+    let generation = 0
     let timer: ReturnType<typeof setTimeout> | undefined
     let visible = false,
       disposed = false
-    let running: TextProjection | null = null,
-      queued: TextProjection | null = null
     let state = {
       projection: null as TextProjection | null,
       findings: [] as Finding[],
@@ -47,51 +45,64 @@ export default defineAddon({
     }
     const send = (projection: TextProjection) => {
       if (disposed || !visible) return
-      if (!worker) {
-        worker = new Worker(new URL('./analyzer.worker.ts', import.meta.url), {
-          type: 'module',
-        })
-        worker.onmessage = (event) => {
-          const completed = running
-          running = null
+      const request = generation
+      void context.analysis
+        .run(projection)
+        .then((result) => {
           if (
-            completed &&
-            !disposed &&
-            visible &&
-            completed?.id === event.data.id &&
-            context.editor.getTextProjection()?.id === completed.id
-          ) {
-            context.editor.clearDecorations()
+            disposed ||
+            !visible ||
+            request !== generation ||
+            context.editor.getTextProjection()?.id !== projection.id
+          )
+            return
+          if (result.status !== 'complete') {
             publish({
-              projection: completed,
-              findings: event.data.findings,
-              selected: '',
               busy: false,
-              error: '',
+              error: result.status === 'failed' ? result.message : '',
             })
+            return
           }
-          const next = queued
-          queued = null
-          if (next && next.id !== completed?.id) send(next)
-        }
-        worker.onerror = () => {
-          worker?.terminate()
-          worker = undefined
-          running = queued = null
+          if (
+            !Array.isArray(result.value) ||
+            result.value.length > 100 ||
+            result.value.some(
+              (finding) =>
+                !finding ||
+                typeof finding.id !== 'string' ||
+                finding.id.length > 100 ||
+                typeof finding.message !== 'string' ||
+                finding.message.length > 500 ||
+                typeof finding.replacement !== 'string' ||
+                finding.replacement.length > 500 ||
+                !projectionRange(projection, finding.from, finding.to),
+            )
+          ) {
+            publish({
+              busy: false,
+              error: 'Could not read the analysis result.',
+            })
+            return
+          }
+          context.editor.clearDecorations()
           publish({
+            projection,
+            findings: result.value as Finding[],
+            selected: '',
             busy: false,
-            error: 'Could not check this document. Try again.',
+            error: '',
           })
-        }
-      }
-      if (running) {
-        queued = projection
-        return
-      }
-      running = projection
-      worker.postMessage(projection)
+        })
+        .catch(() => {
+          if (!disposed && visible && request === generation)
+            publish({
+              busy: false,
+              error: 'Could not check this document. Try again.',
+            })
+        })
     }
     const refresh = () => {
+      generation++
       clearTimeout(timer)
       if (!visible || disposed) return
       publish({ projection: null, selected: '', busy: true, error: '' })
@@ -150,9 +161,8 @@ export default defineAddon({
         return () => {
           visible = false
           clearTimeout(timer)
-          worker?.terminate()
-          worker = undefined
-          running = queued = null
+          generation++
+          context.analysis.cancel()
           context.editor.clearDecorations()
         }
       }, [])
@@ -288,9 +298,8 @@ export default defineAddon({
       disposed = true
       visible = false
       clearTimeout(timer)
-      worker?.terminate()
-      worker = undefined
-      queued = running = null
+      generation++
+      context.analysis.cancel()
       context.editor.clearDecorations()
     }
   },

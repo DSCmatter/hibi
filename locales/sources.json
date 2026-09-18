@@ -150,6 +150,21 @@
   "480347cad7e2": [
     "src/main/sideload.ts"
   ],
+  "7809d2e43901": [
+    "src/main/analysis.ts"
+  ],
+  "68495d2c8dc4": [
+    "src/shared/analysis.ts"
+  ],
+  "f71f7137fa9e": [
+    "src/shared/analysis.ts"
+  ],
+  "2cc9fa9f35da": [
+    "src/main/analysis.ts"
+  ],
+  "29c31ba1ff9a": [
+    "src/main/analysis.ts"
+  ],
   "a4d759d9e47f": [
     "src/renderer/src/main.tsx"
   ],
@@ -595,6 +610,9 @@
   "d6fac84c4dc9": [
     "src/renderer/src/workspace-menu.ts"
   ],
+  "2317ee71d0e1": [
+    "src/main/analysis.ts"
+  ],
   "a4d87e231bb4": [
     "src/addons/review/index.tsx"
   ],
@@ -723,6 +741,9 @@
   ],
   "6704c0f053f8": [
     "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "77fbde96f850": [
+    "src/main/analysis.ts"
   ],
   "655907890730": [
     "src/addons/frontmatter/Properties.tsx"
@@ -1020,6 +1041,9 @@
   ],
   "6a3107f1f0fc": [
     "src/renderer/src/addons.ts"
+  ],
+  "004013250aa1": [
+    "src/main/analysis.ts"
   ],
   "927a50daa425": [
     "src/renderer/src/addons.ts"
@@ -1513,6 +1537,15 @@
   "146382ffc03d": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
+  "d55e67954314": [
+    "src/main/analysis.ts"
+  ],
+  "60e6ec240fd4": [
+    "src/shared/analysis.ts"
+  ],
+  "3a36f3990be4": [
+    "src/main/analysis.ts"
+  ],
   "440c06b497b1": [
     "src/main/file-associations.ts"
   ],
@@ -1848,6 +1881,9 @@
   ],
   "fcfa3087d422": [
     "src/addons/diagnostics/Settings.tsx"
+  ],
+  "a3d81b876044": [
+    "src/main/analysis.ts"
   ],
   "283701594ce8": [
     "src/renderer/src/CommandPalette.tsx"
@@ -2814,6 +2850,18 @@
   "14e2725ada95": [
     "src/renderer/src/addons.ts"
   ],
+  "45d1d79cf007": [
+    "src/renderer/src/addons.ts"
+  ],
+  "a4e0693c4c13": [
+    "src/main/analysis.ts"
+  ],
+  "efbcf28d704b": [
+    "src/main/sideload.ts"
+  ],
+  "d60ff980fc8f": [
+    "src/main/analysis.ts"
+  ],
   "da528ad51e33": [
     "src/main/media.ts"
   ],
@@ -2829,8 +2877,15 @@
   "f515fa45ca50": [
     "src/shared/document-journal.ts"
   ],
+  "d32e2bd6bb09": [
+    "src/main/analysis.ts",
+    "src/shared/analysis.ts"
+  ],
   "c93782bc8528": [
     "src/shared/document-journal.ts"
+  ],
+  "6626018b72b7": [
+    "src/main/analysis.ts"
   ],
   "6ad5e9ddb386": [
     "src/main/links.ts"
@@ -3022,6 +3077,9 @@
   "a027792cd75b": [
     "src/main/addons.ts"
   ],
+  "45bd448b9c3c": [
+    "src/shared/analysis.ts"
+  ],
   "598c7699a784": [
     "src/addons/_shared/document-project.ts"
   ],
@@ -3176,6 +3234,9 @@
   ],
   "d51d6fa0615a": [
     "src/renderer/src/Titlebar.tsx"
+  ],
+  "f8889763cb31": [
+    "src/main/analysis.ts"
   ],
   "451aa51a0fb5": [
     "src/renderer/src/EditorToolbar.tsx"
@@ -3527,6 +3588,9 @@
   ],
   "1e0534e54772": [
     "src/addons/keybeats/manifest.ts"
+  ],
+  "55ea09e5715d": [
+    "src/preload/analysis.ts"
   ],
   "7d982ed61dc3": [
     "src/ui/colorschemes.ts"

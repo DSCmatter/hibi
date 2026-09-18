@@ -212,6 +212,8 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 
 ## Document analysis
 
+- [AnalysisApi](AnalysisApi.md)
+- [AnalysisResult](AnalysisResult.md)
 - [projectionRange](projectionRange.md)
 - [TextDecoration](TextDecoration.md)
 - [TextProjection](TextProjection.md)

@@ -48,6 +48,12 @@ export const referenceSources = [
   ],
   ['src/shared/hotkeys.ts', 'Commands', null, ['AppCommand']],
   [
+    'src/shared/analysis.ts',
+    'Document analysis',
+    null,
+    ['AnalysisApi', 'AnalysisResult'],
+  ],
+  [
     'src/shared/document-projection.ts',
     'Document analysis',
     null,

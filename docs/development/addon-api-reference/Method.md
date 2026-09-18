@@ -2,7 +2,7 @@
 
 # Method
 
-Type alias · Supporting type · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L195)
+Type alias · Supporting type · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L197)
 
 ```typescript
 type Method = (...args: never[]) => unknown
