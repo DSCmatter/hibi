@@ -6,7 +6,7 @@ export default {
   name: 'Word count',
   version: '1.0.0',
   apiVersion: 2,
-  description: 'Live word and character totals for the current document.',
+  description: 'See word and character counts for your current document.',
   defaultEnabled: false,
   startup: 'background',
   authors: [authors.may],

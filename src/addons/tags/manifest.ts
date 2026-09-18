@@ -6,7 +6,7 @@ export default {
   kind: 'extension',
   version: '1.0.0',
   apiVersion: 2,
-  description: 'Inline #tags and a searchable workspace tag browser.',
+  description: 'Organize notes with #tags and find them in the sidebar.',
   defaultEnabled: false,
   authors: [authors.may],
 } satisfies AddonManifest

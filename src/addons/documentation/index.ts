@@ -32,7 +32,9 @@ export default defineAddon({
           { pages, css: [...styles].join('\n') },
         )
         if (result)
-          context.notify(`exported ${result.pages} pages to ${result.path}`)
+          context.notify(
+            `Exported ${result.pages} ${result.pages === 1 ? 'page' : 'pages'} to ${result.path}`,
+          )
       },
     })
   },

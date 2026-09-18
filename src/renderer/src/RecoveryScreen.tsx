@@ -58,10 +58,10 @@ export function RecoveryScreen({
       const saved = await window.hibi.saveDocument(true)
       if (saved) {
         setDraft(saved)
-        setStatus('copy saved.')
+        setStatus('Copy saved.')
       }
     } catch {
-      setStatus('could not save a copy. try again before reloading.')
+      setStatus('Could not save a copy. Try again before reloading.')
     } finally {
       setBusy(false)
     }
@@ -70,9 +70,9 @@ export function RecoveryScreen({
     try {
       await navigator.clipboard.writeText(details)
       setCopied(true)
-      setStatus('error details copied.')
+      setStatus('Error details copied.')
     } catch {
-      setStatus('could not copy details. you can select the text below.')
+      setStatus('Could not copy details. Select and copy the text above.')
     }
   }
   return (
@@ -93,12 +93,12 @@ export function RecoveryScreen({
             aria-hidden
           />
           <h1 id="recovery-title" ref={heading} tabIndex={-1}>
-            Let’s get you back to writing.
+            The editor stopped working
           </h1>
           <p>
             {onBack
-              ? 'This is a preview of Hibi’s recovery screen. your editor is still open underneath.'
-              : 'The editor ran into an unexpected error. reload Hibi to try again.'}
+              ? 'This is a preview. Your document is still open.'
+              : 'Reload Hibi to reopen the editor.'}
           </p>
           {draft && (
             <div className="recovery-draft">
@@ -111,8 +111,7 @@ export function RecoveryScreen({
           )}
           {!onBack && draft?.dirty && (
             <p className="recovery-hint">
-              The latest draft received by Hibi is available in this window.
-              save a copy before reloading if you need one.
+              Save a copy of the latest draft Hibi received before reloading.
             </p>
           )}
           <div className="recovery-actions">

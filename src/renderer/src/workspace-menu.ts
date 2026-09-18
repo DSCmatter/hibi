@@ -58,7 +58,7 @@ export function workspaceMenuItems(
           title: `${action} ${entry.name}`,
           label: 'Destination path',
           description:
-            'Relative to this workspace, including the file or folder name.',
+            'Enter a path within this workspace, including the file or folder name.',
           defaultValue: path,
         })
         if (destination !== null) await onAction({ action, path, destination })

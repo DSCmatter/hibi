@@ -114,8 +114,8 @@ export function TypstPreview({
             src={image}
             alt={
               block
-                ? 'typst block preview'
-                : `typst document preview, ${result?.pages ?? 1} ${(result?.pages ?? 1) === 1 ? 'page' : 'pages'}`
+                ? 'Typst block preview'
+                : `Typst document preview, ${result?.pages ?? 1} ${(result?.pages ?? 1) === 1 ? 'page' : 'pages'}`
             }
           />
         </figure>

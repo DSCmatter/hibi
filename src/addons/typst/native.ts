@@ -19,7 +19,7 @@ export default {
       if (!result.pdf)
         throw new Error(
           result.diagnostics.map((error) => error.message).join('\n') ||
-            'typst compilation failed.',
+            'Typst compilation failed.',
         )
       return context.exportFile(
         result.pdf,

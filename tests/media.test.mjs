@@ -252,7 +252,7 @@ test('file picker and drops attach media safely, stream videos, and move/open wo
   const fake = join(root, 'fake.png')
   await writeFile(fake, 'not an image')
   await drop(fake, source)
-  await page.getByText(/choose a supported image, gif, or video\./i).waitFor()
+  await page.getByText(/choose a supported image or video file\./i).waitFor()
   const guarded = join(root, 'guarded')
   const outside = join(root, 'outside')
   await mkdir(guarded)
@@ -270,7 +270,7 @@ test('file picker and drops attach media safely, stream videos, and move/open wo
   await drop(gif, source)
   await page
     .getByText(
-      /the assets folder must be beside this note, without symlinks\./i,
+      /the assets folder must be beside this document and cannot be a symbolic link\./i,
     )
     .waitFor()
   assert.deepEqual(await readdir(outside), [])

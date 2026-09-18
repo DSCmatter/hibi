@@ -106,7 +106,7 @@ test('native file operations preserve drafts and avoid silent overwrites', {
     .getByRole('tab', { name: /^original\.md$/i, exact: true })
     .waitFor()
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   await page.getByRole('textbox', { name: /markdown editor/i }).waitFor()
   await clickMenu(app, 'Save')

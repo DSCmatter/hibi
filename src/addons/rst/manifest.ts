@@ -7,7 +7,7 @@ export default {
   apiVersion: 2,
   version: '1.0.0',
   kind: 'extension',
-  description: 'reStructuredText source editing, preview, and export.',
+  description: 'Edit, preview, and export reStructuredText documents.',
   fileExtensions: fileAssociations.rst.ext,
   defaultEnabled: false,
   authors: [authors.may],

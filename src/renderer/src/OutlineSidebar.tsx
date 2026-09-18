@@ -47,13 +47,13 @@ export function OutlineSidebar({
       className="document-sidebar outline-sidebar"
       open={open}
       resize={resize}
-      label="In this page"
-      header={<span>In this page</span>}
+      label="On this page"
+      header={<span>On this page</span>}
       items={items}
       collapsible={false}
       selected={selected}
       onSelect={onSelect}
-      empty="headings in this note appear here."
+      empty="Add headings to this note to see them here."
     />
   )
 }

@@ -4,7 +4,7 @@ import { authors } from '../authors'
 export default {
   id: 'text-extras',
   name: 'Text extras',
-  description: 'Subscript and discord-style small text.',
+  description: 'Add subscript and Discord-style small text.',
   kind: 'extension',
   version: '1.0.0',
   apiVersion: 2,

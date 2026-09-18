@@ -45,7 +45,7 @@ function Page({
             )
             const viewport = page.getViewport({ scale })
             if (viewport.width * viewport.height > 16_000_000)
-              throw new Error('PDF page exceeds preview limits.')
+              throw new Error('This PDF page is too large to preview.')
             const canvas = window.document.createElement('canvas')
             canvas.width = Math.ceil(viewport.width)
             canvas.height = Math.ceil(viewport.height)
@@ -123,7 +123,7 @@ export async function pdfHtml(data: Uint8Array) {
       const page = await document.getPage(number)
       const viewport = page.getViewport({ scale: 1.25 })
       if (viewport.width * viewport.height > 16_000_000)
-        throw new Error('PDF page is too large to export.')
+        throw new Error('This PDF page is too large to export.')
       const canvas = window.document.createElement('canvas')
       canvas.width = Math.ceil(viewport.width)
       canvas.height = Math.ceil(viewport.height)
@@ -132,7 +132,7 @@ export async function pdfHtml(data: Uint8Array) {
       bytes += image.length
       if (bytes > 20 * 1024 * 1024)
         throw new Error(
-          'Rendered PDF exceeds 20 MiB. Export the PDF file instead.',
+          'The PDF preview exceeds 20 MiB. Export the PDF file instead.',
         )
       images.push(`<img src="${image}" alt="Page ${number}">`)
       canvas.width = canvas.height = 0

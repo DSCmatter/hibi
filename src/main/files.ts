@@ -11,7 +11,7 @@ export function validateMarkdown(value: unknown): asserts value is string {
     typeof value !== 'string' ||
     Buffer.byteLength(value, 'utf8') > MAX_DOCUMENT_BYTES
   ) {
-    throw new Error('documents must be utf-8 text under 2 mib.')
+    throw new Error('Use a UTF-8 text document no larger than 2 MiB.')
   }
 }
 
@@ -22,9 +22,12 @@ export async function readMarkdown(path: string): Promise<string> {
   )
   try {
     const info = await file.stat()
-    if (!info.isFile()) throw new Error('choose a regular markdown file.')
+    if (!info.isFile())
+      throw new Error('Choose a text file, not a folder or device.')
     if (info.size > MAX_DOCUMENT_BYTES)
-      throw new Error('this document is larger than 2 mib.')
+      throw new Error(
+        'This document exceeds the 2 MiB limit. Open a smaller file.',
+      )
     const bytes = Buffer.alloc(info.size + 1)
     let bytesRead = 0
     while (bytesRead < bytes.length) {
@@ -38,7 +41,7 @@ export async function readMarkdown(path: string): Promise<string> {
       bytesRead += chunk.bytesRead
     }
     if (bytesRead !== info.size)
-      throw new Error('the file changed while opening; try again.')
+      throw new Error('The file changed while opening. Try again.')
     return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
       bytes.subarray(0, bytesRead),
     )

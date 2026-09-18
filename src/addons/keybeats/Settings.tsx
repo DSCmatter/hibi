@@ -15,7 +15,7 @@ export function Settings() {
       <SettingRow
         id="keybeats-profile"
         label="Keyboard"
-        description="Choose a mechanical keyboard sound profile."
+        description="Choose the keyboard sound you hear while typing."
       >
         <Select
           id="keybeats-profile"
@@ -32,7 +32,7 @@ export function Settings() {
       <SettingRow
         id="keybeats-volume"
         label="Volume"
-        description="Sound level while typing in normal and source panes."
+        description="Adjust typing volume in every editor view."
       >
         <div className="setting-controls">
           <div className="padding-control">

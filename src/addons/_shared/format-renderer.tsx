@@ -116,7 +116,7 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
     label: `${spec.name} preview`,
     group: spec.name,
     level: 'block',
-    description: 'Render this document format without changing its source.',
+    description: 'Show a preview beside the source text.',
   })
   if (spec.engine !== 'latex')
     for (const feature of features)
@@ -125,7 +125,7 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
         label: feature.label,
         group: spec.name,
         level: 'block',
-        description: `Render ${feature.label.toLowerCase()} in ${spec.name} previews and HTML exports.`,
+        description: `Show ${feature.label.toLowerCase()} in ${spec.name} previews and HTML exports.`,
       })
   async function render(source: string, documentId?: string) {
     if (!context.editor.isSyntaxEnabled('preview'))
@@ -148,7 +148,7 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
       !(await context.dialogs.confirm({
         title: `${spec.engine === 'latex' ? 'Compile' : 'Run'} ${document.name}?`,
         description:
-          'This runs the document and its project code with access to your files and network. Run only content you trust. Changes require another run.',
+          'This runs code from the document and its project with access to your files and network. Only run code you trust. Run again after making changes.',
         confirmLabel:
           spec.engine === 'latex' ? 'Compile document' : 'Run document',
       }))
@@ -295,8 +295,8 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
         {enabled && spec.engine && !result?.executed && !result?.pdf && (
           <p className="format-message">
             {spec.engine === 'latex'
-              ? 'Compile for typeset PDF output.'
-              : 'Embedded code stays inert until you run this document.'}
+              ? 'Compile the document to preview and export its PDF.'
+              : 'Code in this document runs only when you choose Run document.'}
           </p>
         )}
         {(running || (busy && !result && !html)) && (
@@ -360,15 +360,15 @@ export function FormatSettings({ spec }: { spec: FormatSpec }) {
   const [busy, setBusy] = useState(false)
   return (
     <>
-      <h2>Native tools</h2>
+      <h2>Preview tools</h2>
       <div className="settings-group">
         <SettingRow
           id={`tools-${spec.id}`}
-          label="Renderer availability"
+          label="Required tools"
           description={
             spec.engine
-              ? 'Typing uses a restricted preview. Run uses the native compiler or runtime.'
-              : 'Rendering runs in a background process.'
+              ? 'Check whether the tools needed to preview and run this format are installed.'
+              : 'Check whether the tools needed to preview this format are installed.'
           }
         >
           <Button
@@ -392,7 +392,7 @@ export function FormatSettings({ spec }: { spec: FormatSpec }) {
           </Button>
         </SettingRow>
       </div>
-      {status && <DocumentNotice title="Native tools" message={status} />}
+      {status && <DocumentNotice title="Preview tools" message={status} />}
     </>
   )
 }

@@ -88,7 +88,7 @@ test('frontmatter contributes slash actions in rich and source panes only while 
       .click()
   }
   await rich.waitFor()
-  await mode('markdown only')
+  await mode('source view')
   await source.fill('# keep heading\n\nfirst\n\n/frontmatter\n\nafter')
   await mode('normal')
   await rich
@@ -106,7 +106,7 @@ test('frontmatter contributes slash actions in rich and source panes only while 
     /^# keep heading\n\nfirst[\s\S]*after$/,
   )
 
-  await mode('markdown only')
+  await mode('source view')
   const original = 'hello\n\n/properties\n\nworld'
   await source.fill(original)
   await source.press('ArrowUp')
@@ -357,7 +357,7 @@ test('typing a leading divider never activates frontmatter or disables editing',
     '---\ntitle: still typing',
   ]) {
     await page
-      .getByRole('button', { name: /^markdown only$/i, exact: true })
+      .getByRole('button', { name: /^source view$/i, exact: true })
       .click()
     await page.getByRole('textbox', { name: /markdown editor/i }).fill(source)
     await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
@@ -453,7 +453,7 @@ test('frontmatter addon, inline rename, and centered workspace entry preserve do
     `${prefix}updated body`,
   )
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.fill('---\ntitle: changed\n---\n\nsource body')
@@ -496,7 +496,7 @@ test('frontmatter addon, inline rename, and centered workspace entry preserve do
   await rename('occupied.md')
   await page
     .getByRole('alert')
-    .filter({ hasText: /already exists/i })
+    .filter({ hasText: /a file with that name exists/i })
     .waitFor()
   assert.equal(
     await readFile(join(folder, 'occupied.md'), 'utf8'),

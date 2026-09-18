@@ -23,7 +23,7 @@ test('cursor appearance, movement, selection hiding, and persistence in both edi
   const page = await app.firstWindow()
   const rich = page.getByRole('textbox', { name: /document editor/i })
   await rich.waitFor()
-  await page.getByRole('button', { name: /dismiss this/i }).click()
+  await page.getByRole('button', { name: /start writing/i }).click()
   // Exercise caret rendering without taking focus from the user's active window.
   await page.evaluate(() => {
     document.hasFocus = () => true
@@ -147,7 +147,7 @@ test('cursor appearance, movement, selection hiding, and persistence in both edi
     assert.equal(await cursor.getAttribute('data-move'), 'false')
   }
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.fill('')

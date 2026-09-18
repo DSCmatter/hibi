@@ -55,7 +55,7 @@ export function VersionHistory({
       {loading ? (
         <p role="status">Loading versions…</p>
       ) : !versions.length ? (
-        <p>Save this file to start its local history.</p>
+        <p>Save this file to keep a version on this device.</p>
       ) : (
         <div className="version-history">
           <nav aria-label="Saved versions">

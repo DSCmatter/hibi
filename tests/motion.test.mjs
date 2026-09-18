@@ -43,7 +43,7 @@ test('switching documents retains split/source layout without replaying view tra
   await page.getByRole('heading', { name: /^first$/i, exact: true }).waitFor()
   for (const [mode, label, file] of [
     ['side-by-side', 'side-by-side', second],
-    ['markdown', 'markdown only', first],
+    ['markdown', 'source view', first],
   ]) {
     await page
       .getByRole('button', { name: uiName(label, true), exact: true })
@@ -411,17 +411,17 @@ test('panes move horizontally and sidebar selection slides without fading settin
   assert.ok(new Set(fromRich.map((frame) => frame.richWidth)).size <= 2)
   assert.equal(fromRich.at(-1).sourceX, 0)
   assert.equal(fromRich.at(-1).richX, 500)
-  const fromSource = await sampleSplit('markdown only')
+  const fromSource = await sampleSplit('source view')
   assert.equal(fromSource[0].richWidth, 500)
   assert.ok(fromSource.some((frame) => frame.richX > 510 && frame.richX < 1000))
   assert.equal(fromSource.at(-1).richX, 500)
   assert.equal(new Set(fromSource.map((frame) => frame.richWidth)).size, 1)
   const dismissSource = await sampleSplit('side-by-side', 'normal')
   assert.equal(new Set(dismissSource.map((frame) => frame.sourceWidth)).size, 1)
-  const dismissRich = await sampleSplit('side-by-side', 'markdown only')
+  const dismissRich = await sampleSplit('side-by-side', 'source view')
   assert.equal(new Set(dismissRich.map((frame) => frame.richWidth)).size, 1)
-  const directSource = await sampleSplit('normal', 'markdown only')
-  const directRich = await sampleSplit('markdown only', 'normal')
+  const directSource = await sampleSplit('normal', 'source view')
+  const directRich = await sampleSplit('source view', 'normal')
   for (const frames of [
     fromRich,
     fromSource,
@@ -532,7 +532,7 @@ test('panes move horizontally and sidebar selection slides without fading settin
   )
   await page.getByRole('button', { name: /^back to app$/i }).click()
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   assert.equal(
     await page

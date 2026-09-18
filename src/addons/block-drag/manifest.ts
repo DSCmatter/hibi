@@ -6,8 +6,7 @@ export default {
   name: 'Block dragging',
   version: '1.0.0',
   apiVersion: 2,
-  description:
-    'Drag rich-text blocks to reorder them, including nested list items.',
+  description: 'Drag paragraphs, headings, and list items to move them.',
   defaultEnabled: false,
   startup: 'background',
   authors: [authors.may],

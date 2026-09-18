@@ -28,7 +28,7 @@ test('sidebar starts hidden, stays open while typing, and navigates the page out
       document.querySelector('.app')?.getAttribute('data-sidebar') === 'false',
   )
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   const text =
@@ -41,9 +41,9 @@ test('sidebar starts hidden, stays open while typing, and navigates the page out
     .getByRole('button', { name: /^sidebar views$/i, exact: true })
     .click()
   await page
-    .getByRole('menuitem', { name: /^in this page$/i, exact: true })
+    .getByRole('menuitem', { name: /^on this page$/i, exact: true })
     .click()
-  const outline = page.getByRole('tree', { name: /in this page/i })
+  const outline = page.getByRole('tree', { name: /on this page/i })
   await outline
     .getByRole('treeitem', { name: /^second$/i, exact: true })
     .waitFor()
@@ -124,7 +124,7 @@ test('outline nesting follows the cursor and sidebar view pins survive reload', 
   })
   const page = await app.firstWindow()
   page.setDefaultTimeout(6500)
-  await page.getByRole('button', { name: /^markdown only$/i }).click()
+  await page.getByRole('button', { name: /^source view$/i }).click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.fill(
     'introduction\n\n# alpha\n\nalpha body\n\n### deep\n\ndeep body\n\n## beta\n\nbeta body\n\n# final\n\nfinal body',
@@ -134,8 +134,8 @@ test('outline nesting follows the cursor and sidebar view pins survive reload', 
   assert.equal(await page.locator('.sidebar-view-shortcuts button').count(), 0)
   await page.getByRole('button', { name: /toggle workspace sidebar/i }).click()
   await views.click()
-  await page.getByRole('menuitem', { name: /^in this page$/i }).click()
-  const outline = page.getByRole('tree', { name: /in this page/i })
+  await page.getByRole('menuitem', { name: /^on this page$/i }).click()
+  const outline = page.getByRole('tree', { name: /on this page/i })
   await outline.getByRole('treeitem', { name: 'deep' }).waitFor()
   assert.deepEqual(
     await outline
@@ -191,9 +191,9 @@ test('outline nesting follows the cursor and sidebar view pins survive reload', 
   await views.click()
   assert.equal(
     await page.getByRole('menuitem').first().innerText(),
-    'Pin In this page',
+    'Pin On this page',
   )
-  await page.getByRole('menuitem', { name: /^pin in this page$/i }).click()
+  await page.getByRole('menuitem', { name: /^pin on this page$/i }).click()
   assert.deepEqual(
     await page.evaluate(() =>
       JSON.parse(localStorage.getItem('sidebar-pinned-views')),
@@ -213,7 +213,7 @@ test('outline nesting follows the cursor and sidebar view pins survive reload', 
       .locator('.sidebar-view-shortcuts button')
       .first()
       .getAttribute('aria-label'),
-    'In this page view',
+    'On this page view',
   )
   const edge = await page.evaluate(() => {
     const sidebar = document
@@ -231,7 +231,7 @@ test('outline nesting follows the cursor and sidebar view pins survive reload', 
     await page.locator('.sidebar-toggle svg').innerHTML(),
     toggleIcon,
   )
-  await page.getByRole('button', { name: /^in this page view$/i }).click()
+  await page.getByRole('button', { name: /^on this page view$/i }).click()
   await resize.press('Home')
   await page.waitForFunction(
     (count) =>

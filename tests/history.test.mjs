@@ -59,7 +59,7 @@ test('local history snapshots on save, previews, and restores without overwritin
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.previewVersion('../../note.md')),
-    /unknown document version/,
+    /This saved version is no longer available\./,
   )
   await pressShortcut(app, `${mod}+k`)
   await page

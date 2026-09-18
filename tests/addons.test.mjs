@@ -45,7 +45,7 @@ test('plugin pages, metadata, shared controls, and full source vim editing', {
     document.querySelector('.tiptap')?.textContent.includes('alpha'),
   )
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.waitFor()
@@ -131,7 +131,7 @@ test('plugin pages, metadata, shared controls, and full source vim editing', {
   })
   assert.equal(
     await page.locator('.settings-sidebar .sidebar-section').innerText(),
-    'plugins',
+    'Plugins',
   )
   await page.getByRole('checkbox', { name: /show vim status/i }).uncheck()
   await page.getByRole('checkbox', { name: /show vim status/i }).check()
@@ -308,7 +308,7 @@ test('plugin pages, metadata, shared controls, and full source vim editing', {
   assert.equal(await unavailable.innerText(), 'Vim · off')
   assert.match(
     await unavailable.getAttribute('data-tooltip'),
-    /disabled in the Normal view.*side-by-side or Markdown-only view/i,
+    /Vim works in the source editor\. Switch to source or side-by-side view to use it\./,
   )
   await page
     .getByRole('button', { name: /^side-by-side$/i, exact: true })

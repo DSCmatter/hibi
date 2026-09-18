@@ -6,7 +6,7 @@ import { Sidebar, type SidebarProps } from '../../ui/Sidebar'
 
 export const builtInViews = [
   { id: 'workspace', label: 'Workspace', icon: FolderOpen },
-  { id: 'outline', label: 'In this page', icon: ListTree },
+  { id: 'outline', label: 'On this page', icon: ListTree },
 ]
 
 export function viewShortcut(view: SidebarView) {
@@ -24,7 +24,7 @@ class ViewBoundary extends Component<
   render() {
     return this.state.failed ? (
       <div className="sidebar-empty" role="alert">
-        <p>This view could not load.</p>
+        <p>Could not load this view. Try again.</p>
         <Button onClick={() => this.setState({ failed: false })}>Retry</Button>
       </div>
     ) : (
@@ -47,7 +47,7 @@ export function AddonSidebar({
   return (
     <Sidebar
       className="document-sidebar addon-sidebar"
-      label={view?.label ?? 'Addon view'}
+      label={view?.label ?? 'Plugin view'}
       header={<span>{view?.label}</span>}
       items={[]}
       selected={null}

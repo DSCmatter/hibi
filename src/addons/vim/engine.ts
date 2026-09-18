@@ -15,7 +15,7 @@ function write(cm: { cm6: object }, close = false) {
   void context.editor.runCommand('save').then((saved) => {
     if (saved && close) window.close()
     else {
-      if (saved) context.notify('saved')
+      if (saved) context.notify('Saved.')
       // Saving briefly disables CodeMirror after its prompt restores focus.
       requestAnimationFrame(() => {
         const active = document.activeElement
@@ -31,7 +31,7 @@ function write(cm: { cm6: object }, close = false) {
 }
 Vim.defineEx('write', 'w', (cm, params) => {
   if (commandArgument(params))
-    contexts.get(cm.cm6)?.notify('use save as to choose a new file name.')
+    contexts.get(cm.cm6)?.notify('Use Save as to choose a new file name.')
   else write(cm)
 })
 Vim.defineEx('wq', 'wq', (cm) => write(cm, true))
@@ -49,7 +49,7 @@ Vim.defineEx('edit', 'e', (cm, params) => {
       .openFile(path)
       .catch((error: unknown) =>
         context.notify(
-          error instanceof Error ? error.message : 'could not open file.',
+          error instanceof Error ? error.message : 'Could not open this file.',
         ),
       )
   else void context.editor.runCommand('open')
@@ -169,7 +169,7 @@ export function createVim(context: AddonContext) {
           this.status = context.statusBar.register({
             id: 'mode',
             label: 'Vim · normal',
-            tooltip: 'Vim mode in the Markdown pane',
+            tooltip: 'Vim mode in the source editor',
             when: 'source',
           })
           this.commandStatus = context.statusBar.register({

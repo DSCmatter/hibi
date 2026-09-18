@@ -87,7 +87,7 @@ test('documentation breadcrumbs, outline, pagination, and phone navigation', {
     'catppuccin-mocha',
   )
   await page
-    .getByRole('button', { name: /^colorscheme$/i, exact: true })
+    .getByRole('button', { name: /^color scheme$/i, exact: true })
     .click()
   const appearance = page.getByRole('dialog', {
     name: /^appearance$/i,
@@ -185,7 +185,7 @@ test('documentation breadcrumbs, outline, pagination, and phone navigation', {
   for (const width of [320, 390, 768]) {
     await page.setViewportSize({ width, height: 844 })
     await page
-      .getByRole('button', { name: /^colorscheme$/i, exact: true })
+      .getByRole('button', { name: /^color scheme$/i, exact: true })
       .click()
     await appearance.waitFor()
     assert.equal(

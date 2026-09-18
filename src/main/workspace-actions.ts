@@ -47,7 +47,9 @@ export function validateWorkspaceName(name: unknown): asserts name is string {
     Buffer.byteLength(name) > 255 ||
     /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)
   )
-    throw new Error('choose a valid file or folder name.')
+    throw new Error(
+      'Choose a file or folder name without slashes or reserved characters.',
+    )
 }
 async function resolveEntry(
   base: string,
@@ -62,7 +64,7 @@ async function resolveEntry(
     value.length > 4096 ||
     isAbsolute(value)
   )
-    throw new Error('invalid workspace path.')
+    throw new Error('Choose a file or folder inside this workspace.')
   const parts = value.split('/')
   let path = base
   for (const [index, part] of parts.entries()) {
@@ -75,7 +77,9 @@ async function resolveEntry(
       stat.isSymbolicLink() ||
       (index < parts.length - 1 && !stat.isDirectory())
     )
-      throw new Error('workspace path is missing or contains a symlink.')
+      throw new Error(
+        'This path is missing or contains a symbolic link. Choose the original file or folder.',
+      )
   }
   return path
 }
@@ -101,7 +105,7 @@ async function unique(parent: string, name: string) {
     )
       return candidate
   }
-  throw new Error('choose a different name.')
+  throw new Error('Choose a different name.')
 }
 async function moveEntry(source: string, destination: string, folder: boolean) {
   if (folder) {
@@ -146,9 +150,9 @@ export async function workspaceAction(
   input: unknown,
 ): Promise<WorkspaceActionResult | null> {
   const base = workspaceRoot()
-  if (!base) throw new Error('open a workspace first.')
+  if (!base) throw new Error('Open a workspace first.')
   if (!input || typeof input !== 'object')
-    throw new Error('invalid workspace action.')
+    throw new Error('Hibi could not read this file operation. Try again.')
   const { action, path, destination } = input as Record<string, unknown>
   if (
     ![
@@ -161,12 +165,12 @@ export async function workspaceAction(
       'delete',
     ].includes(String(action))
   )
-    throw new Error('unknown workspace action.')
+    throw new Error('Hibi does not support this file operation.')
   let resultPath: string
   if (action === 'new-file' || action === 'new-folder') {
     const parent = await resolveEntry(base, path, false, true)
     if (!(await lstat(parent)).isDirectory())
-      throw new Error('choose a parent folder.')
+      throw new Error('Choose a folder for the new item.')
     resultPath = await unique(
       parent,
       action === 'new-file' ? 'untitled.md' : 'untitled folder',
@@ -182,7 +186,7 @@ export async function workspaceAction(
       await selectDocumentTab(window, draft.tabId)
     const folder = draft ? false : (await lstat(source)).isDirectory()
     if (!folder && !isDocumentName(source, true))
-      throw new Error('choose a markdown file.')
+      throw new Error('Choose a supported document.')
     if (action === 'delete') {
       if (!(await confirmDiscardAll(window, source))) return null
       if (await lstat(source).catch(missing)) await shell.trashItem(source)
@@ -200,7 +204,7 @@ export async function workspaceAction(
         resultPath = await unique(dirname(source), `${name} copy${extension}`)
       } else resultPath = await resolveEntry(base, destination, true)
       if (!folder && !isDocumentName(resultPath, true))
-        throw new Error('choose a markdown file name.')
+        throw new Error('Use a supported file extension.')
       if (source === resultPath)
         return {
           workspace: await refreshWorkspace(),
@@ -208,15 +212,21 @@ export async function workspaceAction(
           path: relative(base, source).split(sep).join('/'),
         }
       if (contains(source, resultPath))
-        throw new Error('a folder cannot be placed inside itself.')
+        throw new Error(
+          'A folder cannot be placed inside itself. Choose another location.',
+        )
       if (getOpenDocuments().some((draft) => draft.file === resultPath))
-        throw new Error('an open document already uses that destination.')
+        throw new Error(
+          'A document is open at that location. Choose another name or location.',
+        )
       if (await lstat(resultPath).catch(missing))
-        throw new Error('an item already exists at that destination.')
+        throw new Error(
+          'A file or folder exists at that location. Choose another name or location.',
+        )
       if (draft) {
         if (action === 'rename') await renameDocument(basename(resultPath))
         else if (action === 'move') relocateDocument(source, resultPath)
-        else throw new Error('save this draft before copying it.')
+        else throw new Error('Save this draft before copying it.')
       } else if (action === 'copy' || action === 'duplicate') {
         await cp(source, resultPath, {
           recursive: folder,
@@ -224,7 +234,9 @@ export async function workspaceAction(
           errorOnExist: true,
           filter: async (path) => {
             if ((await lstat(path)).isSymbolicLink())
-              throw new Error('copying symlinks is not supported.')
+              throw new Error(
+                'Symbolic links cannot be copied. Copy the original file or folder instead.',
+              )
             return true
           },
         })

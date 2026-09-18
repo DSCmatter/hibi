@@ -34,7 +34,7 @@ export const commands: BlockCommand[] = [
     id: `heading-${level}`,
     label: `Heading ${level}`,
     description:
-      ['large heading', 'medium heading', 'small heading'][level - 1] ?? '',
+      ['Large heading', 'Medium heading', 'Small heading'][level - 1] ?? '',
     keywords: `h${level} title`,
     markdown: `${'#'.repeat(level)} `,
     rich: (chain: ChainedCommands) => chain.setHeading({ level }),
@@ -42,7 +42,7 @@ export const commands: BlockCommand[] = [
   {
     id: 'bullet-list',
     label: 'Bullet list',
-    description: 'Unordered list',
+    description: 'List with bullet points',
     keywords: 'ul bullets',
     markdown: '- ',
     rich: (chain) => chain.toggleBulletList(),
@@ -50,7 +50,7 @@ export const commands: BlockCommand[] = [
   {
     id: 'numbered-list',
     label: 'Numbered list',
-    description: 'Ordered list',
+    description: 'List with numbered steps',
     keywords: 'ol numbers',
     markdown: '1. ',
     rich: (chain) => chain.toggleOrderedList(),
@@ -66,7 +66,7 @@ export const commands: BlockCommand[] = [
   {
     id: 'quote',
     label: 'Quote',
-    description: 'Blockquote',
+    description: 'Indented quotation',
     keywords: 'quotation',
     markdown: '> ',
     rich: (chain) => chain.toggleBlockquote(),
@@ -74,7 +74,7 @@ export const commands: BlockCommand[] = [
   {
     id: 'code',
     label: 'Code block',
-    description: 'Fenced code',
+    description: 'Code with syntax highlighting',
     keywords: 'codeblock pre',
     markdown: '```\n\n```',
     cursor: 4,
@@ -83,7 +83,7 @@ export const commands: BlockCommand[] = [
   {
     id: 'divider',
     label: 'Divider',
-    description: 'Horizontal rule',
+    description: 'Horizontal dividing line',
     keywords: 'hr separator line',
     markdown: '---\n\n',
     rich: (chain) => chain.setHorizontalRule(),

@@ -9,8 +9,7 @@ export default {
   kind: 'extension',
   version: '1.0.0',
   apiVersion: 2,
-  description:
-    'Typst documents, live previews, PDF export, and rendered Markdown blocks.',
+  description: 'Write Typst documents with live previews and PDF export.',
   defaultEnabled: false,
   fileExtensions: fileAssociations.typst.ext,
   authors: [authors.may],

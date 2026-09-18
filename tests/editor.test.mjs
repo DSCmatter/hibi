@@ -120,7 +120,7 @@ test('empty entry, three views, and lossless source switching', {
   await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
   await source.waitFor({ state: 'hidden' })
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   await rich.waitFor({ state: 'hidden' })
   assert.equal(
@@ -172,7 +172,7 @@ test('empty entry, three views, and lossless source switching', {
     '0px',
   )
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   await source.waitFor()
   const sourceBefore = (await page.evaluate(() => window.hibi.getDocument()))
@@ -198,7 +198,7 @@ test('empty entry, three views, and lossless source switching', {
     ),
   ])
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   await page.locator('.cm-lineNumbers').waitFor()
   await clickMenu(app, 'Settings')

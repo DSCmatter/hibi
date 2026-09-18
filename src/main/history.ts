@@ -28,7 +28,7 @@ async function versions(path: string): Promise<Version[]> {
           typeof v.hash !== 'string',
       )
     )
-      throw new Error('local history index is damaged.')
+      throw new Error('Hibi could not read the saved version history.')
     return data as Version[]
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []
@@ -55,7 +55,7 @@ export async function previewVersion(
     !validId(id) ||
     !(await versions(path)).some((version) => version.id === id)
   )
-    throw new Error('unknown document version.')
+    throw new Error('This saved version is no longer available.')
   return readMarkdown(join(directory(path), `${id}.md`))
 }
 export async function recordVersion(

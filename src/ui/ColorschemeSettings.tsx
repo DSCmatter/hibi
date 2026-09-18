@@ -20,7 +20,7 @@ export function ColorschemeSettings({
         <SettingRow
           id="theme-mode"
           label="Appearance"
-          description="Follow your system, or keep one appearance."
+          description="Match your computer’s appearance or choose light or dark."
         >
           <Select
             id="theme-mode"
@@ -47,7 +47,7 @@ export function ColorschemeSettings({
               description={
                 selected
                   ? `${selected.author} · ${selected.license.name}`
-                  : 'Selected addon unavailable; using Hibi.'
+                  : 'This theme is unavailable. Using Hibi’s default colors.'
               }
             >
               <div className="colorscheme-choice">

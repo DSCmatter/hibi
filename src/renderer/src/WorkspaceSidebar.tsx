@@ -212,7 +212,7 @@ export function WorkspaceSidebar({
       }
       empty={
         workspace ? (
-          'no markdown files in this folder.'
+          'No supported documents in this folder.'
         ) : (
           <button
             className="open-workspace"

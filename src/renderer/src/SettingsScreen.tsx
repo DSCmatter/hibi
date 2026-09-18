@@ -52,7 +52,7 @@ class PluginSettingsBoundary extends Component<
     return this.state.failed ? (
       <DocumentNotice
         title="Settings unavailable"
-        message="These plugin settings could not load."
+        message="Could not load this plugin’s settings. Try again."
       >
         <button type="button" onClick={() => this.setState({ failed: false })}>
           Retry
@@ -170,7 +170,7 @@ export function SettingsScreen({
       id: `plugin-${manifest.id}`,
       label: manifest.name,
       icon: Puzzle,
-      ...(index === 0 ? { section: 'plugins' } : {}),
+      ...(index === 0 ? { section: 'Plugins' } : {}),
     })),
   ]
   const category = items.some((item) => item.id === selected)
@@ -338,7 +338,7 @@ export function SettingsScreen({
               <SettingRow
                 id="default-view"
                 label="Default view"
-                description="Start in this view. Formats fall back to a supported view."
+                description="Use this view when Hibi opens. If a format does not support it, Hibi uses an available view."
               >
                 <Select
                   id="default-view"
@@ -351,7 +351,7 @@ export function SettingsScreen({
                 >
                   <option value="normal">Normal</option>
                   <option value="side-by-side">Side-by-side</option>
-                  <option value="markdown">Source only</option>
+                  <option value="markdown">Source view</option>
                 </Select>
               </SettingRow>
               <SettingRow
@@ -382,7 +382,7 @@ export function SettingsScreen({
               <SettingRow
                 id="line-numbers"
                 label="Show line numbers"
-                description="Number each line in Markdown and side-by-side views."
+                description="Number each line in source and side-by-side views."
               >
                 <Toggle
                   id="line-numbers"
@@ -424,7 +424,7 @@ export function SettingsScreen({
               <SettingRow
                 id="lowercase-interface"
                 label="Lowercase interface"
-                description="Display interface text in lowercase. Your documents and typed values keep their original spelling."
+                description="Use lowercase for app labels and messages. Your documents and anything you type stay unchanged."
               >
                 <Toggle
                   id="lowercase-interface"
@@ -439,8 +439,8 @@ export function SettingsScreen({
             <div className="settings-group">
               <SettingRow
                 id="focus-outlines"
-                label="Non-input focus outlines"
-                description="Show outlines on focused buttons, links, and navigation. Input fields keep their focus indicators."
+                label="Focus outlines"
+                description="Outline buttons, links, and navigation when focused. Text fields always show focus."
               >
                 <Toggle
                   id="focus-outlines"
@@ -457,32 +457,32 @@ export function SettingsScreen({
                 [
                   [
                     'style',
-                    'cursor style',
-                    'shape of the text insertion cursor.',
+                    'Cursor style',
+                    'Choose the cursor shape.',
                     [
-                      ['bar', 'line |'],
-                      ['outline', 'outline ▯'],
-                      ['block', 'filled ▮'],
-                      ['underline', 'underline _'],
+                      ['bar', 'Line |'],
+                      ['outline', 'Outline ▯'],
+                      ['block', 'Filled ▮'],
+                      ['underline', 'Underline _'],
                     ],
                   ],
                   [
                     'speed',
-                    'cursor blink',
-                    'how quickly the cursor blinks.',
+                    'Cursor blink',
+                    'Choose how quickly the cursor blinks.',
                     [
-                      ['fast', 'fast'],
-                      ['normal', 'normal'],
-                      ['slow', 'slow'],
+                      ['fast', 'Fast'],
+                      ['normal', 'Normal'],
+                      ['slow', 'Slow'],
                     ],
                   ],
                   [
                     'animation',
-                    'cursor animation',
-                    'smooth fades and slides; blink moves instantly.',
+                    'Cursor animation',
+                    'Smooth fades and slides between positions. Blink moves instantly.',
                     [
-                      ['smooth', 'smooth'],
-                      ['blink', 'blink'],
+                      ['smooth', 'Smooth'],
+                      ['blink', 'Blink'],
                     ],
                   ],
                 ] as const
@@ -518,7 +518,7 @@ export function SettingsScreen({
               <SettingRow
                 id="hide-titlebar"
                 label="Hide top bar while typing"
-                description="Show it after a pause, or move your pointer to the top."
+                description="The bar returns when you pause or move your pointer to the top."
               >
                 <Toggle
                   id="hide-titlebar"
@@ -625,7 +625,7 @@ export function SettingsScreen({
                     <SettingRow
                       id={`plugin-controls-${manifest.id}`}
                       label="Rendering and highlighting"
-                      description="Configure syntax features and source colors."
+                      description="Choose syntax features and code highlighting."
                     >
                       <Button onClick={() => onCategory('syntax')}>
                         Syntax

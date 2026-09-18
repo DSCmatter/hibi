@@ -135,7 +135,7 @@ test('compact filters reset preferences, group addons, and install reviewed url 
   assert.equal(await page.evaluate(() => window.urlFixtureStarted), undefined)
   assert.match(
     (await app.evaluate(() => globalThis.reviewedAddon)).detail,
-    /downloaded from example.com/,
+    /Downloaded from example.com/,
   )
   assert.equal(
     JSON.parse(

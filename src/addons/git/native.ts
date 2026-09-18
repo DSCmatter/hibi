@@ -12,7 +12,7 @@ const redact = (text: string) =>
   text.replace(/(https?:\/\/)[^\s/@]+:[^\s/@]+@/g, '$1[redacted]@')
 async function repository(context: NativeAddonContext) {
   const cwd = context.workspace.directory()
-  if (!cwd) throw new Error('open a git repository folder first.')
+  if (!cwd) throw new Error('Open a Git repository folder first.')
   const hooks = join(app.getPath('userData'), 'disabled-git-hooks')
   await mkdir(hooks, { recursive: true, mode: 0o700 })
   const config = [
@@ -62,7 +62,7 @@ async function repository(context: NativeAddonContext) {
       if (optional && failure.code === 1) return ''
       throw new Error(
         failure.killed
-          ? 'git operation timed out.'
+          ? 'Git took too long. Try again.'
           : redact(failure.stderr?.trim() || failure.message),
       )
     }
@@ -85,7 +85,7 @@ async function repository(context: NativeAddonContext) {
     )
   const top = (await run(['rev-parse', '--show-toplevel'])).trim()
   if ((await realpath(top)) !== (await realpath(cwd)))
-    throw new Error('open the repository root folder to use git.')
+    throw new Error('Open the repository root folder to use Git.')
   const files = async (): Promise<GitFile[]> => {
     const records = (
       await run(['status', '--porcelain=v1', '-z', '--untracked-files=all'])
@@ -141,10 +141,9 @@ async function changedPath(
   repo: Awaited<ReturnType<typeof repository>>,
   value: unknown,
 ) {
-  if (typeof value !== 'string') throw new Error('choose a changed file.')
+  if (typeof value !== 'string') throw new Error('Choose a changed file.')
   const file = (await repo.files()).find((file) => file.path === value)
-  if (!file)
-    throw new Error('this file no longer has changes. refresh git status.')
+  if (!file) throw new Error('This file has no changes. Refresh Git status.')
   return file
 }
 export default {
@@ -192,7 +191,7 @@ export default {
       const repo = await repository(context)
       const file = await changedPath(repo, input)
       if (file.index === '?' && file.worktree === '?')
-        return 'untracked file — stage it to preview its diff.'
+        return 'Stage this new file to preview its changes.'
       const paths = file.original ? [file.original, file.path] : [file.path]
       const base = ['diff', '--no-ext-diff', '--no-textconv', '--no-color']
       return (
@@ -201,7 +200,8 @@ export default {
           await repo.run([...base, '--', ...paths]),
         ]
           .filter(Boolean)
-          .join('\n') || 'no text diff (binary file or metadata change).'
+          .join('\n') ||
+        'No text changes. Only file details or binary content changed.'
       )
     },
     async stage(input, context) {
@@ -212,7 +212,7 @@ export default {
       ).split('\0')[2]
       if (filter && !['unspecified', 'unset'].includes(filter))
         throw new Error(
-          'this file uses an external git filter. stage it with your git client to preserve its encoding.',
+          'This file needs an external Git filter. Stage it in your Git client to preserve its encoding.',
         )
       await repo.run([
         'add',
@@ -243,7 +243,7 @@ export default {
     },
     async commit(input, context) {
       if (typeof input !== 'string' || !input.trim() || input.length > 8000)
-        throw new Error('enter a commit message under 8,000 characters.')
+        throw new Error('Enter a commit message of 8,000 characters or fewer.')
       const repo = await repository(context)
       await repo.run(['commit', '--no-gpg-sign', '-m', input.trim()])
       return state(context)
@@ -252,10 +252,10 @@ export default {
       const repo = await repository(context)
       if (context.workspace.hasUnsavedChanges() || (await repo.files()).length)
         throw new Error(
-          'save edits and commit or stash changes before switching branches.',
+          'Save your edits, then commit or stash changes before switching branches.',
         )
       if (typeof input !== 'string' || !(await repo.branches()).includes(input))
-        throw new Error('choose an existing branch.')
+        throw new Error('Choose an existing branch.')
       await repo.run(
         input.startsWith('refs/remotes/')
           ? ['switch', '--track', input.slice('refs/remotes/'.length)]
@@ -268,7 +268,7 @@ export default {
       const repo = await repository(context)
       if (context.workspace.hasUnsavedChanges() || (await repo.files()).length)
         throw new Error(
-          'save edits and commit or stash changes before pulling.',
+          'Save your edits, then commit or stash changes before pulling.',
         )
       await repo.run([
         'pull',

@@ -115,11 +115,11 @@ test('keybeats uses local audio, editor input, toolbar controls, and clean addon
     name: /^keybeats$/i,
     exact: true,
   })
-  assert.match(await plugin.innerText(), /may.*hibi port/s)
+  assert.match(await plugin.innerText(), /may.*Hibi port/s)
   assert.doesNotMatch(await plugin.innerText(), /Yug Bhanushali|Thomas Lai/)
   assert.match(
     await readFile('src/addons/keybeats/README.md', 'utf8'),
-    /## credits[\s\S]*Yug Bhanushali[\s\S]*Thomas Lai/,
+    /## Credits[\s\S]*Yug Bhanushali[\s\S]*Thomas Lai/,
   )
   await plugin.getByRole('combobox').waitFor()
   assert.equal(await plugin.locator('select option').count(), 13)
@@ -177,7 +177,7 @@ test('keybeats uses local audio, editor input, toolbar controls, and clean addon
   assert.equal(await sounds(), count)
   await toggleSound()
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await typeKey(source)
@@ -204,7 +204,7 @@ test('keybeats uses local audio, editor input, toolbar controls, and clean addon
     process.platform === 'darwin' ? 'Meta+f' : 'Control+f',
   )
   const find = page.getByRole('textbox', {
-    name: /^find in note$/i,
+    name: /^find in document$/i,
     exact: true,
   })
   await find.pressSequentially('abc')

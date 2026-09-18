@@ -282,7 +282,9 @@ export function useAddons(environment: Environment, documentName?: string) {
       }
       try {
         if (!compatibleAddonManifest(addon.manifest))
-          throw new Error(`incompatible addon: ${id}`)
+          throw new Error(
+            `The ${id} plugin needs an update before it can run in this version of Hibi.`,
+          )
         running.set(id, { addon, stop })
         const start = () =>
           addon.start({
@@ -291,7 +293,9 @@ export function useAddons(environment: Environment, documentName?: string) {
               register(scheme) {
                 if (disposed) return () => {}
                 if (!/^[a-z][a-z0-9-]*$/.test(scheme.id))
-                  throw new Error('invalid addon colorscheme id')
+                  throw new Error(
+                    'This plugin supplied an invalid color scheme name.',
+                  )
                 const remove = colorschemes.register({
                   ...scheme,
                   id: `${id}.${scheme.id}`,
@@ -317,7 +321,9 @@ export function useAddons(environment: Environment, documentName?: string) {
                 if (disposed) return { open() {}, dispose() {} }
                 const key = `${id}.${view.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(view.id) || views.has(key))
-                  throw new Error(`duplicate or invalid sidebar view: ${key}`)
+                  throw new Error(
+                    `This plugin supplied a duplicate or invalid sidebar view: ${key}.`,
+                  )
                 const entry = { ...view, id: key }
                 views.set(key, entry)
                 setSidebarViews([...views.values()])
@@ -348,7 +354,9 @@ export function useAddons(environment: Environment, documentName?: string) {
                 if (disposed) return { update() {}, dispose() {} }
                 const key = `${id}.${initial.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(initial.id) || status.has(key))
-                  throw new Error(`duplicate or invalid status item: ${key}`)
+                  throw new Error(
+                    `This plugin supplied a duplicate or invalid status item: ${key}.`,
+                  )
                 let active = true
                 let item = initial
                 const publish = () => {
@@ -458,7 +466,7 @@ export function useAddons(environment: Environment, documentName?: string) {
                 if (format?.render) return format.render(source, documentId)
                 if (format?.editing !== 'markdown')
                   throw new Error(
-                    `enable the extension for ${name} before exporting it.`,
+                    `Enable the plugin for ${name} before exporting this document.`,
                   )
                 return renderMarkdownAsync(
                   projectMarkdown(source, [...extensions.values()]).content,
@@ -530,7 +538,9 @@ export function useAddons(environment: Environment, documentName?: string) {
                 if (disposed) return () => {}
                 const key = `${id}.${extension.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(extension.id) || rich.has(key))
-                  throw new Error(`duplicate or invalid rich extension: ${key}`)
+                  throw new Error(
+                    `This plugin supplied a duplicate or invalid editor feature: ${key}.`,
+                  )
                 rich.set(key, {
                   id: key,
                   addonId: id,
@@ -567,7 +577,7 @@ export function useAddons(environment: Environment, documentName?: string) {
                 const key = `${id}.${extension.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(extension.id) || sources.has(key))
                   throw new Error(
-                    `duplicate or invalid source extension: ${key}`,
+                    `This plugin supplied a duplicate or invalid source-editor feature: ${key}.`,
                   )
                 sources.set(key, {
                   id: key,
@@ -600,7 +610,7 @@ export function useAddons(environment: Environment, documentName?: string) {
                   extensions.has(key)
                 )
                   throw new Error(
-                    `duplicate or invalid markdown extension: ${key}`,
+                    `This plugin supplied a duplicate or invalid Markdown feature: ${key}.`,
                   )
                 extensions.set(key, {
                   id: key,
@@ -644,7 +654,9 @@ export function useAddons(environment: Environment, documentName?: string) {
                   !/^[a-z][a-z0-9-]*$/.test(command.id) ||
                   registered.has(key)
                 )
-                  throw new Error(`duplicate or invalid command: ${key}`)
+                  throw new Error(
+                    `This plugin supplied a duplicate or invalid command: ${key}.`,
+                  )
                 let active = true
                 registered.set(key, {
                   ...command,
@@ -698,7 +710,9 @@ export function useAddons(environment: Environment, documentName?: string) {
               registerDecorations(provider) {
                 if (disposed) return () => {}
                 if (!/^[a-z][a-z0-9-]*$/.test(provider.id))
-                  throw new Error('invalid explorer provider id.')
+                  throw new Error(
+                    'This plugin supplied an invalid file-list feature name.',
+                  )
                 const remove = explorerDecorations.register(
                   `${id}.${provider.id}`,
                   provider,
@@ -712,11 +726,19 @@ export function useAddons(environment: Environment, documentName?: string) {
               },
               snapshot: () =>
                 disposed
-                  ? Promise.reject(new Error('addon is disabled.'))
+                  ? Promise.reject(
+                      new Error(
+                        'Enable this addon in Settings → Addons first.',
+                      ),
+                    )
                   : latest.current.workspace.snapshot(),
               index: () =>
                 disposed
-                  ? Promise.reject(new Error('addon is disabled.'))
+                  ? Promise.reject(
+                      new Error(
+                        'Enable this addon in Settings → Addons first.',
+                      ),
+                    )
                   : latest.current.workspace.index(),
               get: () => latest.current.workspace.get(),
               open: () =>
@@ -731,11 +753,19 @@ export function useAddons(environment: Environment, documentName?: string) {
             native: {
               query: <T>(method: string, input?: unknown) =>
                 disposed
-                  ? Promise.reject(new Error('addon is disabled.'))
+                  ? Promise.reject(
+                      new Error(
+                        'Enable this addon in Settings → Addons first.',
+                      ),
+                    )
                   : (window.hibi.queryAddon(id, method, input) as Promise<T>),
               invoke: <T>(method: string, input?: unknown) =>
                 disposed
-                  ? Promise.reject(new Error('addon is disabled.'))
+                  ? Promise.reject(
+                      new Error(
+                        'Enable this addon in Settings → Addons first.',
+                      ),
+                    )
                   : (latest.current.invoke(id, method, input) as Promise<T>),
             },
             notify: (message) => {

@@ -94,7 +94,7 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
     process.platform === 'darwin' ? 'Meta+f' : 'Control+f',
   )
   await page
-    .getByRole('textbox', { name: /^find in note$/i, exact: true })
+    .getByRole('textbox', { name: /^find in document$/i, exact: true })
     .fill('final list item')
   await page.waitForFunction(
     () => document.querySelector('.find-bar output')?.textContent === '1/1',
@@ -104,7 +104,7 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
     false,
   )
   await page
-    .getByRole('textbox', { name: /^find in note$/i, exact: true })
+    .getByRole('textbox', { name: /^find in document$/i, exact: true })
     .press('Escape')
   assert.equal(
     await page
@@ -114,11 +114,11 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.openWorkspaceFile('../outside.md')),
-    /invalid workspace/,
+    /Choose a supported document inside this workspace\./,
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.openWorkspaceFile('linked.md')),
-    /symlink/,
+    /Symbolic links cannot be opened from a workspace\./,
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.openWorkspaceFile('escape/outside.md')),
@@ -185,7 +185,7 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.invokeAddon('documentation', 'export')),
-    /not enabled/,
+    /Enable this addon in Settings → Addons first\./,
   )
   await enabled.click()
   await page.waitForFunction(
@@ -202,7 +202,7 @@ test('nested workspace editing, addon lifecycle, and offline static export', {
     page.evaluate(() =>
       window.hibi.invokeAddon('documentation', 'constructor'),
     ),
-    /unknown addon method/,
+    /This addon does not support the requested action\./,
   )
   await page.getByRole('button', { name: /^back to app$/i }).click()
   assert.equal(

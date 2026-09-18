@@ -24,13 +24,15 @@ function validate(value: unknown): NativeAppearance {
         preferences[key as keyof typeof preferences],
     )
   )
-    throw new Error('invalid appearance preferences')
+    throw new Error(
+      'Could not read these appearance settings. Choose them again.',
+    )
   for (const mode of ['light', 'dark'] as const)
     if (
       !/^#[\da-f]{6}$/i.test(input[mode]?.background) ||
       !/^#[\da-f]{6}$/i.test(input[mode]?.foreground)
     )
-      throw new Error('invalid appearance colors')
+      throw new Error('This theme has invalid colors. Choose another theme.')
   return {
     preferences,
     light: {

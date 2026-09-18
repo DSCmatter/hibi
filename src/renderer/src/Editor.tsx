@@ -592,8 +592,8 @@ export function MarkdownEditor({
                 />
               ) : (
                 <p className="format-unavailable">
-                  Enable {formatName} for preview. source editing remains
-                  available.
+                  Enable {formatName} in Addons to preview this document. You
+                  can still edit it in source view.
                 </p>
               ))}
             {markdownDocument &&
@@ -617,7 +617,7 @@ export function MarkdownEditor({
           <section
             className="source-pane"
             onFocusCapture={() => setFocusedPane('source')}
-            aria-label="Markdown source"
+            aria-label="Document source"
             aria-hidden={paneMode === 'normal'}
             inert={paneMode === 'normal'}
           >

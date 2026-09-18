@@ -27,7 +27,10 @@ export async function loadHotkeys(): Promise<void> {
 
 export async function saveHotkeys(value: unknown): Promise<Hotkeys> {
   const next = validateHotkeys(value, process.platform)
-  if (saving) throw new Error('hotkeys are still saving. try again.')
+  if (saving)
+    throw new Error(
+      'Shortcuts are still saving. Wait a moment, then try again.',
+    )
   saving = true
   try {
     const path = join(app.getPath('userData'), 'hotkeys.json')

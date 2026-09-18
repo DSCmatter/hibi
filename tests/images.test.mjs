@@ -178,7 +178,7 @@ test('local images resolve from the note, validate content, and retain their Mar
     `${process.platform === 'darwin' ? 'Meta' : 'Control'}+o`,
   )
   await page
-    .locator('.tiptap img[title^="media unavailable"]')
+    .locator('.tiptap img[title^="Could not load this media"]')
     .waitFor({ state: 'attached' })
   await app.evaluate(({ dialog }, folder) => {
     dialog.showOpenDialog = async () => ({

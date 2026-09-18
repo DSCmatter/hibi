@@ -37,7 +37,7 @@ Escape closes Settings. If a dialog is open, it closes that dialog first.
 
 ## Open remote Markdown
 
-Choose **File → Open from remote…** and enter a raw HTTP or HTTPS Markdown URL. Hibi opens the downloaded text as an editable draft. Save it locally to keep it; Hibi never writes back to the server.
+Choose **File → Open from URL…** and enter a direct HTTP or HTTPS link to a text file. Hibi opens the downloaded text as an editable draft. Save it locally to keep it; Hibi never writes back to the server.
 
 The download must be UTF-8 text under 2 MiB. Webpage HTML, embedded credentials, and non-web addresses are rejected. Requests stop after 20 seconds or more than five redirects. Relative attachment paths need matching local assets after you save.
 

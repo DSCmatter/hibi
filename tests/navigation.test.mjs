@@ -168,11 +168,11 @@ test('shift-click links, note/settings history, and file-menu remote imports', {
     await app.evaluate(({ Menu }) =>
       Menu.getApplicationMenu()
         .items.find((item) => item.label === 'File')
-        .submenu.items.find((item) => item.label === 'Open from remote…')
+        .submenu.items.find((item) => item.label === 'Open from URL…')
         .click(),
     )
     const dialog = page.getByRole('dialog', {
-      name: /^open from remote$/i,
+      name: /^open from URL$/i,
       exact: true,
     })
     await dialog.getByLabel(/^markdown url$/i, { exact: true }).fill(address)
@@ -185,14 +185,18 @@ test('shift-click links, note/settings history, and file-menu remote imports', {
   assert.equal(imported.dirty, true)
   await remote(`${url}/html`)
   await page
-    .getByText(/this url is a web page\. use the raw markdown file url\./i)
+    .getByText(
+      /this url points to a web page\. use a direct link to the raw text file\./i,
+    )
     .waitFor()
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     '# remote note',
   )
   await remote(`${url}/large`)
-  await page.getByText(/remote documents must be under 2 mib\./i).waitFor()
+  await page
+    .getByText(/the download exceeds the 2 mib document limit\./i)
+    .waitFor()
   await assert.rejects(
     page.evaluate(() => window.hibi.openRemoteDocument('file:///etc/passwd')),
   )

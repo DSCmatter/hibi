@@ -22,13 +22,15 @@ The autosave status at the bottom of the window opens these settings. If another
 
 ## Keyboard shortcuts
 
+The command palette searches action names and help text. Matches in action names appear first.
+
 Under **Hotkeys**, select a binding and press a new shortcut. Enter saves it; Escape cancels. You can clear individual shortcuts or reset them. Hibi rejects conflicts and reserved editing or window shortcuts. Menus, tooltips, and the command palette show your current bindings.
 
 ## Sidebar views
 
 The dropdown beside the sidebar button lists available views. Use its first item to pin or unpin the current view. Up to three pinned views appear first. Shortcuts appear beside the window controls while there is room; the dropdown keeps all views available in narrow windows.
 
-**In this page** groups headings by level and highlights the section containing your cursor. Select a heading to jump to it. See [workspaces](workspaces.md) for sidebar resizing and file navigation.
+**On this page** groups headings by level and highlights the section containing your cursor. Select a heading to jump to it. See [workspaces](workspaces.md) for sidebar resizing and file navigation.
 
 ## Formats, syntax, and code highlighting
 

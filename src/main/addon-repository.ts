@@ -82,7 +82,9 @@ export async function downloadRepository(
           stat.isSymbolicLink()
         ) {
           oversized = true
-          throw new Error('repository exceeds addon download limits.')
+          throw new Error(
+            'This repository exceeds the limit of 5,000 entries or 64 MiB, or contains a symbolic link.',
+          )
         }
         if (stat.isDirectory()) await walk(file)
       }
@@ -137,11 +139,13 @@ export async function downloadRepository(
     return { zip: stdout, host: url.host }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-      throw new Error('install git to add extensions from repositories.')
+      throw new Error('Install Git to add addons from repositories.')
     if (oversized)
-      throw new Error('repository exceeds addon download limits (64 mib).')
+      throw new Error(
+        'This repository exceeds the limit of 5,000 entries or 64 MiB, or contains a symbolic link.',
+      )
     throw new Error(
-      'could not read the git repository. use a public https repository with a ready-to-use addon package.',
+      'Could not read this Git repository. Use a public HTTPS repository containing a ready-to-install addon.',
       { cause: error },
     )
   } finally {

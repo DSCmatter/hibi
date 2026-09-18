@@ -91,7 +91,9 @@ export function useAutosave(
           ...identity,
           status: 'error',
           error:
-            error instanceof Error ? error.message : 'could not save the file.',
+            error instanceof Error
+              ? error.message
+              : 'Could not save this file.',
         })
       } finally {
         inFlight.current = false
@@ -113,7 +115,7 @@ export function useAutosave(
             : 'Autosave · saved'
   const tooltip =
     currentResult?.status === 'conflict'
-      ? 'File changed outside Hibi. save manually to review the changes before autosave resumes.'
+      ? 'Another app changed this file. Save manually to review the changes and resume autosave.'
       : (currentResult?.error ??
         (!settings.enabled
           ? 'Autosave is off · click to configure'

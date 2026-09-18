@@ -11,7 +11,7 @@ export function AutosaveSettings() {
         <SettingRow
           id="autosave-enabled"
           label="Autosave"
-          description="Save local files after a pause. new drafts need an initial save; files changed outside Hibi pause autosave."
+          description="Save files after you stop typing. Save new drafts once to choose a location. Autosave pauses if another app changes the file."
         >
           <Toggle
             id="autosave-enabled"

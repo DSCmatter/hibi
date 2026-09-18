@@ -6,8 +6,7 @@ export default {
   kind: 'extension',
   version: '1.0.0',
   apiVersion: 2,
-  description:
-    'Explore connections between notes in an interactive workspace graph.',
+  description: 'See links between your notes and open them from a graph.',
   defaultEnabled: false,
   startup: 'background',
   authors: [authors.may],

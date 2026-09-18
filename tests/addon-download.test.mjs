@@ -78,7 +78,7 @@ test('addon archives preserve wrappers and reject unsafe or oversized contents',
   await assert.rejects(unpackAddon(many, root), /1,000 entries/)
   await assert.rejects(
     unpackAddon(Buffer.from('not a zip'), root),
-    /invalid addon zip/,
+    /This is not a valid addon ZIP file\./,
   )
 })
 
@@ -112,12 +112,15 @@ test('addon urls stay https through redirects and downloads remain bounded', asy
       status: 302,
       headers: { location: 'http://example.com/a.zip' },
     })
-  await assert.rejects(downloadAddon('https://example.com/a.zip'), /https/)
+  await assert.rejects(downloadAddon('https://example.com/a.zip'), /HTTPS URL/)
   globalThis.fetch = async () =>
     new Response('large', {
       headers: { 'content-length': String(26 * 1024 * 1024) },
     })
-  await assert.rejects(downloadAddon('https://example.com/a.zip'), /25 mib/)
+  await assert.rejects(
+    downloadAddon('https://example.com/a.zip'),
+    /25 MiB limit/,
+  )
 })
 
 test('repository installs archive without checkout, hooks, or inherited git config', {

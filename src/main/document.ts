@@ -86,7 +86,7 @@ function storeTab() {
 }
 function activateTab(id: string) {
   const draft = tabs.get(id)
-  if (!draft) throw new Error('this tab is no longer open.')
+  if (!draft) throw new Error('This tab is no longer open.')
   activeTab = id
   ;({ markdown, saved, path, pendingPath, untitledName, draftId } = draft)
 }
@@ -134,7 +134,7 @@ export async function selectDocumentTab(
 ): Promise<DocumentState> {
   storeTab()
   if (typeof id !== 'string' || !tabs.has(id))
-    throw new Error('this tab is no longer open.')
+    throw new Error('This tab is no longer open.')
   if (id === activeTab && !refresh) return getDocument()
   const draft = tabs.get(id)!
   const current = markdown
@@ -142,9 +142,7 @@ export async function selectDocumentTab(
   if (draft.path && draft.markdown === draft.saved) {
     const content = await readMarkdown(draft.path)
     if (markdown !== current)
-      throw new Error(
-        'document changed while switching tabs. please try again.',
-      )
+      throw new Error('The document changed while switching tabs. Try again.')
     draft.markdown = draft.saved = content
   }
   if (remember && id !== activeTab) rememberLocation()
@@ -211,7 +209,7 @@ function removeTabs(window: BrowserWindow, ids: Set<string>) {
 export async function closeDocumentTab(window: BrowserWindow, id: unknown) {
   storeTab()
   if (typeof id !== 'string' || !tabs.has(id))
-    throw new Error('this tab is no longer open.')
+    throw new Error('This tab is no longer open.')
   if (!(await confirmTabDiscard(window, id))) return null
   return removeTabs(window, new Set([id]))
 }
@@ -259,7 +257,7 @@ export async function navigateDocument(
   direction: unknown,
 ): Promise<DocumentState | null> {
   if (direction !== 'back' && direction !== 'forward')
-    throw new Error('invalid navigation direction.')
+    throw new Error('Choose Back or Forward to navigate.')
   const from = direction === 'back' ? back : forward
   const to = direction === 'back' ? forward : back
   if (!from.length) return null
@@ -362,7 +360,7 @@ export async function saveDocument(
     )
   )
     throw new Error(
-      'this file is already open in another tab. choose a different name.',
+      'This file is open in another tab. Choose a different name.',
     )
   let previous: string | null = null
   if (destination === path) {
@@ -398,7 +396,7 @@ export async function saveDocument(
     console.error('local history failed:', error)
     window.webContents.send(
       HISTORY_CHANNELS.notice,
-      'file saved, but its local history could not be updated.',
+      'File saved, but Hibi could not add it to version history.',
     )
   }
   return getDocument()
@@ -492,7 +490,7 @@ export function relocateDocument(from: string, to: string): void {
 }
 
 export async function renameDocument(value: unknown): Promise<DocumentState> {
-  if (typeof value !== 'string') throw new Error('invalid file name.')
+  if (typeof value !== 'string') throw new Error('Enter a file name.')
   let name = value.trim()
   if (
     !name ||
@@ -502,7 +500,7 @@ export async function renameDocument(value: unknown): Promise<DocumentState> {
     /[. ]$/.test(name)
   )
     throw new Error(
-      'enter a file name without path separators or reserved characters.',
+      'Enter a file name without slashes, control characters, or these symbols: < > : " | ? *. Do not end it with a period or space.',
     )
   if (!extname(name))
     name += extname(path ?? pendingPath ?? untitledName) || '.md'
@@ -511,7 +509,9 @@ export async function renameDocument(value: unknown): Promise<DocumentState> {
     Buffer.byteLength(name) > 255 ||
     /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)
   )
-    throw new Error('choose a valid markdown file name.')
+    throw new Error(
+      'Choose a supported file extension and a name under 256 bytes. Reserved names such as CON and NUL are not allowed.',
+    )
   if (!path) {
     if (pendingPath) {
       const destination = join(dirname(pendingPath), name)
@@ -520,14 +520,19 @@ export async function renameDocument(value: unknown): Promise<DocumentState> {
           (draft) => draft.tabId !== activeTab && draft.file === destination,
         )
       )
-        throw new Error('a file with that name is already open.')
+        throw new Error(
+          'A file with that name is open. Choose a different name.',
+        )
       const exists = await lstat(destination).catch(
         (error: NodeJS.ErrnoException) => {
           if (error.code !== 'ENOENT') throw error
           return null
         },
       )
-      if (exists) throw new Error('a file with that name already exists.')
+      if (exists)
+        throw new Error(
+          'A file with that name exists. Choose a different name.',
+        )
       pendingPath = destination
     }
     untitledName = name
@@ -540,7 +545,7 @@ export async function renameDocument(value: unknown): Promise<DocumentState> {
       (draft) => draft.tabId !== activeTab && draft.file === destination,
     )
   )
-    throw new Error('a file with that name is already open.')
+    throw new Error('A file with that name is open. Choose a different name.')
   const existing = await lstat(destination).catch(
     (error: NodeJS.ErrnoException) => {
       if (error.code !== 'ENOENT') throw error
@@ -553,7 +558,7 @@ export async function renameDocument(value: unknown): Promise<DocumentState> {
       relocateDocument(path, destination)
       return getDocument()
     }
-    throw new Error('a file with that name already exists.')
+    throw new Error('A file with that name exists. Choose a different name.')
   }
   // Linking creates the new name atomically without replacing another file.
   try {
@@ -570,7 +575,9 @@ export async function renameDocument(value: unknown): Promise<DocumentState> {
   try {
     await unlink(path)
   } catch {
-    throw new Error(`created ${name}, but could not remove the original file.`)
+    throw new Error(
+      `Created ${name}, but could not remove the original file. Check both files before trying again.`,
+    )
   }
   relocateDocument(path, destination)
   return getDocument()
@@ -601,7 +608,9 @@ export async function loadDocument(
   if (existing) return selectDocumentTab(window, existing.tabId, remember, true)
   const content = await readMarkdown(chosen)
   if (markdown !== current)
-    throw new Error('document changed while opening a file. please try again.')
+    throw new Error(
+      'The document changed while opening another file. Try again.',
+    )
   if (remember && chosen !== path && !isEmptyTab()) rememberLocation()
   if (!(await startTab(window, true))) return null
   path = chosen

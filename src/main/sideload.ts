@@ -44,7 +44,7 @@ function manifest(value: unknown): {
   themes: ColorschemeInput[]
 } {
   if (!value || typeof value !== 'object')
-    throw new Error('invalid addon manifest.')
+    throw new Error('The addon details in hibi-addon.json are invalid.')
   const data = value as Record<string, unknown>
   const string = (value: unknown, max: number): value is string =>
     typeof value === 'string' && !!value.trim() && value.length <= max
@@ -72,7 +72,7 @@ function manifest(value: unknown): {
     )
   )
     throw new Error(
-      'addon needs an id, kind, api version, version, description, and authors.',
+      'The addon needs an ID, kind, API version, version, description, and authors in hibi-addon.json.',
     )
   if (
     data.licenses !== undefined &&
@@ -87,12 +87,12 @@ function manifest(value: unknown): {
           !string(license.text, 32000),
       ))
   )
-    throw new Error('invalid addon licenses.')
+    throw new Error('The addon license details are invalid.')
   if (
     data.fileExtensions !== undefined &&
     (data.kind === 'theme' || !validDocumentExtensions(data.fileExtensions))
   )
-    throw new Error('invalid document extensions.')
+    throw new Error('The addon lists invalid file extensions.')
   const base: AddonManifest = {
     id: data.id,
     name: data.name,
@@ -122,7 +122,7 @@ function manifest(value: unknown): {
       data.themes.length > 20
     )
       throw new Error(
-        'theme packages contain colorschemes, not executable entries.',
+        'Themes must contain color schemes without executable code.',
       )
     const themes = data.themes.map((value) => {
       if (
@@ -131,14 +131,14 @@ function manifest(value: unknown): {
         !value.colors ||
         typeof value.colors !== 'object'
       )
-        throw new Error('invalid colorscheme.')
+        throw new Error('This theme has an invalid color scheme.')
       return defineColorscheme(value as ColorschemeInput)
     })
     if (
       themes.some((theme) => !validId(theme.id)) ||
       new Set(themes.map((theme) => theme.id)).size !== themes.length
     )
-      throw new Error('invalid or duplicate theme id.')
+      throw new Error('Each theme needs a valid, unique ID.')
     base.licenses = [
       ...(base.licenses ?? []),
       ...themes.map((theme) => ({
@@ -151,14 +151,18 @@ function manifest(value: unknown): {
     return { manifest: base, entry: '', themes }
   }
   if (!validPath(data.entry) || !/\.(m?js)$/.test(data.entry))
-    throw new Error('extension entry must be a relative .js or .mjs module.')
+    throw new Error(
+      'The extension entry must point to a .js or .mjs file inside the addon folder.',
+    )
   return { manifest: base, entry: data.entry, themes: [] }
 }
 async function readManifest(folder: string) {
   const path = join(folder, 'hibi-addon.json')
   const stat = await lstat(path)
   if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 64 * 1024)
-    throw new Error('addon manifest must be a regular json file under 64 kib.')
+    throw new Error(
+      'hibi-addon.json must be a JSON file no larger than 64 KiB.',
+    )
   return manifest(JSON.parse(await readFile(path, 'utf8')))
 }
 function descriptor(data: Omit<Package, 'url'>): Package {
@@ -207,7 +211,9 @@ export async function loadInstalledAddons(builtinIds: readonly string[]) {
         record.files.length > MAX_ADDON_ENTRIES ||
         !record.files.every(validPath)
       )
-        throw new Error('invalid installation record.')
+        throw new Error(
+          'The addon installation record is invalid. Reinstall the addon.',
+        )
       next.push(
         descriptor({
           ...data,
@@ -256,7 +262,7 @@ export async function installPackage(
     }
   }
   const selection = await dialog.showOpenDialog(window, {
-    title: 'Install addon package folder',
+    title: 'Choose an addon folder',
     properties: ['openDirectory'],
   })
   if (selection.canceled || !selection.filePaths[0]) return false
@@ -274,15 +280,17 @@ async function installDirectory(
 ): Promise<boolean> {
   const data = await readManifest(source)
   if (builtinIds.includes(data.manifest.id))
-    throw new Error('an installed package cannot replace a bundled addon.')
+    throw new Error(
+      'This addon uses the ID of a built-in addon and cannot replace it.',
+    )
   const verdict = await dialog.showMessageBox(window, {
     type: data.manifest.kind === 'extension' ? 'warning' : 'question',
     message: `Install ${data.manifest.name} ${data.manifest.version}?`,
-    detail: `${data.manifest.description}\n\nby ${data.manifest.authors?.map((author) => author.displayName).join(', ')}${host ? `\n\ndownloaded from ${host}` : ''}\n\n${data.manifest.kind === 'extension' ? 'extensions run trusted renderer code and can read and edit documents through hibi’s api. only install code you trust. ' : ''}the addon will be installed disabled.`,
+    detail: `${data.manifest.description}\n\nBy ${data.manifest.authors?.map((author) => author.displayName).join(', ')}${host ? `\n\nDownloaded from ${host}` : ''}\n\n${data.manifest.kind === 'extension' ? 'Extensions can run code and read or edit documents in Hibi. Only install addons you trust. ' : ''}This addon will stay disabled until you enable it.`,
     buttons: [
       'Cancel',
       installed.some((item) => item.manifest.id === data.manifest.id)
-        ? 'Replace package'
+        ? 'Replace addon'
         : 'Install',
     ],
     defaultId: 0,
@@ -309,11 +317,11 @@ async function installDirectory(
       for (const entry of entries) {
         if (entry.name.startsWith('.')) continue
         if (++count > MAX_ADDON_ENTRIES)
-          throw new Error('addon packages support up to 1,000 entries.')
+          throw new Error('An addon can contain up to 1,000 entries.')
         const relative = parent ? `${parent}/${entry.name}` : entry.name
         if (!validPath(relative) || entry.isSymbolicLink())
           throw new Error(
-            'addon packages cannot contain symlinks or invalid paths.',
+            'Addon folders cannot contain symbolic links or invalid paths.',
           )
         const path = join(directory, entry.name),
           target = join(staging, relative)
@@ -345,18 +353,22 @@ async function installDirectory(
             '.txt',
           ].includes(extname(entry.name).toLowerCase())
         )
-          throw new Error(`unsupported package file: ${relative}`)
+          throw new Error(
+            `This file type is not allowed in addons: ${relative}`,
+          )
         const stat = await lstat(path)
         if (
           stat.isSymbolicLink() ||
           stat.size > MAX_ADDON_FILE_BYTES ||
           files.length >= MAX_ADDON_ENTRIES
         )
-          throw new Error('addon package exceeds file limits.')
+          throw new Error(
+            'Addon files must be regular files no larger than 5 MiB, with at most 1,000 entries in total.',
+          )
         const content = await readFile(path)
         bytes += content.length
         if (bytes > MAX_ADDON_BYTES)
-          throw new Error('addon package must stay under 25 mib.')
+          throw new Error('The addon exceeds the 25 MiB limit.')
         await writeFile(target, content, { mode: 0o600, flag: 'wx' })
         files.push(relative)
         hash.update(relative).update('\0').update(content)
@@ -367,10 +379,12 @@ async function installDirectory(
       !files.includes('README.md') ||
       (data.entry && !files.includes(data.entry))
     )
-      throw new Error('package needs README.md and its declared entry.')
+      throw new Error(
+        'The addon needs README.md and the entry file listed in hibi-addon.json.',
+      )
     const copied = await readManifest(staging)
     if (JSON.stringify(copied) !== JSON.stringify(data))
-      throw new Error('package changed while installing. try again.')
+      throw new Error('The addon files changed during installation. Try again.')
     const fingerprint = hash.digest('hex')
     await writeFile(
       join(staging, '.hibi-install.json'),
@@ -387,7 +401,9 @@ async function installDirectory(
       exists &&
       !installed.some((item) => item.manifest.id === data.manifest.id)
     )
-      throw new Error('an unrecognized package already uses that id.')
+      throw new Error(
+        'An unrecognized addon already uses this ID. Check the addons folder before installing.',
+      )
     restore = await disable(data.manifest.id)
     if (exists) {
       await rename(destination, backup)
@@ -414,7 +430,10 @@ async function installDirectory(
 }
 export async function removePackage(id: unknown): Promise<void> {
   const packageInfo = installed.find((item) => item.manifest.id === id)
-  if (!packageInfo) throw new Error('only sideloaded addons can be removed.')
+  if (!packageInfo)
+    throw new Error(
+      'Only addons you installed can be removed. Disable built-in addons instead.',
+    )
   await shell.trashItem(join(root(), packageInfo.manifest.id))
   installed = installed.filter((item) => item !== packageInfo)
 }

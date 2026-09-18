@@ -11,13 +11,13 @@ export function Settings() {
         [
           [
             'insert',
-            'start in insert mode',
-            'begin new source editor sessions in insert mode.',
+            'Start in insert mode',
+            'Start typing immediately when you open the source editor.',
           ],
           [
             'status',
-            'show vim status',
-            'show availability, the current mode, and pending or last commands.',
+            'Show Vim status',
+            'Show the current mode and command in the status bar.',
           ],
         ] as const
       ).map(([key, label, description]) => (

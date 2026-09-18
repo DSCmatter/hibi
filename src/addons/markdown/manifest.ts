@@ -9,7 +9,7 @@ export default {
   version: '1.0.0',
   kind: 'extension',
   description:
-    'Markdown documents with rich editing, source view, and HTML export.',
+    'Write Markdown with formatted editing, source view, and HTML export.',
   defaultEnabled: true,
   fileExtensions: fileAssociations.markdown.ext,
   authors: [authors.may],

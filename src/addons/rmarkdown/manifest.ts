@@ -8,7 +8,7 @@ export default {
   version: '1.0.0',
   kind: 'extension',
   description:
-    'R Markdown source editing, preview, and export with an explicit native run action.',
+    'Edit and preview R Markdown; run embedded code when you choose.',
   fileExtensions: fileAssociations.rmarkdown.ext,
   defaultEnabled: false,
   authors: [authors.may],

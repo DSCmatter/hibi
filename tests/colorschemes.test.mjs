@@ -93,7 +93,7 @@ test('bundled palettes retain licenses, provide every role, and keep text readab
         ...base,
         colors: { ...base.colors, accent: 'url(https://example.com)' },
       }),
-    /invalid colorscheme color/,
+    /This color scheme needs a six-digit hex color for accent\./,
   )
   assert.throws(
     () =>
@@ -101,7 +101,7 @@ test('bundled palettes retain licenses, provide every role, and keep text readab
         ...base,
         colors: { ...base.colors, background: '#ffffff00' },
       }),
-    /invalid colorscheme color/,
+    /This color scheme needs a six-digit hex color for background\./,
   )
   assert.throws(
     () =>
@@ -109,7 +109,7 @@ test('bundled palettes retain licenses, provide every role, and keep text readab
         ...base,
         license: { ...base.license, source: 'javascript:alert(1)' },
       }),
-    /invalid colorscheme metadata/,
+    /This color scheme has an invalid ID, name, author, appearance, or license details\./,
   )
   assert.throws(() => {
     base.colors.accent = '#ffffff'

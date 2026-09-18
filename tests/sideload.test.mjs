@@ -146,7 +146,7 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   await pressShortcut(app, `${mod}+k`)
   await page
     .getByRole('combobox', { name: /search commands/i })
-    .fill('install theme or extension')
+    .fill('install addon')
   await page.getByRole('option').first().click()
   await page.locator('#addon-fixture-addon').waitFor()
   assert.equal(await page.locator('#addon-fixture-addon').isChecked(), false)
@@ -251,7 +251,7 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   await app.evaluate((_electron, path) => {
     globalThis.packageSource = path
   }, theme)
-  await choose('install theme or extension')
+  await choose('install addon')
   await waitForAsync(
     page,
     async () => (await window.hibi.getInstalledAddons()).length === 2,
@@ -301,7 +301,7 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   }, bad)
   await assert.rejects(
     page.evaluate(() => window.hibi.installAddon()),
-    /symlink/,
+    /Addon folders cannot contain symbolic links or invalid paths\./,
   )
   assert.equal(
     (await page.evaluate(() => window.hibi.getInstalledAddons())).length,

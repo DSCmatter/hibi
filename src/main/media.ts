@@ -76,7 +76,7 @@ function filePath(value: unknown): string {
     value.startsWith('\\\\') ||
     value.startsWith('//')
   )
-    throw new Error('drop a file from your file manager.')
+    throw new Error('Drag a file here from your file manager.')
   return value
 }
 
@@ -88,13 +88,15 @@ async function openMedia(path: string) {
   try {
     const stat = await file.stat()
     if (!stat.isFile() || !stat.size || stat.size > 512 * 1024 * 1024)
-      throw new Error('media must be a regular file under 512 mib.')
+      throw new Error(
+        'Choose a nonempty image or video file no larger than 512 MiB.',
+      )
     const header = Buffer.alloc(Math.min(4096, stat.size))
     await file.read(header, 0, header.length, 0)
     const mime = imageMime(header) ?? videoMime(header)
-    if (!mime) throw new Error('choose a supported image, gif, or video.')
+    if (!mime) throw new Error('Choose a supported image or video file.')
     if (mime.startsWith('image/') && stat.size > 8 * 1024 * 1024)
-      throw new Error('images must be under 8 mib.')
+      throw new Error('Choose an image no larger than 8 MiB.')
     return { file, stat, mime }
   } catch (error) {
     await file.close()
@@ -108,7 +110,7 @@ export async function openDroppedFile(window: BrowserWindow, value: unknown) {
     return { workspace: await loadWorkspace(path), document: getDocument() }
   if (!isDocumentName(path))
     throw new Error(
-      'drop a markdown file or folder to open it; drop media onto the editor to attach it.',
+      'Drop a supported document or folder to open it. Drop an image or video onto the editor to attach it.',
     )
   if (path === getDocumentPath()) return { document: getDocument() }
   return { document: await loadDocument(window, path) }
@@ -120,7 +122,7 @@ export async function attachMedia(
   revision: unknown,
 ): Promise<AttachmentResult | null> {
   if (revision !== getDocument().revision)
-    throw new Error('the note changed; try attaching again.')
+    throw new Error('The document changed. Try attaching the file again.')
   if (values === null) {
     const result = await dialog.showOpenDialog(window, {
       title: 'Attach image or video',
@@ -131,7 +133,7 @@ export async function attachMedia(
     values = result.filePaths
   }
   if (!Array.isArray(values) || !values.length || values.length > 32)
-    throw new Error('choose up to 32 media files.')
+    throw new Error('Choose up to 32 images or videos at a time.')
   const paths = values.map(filePath)
   // Validate the whole selection before prompting to save or creating attachments.
   for (const path of paths) await (await openMedia(path)).file.close()
@@ -139,7 +141,7 @@ export async function attachMedia(
     if (!(await saveDocument(window))) return null
   }
   if (revision !== getDocument().revision)
-    throw new Error('the note changed; try attaching again.')
+    throw new Error('The document changed. Try attaching the file again.')
   const note = getDocumentPath()!
   const directory = join(dirname(note), 'assets')
   await mkdir(directory, { recursive: true })
@@ -148,7 +150,7 @@ export async function attachMedia(
     (await realpath(directory)) !== directory
   )
     throw new Error(
-      'the assets folder must be beside this note, without symlinks.',
+      'The assets folder must be beside this document and cannot be a symbolic link.',
     )
   const created: string[] = []
   try {
@@ -185,7 +187,7 @@ export async function attachMedia(
             output,
           )
           if (output.bytesWritten !== stat.size)
-            throw new Error('the attachment changed while copying; try again.')
+            throw new Error('The attachment changed while copying. Try again.')
         } finally {
           await target.close()
         }
@@ -198,7 +200,7 @@ export async function attachMedia(
       }
     }
     if (getDocumentPath() !== note || getDocument().revision !== revision)
-      throw new Error('the note changed; try attaching again.')
+      throw new Error('The document changed. Try attaching the file again.')
     return { document: getDocument(), attachments }
   } catch (error) {
     await Promise.all(created.map((path) => unlink(path)))
@@ -310,7 +312,7 @@ export async function exportDocumentMedia(
     try {
       if (stat.size > 14 * 1024 * 1024)
         throw new Error(
-          'embedded media exceeds the 20 mib documentation export limit.',
+          'Embedded media exceeds the 20 MiB export limit. Use smaller attachments.',
         )
       const bytes = Buffer.alloc(stat.size + 1)
       const { bytesRead } = await file.read(bytes, 0, bytes.length, 0)

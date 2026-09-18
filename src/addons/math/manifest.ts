@@ -8,7 +8,7 @@ export default {
   version: '1.0.0',
   apiVersion: 2,
   description:
-    'LaTeX documents, native PDF compilation, and inline and block math with KaTeX.',
+    'Write LaTeX documents, export PDFs, and add equations to Markdown.',
   defaultEnabled: false,
   fileExtensions: fileAssociations.math.ext,
   authors: [authors.may],

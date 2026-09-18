@@ -69,14 +69,16 @@ process.parentPort.on('message', ({ data }: { data: CompileJob }) => {
     if (!result.result) process.parentPort.postMessage({ diagnostics, missing })
     else {
       if (result.result.numOfPages > 200)
-        throw new Error('typst preview supports up to 200 pages.')
+        throw new Error('Typst previews support up to 200 pages.')
       const svg = compiler.plainSvg(result.result)
       const pdf = data.pdf ? compiler.pdf(result.result) : undefined
       if (
         Buffer.byteLength(svg) > 20 * 1024 * 1024 ||
         (pdf && pdf.byteLength > 64 * 1024 * 1024)
       )
-        throw new Error('typst output is too large.')
+        throw new Error(
+          'Typst output exceeds the 20 MiB preview or 64 MiB PDF limit.',
+        )
       process.parentPort.postMessage({
         svg,
         pdf,

@@ -128,7 +128,7 @@ test('startup placeholder stays out of documents and reopens persisted recent wo
 
   page = await launch()
   await welcome()
-    .getByRole('button', { name: /dismiss this/i })
+    .getByRole('button', { name: /start writing/i })
     .click()
   await welcome().waitFor({ state: 'hidden' })
   assert.equal(

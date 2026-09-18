@@ -31,7 +31,7 @@ function input(value: unknown): Input {
     (data.documentId !== undefined &&
       (typeof data.documentId !== 'string' || data.documentId.length > 128))
   )
-    throw new Error('Invalid document input.')
+    throw new Error('Could not read this document for preview.')
   return data
 }
 
@@ -117,12 +117,16 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
         }
         const timer = setTimeout(
           () =>
-            finish(new Error(`Rendering exceeded ${run ? 90 : 15} seconds.`)),
+            finish(
+              new Error(
+                `The preview took longer than ${run ? 90 : 15} seconds. Try again.`,
+              ),
+            ),
           run ? 90000 : 15000,
         )
         worker.once('error', (error) => finish(new Error(String(error))))
         worker.once('exit', () =>
-          finish(new Error('Document renderer stopped. Try again.')),
+          finish(new Error('The preview stopped. Try again.')),
         )
         worker.on(
           'message',
@@ -235,7 +239,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
           const result = cached?.key === key(data) ? cached.result : undefined
           if (!result?.pdf)
             throw new Error(
-              'Compile this version of the document before exporting its PDF.',
+              'Compile the document again before exporting its PDF.',
             )
           bytes = result.pdf
         } else if (

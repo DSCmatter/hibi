@@ -20,7 +20,7 @@ export default defineAddon({
       id: 'unavailable',
       label: '',
       tooltip:
-        'Vim mode is disabled in the Normal view mode. Switch to the side-by-side or Markdown-only view to use Vim mode.',
+        'Vim works in the source editor. Switch to source or side-by-side view to use it.',
       when: 'normal',
     })
     const applyPreferences = () => {

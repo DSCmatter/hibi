@@ -77,7 +77,7 @@ export function typstNode(context: AddonContext) {
           documentId,
           block: true,
         })
-        if (path) context.notify(`exported pdf to ${path}`)
+        if (path) context.notify(`Exported PDF to ${path}`)
       } catch (error) {
         context.toasts.show({
           message:

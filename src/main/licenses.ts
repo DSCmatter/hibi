@@ -18,8 +18,8 @@ export async function listLicenses(): Promise<LicenseInfo[]> {
   return (await load()).map(({ text: _text, ...info }) => info)
 }
 export async function readLicense(id: unknown): Promise<string> {
-  if (typeof id !== 'string') throw new Error('invalid license id')
+  if (typeof id !== 'string') throw new Error('Choose a license to view.')
   const license = (await load()).find((entry) => entry.id === id)
-  if (!license) throw new Error('unknown license')
+  if (!license) throw new Error('This license is no longer available.')
   return license.text
 }

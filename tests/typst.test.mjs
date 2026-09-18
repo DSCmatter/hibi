@@ -74,7 +74,7 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   await tree
     .getByRole('treeitem', { name: /^report\.typ$/i, exact: true })
     .click()
-  const preview = page.getByAltText(/typst document preview/)
+  const preview = page.getByAltText(/Typst document preview/)
   await preview.waitFor()
   assert.equal((await read()).markdown, original)
   await pressShortcut(app, `${mod}+Shift+\\`)
@@ -174,7 +174,10 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   )
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: /^appearance$/i, exact: true }).click()
-  assert.match(await loop, /timed out|infinite/)
+  assert.match(
+    await loop,
+    /Typst compilation took longer than 10 seconds|infinite/,
+  )
   await page.getByRole('button', { name: /^back to app$/i }).click()
   assert.ok((await query('recovered')).svg)
   // Exercise timeout/restart deterministically without allocating an enormous Typst document.
@@ -201,7 +204,10 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   })
   try {
     await page.evaluate(() => window.hibi.setAddonEnabled('typst', true))
-    await assert.rejects(query('timeout fixture'), /timed out/)
+    await assert.rejects(
+      query('timeout fixture'),
+      /Typst compilation took longer than 10 seconds\./,
+    )
   } finally {
     await app.evaluate(({ utilityProcess }) => {
       utilityProcess.fork = globalThis.typstOriginalFork
@@ -224,7 +230,7 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
   await tree
     .getByRole('treeitem', { name: /^blocks\.md$/i, exact: true })
     .click()
-  await page.getByAltText('typst block preview', { exact: true }).waitFor()
+  await page.getByAltText('Typst block preview', { exact: true }).waitFor()
   assert.equal(await page.locator('.tiptap h1').innerText(), 'markdown')
   assert.match(
     await page.locator('.tiptap').innerText(),
@@ -244,7 +250,7 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
     (await window.hibi.getDocument()).markdown.includes('$ x^3 $'),
   )
   assert.match((await read()).markdown, /```typst\n\$ x\^3 \$\n```/)
-  await page.getByAltText('typst block preview', { exact: true }).waitFor()
+  await page.getByAltText('Typst block preview', { exact: true }).waitFor()
   const output = join(root, 'doc.html')
   await app.evaluate(({ dialog }, path) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: path })
@@ -268,9 +274,9 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
     void window.loadFile(path)
   }, output)
   const site = await nextWindow
-  await site.getByAltText('typst block preview', { exact: true }).waitFor()
+  await site.getByAltText('Typst block preview', { exact: true }).waitFor()
   await site.getByRole('treeitem', { name: /^report$/i, exact: true }).click()
-  await site.getByAltText('typst document preview', { exact: true }).waitFor()
+  await site.getByAltText('Typst document preview', { exact: true }).waitFor()
   assert.equal(
     await site
       .locator('img')

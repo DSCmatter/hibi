@@ -103,7 +103,9 @@ export async function documentProject(
           continue
         bytes += info.size
         if (paths.length >= 1000 || bytes > 64 * 1024 * 1024)
-          throw new Error('Document dependencies exceed 1,000 files or 64 MiB.')
+          throw new Error(
+            'This document needs more than 1,000 files or 64 MiB of files.',
+          )
         paths.push({
           path,
           name: relative(root, path),
@@ -136,11 +138,11 @@ export async function documentProject(
         info.size !== item.size ||
         (await realpath(item.path)) !== item.path
       )
-        throw new Error('Project input changed; try again.')
+        throw new Error('A project file changed. Try again.')
       const data = Buffer.alloc(item.size + 1)
       const { bytesRead } = await file.read(data, 0, data.length, 0)
       if (bytesRead !== item.size)
-        throw new Error('Project input changed; try again.')
+        throw new Error('A project file changed. Try again.')
       files.push([item.name, data.subarray(0, bytesRead)])
     } finally {
       await file.close()

@@ -11,7 +11,7 @@ export default {
       const snapshot = await context.workspace.snapshot()
       if (input !== undefined) {
         if (!input || typeof input !== 'object')
-          throw new Error('invalid rendered documentation.')
+          throw new Error('Could not prepare the documentation export.')
         const { pages, css } = input as Record<string, unknown>
         if (
           !Array.isArray(pages) ||
@@ -19,7 +19,7 @@ export default {
           typeof css !== 'string' ||
           Buffer.byteLength(css) > 2 * 1024 * 1024
         )
-          throw new Error('invalid rendered documentation.')
+          throw new Error('Could not prepare the documentation export.')
         let bytes = 0
         for (const page of snapshot.pages) {
           const rendered = pages.find((entry) => entry?.path === page.path)
@@ -28,10 +28,14 @@ export default {
             rendered.markdown !== page.markdown ||
             typeof rendered.html !== 'string'
           )
-            throw new Error('workspace changed while rendering. export again.')
+            throw new Error(
+              'The workspace changed during export. Export again.',
+            )
           bytes += Buffer.byteLength(rendered.html)
           if (bytes > 40 * 1024 * 1024)
-            throw new Error('rendered documentation must stay under 40 mib.')
+            throw new Error(
+              'The documentation export exceeds the 40 MiB limit.',
+            )
           page.html = rendered.html
         }
         snapshot.css = css

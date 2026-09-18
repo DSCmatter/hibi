@@ -100,7 +100,7 @@ export function Properties({ value, onChange, disabled }: MarkdownEditorProps) {
       setError('')
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'could not update properties.',
+        error instanceof Error ? error.message : 'Could not update properties.',
       )
     }
   }
@@ -157,7 +157,7 @@ export function Properties({ value, onChange, disabled }: MarkdownEditorProps) {
                 ) {
                   setError(
                     parsed.errors[0]?.message ??
-                      'frontmatter must be a key/value object, without document delimiters.',
+                      'Enter YAML properties as name: value pairs, without the surrounding --- lines.',
                   )
                   return
                 }
@@ -326,7 +326,7 @@ export function Properties({ value, onChange, disabled }: MarkdownEditorProps) {
                     const key = name.trim()
                     if (!key) return
                     if (doc.has(key)) {
-                      setError('that property already exists.')
+                      setError('A property with that name already exists.')
                       return
                     }
                     save(
@@ -390,7 +390,7 @@ export function Properties({ value, onChange, disabled }: MarkdownEditorProps) {
             <div className="frontmatter-invalid">
               <p>
                 {doc.errors[0]?.message ??
-                  'These properties need the YAML editor.'}
+                  'Use Edit YAML to change these properties.'}
               </p>
               <Button type="button" onClick={editYaml}>
                 Edit YAML

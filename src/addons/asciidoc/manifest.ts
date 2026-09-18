@@ -7,7 +7,7 @@ export default {
   apiVersion: 2,
   version: '1.0.0',
   kind: 'extension',
-  description: 'AsciiDoc source editing, preview, and export.',
+  description: 'Edit, preview, and export AsciiDoc documents.',
   fileExtensions: fileAssociations.asciidoc.ext,
   defaultEnabled: false,
   authors: [authors.may],

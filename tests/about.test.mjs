@@ -114,11 +114,11 @@ test('hibi opens first, sponsor uses a fixed URL, and license dialogs stay reada
   assert.ok(catalog.every((entry) => !('text' in entry)))
   await assert.rejects(
     page.evaluate(() => window.hibi.getLicense('../package.json')),
-    /unknown license/,
+    /This license is no longer available\./,
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.getLicense(42)),
-    /invalid license/,
+    /Choose a license to view\./,
   )
   await app.evaluate(({ shell }) => {
     shell.openExternal = async (url) => {

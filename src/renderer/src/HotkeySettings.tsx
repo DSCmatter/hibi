@@ -57,7 +57,7 @@ export function HotkeySettings({
       setRecording(null)
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'could not save hotkeys.',
+        error instanceof Error ? error.message : 'Could not save shortcuts.',
       )
     } finally {
       setSaving(false)
@@ -69,13 +69,14 @@ export function HotkeySettings({
   )
   const invalid =
     shortcutError(candidate, platform, recording ?? undefined) ??
-    (conflict ? `already used by ${conflict.label}.` : '')
+    (conflict ? `Already used by ${conflict.label}.` : '')
 
   return (
     <>
       <h1>Hotkeys</h1>
       <p className="settings-description">
-        Choose a shortcut to rebind it. changes save on this device.
+        Select a shortcut and press the keys you want to use. Changes apply on
+        this device.
       </p>
       <SettingsFilter
         id="hotkey-filter"
@@ -119,7 +120,7 @@ export function HotkeySettings({
                       setCandidate('')
                       setRecording(id)
                     } catch {
-                      setError('could not start shortcut recording.')
+                      setError('Could not record a shortcut. Try again.')
                     }
                   }}
                   onKeyDown={(event) => {
@@ -167,7 +168,7 @@ export function HotkeySettings({
                     <IconButton
                       type="button"
                       aria-label={`Save shortcut for ${label}`}
-                      title="Save shortcut (enter)"
+                      title="Save shortcut (Enter)"
                       disabled={saving || !candidate || !!invalid}
                       onClick={() => void save({ ...hotkeys, [id]: candidate })}
                     >
@@ -176,7 +177,7 @@ export function HotkeySettings({
                     <IconButton
                       type="button"
                       aria-label="Cancel rebinding"
-                      title="Cancel (escape)"
+                      title="Cancel (Escape)"
                       disabled={saving}
                       onClick={cancel}
                     >
@@ -212,7 +213,7 @@ export function HotkeySettings({
               </div>
               {recording === id && (
                 <p className="hotkey-feedback" role="status">
-                  {invalid || 'Enter to save · escape to cancel'}
+                  {invalid || 'Enter to save · Escape to cancel'}
                 </p>
               )}
             </div>
@@ -224,7 +225,7 @@ export function HotkeySettings({
         </p>
       )}
       <p className="settings-description hotkey-note">
-        Standard editing and window shortcuts stay reserved.
+        Standard editing and window shortcuts cannot be changed.
       </p>
     </>
   )

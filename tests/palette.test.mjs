@@ -73,6 +73,11 @@ test('command palette, full-height settings, and local geist fonts', {
   )
   await search.fill('no-such-command-zzzz')
   assert.equal(await marker.count(), 0)
+  await search.fill('export documentation')
+  assert.equal(
+    await palette.locator('.command-label').first().textContent(),
+    'Export documentation',
+  )
   await search.fill('')
   const keyStyle = (element) => {
     const style = getComputedStyle(element)
@@ -210,7 +215,7 @@ test('command palette, full-height settings, and local geist fonts', {
     'format',
     'normal',
     'side-by-side',
-    'markdown only',
+    'source view',
   ]) {
     assert.equal(
       await page

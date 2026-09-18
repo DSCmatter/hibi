@@ -284,7 +284,7 @@ function InsertForm({
         <SettingRow
           id="insert-url"
           label="Link destination"
-          description="Web address, file path, or heading anchor."
+          description="Enter a web address, file path, or #heading link."
         >
           <TextInput
             id="insert-url"
@@ -422,7 +422,7 @@ export function useFormattingToolbar(
         }
         if (!inserted)
           throw new Error(
-            'the note changed before insertion. copied files remain in assets; drop them again to insert.',
+            'The note changed before the files could be inserted. They are saved in the assets folder. Drop them again to add them to the note.',
           )
       } catch (error) {
         toasts.show({

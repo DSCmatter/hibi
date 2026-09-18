@@ -211,7 +211,7 @@ function renderMarkdown(path: string, markdown: string, html?: string) {
       const video = document.createElement('video')
       video.controls = true
       video.preload = 'metadata'
-      video.setAttribute('aria-label', image.alt || 'video attachment')
+      video.setAttribute('aria-label', image.alt || 'Video attachment')
       video.src = embedded
       image.replaceWith(video)
       continue
@@ -248,7 +248,7 @@ function renderMarkdown(path: string, markdown: string, html?: string) {
         link.href = destination(target, decodeURIComponent(url.hash.slice(1)))
       else {
         link.removeAttribute('href')
-        link.title = 'this file is not included in the export'
+        link.title = 'This file is not included in the export.'
       }
     } catch {
       link.removeAttribute('href')
@@ -308,7 +308,7 @@ function DocumentationSite() {
     }
   }, [dialogs])
   useEffect(() => {
-    document.title = `${page?.title ?? 'page not found'} · ${workspace.name}`
+    document.title = `${page?.title ?? 'Page not found'} · ${workspace.name}`
     if (current.anchor)
       document.getElementById(`doc-${current.anchor}`)?.scrollIntoView()
     else document.querySelector('.site-content')?.scrollTo(0, 0)
@@ -344,7 +344,7 @@ function DocumentationSite() {
   const next = pageIndex >= 0 ? pages[pageIndex + 1] : undefined
   const folders = current.path.split('/').slice(0, -1)
   const outlineLinks = (
-    <nav aria-label="In this page">
+    <nav aria-label="On this page">
       {outline.map((heading) => (
         <a
           key={heading.id}
@@ -444,8 +444,8 @@ function DocumentationSite() {
             />
           </button>
           <IconButton
-            aria-label="Colorscheme"
-            title="Colorscheme"
+            aria-label="Color scheme"
+            title="Color scheme"
             onClick={() =>
               dialogs.open({
                 title: 'Appearance',
@@ -488,7 +488,7 @@ function DocumentationSite() {
                 {outline.length > 0 && (
                   <details className="site-outline-mobile">
                     <summary>
-                      In this page
+                      On this page
                       <ChevronDown size={14} aria-hidden="true" />
                     </summary>
                     {outlineLinks}
@@ -528,7 +528,7 @@ function DocumentationSite() {
               </div>
               {outline.length > 0 && (
                 <aside className="site-outline">
-                  <p>In this page</p>
+                  <p>On this page</p>
                   {outlineLinks}
                 </aside>
               )}

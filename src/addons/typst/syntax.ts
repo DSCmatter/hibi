@@ -29,9 +29,9 @@ export const typstTokens: MarkedExtension = {
 const detector = new Marked(typstTokens)
 export const typstFlavor: MarkdownFlavor = {
   id: 'blocks',
-  name: 'typst blocks',
+  name: 'Typst blocks',
   kind: 'syntax',
-  description: 'Render fenced Typst blocks locally.',
+  description: 'Preview Typst code blocks on your computer.',
   readOnlyWhenDisabled: false,
   detect(source) {
     let found = false

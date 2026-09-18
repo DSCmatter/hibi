@@ -52,7 +52,7 @@ export function CodeSyntaxSettings() {
                     description={
                       language.aliases.length
                         ? `Also applies to ${language.aliases.join(', ')}.`
-                        : 'Highlight matching code blocks and source documents.'
+                        : 'Use colors for this language in code blocks and source view.'
                     }
                   >
                     <Toggle

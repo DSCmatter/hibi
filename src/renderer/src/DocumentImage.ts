@@ -53,7 +53,7 @@ export function documentImage(revision: number) {
           } else {
             media.removeAttribute('src')
             media.title =
-              'media unavailable — check its path; save the note before using a relative path'
+              'Could not load this media. Check the file path. Save the note first if the path is relative to it.'
           }
         }
         void render()

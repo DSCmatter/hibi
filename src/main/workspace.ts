@@ -56,7 +56,7 @@ export async function scanWorkspace(base: string): Promise<WorkspaceEntry[]> {
         continue
       if (++count > 20000)
         throw new Error(
-          'this folder is too large. open a smaller documentation folder.',
+          'This folder has more than 20,000 items. Open a smaller folder.',
         )
       const full = join(directory, child.name)
       const path = relative(base, full).split(sep).join('/')
@@ -189,7 +189,10 @@ export async function loadWorkspace(
 
 export async function openRecentWorkspace(id: unknown) {
   const recent = (await getRecentWorkspaces()).find((item) => item.id === id)
-  if (!recent) throw new Error('workspace is no longer in your recent list.')
+  if (!recent)
+    throw new Error(
+      'This workspace is no longer in the recent list. Open it from its folder.',
+    )
   return loadWorkspace(recent.path)
 }
 
@@ -205,18 +208,22 @@ export async function resolveWorkspaceFile(
     value.split('/').some((part) => !part || part === '.' || part === '..') ||
     !isDocumentName(value, true)
   )
-    throw new Error('invalid workspace file.')
+    throw new Error('Choose a supported document inside this workspace.')
   const candidate = join(base, value)
   if ((await lstat(candidate)).isSymbolicLink())
-    throw new Error('workspace symlinks are not supported.')
+    throw new Error(
+      'Symbolic links cannot be opened from a workspace. Open the original file instead.',
+    )
   const chosen = await realpath(candidate)
   if (!relativePath(base, chosen))
-    throw new Error('file is outside the workspace.')
+    throw new Error(
+      'This file is outside the workspace. Open its folder first.',
+    )
   return chosen
 }
 
 export async function openWorkspaceFile(window: BrowserWindow, path: unknown) {
-  if (!root) throw new Error('open a workspace first.')
+  if (!root) throw new Error('Open a workspace first.')
   if (typeof path === 'string' && getWorkspace()?.activePath === path)
     return getDocument()
   const draft =
@@ -231,7 +238,7 @@ export async function openWorkspaceFile(window: BrowserWindow, path: unknown) {
 
 export async function snapshotWorkspace(): Promise<WorkspaceSnapshot> {
   const selected = root
-  if (!selected) throw new Error('open a workspace first.')
+  if (!selected) throw new Error('Open a workspace first.')
   const tree = await scanWorkspace(selected)
   const pages: WorkspaceSnapshot['pages'] = []
   const drafts = new Map(
@@ -249,7 +256,7 @@ export async function snapshotWorkspace(): Promise<WorkspaceSnapshot> {
         bytes += Buffer.byteLength(markdown)
         if (pages.length >= 2000 || bytes > 20 * 1024 * 1024)
           throw new Error(
-            'export supports up to 2,000 documents and 20 mib of markdown.',
+            'Export supports up to 2,000 documents and 20 MiB of text and images. Choose a smaller folder.',
           )
         const images: Record<string, string> = Object.create(null)
         for (const source of isMarkdownDocument(item.path)
@@ -260,7 +267,7 @@ export async function snapshotWorkspace(): Promise<WorkspaceSnapshot> {
           bytes += Buffer.byteLength(image)
           if (bytes > 20 * 1024 * 1024)
             throw new Error(
-              'export supports up to 20 mib of markdown and embedded images.',
+              'Export supports up to 20 MiB of text and images. Choose a smaller folder.',
             )
           images[source] = image
         }
@@ -275,7 +282,7 @@ export async function snapshotWorkspace(): Promise<WorkspaceSnapshot> {
   }
   await collect(tree)
   if (!pages.length)
-    throw new Error('this workspace has no markdown documents.')
+    throw new Error('This workspace has no supported documents to export.')
   return { name: basename(selected), pages }
 }
 
@@ -306,7 +313,7 @@ export async function indexWorkspace(): Promise<WorkspaceIndex | null> {
         bytes += Buffer.byteLength(markdown)
         if (pages.length >= 2000 || bytes > 20 * 1024 * 1024)
           throw new Error(
-            'note indexes support up to 2,000 documents and 20 mib of text.',
+            'Hibi can index up to 2,000 documents and 20 MiB of text. Open a smaller workspace.',
           )
         pages.push({
           id: createHash('sha256').update(path).digest('hex'),

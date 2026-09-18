@@ -75,14 +75,14 @@ export function startMath(context: AddonContext) {
   const prompt = (value = '') =>
     context.dialogs.prompt({
       title: 'Math',
-      label: 'Latex',
+      label: 'LaTeX',
       defaultValue: value,
       confirmLabel: 'Apply',
       validate: (value) =>
         !value.trim()
-          ? 'enter an expression.'
+          ? 'Enter an expression.'
           : value.length > 10000
-            ? 'keep expressions under 10,000 characters.'
+            ? 'Use 10,000 characters or fewer.'
             : null,
     })
   async function edit(node: Node, pos: number, block: boolean) {
@@ -112,7 +112,7 @@ export function startMath(context: AddonContext) {
       !selection ||
       (!inSource && !editor?.schema.nodes[block ? 'blockMath' : 'inlineMath'])
     ) {
-      context.notify('enable math for this file from the flavor pill.')
+      context.notify('Enable math from the format menu in the status bar.')
       return
     }
     const latex = await prompt()
@@ -222,7 +222,7 @@ export function startMath(context: AddonContext) {
       label = block ? 'Block math' : 'Inline math'
     context.commands.register({
       id,
-      label: `Insert ${label}`,
+      label: `Insert ${label.toLowerCase()}`,
       run: () => insert(block),
     })
     const item = context.toolbar.register({

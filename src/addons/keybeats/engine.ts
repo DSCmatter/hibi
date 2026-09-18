@@ -49,10 +49,10 @@ export function startKeybeats(context: AddonContext) {
           let buffer = cache.get(path)
           if (!buffer) {
             const url = urls[`./sounds/${path}`]
-            if (!url) throw new Error('sound unavailable')
+            if (!url) throw new Error('Sound unavailable.')
             buffer = fetch(url)
               .then((response) => {
-                if (!response.ok) throw new Error('sound unavailable')
+                if (!response.ok) throw new Error('Sound unavailable.')
                 return response.arrayBuffer()
               })
               .then((bytes) => audio.decodeAudioData(bytes))
@@ -69,7 +69,7 @@ export function startKeybeats(context: AddonContext) {
     } catch {
       if (!disposed && generation === run)
         context.notify(
-          'could not load this keyboard sound. try another profile.',
+          'Could not load this keyboard sound. Choose another keyboard.',
         )
     }
   }

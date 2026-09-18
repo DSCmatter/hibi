@@ -54,25 +54,28 @@ test('hotkey validation rejects conflicts and preserves standard editing keys', 
   ])
   assert.throws(
     () => validateHotkeys({ ...defaults, palette: defaults.save }, 'darwin'),
-    /already assigned/,
+    /This shortcut is assigned to another action\./,
   )
   assert.throws(
     () => validateHotkeys({ ...defaults, palette: 'meta+w' }, 'darwin'),
-    /reserved/,
+    /This shortcut closes tabs\./,
   )
   assert.throws(
     () => validateHotkeys({ ...defaults, palette: 'k' }, 'darwin'),
-    /include/,
+    /Include Command, Control, or Option/,
   )
   assert.throws(
     () => validateHotkeys({ ...defaults, palette: 'meta+meta+k' }, 'darwin'),
-    /unsupported/,
+    /Choose a supported key combination\./,
   )
   assert.throws(
     () => validateHotkeys({ ...defaults, palette: 12 }, 'darwin'),
-    /invalid/,
+    /Choose a supported key combination\./,
   )
-  assert.throws(() => validateHotkeys([], 'darwin'), /invalid/)
+  assert.throws(
+    () => validateHotkeys([], 'darwin'),
+    /Could not read these shortcut settings\./,
+  )
   assert.equal(
     validateHotkeys({ ...defaults, palette: 'f1' }, 'darwin').palette,
     'f1',
@@ -166,7 +169,7 @@ test('rebind, conflict, clear, reset, native menus, and relaunch persistence', {
   await pressShortcut(app, `${mod}+w`)
   await page
     .getByRole('status')
-    .filter({ hasText: /reserved/i })
+    .filter({ hasText: /this shortcut closes tabs/i })
     .waitFor()
   assert.equal(app.windows().length, 1)
   await pressShortcut(app, `${mod}+j`)
@@ -216,7 +219,7 @@ test('rebind, conflict, clear, reset, native menus, and relaunch persistence', {
 
   await page
     .getByRole('button', {
-      name: /^clear shortcut for find in note$/i,
+      name: /^clear shortcut for find in document$/i,
       exact: true,
     })
     .click()
@@ -225,7 +228,7 @@ test('rebind, conflict, clear, reset, native menus, and relaunch persistence', {
   )
   await page
     .getByRole('button', {
-      name: /^reset shortcut for find in note$/i,
+      name: /^reset shortcut for find in document$/i,
       exact: true,
     })
     .click()

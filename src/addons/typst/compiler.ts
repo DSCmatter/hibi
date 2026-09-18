@@ -86,20 +86,19 @@ export async function compileTypst(
     (value.block !== undefined && typeof value.block !== 'boolean') ||
     (value.pdf !== undefined && typeof value.pdf !== 'boolean')
   )
-    throw new Error('invalid typst input.')
-  if (queued >= 16)
-    throw new Error('typst compiler is busy. try again shortly.')
+    throw new Error('Could not read this Typst document.')
+  if (queued >= 16) throw new Error('Typst is busy. Try again shortly.')
   queued++
   const epoch = generation
   const run = tail
     .catch(() => {})
     .then(async () => {
-      if (epoch !== generation) throw new Error('typst compilation canceled.')
+      if (epoch !== generation) throw new Error('Typst compilation canceled.')
       if (!child) {
         const createdDirectory = await mkdtemp(join(tmpdir(), 'hibi-typst-'))
         if (epoch !== generation) {
           await rm(createdDirectory, { recursive: true, force: true })
-          throw new Error('typst compilation canceled.')
+          throw new Error('Typst compilation canceled.')
         }
         scratch = createdDirectory
         await mkdir(join(scratch, 'project'))
@@ -118,12 +117,14 @@ export async function compileTypst(
         if (epoch !== generation) {
           blocker.close()
           await rm(createdDirectory, { recursive: true, force: true })
-          throw new Error('typst compilation canceled.')
+          throw new Error('Typst compilation canceled.')
         }
         networkBlocker = blocker
         const address = blocker.address()
         if (!address || typeof address === 'string')
-          throw new Error('could not isolate typst networking.')
+          throw new Error(
+            'Could not block network access for the Typst preview.',
+          )
         const proxy = `http://127.0.0.1:${address.port}`
         child = utilityProcess.fork(
           join(app.getAppPath(), 'out/main/typst-worker.js'),
@@ -175,7 +176,7 @@ export async function compileTypst(
       dependencies.set(dependencyKey, requested)
       let passes = 0
       if (epoch !== generation || !child)
-        throw new Error('typst compilation canceled.')
+        throw new Error('Typst compilation canceled.')
       const worker = child
       return new Promise<TypstResult & { pdf?: Uint8Array }>(
         (resolve, reject) => {
@@ -189,7 +190,7 @@ export async function compileTypst(
             clean()
             child = null
             fingerprint = ''
-            reject(new Error('typst compiler stopped. try again.'))
+            reject(new Error('Typst stopped while compiling. Try again.'))
           }
           const message = async (
             result: TypstResult & { pdf?: Uint8Array; missing?: string[] },
@@ -221,7 +222,7 @@ export async function compileTypst(
           }
           cancel = () => {
             clean()
-            reject(new Error('typst compilation canceled.'))
+            reject(new Error('Typst compilation canceled.'))
           }
           const timer = setTimeout(() => {
             clean()
@@ -230,7 +231,7 @@ export async function compileTypst(
             fingerprint = ''
             reject(
               new Error(
-                'typst compilation timed out after 10 seconds. simplify the document and try again.',
+                'Typst compilation took longer than 10 seconds. Simplify the document and try again.',
               ),
             )
           }, 10000)

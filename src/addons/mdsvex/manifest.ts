@@ -7,8 +7,7 @@ export default {
   apiVersion: 2,
   version: '1.0.0',
   kind: 'extension',
-  description:
-    'MDsveX source editing, preview, and export with an explicit native run action.',
+  description: 'Edit and preview MDsveX; run embedded code when you choose.',
   fileExtensions: fileAssociations.mdsvex.ext,
   defaultEnabled: false,
   authors: [authors.may],

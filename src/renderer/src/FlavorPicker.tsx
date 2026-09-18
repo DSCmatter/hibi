@@ -24,7 +24,7 @@ export function FlavorPicker({
       <SettingRow
         id="file-dialect"
         label="Markdown dialect"
-        description="Automatic mode recognizes features from enabled extensions."
+        description="Automatic detects Markdown features from enabled plugins."
       >
         <Select
           id="file-dialect"
@@ -47,7 +47,7 @@ export function FlavorPicker({
       <SettingRow
         id="file-syntax-auto"
         label="Detect extra syntax"
-        description="Recognize math and other enabled syntax extensions automatically."
+        description="Detect math and other syntax provided by enabled plugins."
       >
         <Toggle
           id="file-syntax-auto"
@@ -93,7 +93,7 @@ export function FlavorPicker({
                 />
               ) : (
                 <Button onClick={() => void onEnable(flavor.addonId)}>
-                  Enable extension
+                  Enable plugin
                 </Button>
               )}
             </SettingRow>

@@ -16,8 +16,8 @@ export default defineAddon({
     context.editor.registerSyntax({
       id: 'blocks',
       label: 'Typst blocks',
-      group: 'typst',
-      description: 'Render fenced Typst inside Markdown.',
+      group: 'Typst',
+      description: 'Preview Typst code blocks in Markdown.',
       level: 'block',
       extensions: ['typstBlock'],
       matches: (token) =>
@@ -40,11 +40,11 @@ export default defineAddon({
         throw new Error(
           result.diagnostics.map((error) => error.message).join('\n'),
         )
-      return `<figure class="typst-preview"><img src="${svgSource(result.svg)}" alt="typst ${block ? 'block' : 'document'} preview"></figure>`
+      return `<figure class="typst-preview"><img src="${svgSource(result.svg)}" alt="Typst ${block ? 'block' : 'document'} preview"></figure>`
     }
     const format: DocumentFormat = {
       id: 'typst',
-      name: 'typst',
+      name: 'Typst',
       extensions: ['typ'],
       language: typstLanguage,
       codeLanguage: 'typst',
@@ -116,7 +116,7 @@ export default defineAddon({
         await context.dialogs.alert({
           title: 'Open a Typst document',
           description:
-            'open a .typ file, or use the pdf button on a typst block.',
+            'Open a .typ file, or use the PDF button on a Typst block.',
         })
         return
       }
@@ -124,7 +124,7 @@ export default defineAddon({
         source: document.markdown,
         documentId: document.id,
       })
-      if (path) context.notify(`exported pdf to ${path}`)
+      if (path) context.notify(`Exported PDF to ${path}`)
     }
     context.commands.register({
       id: 'pdf',
@@ -146,7 +146,7 @@ export default defineAddon({
           await context.dialogs.alert({
             title: 'Open a Markdown document',
             description:
-              'Typst blocks belong inside Markdown. write Typst directly in .typ files.',
+              'Insert Typst blocks in Markdown documents. In .typ files, write Typst directly.',
           })
           return
         }

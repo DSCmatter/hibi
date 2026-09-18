@@ -41,7 +41,7 @@ export function FormatsSettings({
           if (mounted)
             toasts.show({
               message:
-                'Could not read file defaults. Check your operating system’s default app settings.',
+                'Could not check your default apps. Check the default app settings on your computer.',
               variant: 'error',
             })
         })
@@ -66,7 +66,7 @@ export function FormatsSettings({
         title={
           associations?.available
             ? `Open .${format.ext.join(', .')} files with Hibi`
-            : 'Install Hibi to manage file defaults'
+            : 'Install Hibi to choose it as your default app'
         }
         onClick={async () => {
           setBusy(true)
@@ -119,7 +119,7 @@ export function FormatsSettings({
         app for a format below.
         {associations &&
           !associations.available &&
-          ' Install Hibi to manage file defaults; development and preview builds leave them unchanged.'}
+          ' Install Hibi to change your default apps. This option is unavailable in development and preview builds.'}
       </p>
       <SettingsFilter
         id="formats-filter"

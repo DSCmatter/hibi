@@ -21,7 +21,7 @@ export default defineAddon({
         if (module && run === generation) stop = module.startKeybeats(context)
       })
       .catch(() => {
-        if (run === generation) context.notify('could not load keybeats.')
+        if (run === generation) context.notify('Could not load keyBeats.')
       })
   },
   stop() {

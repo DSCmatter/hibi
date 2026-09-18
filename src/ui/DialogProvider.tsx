@@ -203,7 +203,7 @@ class ContentBoundary extends Component<
   render() {
     return this.state.failed ? (
       <div role="alert">
-        <p>This dialog could not load.</p>
+        <p>Could not load this dialog. Close it and try again.</p>
         <Button onClick={this.props.close}>Close</Button>
       </div>
     ) : (
@@ -323,7 +323,7 @@ function PromptForm({
           setError(
             error instanceof Error
               ? error.message
-              : 'could not validate this value.',
+              : 'Could not check this value. Try again.',
           )
         }
       }}

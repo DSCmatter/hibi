@@ -350,7 +350,7 @@ function App() {
       runCommand: (command) => runCommand(command),
       updateMarkdown(transform, options) {
         if (busyRef.current || !document)
-          throw new Error('the document is busy.')
+          throw new Error('The document is busy. Try again in a moment.')
         const source = options
           ? projectMarkdown(
               document.markdown,
@@ -371,7 +371,9 @@ function App() {
       },
       invoke: async (id, method, input) => {
         if (busyRef.current)
-          throw new Error('another operation is in progress.')
+          throw new Error(
+            'Another action is still running. Try again in a moment.',
+          )
         busyRef.current = true
         setBusy(true)
         try {
@@ -389,7 +391,11 @@ function App() {
         }
       },
       error: (error) =>
-        setError(error instanceof Error ? error.message : 'addon failed.'),
+        setError(
+          error instanceof Error
+            ? error.message
+            : 'The plugin could not complete this action.',
+        ),
     },
     document?.name,
   )
@@ -615,7 +621,7 @@ function App() {
         setError(
           error instanceof Error
             ? error.message
-            : 'could not complete file operation.',
+            : 'Could not complete this file action.',
         )
         return false
       } finally {
@@ -645,7 +651,9 @@ function App() {
       return next
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'could not open workspace.',
+        error instanceof Error
+          ? error.message
+          : 'Could not open this workspace.',
       )
       return null
     } finally {
@@ -668,7 +676,9 @@ function App() {
         setWorkspace(await window.hibi.getWorkspace())
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'could not open file.')
+      setError(
+        error instanceof Error ? error.message : 'Could not open this file.',
+      )
     } finally {
       busyRef.current = false
       setBusy(false)
@@ -680,7 +690,9 @@ function App() {
       setWorkspace(await window.hibi.refreshWorkspace())
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'could not refresh workspace.',
+        error instanceof Error
+          ? error.message
+          : 'Could not refresh this workspace.',
       )
     }
   }
@@ -695,7 +707,7 @@ function App() {
       setWorkspace(await window.hibi.refreshWorkspace())
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'could not rename file.',
+        error instanceof Error ? error.message : 'Could not rename this file.',
       )
     } finally {
       busyRef.current = false
@@ -717,7 +729,9 @@ function App() {
   function updateMarkdown(markdown: string) {
     if (!welcomeDismissed) dismissWelcome()
     if (new TextEncoder().encode(markdown).length > MAX_DOCUMENT_BYTES) {
-      setError('documents must stay under 2 mib. this edit was not applied.')
+      setError(
+        'This edit would exceed the 2 MiB document limit, so it was not applied.',
+      )
       setResetEditor((value) => value + 1)
       return
     }
@@ -736,7 +750,7 @@ function App() {
         setError(
           error instanceof Error
             ? error.message
-            : 'could not preserve changes.',
+            : 'Could not keep your latest changes.',
         ),
       )
   }
@@ -803,7 +817,9 @@ function App() {
       }
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'could not open dropped file.',
+        error instanceof Error
+          ? error.message
+          : 'Could not open the dropped file.',
       )
     } finally {
       busyRef.current = false
@@ -830,7 +846,9 @@ function App() {
       }
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'could not open document.',
+        error instanceof Error
+          ? error.message
+          : 'Could not open this document.',
       )
     } finally {
       busyRef.current = false
@@ -841,11 +859,11 @@ function App() {
   async function openRemote() {
     if (busyRef.current || dialogs.isOpen()) return
     const url = await dialogs.prompt({
-      title: 'Open from remote',
+      title: 'Open from URL',
       label: 'Markdown URL',
       placeholder: 'https://example.com/readme.md',
       description:
-        'Open raw Markdown as an editable draft, then save it locally.',
+        'Paste a link to a Markdown file. Open it as a draft, then save it on your computer.',
       confirmLabel: 'Open',
     })
     if (url)
@@ -921,7 +939,7 @@ function App() {
             title: 'Version history',
             size: 'wide',
             description:
-              'Local snapshots on save. restoring changes the editor; save to replace the file.',
+              'Hibi keeps a version each time you save. Restore a version to the editor, then save to replace the file.',
             content: ({ close }) => (
               <Suspense fallback={<LoadingScreen />}>
                 <VersionHistory close={close} />
@@ -1048,7 +1066,7 @@ function App() {
     dialogs.open({
       title: 'Markdown flavor',
       description:
-        'Choose this file’s dialect and extra syntax. automatic detection recognizes enabled features.',
+        'Choose which Markdown features this file uses. Automatic detection uses enabled plugins.',
       content: () => (
         <FlavorPicker
           initial={flavorChoice}
@@ -1082,7 +1100,7 @@ function App() {
         id === 'settings' && settingsOpen
           ? 'Back to editor'
           : id === 'markdown' && !markdownDocument
-            ? 'Source only'
+            ? 'Source view'
             : id === 'toggle-titlebar'
               ? hideTitlebar
                 ? 'Keep top bar visible'
@@ -1364,7 +1382,7 @@ function App() {
         event.stopPropagation()
         if (files.length !== 1)
           setError(
-            'drop one markdown file or folder to open it; drop media onto the editor to attach several files.',
+            'Drop one document or folder to open it. To attach several images or videos, drop them onto the editor.',
           )
         else void openDroppedFile(files[0]!)
       }}
@@ -1606,10 +1624,10 @@ function App() {
                   id: 'flavor',
                   label: markdownDocument ? flavorLabel : sourceName,
                   tooltip: !markdownDocument
-                    ? `${sourceName} document · click for addons`
+                    ? `${sourceName} document · click for format settings`
                     : unsupportedFlavor
-                      ? 'Some detected syntax is disabled; choose a flavor or enable its extension'
-                      : `${flavorChoice.dialect === 'auto' ? 'Detected' : 'Selected'} markdown flavor · click to change`,
+                      ? 'Some Markdown features are disabled. Choose a flavor or enable the plugin.'
+                      : `${flavorChoice.dialect === 'auto' ? 'Detected' : 'Selected'} Markdown flavor · click to change`,
                   onClick: openFlavors,
                 },
                 {

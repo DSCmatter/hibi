@@ -145,7 +145,7 @@ export async function setFileAssociation(value: unknown): Promise<void> {
     value !== 'text' &&
     !getAddonStates().some(({ id, enabled }) => id === value && enabled)
   )
-    throw new Error('Enable this format in Addons first.')
+    throw new Error('Enable this format in Settings → Addons first.')
   const format = fileAssociations[value as keyof typeof fileAssociations]
   if (process.platform === 'win32') {
     await shell.openExternal(

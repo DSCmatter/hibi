@@ -7,7 +7,7 @@ export default {
   apiVersion: 2,
   version: '1.0.0',
   kind: 'extension',
-  description: 'HTML source editing, preview, and export.',
+  description: 'Edit, preview, and export HTML documents.',
   fileExtensions: fileAssociations.html.ext,
   defaultEnabled: false,
   authors: [authors.may],

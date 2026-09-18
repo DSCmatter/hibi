@@ -59,7 +59,14 @@ export function CommandPalette({
   const [marker, setMarker] = useState<{ top: number; height: number } | null>(
     null,
   )
-  const terms = query.toLowerCase().trim().split(/\s+/)
+  const normalized = query.toLowerCase().trim()
+  const terms = normalized.split(/\s+/)
+  const rank = (command: PaletteCommand) => {
+    const label = command.label.toLowerCase()
+    if (label === normalized) return 0
+    if (label.startsWith(normalized)) return 1
+    return terms.every((term) => label.includes(term)) ? 2 : 3
+  }
   const results = searchCommands
     ? searchCommands(query)
     : commands.filter((command) =>
@@ -69,6 +76,8 @@ export function CommandPalette({
             .includes(term),
         ),
       )
+  if (!searchCommands && normalized)
+    results.sort((left, right) => rank(left) - rank(right))
   const active = Math.min(selected, results.length - 1)
   const activeId = results[active]?.id
   const resultCount = results.length
@@ -182,7 +191,7 @@ export function CommandPalette({
           type="button"
           className="palette-close"
           aria-label="Close command palette"
-          title="Close (escape)"
+          title="Close (Escape)"
           onClick={() => close()}
         >
           <X size={16} aria-hidden="true" />

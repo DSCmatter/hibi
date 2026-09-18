@@ -8,10 +8,10 @@ export default {
   name: 'keyBeats',
   version: '1.0.0',
   apiVersion: 2,
-  description: 'Mechanical keyboard sounds while editing your notes.',
+  description: 'Play mechanical keyboard sounds while you write.',
   defaultEnabled: false,
   startup: 'background',
-  authors: [{ ...authors.may, role: 'hibi port' }],
+  authors: [{ ...authors.may, role: 'Hibi port' }],
   licenses: [
     { id: 'keybeats', name: 'keyBeats', license: 'MIT', text: keybeatsLicense },
     { id: 'kbsim', name: 'Kbsim sounds', license: 'MIT', text: soundsLicense },

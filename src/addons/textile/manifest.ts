@@ -7,7 +7,7 @@ export default {
   apiVersion: 2,
   version: '1.0.0',
   kind: 'extension',
-  description: 'Textile source editing, preview, and export.',
+  description: 'Edit, preview, and export Textile documents.',
   fileExtensions: fileAssociations.textile.ext,
   defaultEnabled: false,
   authors: [authors.may],

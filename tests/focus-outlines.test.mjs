@@ -22,7 +22,7 @@ test('non-input focus outlines default off across portals, preserve fields, and 
   }
   await settings()
   const toggle = page.getByRole('checkbox', {
-    name: 'Non-input focus outlines',
+    name: 'Focus outlines',
     exact: true,
   })
   assert.equal(await toggle.isChecked(), false)

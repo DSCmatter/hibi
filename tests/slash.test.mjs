@@ -85,7 +85,7 @@ test('slash commands work in both editors, preserve undo, and coexist with vim',
   assert.equal(await rich.locator('h1').count(), 1)
   await rich.fill('/quote')
   await menu.waitFor()
-  await menu.getByRole('option', { name: /quote blockquote/i }).click()
+  await menu.getByRole('option', { name: /^Quote Indented quotation$/ }).click()
   assert.equal(await rich.locator('blockquote').count(), 1)
   await rich.fill('/')
   await menu.waitFor()
@@ -102,7 +102,7 @@ test('slash commands work in both editors, preserve undo, and coexist with vim',
 
   await page.mouse.move(450, 18)
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   await source.waitFor()
   await source.fill('/code')
@@ -173,7 +173,7 @@ test('slash commands work in both editors, preserve undo, and coexist with vim',
   assert.match(await read(), />/)
   await page.mouse.move(400, 18)
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
 
   await page.mouse.move(450, 18)

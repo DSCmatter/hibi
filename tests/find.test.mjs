@@ -6,7 +6,7 @@ import test from 'node:test'
 import { electron } from './electron.mjs'
 import { pressShortcut } from './keyboard.mjs'
 
-test('find in note searches rich text and offscreen markdown without editing it', {
+test('find in document searches rich text and offscreen markdown without editing it', {
   timeout: 45000,
 }, async (t) => {
   const profile = await mkdtemp(join(tmpdir(), 'hibi-find-'))
@@ -28,7 +28,7 @@ test('find in note searches rich text and offscreen markdown without editing it'
   const rich = page.getByRole('textbox', { name: /document editor/i })
   await rich.waitFor()
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.waitFor()
@@ -39,10 +39,10 @@ test('find in note searches rich text and offscreen markdown without editing it'
   const shortcut = process.platform === 'darwin' ? 'Meta+f' : 'Control+f'
   await pressShortcut(app, shortcut)
   const input = page.getByRole('textbox', {
-    name: /^find in note$/i,
+    name: /^find in document$/i,
     exact: true,
   })
-  const bar = page.getByRole('search', { name: /find in note/i })
+  const bar = page.getByRole('search', { name: /find in document/i })
   await page.waitForFunction(
     () =>
       Math.abs(
@@ -98,7 +98,7 @@ test('find in note searches rich text and offscreen markdown without editing it'
   )
 
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   await source.waitFor()
   await pressShortcut(app, shortcut)
@@ -114,7 +114,7 @@ test('find in note searches rich text and offscreen markdown without editing it'
   await input.fill('settings')
   await page.waitForFunction(
     () =>
-      document.querySelector('.find-bar output')?.textContent === 'no results',
+      document.querySelector('.find-bar output')?.textContent === 'No results',
   )
   assert.equal(
     await page

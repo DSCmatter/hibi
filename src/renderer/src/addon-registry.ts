@@ -31,7 +31,11 @@ const bundled = Object.entries(manifests).map(([path, manifest]): Addon => {
     (pending ??= (
       loader
         ? loader()
-        : Promise.reject(new Error(`Missing addon entry: ${manifest.id}`))
+        : Promise.reject(
+            new Error(
+              `The ${manifest.id} plugin is missing its startup file. Reinstall it.`,
+            ),
+          )
     ).catch((error) => {
       pending = undefined
       throw error
@@ -58,7 +62,9 @@ const bundled = Object.entries(manifests).map(([path, manifest]): Addon => {
       const addon = await load()
       if (token !== generation) return
       if (addon.manifest.id !== manifest.id)
-        throw new Error('Addon identity mismatch.')
+        throw new Error(
+          'This plugin’s files do not match its manifest. Reinstall it.',
+        )
       instance = addon
       let changed = false
       if (!descriptor.flavors && addon.flavors) {
@@ -102,7 +108,10 @@ function installedAddon(item: InstalledAddon): Addon {
         for (const theme of item.themes) context.colorschemes.register(theme)
         return
       }
-      if (!item.url) throw new Error('missing installed extension entry.')
+      if (!item.url)
+        throw new Error(
+          'This plugin is missing its startup file. Reinstall it.',
+        )
       const [module, { sdk }] = await Promise.all([
         import(/* @vite-ignore */ item.url) as Promise<{
           default?: SideloadFactory
@@ -111,7 +120,9 @@ function installedAddon(item: InstalledAddon): Addon {
       ])
       if (token !== generation) return
       if (typeof module.default !== 'function')
-        throw new Error('extension entry must export a factory function.')
+        throw new Error(
+          'This plugin has no valid startup function. Contact its author.',
+        )
       const definition = module.default(sdk)
       if (
         !definition ||
@@ -121,7 +132,9 @@ function installedAddon(item: InstalledAddon): Addon {
         (definition.Settings !== undefined &&
           typeof definition.Settings !== 'function')
       )
-        throw new Error('invalid installed extension definition.')
+        throw new Error(
+          'This plugin cannot start. Contact its author for an updated version.',
+        )
       instance = definition
       if (definition.Settings) addon.Settings = definition.Settings
       if (definition.flavors) addon.flavors = definition.flavors

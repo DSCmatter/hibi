@@ -98,14 +98,14 @@ export function AddonSettings({
       label: 'Addon URL',
       placeholder: 'https://example.com/addon.zip',
       description:
-        'Use a public https Git repository or addon zip link. the repository must include a ready-to-use Hibi-addon.JSON and entry. review before installing; it starts disabled.',
+        'Paste an HTTPS link to a public Git repository or addon ZIP file. Only install addons you trust. The addon stays disabled until you enable it.',
       confirmLabel: 'Download',
       validate: (value) => {
         try {
           addonPackageUrl(value)
           return null
         } catch (error) {
-          return error instanceof Error ? error.message : 'enter an https url.'
+          return error instanceof Error ? error.message : 'Enter an HTTPS URL.'
         }
       },
     })

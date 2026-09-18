@@ -48,7 +48,7 @@ test('default view persists separately from temporary switches and respects form
   await page.getByRole('textbox', { name: /markdown editor/i }).waitFor()
   assert.equal(
     await page
-      .getByRole('button', { name: 'Markdown only', exact: true })
+      .getByRole('button', { name: 'Source view', exact: true })
       .getAttribute('aria-pressed'),
     'true',
   )
@@ -69,7 +69,7 @@ test('default view persists separately from temporary switches and respects form
     .waitFor()
   assert.equal(
     await page
-      .getByRole('button', { name: 'Source only', exact: true })
+      .getByRole('button', { name: 'Source view', exact: true })
       .getAttribute('aria-pressed'),
     'true',
   )

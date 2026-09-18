@@ -48,7 +48,8 @@ const core: MarkdownSyntaxFeature[] = [
     id: 'escapes',
     label: 'Escaped punctuation',
     group: 'text',
-    description: 'Backslash escapes such as \\*.',
+    description:
+      'Put a backslash before punctuation, such as \\*, to show it as text.',
     level: 'inline',
     matches: (token) => token.type === 'escape',
   },
@@ -56,7 +57,8 @@ const core: MarkdownSyntaxFeature[] = [
     id: 'code-blocks',
     label: 'Code blocks',
     group: 'blocks',
-    description: 'Fenced and indented code.',
+    description:
+      'Wrap code in three backticks or tildes, or indent it with four spaces.',
     level: 'block',
     extensions: ['codeBlock'],
     matches: (token) => token.type === 'code',
@@ -107,7 +109,8 @@ const core: MarkdownSyntaxFeature[] = [
     id: 'line-breaks',
     label: 'Line breaks',
     group: 'blocks',
-    description: 'Two trailing spaces or a backslash before a newline.',
+    description:
+      'End a line with two spaces or a backslash to keep the line break.',
     level: 'inline',
     extensions: ['hardBreak'],
     matches: (token) => token.type === 'br',
@@ -134,7 +137,7 @@ const core: MarkdownSyntaxFeature[] = [
     id: 'html-blocks',
     label: 'HTML blocks',
     group: 'html',
-    description: 'Sanitized HTML in exports; rich editing remains protected.',
+    description: 'Include HTML in exports with unsafe content removed.',
     level: 'block',
     matches: (token) => token.type === 'html' && !!token.block,
   },
@@ -142,7 +145,8 @@ const core: MarkdownSyntaxFeature[] = [
     id: 'inline-html',
     label: 'Inline HTML',
     group: 'html',
-    description: 'Sanitized inline HTML in exports.',
+    description:
+      'Include HTML within text in exports, with unsafe content removed.',
     level: 'inline',
     matches: (token) => token.type === 'html' && !token.block,
   },

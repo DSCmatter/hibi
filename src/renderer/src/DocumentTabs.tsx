@@ -258,7 +258,7 @@ export function DocumentTabs({
               data-tab-id={tab.id}
               aria-label={name}
               aria-selected={selected}
-              aria-description={dirty ? 'unsaved changes' : undefined}
+              aria-description={dirty ? 'Unsaved changes' : undefined}
               aria-disabled={busy}
               tabIndex={selected ? 0 : -1}
               title={name}

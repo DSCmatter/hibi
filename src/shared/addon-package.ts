@@ -20,11 +20,11 @@ export function validAddonPath(value: unknown): value is string {
 export function addonPackageUrl(value: unknown): URL {
   if (typeof value !== 'string' || value.length > 8192)
     throw new Error(
-      'enter an https url to an addon zip package or git repository.',
+      'Enter an HTTPS URL for an addon ZIP file or Git repository.',
     )
   const url = new URL(value)
   if (url.protocol !== 'https:' || url.username || url.password)
-    throw new Error('use an https url without embedded credentials.')
+    throw new Error('Use an HTTPS URL without a username or password.')
   url.hash = ''
   return url
 }

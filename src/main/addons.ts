@@ -94,7 +94,7 @@ export async function loadAddons(): Promise<void> {
       .then((text): Record<string, unknown> => {
         const value: unknown = JSON.parse(text)
         if (!value || typeof value !== 'object' || Array.isArray(value))
-          throw new Error('invalid addon preferences')
+          throw new Error('Could not read these addon settings.')
         return value as Record<string, unknown>
       })
       .catch((error: unknown): Record<string, unknown> => {
@@ -112,7 +112,9 @@ export async function loadAddons(): Promise<void> {
         !validDocumentExtensions(manifest.fileExtensions)) ||
       !compatibleAddonManifest(manifest)
     )
-      throw new Error('invalid or incompatible addon manifest.')
+      throw new Error(
+        'This addon has invalid details or needs a different version of Hibi.',
+      )
     ids.add(manifest.id)
   }
   setDocumentExtensions(
@@ -144,7 +146,7 @@ export async function enableAddon(
     !manifests().some((manifest) => manifest.id === id) ||
     typeof value !== 'boolean'
   )
-    throw new Error('invalid addon preference.')
+    throw new Error('Could not change this addon setting. Try again.')
   return saveEnabled(id, id === 'markdown' || value)
 }
 
@@ -182,7 +184,9 @@ export async function removeAddon(id: unknown): Promise<void> {
     typeof id !== 'string' ||
     !installedAddons().some((addon) => addon.manifest.id === id)
   )
-    throw new Error('only sideloaded addons can be removed.')
+    throw new Error(
+      'Only addons you installed can be removed. Disable built-in addons instead.',
+    )
   const previous = enabled[id] ?? false
   await saveEnabled(id, false)
   try {
@@ -205,19 +209,22 @@ export async function invokeAddon(
     typeof method !== 'string' ||
     !getAddonStates().some((addon) => addon.id === id && addon.enabled)
   )
-    throw new Error('addon is not enabled.')
+    throw new Error('Enable this addon in Settings → Addons first.')
   const generation = generations.get(id)
   const addon = await nativeAddon(id)
   if (
     generations.get(id) !== generation ||
     !getAddonStates().some((state) => state.id === id && state.enabled)
   )
-    throw new Error('addon is no longer enabled.')
+    throw new Error(
+      'This addon was disabled. Enable it in Settings → Addons to continue.',
+    )
   const handlers = query ? addon?.queries : addon?.methods
   if (!handlers || !Object.hasOwn(handlers, method))
-    throw new Error('unknown addon method.')
+    throw new Error('This addon does not support the requested action.')
   const handler = handlers[method]
-  if (!handler) throw new Error('unknown addon method.')
+  if (!handler)
+    throw new Error('This addon does not support the requested action.')
   return handler(input, {
     document: {
       get: getDocument,
@@ -225,7 +232,9 @@ export async function invokeAddon(
         if (!id || id === getDocument().id) return getDocumentPath()
         const base = workspaceRoot()
         if (!base)
-          throw new Error('the document is no longer in this workspace.')
+          throw new Error(
+            'This document is no longer in the workspace. Open it again.',
+          )
         async function find(
           entries: import('../shared/workspace').WorkspaceEntry[],
         ): Promise<string | null> {
@@ -243,7 +252,9 @@ export async function invokeAddon(
         }
         const path = await find(getWorkspace()?.entries ?? [])
         if (!path)
-          throw new Error('the document is no longer in this workspace.')
+          throw new Error(
+            'This document is no longer in the workspace. Open it again.',
+          )
         return path
       },
       async create(name, source) {
@@ -261,7 +272,7 @@ export async function invokeAddon(
         bytes.byteLength > 64 * 1024 * 1024 ||
         !/^[a-z0-9]{1,12}$/.test(extension)
       )
-        throw new Error('invalid export file.')
+        throw new Error('The addon returned an invalid export file.')
       const result = await dialog.showSaveDialog(window, {
         title: 'Export document',
         defaultPath: basename(suggestedName),
@@ -272,7 +283,9 @@ export async function invokeAddon(
         (await realpath(result.filePath).catch(() => result.filePath)) ===
         getDocumentPath()
       )
-        throw new Error('choose a different filename from the open document.')
+        throw new Error(
+          'Choose a different file name to keep the open document.',
+        )
       await writeText(result.filePath, bytes)
       return result.filePath
     },
@@ -282,7 +295,9 @@ export async function invokeAddon(
       hasUnsavedChanges: hasUnsavedDocuments,
       async reload() {
         if (hasUnsavedDocuments())
-          throw new Error('save or discard edits before reloading files.')
+          throw new Error(
+            'Save or discard your changes before reloading files.',
+          )
         const path = getDocumentPath()
         if (path) {
           const exists = await lstat(path).catch(

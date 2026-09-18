@@ -282,14 +282,14 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.queryAddon('git', 'decorations')),
-    /not enabled/,
+    /Enable this addon in Settings → Addons first\./,
   )
   await page.locator('#addon-git').click()
   await page.getByRole('button', { name: /^back to app$/i }).click()
   await nested.locator('.sidebar-decoration').waitFor()
   await assert.rejects(
     page.evaluate(() => window.hibi.queryAddon('git', 'stage', 'note.md')),
-    /unknown addon method/,
+    /This addon does not support the requested action\./,
   )
   await page
     .getByRole('textbox', { name: /document editor/i })
@@ -297,16 +297,16 @@ test('git addon stages, commits, switches, pulls and pushes only to a disposable
   const note = page.getByRole('treeitem', { name: /^note\.md$/i, exact: true })
   await note.locator('.sidebar-dirty').waitFor()
   assert.equal(await note.locator('.sidebar-decoration').count(), 0)
-  await assert.rejects(invoke('switch', 'refs/heads/other'), /save edits/)
-  await assert.rejects(invoke('pull'), /save edits/)
+  await assert.rejects(invoke('switch', 'refs/heads/other'), /Save your edits/)
+  await assert.rejects(invoke('pull'), /Save your edits/)
   await assert.rejects(
     invoke('stage', '../outside.md'),
-    /no longer has changes/,
+    /This file has no changes\. Refresh Git status\./,
   )
   await writeFile(join(root, '.gitattributes'), 'secret.md filter=secret\n')
   await writeFile(join(root, 'secret.md'), 'private text')
   await git(root, 'config', 'filter.secret.clean', 'touch filter-ran')
-  await assert.rejects(invoke('stage', 'secret.md'), /external git filter/)
+  await assert.rejects(invoke('stage', 'secret.md'), /external Git filter/)
   await git(root, 'config', 'protocol.ext.allow', 'always')
   await git(
     root,

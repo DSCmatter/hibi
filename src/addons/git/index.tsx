@@ -46,7 +46,7 @@ export default defineAddon({
         async run() {
           await context.native.invoke(action)
           context.notify(
-            action === 'pull' ? 'repository updated.' : 'commits pushed.',
+            action === 'pull' ? 'Repository updated.' : 'Commits pushed.',
           )
         },
       })

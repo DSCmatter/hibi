@@ -71,7 +71,7 @@ test('split view mirrors the caret without moving focus or selecting the other p
   await source.press('ArrowRight')
   await page.locator('.mirror-cursor').waitFor()
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   await page.locator('.mirror-cursor').waitFor({ state: 'hidden' })
 })

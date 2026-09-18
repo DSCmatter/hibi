@@ -5,7 +5,7 @@ import { alertMarker } from './alerts'
 const parser = new Marked({ gfm: true })
 export const flavorInfo: MarkdownFlavor = {
   id: 'github',
-  name: 'github markdown',
+  name: 'GitHub Markdown',
   kind: 'dialect',
   description:
     'Alerts, tables, task lists, strikethrough, and automatic links.',

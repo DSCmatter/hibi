@@ -34,9 +34,9 @@ export const mathTokens: MarkedExtension = {
 const detector = new Marked(mathTokens)
 export const mathFlavor: MarkdownFlavor = {
   id: 'latex',
-  name: 'math',
+  name: 'Math',
   kind: 'syntax',
-  description: 'Inline $…$ and block $$…$$ latex.',
+  description: 'LaTeX math: $…$ within a line or $$…$$ in a separate block.',
   detect(source) {
     let found = false
     detector.walkTokens(detector.lexer(source), (token) => {

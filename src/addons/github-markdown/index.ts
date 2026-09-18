@@ -28,7 +28,7 @@ export default defineAddon({
     context.editor.registerSyntax({
       id: 'tables',
       label: 'Tables',
-      group: 'github markdown',
+      group: 'GitHub Markdown',
       level: 'block',
       extensions: ['tableKit'],
       matches: (token) => token.type === 'table',
@@ -36,7 +36,7 @@ export default defineAddon({
     context.editor.registerSyntax({
       id: 'tasks',
       label: 'Task lists',
-      group: 'github markdown',
+      group: 'GitHub Markdown',
       description: '- [ ] task',
       level: 'block',
       extensions: ['taskList', 'taskItem'],
@@ -47,7 +47,7 @@ export default defineAddon({
     context.editor.registerSyntax({
       id: 'strike',
       label: 'Strikethrough',
-      group: 'github markdown',
+      group: 'GitHub Markdown',
       description: '~~text~~',
       level: 'inline',
       extensions: ['strike'],
@@ -56,7 +56,7 @@ export default defineAddon({
     context.editor.registerSyntax({
       id: 'alerts',
       label: 'Alerts',
-      group: 'github markdown',
+      group: 'GitHub Markdown',
       description: 'Note, tip, important, warning, and caution.',
       level: 'block',
       extensions: ['githubAlert'],

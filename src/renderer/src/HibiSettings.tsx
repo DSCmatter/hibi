@@ -26,7 +26,9 @@ function LicenseText({ id }: { id: string }) {
     }
   }, [id])
   if (failed)
-    return <p role="alert">This license could not load. close and try again.</p>
+    return (
+      <p role="alert">Could not load this license. Close it and try again.</p>
+    )
   if (text === null) return <p role="status">Loading license…</p>
   return <pre className="license-text">{text}</pre>
 }
@@ -78,7 +80,7 @@ export function HibiSettings({ info }: { info: AppInfo | null }) {
             <p>Version {info?.version ?? '…'}</p>
           </div>
           <span className="hibi-description">
-            A quiet place to write Markdown.
+            Write, edit, and organize your documents.
           </span>
         </div>
         <p className="hibi-credit">
@@ -88,7 +90,7 @@ export function HibiSettings({ info }: { info: AppInfo | null }) {
         <SettingRow
           id="sponsor-project"
           label="Support Hibi"
-          description="Help keep the project growing."
+          description="Support development with a donation."
         >
           <Button
             id="sponsor-project"
@@ -106,15 +108,15 @@ export function HibiSettings({ info }: { info: AppInfo | null }) {
       <div className="settings-group">
         <SettingRow
           id="recovery-preview"
-          label="Explode screen"
+          label="Recovery screen"
           description="Preview the recovery screen without interrupting your document."
         >
           <Button
             id="recovery-preview"
-            aria-label="Preview explode screen"
+            aria-label="Preview recovery screen"
             onClick={() => setPreview(true)}
           >
-            Preview explode screen
+            Preview recovery screen
           </Button>
         </SettingRow>
       </div>
@@ -125,7 +127,7 @@ export function HibiSettings({ info }: { info: AppInfo | null }) {
           onDismiss={() => setPreview(false)}
         >
           <RecoveryScreen
-            error={new Error('preview: this is an example error.')}
+            error={new Error('This is an example error for the preview.')}
             onBack={() => setPreview(false)}
           />
         </Modal>
@@ -137,7 +139,7 @@ export function HibiSettings({ info }: { info: AppInfo | null }) {
       >
         {failed ? (
           <p role="alert">
-            Licenses could not load. reopen this page to try again.
+            Could not load licenses. Reopen this page to try again.
           </p>
         ) : licenses === null ? (
           <p role="status">Loading licenses…</p>

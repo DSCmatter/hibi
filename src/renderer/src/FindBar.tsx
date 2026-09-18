@@ -26,7 +26,7 @@ export function FindBar({
   const count = query
     ? status.total
       ? `${status.current}/${status.total}`
-      : 'no results'
+      : 'No results'
     : ''
   useLayoutEffect(() => {
     if (!open) return
@@ -40,14 +40,14 @@ export function FindBar({
   }, [open])
 
   return (
-    <search className="find-bar" aria-label="Find in note" hidden={!open}>
+    <search className="find-bar" aria-label="Find in document" hidden={!open}>
       <div className="find-input">
         <Search size={15} aria-hidden="true" />
         <TextInput
           variant="inline"
           ref={input}
-          aria-label="Find in note"
-          placeholder="Find in note"
+          aria-label="Find in document"
+          placeholder="Find in document"
           value={query}
           spellCheck={false}
           onChange={(event) => onQuery(event.target.value)}
@@ -76,7 +76,7 @@ export function FindBar({
       <IconButton
         type="button"
         aria-label="Previous match"
-        title="Previous match (shift+enter)"
+        title="Previous match (Shift+Enter)"
         disabled={!status.total}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => onMove('previous')}
@@ -86,7 +86,7 @@ export function FindBar({
       <IconButton
         type="button"
         aria-label="Next match"
-        title="Next match (enter)"
+        title="Next match (Enter)"
         disabled={!status.total}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => onMove('next')}
@@ -96,7 +96,7 @@ export function FindBar({
       <IconButton
         type="button"
         aria-label="Close find"
-        title="Close find (escape)"
+        title="Close find (Escape)"
         onClick={onClose}
       >
         <X size={16} aria-hidden="true" />

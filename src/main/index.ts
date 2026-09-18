@@ -190,7 +190,10 @@ function runFileOperation<T>(
   operation: (window: BrowserWindow) => Promise<T>,
 ) {
   const window = trustedWindow(event)
-  if (fileOperation) throw new Error('another file operation is in progress.')
+  if (fileOperation)
+    throw new Error(
+      'Another file operation is in progress. Wait for it to finish, then try again.',
+    )
   const pending = operation(window).finally(() => {
     fileOperation = null
   })
@@ -330,8 +333,8 @@ function createWindow(): void {
       .catch((error: unknown) => {
         quitting = false
         dialog.showErrorBox(
-          'could not save document',
-          error instanceof Error ? error.message : 'please try again.',
+          'Could not save document',
+          error instanceof Error ? error.message : 'Try saving again.',
         )
       })
       .finally(() => {
@@ -364,7 +367,7 @@ function createWindow(): void {
       .showMessageBox(window, {
         type: 'error',
         message: 'Hibi needs to reload.',
-        detail: 'The window stopped responding. unsaved changes may be lost.',
+        detail: 'The window stopped responding. Unsaved changes may be lost.',
         buttons: ['Reload', 'Quit'],
         defaultId: 0,
         cancelId: 1,
@@ -389,8 +392,8 @@ function createWindow(): void {
       return
     console.error('failed to load app:', error)
     dialog.showErrorBox(
-      'hibi could not start',
-      'please restart the app. if this continues, reinstall it.',
+      'Hibi could not start',
+      'Restart Hibi. If it still cannot start, reinstall it.',
     )
     app.quit()
   })
@@ -415,7 +418,7 @@ function installMenu(): void {
           click: command('open'),
         },
         {
-          label: 'Open from remote…',
+          label: 'Open from URL…',
           click: () =>
             mainWindow?.webContents.send(DOCUMENT_CHANNELS.requestRemote),
         },
@@ -453,7 +456,7 @@ function installMenu(): void {
           click: command('palette'),
         },
         {
-          label: 'Find in note',
+          label: 'Find in document',
           accelerator: accelerator(hotkeys.find),
           click: command('find'),
         },
@@ -671,7 +674,7 @@ if (!app.requestSingleInstanceLock()) {
       handle(HOTKEY_CHANNELS.record, (event, value: unknown) => {
         const window = trustedWindow(event)
         if (typeof value !== 'boolean')
-          throw new Error('invalid recording state.')
+          throw new Error('Could not record this shortcut. Try again.')
         recordingHotkey = value
         window.webContents.setIgnoreMenuShortcuts(value)
       })
@@ -826,7 +829,8 @@ if (!app.requestSingleInstanceLock()) {
         runFileOperation(event, newDocument),
       )
       handle(DOCUMENT_CHANNELS.save, (event, saveAs: unknown) => {
-        if (typeof saveAs !== 'boolean') throw new Error('invalid save request')
+        if (typeof saveAs !== 'boolean')
+          throw new Error('Could not read the save request. Try saving again.')
         return runFileOperation(event, (window) =>
           saveDocument(
             window,
@@ -858,8 +862,8 @@ if (!app.requestSingleInstanceLock()) {
     .catch((error: unknown) => {
       console.error('startup failed:', error)
       dialog.showErrorBox(
-        'hibi could not start',
-        'please restart the app. if this continues, reinstall it.',
+        'Hibi could not start',
+        'Restart Hibi. If it still cannot start, reinstall it.',
       )
       app.quit()
     })

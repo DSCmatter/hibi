@@ -20,7 +20,7 @@ export default defineAddon({
       context.editor.registerSyntax({
         id,
         label: id === 'subscript' ? 'Subscript' : 'Small text',
-        group: 'text extras',
+        group: 'Text extras',
         description: id === 'subscript' ? 'H~2~O' : '-# small text',
         level: id === 'subscript' ? 'inline' : 'block',
         extensions: [id],

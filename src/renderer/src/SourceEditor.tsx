@@ -429,7 +429,7 @@ export function SourceEditor({
     <>
       {extensionError && (
         <DocumentNotice
-          title="Editor extension unavailable"
+          title="Editor plugin unavailable"
           message={extensionError}
         />
       )}

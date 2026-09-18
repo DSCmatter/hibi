@@ -319,7 +319,7 @@ export function ToolbarSettings() {
         <SettingRow
           id="toolbar-visible"
           label="Show toolbar"
-          description="Show addon actions below the top bar."
+          description="Show formatting and plugin actions below the top bar."
         >
           <Toggle
             id="toolbar-visible"
@@ -332,7 +332,7 @@ export function ToolbarSettings() {
         <SettingRow
           id="toolbar-autohide"
           label="Hide toolbar while typing"
-          description="Fade with the top bar and move the page up while you write."
+          description="Hide the toolbar while you write to give the document more room."
         >
           <Toggle
             id="toolbar-autohide"
@@ -370,7 +370,7 @@ export function ToolbarSettings() {
         <div className="toolbar-order-panel">
           <div className="toolbar-order-heading">
             <p id={help}>
-              Drag to reorder. select an action to move it with the arrows.
+              Drag actions to reorder them, or select one and use the arrows.
             </p>
             <Button
               disabled={!preferences.order?.length}

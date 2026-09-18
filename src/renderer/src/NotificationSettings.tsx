@@ -37,7 +37,7 @@ export function NotificationSettings() {
         <SettingRow
           id="notification-duration"
           label="Dismiss after"
-          description="Hover or focus a notification to pause its countdown."
+          description="Notifications stay open while you point to them or focus them with the keyboard."
         >
           <Select
             id="notification-duration"
@@ -60,7 +60,7 @@ export function NotificationSettings() {
         <SettingRow
           id="notification-preview"
           label="Preview"
-          description="Try the current position and countdown."
+          description="See how notifications will appear."
         >
           <Button
             id="notification-preview"
@@ -69,7 +69,7 @@ export function NotificationSettings() {
               service.api.show({
                 message: 'Notification preview',
                 description: preferences.duration
-                  ? 'Hover to pause the countdown.'
+                  ? 'Point here to keep this notification open.'
                   : 'Stays until you dismiss it.',
                 variant: 'success',
               })

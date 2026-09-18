@@ -139,20 +139,20 @@ test('workspace popovers, durable folders, ephemeral files, inline rename, dirty
         destination: 'renamed copy.md',
       }),
     ),
-    /already exists/,
+    /A file or folder exists at that location\./,
   )
   await assert.rejects(
     page.evaluate(() =>
       window.hibi.workspaceAction({ action: 'delete', path: '../outside.md' }),
     ),
-    /valid.*name/,
+    /Choose a file or folder name without slashes or reserved characters\./,
   )
   await symlink(profile, join(root, 'escape'))
   await assert.rejects(
     page.evaluate(() =>
       window.hibi.workspaceAction({ action: 'new-file', path: 'escape' }),
     ),
-    /symlink/,
+    /This path is missing or contains a symbolic link\./,
   )
   await page.evaluate(() =>
     window.hibi.workspaceAction({

@@ -12,14 +12,14 @@ import { documentMediaPath } from './images'
 
 function webUrl(value: unknown) {
   if (typeof value !== 'string' || value.length > 8192)
-    throw new Error('enter an http or https url.')
+    throw new Error('Enter an HTTP or HTTPS URL.')
   const url = new URL(value)
   if (
     !['https:', 'http:'].includes(url.protocol) ||
     url.username ||
     url.password
   )
-    throw new Error('use an http or https url without embedded credentials.')
+    throw new Error('Use an HTTP or HTTPS URL without a username or password.')
   return url
 }
 
@@ -44,7 +44,7 @@ export async function openDocumentLink(
   }
   const path = documentMediaPath(href.split('#')[0]!, getDocumentPath())
   if (!path || !isDocumentName(path))
-    throw new Error('only web, email, and markdown links can be opened.')
+    throw new Error('Choose a web link, email address, or supported document.')
   if (path === getDocumentPath()) return getDocument()
   return loadDocument(window, path)
 }
@@ -68,16 +68,20 @@ export async function openRemoteDocument(
     await response.body?.cancel()
     const location = response.headers.get('location')
     if (!location || redirects === 5)
-      throw new Error('too many redirects or a missing redirect destination.')
+      throw new Error(
+        'This link redirects too many times or has no destination. Use a direct file URL.',
+      )
     url = webUrl(new URL(location, url).href)
   }
   if (!response?.ok || !response.body)
     throw new Error(
-      `could not open remote document (${response?.status ?? 'no response'}).`,
+      `Could not download the document (${response?.status ?? 'no response'}). Check the URL and try again.`,
     )
   if (/text\/html/i.test(response.headers.get('content-type') ?? '')) {
     await response.body.cancel()
-    throw new Error('this url is a web page. use the raw markdown file url.')
+    throw new Error(
+      'This URL points to a web page. Use a direct link to the raw text file.',
+    )
   }
   const reader = response.body.getReader()
   const parts: Uint8Array[] = []
@@ -88,7 +92,9 @@ export async function openRemoteDocument(
       if (done) break
       size += value.byteLength
       if (size > MAX_DOCUMENT_BYTES)
-        throw new Error('remote documents must be under 2 mib.')
+        throw new Error(
+          'The download exceeds the 2 MiB document limit. Choose a smaller file.',
+        )
       parts.push(value)
     }
   } finally {
@@ -102,7 +108,7 @@ export async function openRemoteDocument(
     current.revision !== getDocument().revision ||
     current.markdown !== getDocument().markdown
   )
-    throw new Error('the note changed while downloading; try again.')
+    throw new Error('The document changed while downloading. Try again.')
   let name =
     basename(decodeURIComponent(url.pathname))
       .replace(/[<>:"/\\|?*\p{Cc}]/gu, '-')

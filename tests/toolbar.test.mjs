@@ -315,7 +315,7 @@ test('markdown toolbar formats both panes, preserves undo, and persists drag ord
   assert.equal(await rich.locator('table').count(), 0)
 
   await page
-    .getByRole('button', { name: /^markdown only$/i, exact: true })
+    .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.waitFor()
@@ -510,7 +510,7 @@ test('select all stays in the active pane after changing views or clicking line 
       }
     })
   }
-  for (const mode of ['markdown only', 'side-by-side']) {
+  for (const mode of ['source view', 'side-by-side']) {
     await page
       .getByRole('button', { name: uiName(mode, true), exact: true })
       .click()

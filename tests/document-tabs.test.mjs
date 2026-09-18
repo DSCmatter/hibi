@@ -549,7 +549,7 @@ test('file tabs preserve independent drafts and guard closing, saving, and works
   await clickMenu(app, 'Save')
   await page
     .getByRole('alert')
-    .filter({ hasText: /already open in another tab/i })
+    .filter({ hasText: /this file is open in another tab/i })
     .waitFor()
   assert.equal(await readFile(b, 'utf8'), 'original b')
   await choose(a)
@@ -609,7 +609,7 @@ test('file tabs preserve independent drafts and guard closing, saving, and works
     page.evaluate(() =>
       window.hibi.openWorkspaceFile('../notes/' + 'untitled.md'),
     ),
-    /invalid workspace/,
+    /Choose a supported document inside this workspace\./,
   )
   await assert.rejects(
     page.evaluate(() => window.hibi.selectDocumentTab('invented')),

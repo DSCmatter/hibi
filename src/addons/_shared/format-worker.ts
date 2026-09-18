@@ -69,7 +69,7 @@ async function command(
   if (process.platform === 'win32' && executable.endsWith('.cmd')) {
     if ([executable, ...args].some((value) => /["\r\n%!?^&|<>()]/.test(value)))
       throw new Error(
-        'Quarto’s Windows launcher needs a path without shell punctuation. Move the document to a simpler folder name.',
+        'Quarto cannot run with special characters in this file path on Windows. Rename the affected files or folders, then try again.',
       )
     args = [
       '/d',
@@ -388,7 +388,9 @@ process.parentPort.once(
         )
         process.parentPort.postMessage({
           result: {
-            diagnostics: status.join('\n') || 'Renderer bundled with Hibi.',
+            diagnostics:
+              status.join('\n') ||
+              'Ready. Hibi includes the tools for this format.',
           },
         })
       } else {

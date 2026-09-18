@@ -20,7 +20,7 @@ Hidden files and folders, `node_modules`, and symbolic links are excluded. Folde
 
 ## Use the page outline
 
-Choose **In this page** from the sidebar dropdown to browse the current note's headings. Headings are nested by level, and the section containing your cursor is highlighted. Select one to move to it. Code-block contents are excluded.
+Choose **On this page** from the sidebar dropdown to browse the current note's headings. Headings are nested by level, and the section containing your cursor is highlighted. Select one to move to it. Code-block contents are excluded.
 
 ## Show and resize the sidebar
 
