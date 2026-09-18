@@ -1,4 +1,4 @@
-# Addon development
+# addon development
 
 Addons can add commands, editor behavior, sidebar views, document formats, and themes. Start with a local addon, then package it when you are ready to share it.
 

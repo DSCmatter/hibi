@@ -1,4 +1,4 @@
-# Core development
+# core development
 
 These guides cover working on Hibi itself. For an independent extension or theme, use the [addon guides](../addons/README.md).
 

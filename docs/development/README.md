@@ -1,4 +1,4 @@
-# Development
+# development
 
 Build an addon to change how Hibi works, or contribute to the app itself.
 
