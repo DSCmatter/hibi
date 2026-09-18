@@ -352,10 +352,15 @@ function createWindow(): void {
     mainWindow = null
   })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-  window.webContents.on('will-navigate', (event) => event.preventDefault())
-  window.webContents.on('will-frame-navigate', (event) =>
-    event.preventDefault(),
-  )
+  window.webContents.on('will-frame-navigate', (event) => {
+    // Vite reloads this page when a change cannot be applied in place.
+    if (
+      !devUrl ||
+      !event.isMainFrame ||
+      !isTrustedRendererUrl(event.url, rendererUrl)
+    )
+      event.preventDefault()
+  })
   window.webContents.on('will-redirect', (event) => event.preventDefault())
   window.webContents.on('will-attach-webview', (event) =>
     event.preventDefault(),

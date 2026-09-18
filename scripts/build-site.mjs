@@ -72,7 +72,7 @@ const result = await build({
   ],
   build: {
     outDir: resolve('out/site'),
-    emptyOutDir: true,
+    emptyOutDir: !watching,
     lib: {
       entry: resolve('src/site/main.tsx'),
       formats: ['iife'],

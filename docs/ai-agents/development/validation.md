@@ -15,7 +15,9 @@ npm run bench:startup # detailed local launch report
 npm run package     # unpacked local application
 ```
 
-React and CSS update in place. Main/preload edits restart the process, so save working notes first. Development uses a separate data profile. The exporter template watches shared UI dependencies, and API references regenerate when their source declarations change.
+`npm run dev` updates React and CSS in place. Changes that need a full reload, including addon runtimes and preload code, reload the window while keeping drafts in the main process. Main-process edits restart the app, so save working notes first. Development uses a separate data profile.
+
+The exporter template watches shared UI dependencies, and API references regenerate when their source declarations change. Both generators also restart when their own scripts change. The last exporter template stays available during a rebuild. To pass Electron arguments, use `npm run dev -- -- --user-data-dir=/path/to/profile`.
 
 Keep Vite on 7 and `@vitejs/plugin-react` on 5 while stable `electron-vite` 5 and `@codspeed/vitest-plugin` 5 require Vite 7 or earlier. Update them together when their stable peer ranges allow Vite 8. Node type definitions can update independently.
 
