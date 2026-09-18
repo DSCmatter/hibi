@@ -6,8 +6,21 @@
 .settings-content .dependency-intro h1 {
   margin: 0;
 }
-.dependency-group {
+.settings-group.dependency-group {
   margin-top: var(--space-4);
+  padding-top: var(--space-3);
+}
+.settings-content .dependency-section-label {
+  margin: 0;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.dependency-setup-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
 }
 .dependency-state {
   padding: 3px 7px;
@@ -28,15 +41,38 @@
   border-top: 1px solid var(--border);
 }
 .dependency-path {
-  color: var(--muted);
-  font-size: var(--text-xs);
-  overflow-wrap: anywhere;
+  display: grid;
+  gap: var(--space-2);
 }
-.dependency-purpose {
+.dependency-path-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-ui);
+}
+.dependency-path-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+.dependency-path-row .ui-input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+}
+.dependency-path-row .ui-button {
+  flex-shrink: 0;
+}
+.dependency-path > p {
   margin: 0;
   color: var(--muted);
   font-size: var(--text-xs);
   line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.dependency-path > p[data-error="true"] {
+  color: var(--status-danger);
 }
 .dependency-addons {
   display: grid;
@@ -52,15 +88,10 @@
   justify-content: space-between;
   gap: var(--space-1) var(--space-2);
 }
-.dependency-addons span,
-.dependency-addons p {
+.dependency-addons span {
   color: var(--muted);
   font-size: var(--text-xs);
   line-height: 1.5;
-}
-.dependency-addons p {
-  flex-basis: 100%;
-  margin: 0;
 }
 .dependency-addon-link,
 .dependency-addon-link:hover {
@@ -73,10 +104,7 @@
   font-size: var(--text-ui);
   line-height: 1.5;
 }
-.dependency-details .document-notice {
-  margin: 0;
-}
-.dependency-details .ui-control-row a {
+.dependency-setup-details a {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);

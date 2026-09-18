@@ -134,9 +134,9 @@ async function state(
     command: entry.definition.command,
     homepage: entry.definition.homepage,
     status: path ? 'available' : 'missing',
-    path: path ?? configured[entry.key] ?? null,
     customPath: !!configured[entry.key],
     ...(previous?.path === path ? previous : {}),
+    path: path ?? configured[entry.key] ?? null,
     ...(installing.has(entry.key) ? { status: 'installing' as const } : {}),
     installer: plan
       ? {
@@ -221,8 +221,12 @@ export async function configureDependency(
     throw new Error(
       'Wait for installation to finish before changing this path.',
     )
-  if (action !== 'choose' && action !== 'reset')
-    throw new Error('Choose or reset the executable path.')
+  const typed =
+    action && typeof action === 'object' && 'path' in action
+      ? action.path
+      : undefined
+  if (action !== 'choose' && action !== 'reset' && typeof typed !== 'string')
+    throw new Error('Choose, enter, or reset the executable path.')
   let selected: string | undefined
   if (action === 'choose') {
     const result = await dialog.showOpenDialog(window, {
@@ -231,7 +235,11 @@ export async function configureDependency(
     })
     if (result.canceled || !result.filePaths[0]) return state(entry)
     selected = result.filePaths[0]
+  } else if (typeof typed === 'string') selected = typed
+  if (selected !== undefined) {
     if (
+      selected.length > 32768 ||
+      /[\0\r\n]/.test(selected) ||
       !isAbsolute(selected) ||
       !(await executableFile(selected)) ||
       (process.platform === 'win32' &&
@@ -241,7 +249,7 @@ export async function configureDependency(
           /quarto\.cmd$/i.test(selected)
         ))
     )
-      throw new Error('Choose an executable file for this tool.')
+      throw new Error('Enter an absolute path to an executable file.')
   }
   const save = saving.then(async () => {
     const next = { ...(await paths()) }

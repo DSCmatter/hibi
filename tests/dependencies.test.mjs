@@ -199,11 +199,40 @@ test('dependency manager scopes declarations, confirms installs, persists paths,
   )
   assert.equal(selected.path, state.selected)
   assert.equal(await manager.resolveDependency('two', 'pandoc'), state.selected)
+  const beforeInvalid = state.calls.length
+  for (const path of [
+    '',
+    'relative/pandoc',
+    '/tools/pandoc\n--version',
+    '/tools/\0pandoc',
+  ]) {
+    await assert.rejects(
+      manager.configureDependency({}, dependency.key, { path }),
+      /absolute path/,
+    )
+  }
+  await assert.rejects(
+    manager.configureDependency({}, dependency.key, { path: 42 }),
+    /executable path/,
+  )
+  assert.equal(
+    state.calls.length,
+    beforeInvalid,
+    'invalid paths never run a version probe',
+  )
+  assert.equal(await manager.resolveDependency('two', 'pandoc'), state.selected)
+  const typed = join(manager.root, 'typed pandoc')
+  assert.equal(
+    (await manager.configureDependency({}, dependency.key, { path: typed }))
+      .path,
+    typed,
+  )
+  assert.deepEqual(state.calls.at(-1), ['version', typed, ['--version']])
   assert.equal(
     JSON.parse(await readFile(join(manager.root, 'dependencies.json'), 'utf8'))[
       dependency.key
     ],
-    state.selected,
+    typed,
   )
   await manager.configureDependency({}, dependency.key, 'reset')
   assert.equal(

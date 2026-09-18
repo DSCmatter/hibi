@@ -1,20 +1,146 @@
 import { ExternalLink, Package, RefreshCw, Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Addon, AddonState } from '../../addons/api'
 import type { DependencyState } from '../../shared/dependencies'
+import type { DesktopApi } from '../../shared/desktop'
 import { errorMessage } from '../../shared/errors'
 import {
   Button,
-  ControlRow,
   IconButton,
   Panel,
   PanelMessage,
   SettingRow,
+  TextInput,
 } from '../../ui/Controls'
 import { useDialogs } from '../../ui/DialogProvider'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { SettingsFilter } from '../../ui/SettingsFilter'
 import './dependencies.css'
+
+function DependencyPath({
+  tool,
+  disabled,
+  configure,
+}: {
+  tool: DependencyState
+  disabled: boolean
+  configure: (
+    action: Parameters<DesktopApi['configureDependency']>[1],
+  ) => Promise<DependencyState>
+}) {
+  const [draft, setDraft] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const pending = useRef(false)
+  const id = `dependency-path-${tool.key}`
+  const apply = async (
+    action: Parameters<DesktopApi['configureDependency']>[1],
+  ) => {
+    if (disabled || pending.current) return
+    pending.current = true
+    setError('')
+    try {
+      await configure(action)
+      setDraft(null)
+    } catch (error) {
+      setError(errorMessage(error))
+    } finally {
+      pending.current = false
+    }
+  }
+  const commit = () => {
+    if (draft !== null && draft !== (tool.path ?? ''))
+      void apply(draft ? { path: draft } : 'reset')
+  }
+  const invalid =
+    !!error ||
+    tool.status === 'error' ||
+    (tool.customPath && tool.status === 'missing')
+  const message =
+    error ||
+    tool.message ||
+    (tool.status === 'available'
+      ? tool.version
+        ? `Executable available · ${tool.version}`
+        : 'Executable available.'
+      : tool.status === 'installing'
+        ? 'Installing…'
+        : tool.customPath
+          ? 'No executable found at this path.'
+          : 'No executable found. Enter a path or choose a file.')
+  return (
+    <div className="dependency-path">
+      <div className="dependency-path-heading">
+        <label htmlFor={id}>Path</label>
+        {tool.customPath && (
+          <button
+            type="button"
+            className="dependency-addon-link"
+            data-path-action
+            disabled={disabled}
+            onClick={() => void apply('reset')}
+          >
+            Use PATH
+          </button>
+        )}
+      </div>
+      <div className="dependency-path-row">
+        <TextInput
+          id={id}
+          aria-label={`${tool.name} executable path`}
+          aria-describedby={`${id}-status`}
+          aria-invalid={invalid}
+          data-verbatim="true"
+          spellCheck={false}
+          placeholder="Absolute path to executable"
+          value={draft ?? tool.path ?? ''}
+          disabled={disabled}
+          onChange={(event) => {
+            setDraft(event.target.value)
+            setError('')
+          }}
+          onBlur={(event) => {
+            if (
+              !(
+                event.relatedTarget instanceof Element &&
+                event.relatedTarget.closest('[data-path-action]')
+              )
+            )
+              commit()
+          }}
+          onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing) return
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              commit()
+            } else if (event.key === 'Escape') {
+              event.preventDefault()
+              event.stopPropagation()
+              setDraft(null)
+              setError('')
+            }
+          }}
+        />
+        <Button
+          disabled={disabled}
+          data-path-action
+          onClick={() => void apply('choose')}
+        >
+          Choose executable…
+        </Button>
+      </div>
+      <p
+        id={`${id}-status`}
+        role="status"
+        data-verbatim="true"
+        data-error={invalid}
+      >
+        {draft !== null && !error
+          ? 'Press Enter or leave the field to apply. Clear it to use PATH.'
+          : message}
+      </p>
+    </div>
+  )
+}
 
 export function DependencySettings({
   active,
@@ -149,11 +275,25 @@ export function DependencySettings({
           aria-label={tool.name}
           hidden={!matches(tool)}
         >
+          <h2 className="dependency-section-label">Setup</h2>
           <SettingRow
             id={`dependency-${tool.key}`}
             label={tool.name}
             description={
-              <span data-verbatim="true">{tool.version || tool.command}</span>
+              <span className="dependency-setup-details">
+                <span data-verbatim="true">{tool.command}</span>
+                <a
+                  href={tool.homepage}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    void run(tool.key, () =>
+                      window.hibi.openDependencyGuide(tool.key),
+                    )
+                  }}
+                >
+                  Installation guide <ExternalLink size={12} aria-hidden />
+                </a>
+              </span>
             }
           >
             <span className="dependency-state" data-status={tool.status}>
@@ -165,6 +305,19 @@ export function DependencySettings({
                     ? 'Needs attention'
                     : 'Not found'}
             </span>
+            {tool.status !== 'available' && tool.installer && (
+              <Button
+                disabled={waiting}
+                title={tool.installer.command}
+                onClick={() =>
+                  void run(tool.key, () =>
+                    window.hibi.installDependency(tool.key),
+                  )
+                }
+              >
+                Install with {tool.installer.manager}
+              </Button>
+            )}
             <IconButton
               aria-label={`Check ${tool.name}`}
               disabled={waiting}
@@ -176,13 +329,29 @@ export function DependencySettings({
             </IconButton>
           </SettingRow>
           <div className="dependency-details">
-            <p className="dependency-path">
-              <span data-verbatim={!!tool.path}>
-                {tool.path || 'No executable found in PATH.'}
-              </span>
-              {tool.customPath && <span> · Custom path</span>}
-            </p>
-            <p className="dependency-purpose">{tool.addons[0]?.reason}</p>
+            <DependencyPath
+              tool={tool}
+              disabled={waiting}
+              configure={async (action) => {
+                setBusy(tool.key)
+                try {
+                  const next = await window.hibi.configureDependency(
+                    tool.key,
+                    action,
+                  )
+                  setTools(
+                    (tools) =>
+                      tools?.map((item) =>
+                        item.key === tool.key ? next : item,
+                      ) ?? null,
+                  )
+                  return next
+                } finally {
+                  setBusy(null)
+                }
+              }}
+            />
+            <h2 className="dependency-section-label">Used by</h2>
             <ul
               className="dependency-addons"
               aria-label={`Addons using ${tool.name}`}
@@ -192,6 +361,7 @@ export function DependencySettings({
                   <button
                     type="button"
                     className="dependency-addon-link"
+                    title={addon.reason}
                     onClick={() => openAddon(addon.id)}
                   >
                     {addon.name}
@@ -200,67 +370,9 @@ export function DependencySettings({
                     {addon.optional ? 'Optional' : 'Required'}
                     {!addon.enabled && ' · Addon disabled'}
                   </span>
-                  {addon.reason !== tool.addons[0]?.reason && (
-                    <p>{addon.reason}</p>
-                  )}
                 </li>
               ))}
             </ul>
-            {tool.message && (
-              <DocumentNotice
-                variant="warning"
-                title="Tool check failed"
-                message={tool.message}
-              />
-            )}
-            <ControlRow>
-              {tool.status !== 'available' && tool.installer && (
-                <Button
-                  disabled={waiting}
-                  title={tool.installer.command}
-                  onClick={() =>
-                    void run(tool.key, () =>
-                      window.hibi.installDependency(tool.key),
-                    )
-                  }
-                >
-                  Install with {tool.installer.manager}
-                </Button>
-              )}
-              <Button
-                disabled={waiting}
-                onClick={() =>
-                  void run(tool.key, () =>
-                    window.hibi.configureDependency(tool.key, 'choose'),
-                  )
-                }
-              >
-                Choose executable…
-              </Button>
-              {tool.customPath && (
-                <Button
-                  disabled={waiting}
-                  onClick={() =>
-                    void run(tool.key, () =>
-                      window.hibi.configureDependency(tool.key, 'reset'),
-                    )
-                  }
-                >
-                  Use PATH
-                </Button>
-              )}
-              <a
-                href={tool.homepage}
-                onClick={(event) => {
-                  event.preventDefault()
-                  void run(tool.key, () =>
-                    window.hibi.openDependencyGuide(tool.key),
-                  )
-                }}
-              >
-                Installation guide <ExternalLink size={12} aria-hidden />
-              </a>
-            </ControlRow>
           </div>
         </section>
       ))}

@@ -154,9 +154,53 @@ test('dependency settings discover addon requirements, manage shared paths, and 
   assert.equal(custom.path, await realpath(process.execPath))
   assert.equal(custom.customPath, true)
   assert.match(custom.version, /^v\d+/)
+  const pathField = card.getByRole('textbox', {
+    name: 'Fixture CLI executable path',
+    exact: true,
+  })
+  assert.equal(await pathField.inputValue(), custom.path)
+  await pathField.fill(join(profile, 'missing executable'))
+  await pathField.press('Enter')
+  await card
+    .getByRole('status')
+    .getByText('Enter an absolute path to an executable file.', { exact: true })
+    .waitFor()
+  assert.equal(await pathField.getAttribute('aria-invalid'), 'true')
+  assert.equal(
+    (await page.evaluate(() => window.fixtureDependencies.list()))[0].path,
+    custom.path,
+  )
+  await pathField.fill(profile)
+  await filter.focus()
+  await card
+    .getByRole('status')
+    .getByText('Enter an absolute path to an executable file.', { exact: true })
+    .waitFor()
+  // Browsing must replace an invalid draft without triggering a competing blur save.
+  await pathField.focus()
+  await card
+    .getByRole('button', { name: 'Choose executable…', exact: true })
+    .click()
+  await card
+    .getByRole('status')
+    .getByText(/^Executable available · v\d+/)
+    .waitFor()
+  assert.equal(await pathField.inputValue(), custom.path)
+  await pathField.fill('')
+  await pathField.press('Enter')
+  await card.getByText('Not found', { exact: true }).waitFor()
+  await pathField.fill(process.execPath)
+  await filter.focus()
+  await card.getByText('Available', { exact: true }).waitFor()
+  assert.equal(
+    (await page.evaluate(() => window.fixtureDependencies.list()))[0].path,
+    custom.path,
+  )
   await filter.fill('pandoc')
   card = panel.getByRole('region', { name: 'Pandoc', exact: true })
   await card.waitFor()
+  await card.getByRole('heading', { name: 'Setup', exact: true }).waitFor()
+  await card.getByRole('heading', { name: 'Used by', exact: true }).waitFor()
   const all = await page.evaluate(() => window.hibi.getDependencies())
   const pandoc = all.filter((tool) => tool.id === 'pandoc')
   assert.equal(pandoc.length, 1)
@@ -183,6 +227,22 @@ test('dependency settings discover addon requirements, manage shared paths, and 
     await readFile(join(profile, 'dependencies.json'), 'utf8'),
   )
   assert.equal(preferences[pandoc[0].key], process.execPath)
+  const [inputBox, chooseBox] = await Promise.all([
+    card
+      .getByRole('textbox', { name: 'Pandoc executable path', exact: true })
+      .boundingBox(),
+    card
+      .getByRole('button', { name: 'Choose executable…', exact: true })
+      .boundingBox(),
+  ])
+  assert.ok(
+    Math.abs(inputBox.y - chooseBox.y) < 2,
+    'path input and browse button share one row',
+  )
+  assert.ok(
+    chooseBox.x > inputBox.x + inputBox.width,
+    'browse button follows the path field',
+  )
   await mkdir('test-results', { recursive: true })
   await page.screenshot({ path: 'test-results/dependency-settings.png' })
   await page.setViewportSize({ width: 640, height: 900 })

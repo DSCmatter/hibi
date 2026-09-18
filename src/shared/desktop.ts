@@ -73,7 +73,7 @@ export type DesktopApi = {
   ) => Promise<import('./dependencies').DependencyState>
   configureDependency: (
     key: string,
-    action: 'choose' | 'reset',
+    action: 'choose' | 'reset' | { path: string },
   ) => Promise<import('./dependencies').DependencyState>
   openDependencyGuide: (key: string) => Promise<void>
   analyzeDocument: (

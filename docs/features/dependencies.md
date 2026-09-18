@@ -1,6 +1,6 @@
 # Addon dependencies
 
-Open **Settings → Dependencies** to see the command-line tools requested by your installed addons. Each tool lists the addons that use it, why they need it, and whether those addons are enabled. Identical requirements share one entry.
+Open **Settings → Dependencies** to see the command-line tools requested by your installed addons. Each tool has **Setup**, **Path**, and **Used by** sections. Setup includes its installation guide and availability. Used by lists its addons and whether they are enabled; hover an addon name to see why it needs the tool. Identical requirements share one entry.
 
 ## Check a tool
 
@@ -16,7 +16,9 @@ When the addon supplies an installer and a supported package manager is availabl
 
 ## Choose an existing installation
 
-Choose **Choose executable…** to select a trusted executable, including a specific toolchain version. The path is saved for this Hibi profile and shared by addons with the same requirement. **Use PATH** removes that override. Managed paths take effect on the next command without restarting Hibi.
+Edit the **Path** field or use **Choose executable…** beside it to select a trusted executable, including a specific toolchain version. Press Enter or leave the field to apply a typed path. Feedback below the field shows its availability and version, or explains why the path is invalid. Invalid entries leave the previous saved path unchanged; Escape discards your edit.
+
+The path is saved for this Hibi profile and shared by addons with the same requirement. **Use PATH**, or clearing the field, removes that override. Managed paths take effect on the next command without restarting Hibi.
 
 Automatic discovery excludes executables inside the open workspace, including symlink targets. A custom executable is an explicit choice to trust that file. If an installer succeeds but its location is not found, choose its executable or restart Hibi to pick up an updated system `PATH`.
 
