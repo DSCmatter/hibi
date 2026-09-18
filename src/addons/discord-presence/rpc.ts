@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { createConnection, type Socket } from 'node:net'
 import { posix } from 'node:path'
+import { presenceAssets } from './assets.ts'
 import type { Preferences, PresenceStatus } from './types'
 
 type Activity = {
   details: string
+  assets: ReturnType<typeof presenceAssets>
   state?: string
   timestamps?: { start: number }
 }
@@ -38,6 +40,7 @@ export function activityFor(
   }
   return {
     details: 'Writing in Hibi',
+    assets: presenceAssets(name),
     ...(preferences.showDocumentName && title !== 'Editing '
       ? { state: title }
       : {}),

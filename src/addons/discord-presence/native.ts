@@ -20,7 +20,7 @@ export default {
       const preferences = parsePreferences(input)
       return presence.update(
         preferences,
-        preferences.showDocumentName ? context.document.get().name : '',
+        preferences.applicationId ? context.document.get().name : '',
       )
     },
     async disconnect() {

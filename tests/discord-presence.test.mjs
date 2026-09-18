@@ -8,6 +8,7 @@ import test from 'node:test'
 import { setImmediate as tick } from 'node:timers/promises'
 import { pathToFileURL } from 'node:url'
 import { build } from 'esbuild'
+import { presenceAssets } from '../src/addons/discord-presence/assets.ts'
 import {
   activityFor,
   DiscordPresence,
@@ -18,6 +19,7 @@ import {
   DEFAULT_APPLICATION_ID,
   parsePreferences,
 } from '../src/addons/discord-presence/types.ts'
+import { fileAssociations } from '../src/shared/file-associations.ts'
 
 const config = {
   applicationId: '123456789012345678',
@@ -110,6 +112,12 @@ test('Discord presence accepts only public application IDs and excludes names un
     assert.throws(() => parsePreferences(input), /application ID/)
   assert.deepEqual(activityFor(config, '/private/workspace/secret.md', 100), {
     details: 'Writing in Hibi',
+    assets: {
+      large_image: 'https://hibi.garden/favicon.png',
+      large_text: 'Hibi',
+      small_image: 'https://hibi.garden/rpc/book-open-text.png',
+      small_text: 'Markdown',
+    },
     timestamps: { start: 100 },
   })
   assert.deepEqual(
@@ -118,7 +126,16 @@ test('Discord presence accepts only public application IDs and excludes names un
       'C:\\private\\notes\\name\n.md',
       100,
     ),
-    { details: 'Writing in Hibi', state: 'Editing name.md' },
+    {
+      details: 'Writing in Hibi',
+      state: 'Editing name.md',
+      assets: {
+        large_image: 'https://hibi.garden/favicon.png',
+        large_text: 'Hibi',
+        small_image: 'https://hibi.garden/rpc/book-open-text.png',
+        small_text: 'Markdown',
+      },
+    },
   )
   assert.ok(
     Buffer.byteLength(
@@ -135,6 +152,99 @@ test('Discord presence accepts only public application IDs and excludes names un
   assert.equal(paths.length, 20)
   assert.equal(paths[0], '/run/user/1/discord-ipc-0')
   assert.equal(paths[10], '/tmp/discord-ipc-0')
+})
+
+test('file-type artwork covers bundled formats and aliases without exposing filenames or arbitrary URLs', () => {
+  for (const format of Object.values(fileAssociations)) {
+    for (const extension of format.ext) {
+      const assets = presenceAssets(
+        `C:\\private\\Secret.${extension.toUpperCase()}`,
+      )
+      assert.equal(assets.small_text, format.name)
+      assert.equal(assets.large_image, 'https://hibi.garden/favicon.png')
+      assert.equal(assets.large_text, 'Hibi')
+      assert.match(
+        assets.small_image,
+        /^https:\/\/hibi\.garden\/rpc\/[a-z0-9-]+\.png$/,
+      )
+      assert.equal(JSON.stringify(assets).includes('Secret'), false)
+    }
+  }
+  for (const [file, icon, label] of [
+    ['note.tex', 'sigma', 'LaTeX'],
+    ['note.typ', 'type', 'Typst'],
+    ['note.mmd', 'chart-no-axes-combined', 'Mermaid'],
+    ['note.html', 'code-xml', 'HTML'],
+    ['note.org', 'list-tree', 'Org mode'],
+    ['note.txt', 'file-text', 'Plain text'],
+    ['note.Rmd', 'notebook-text', 'R Markdown'],
+    ['note.qmd', 'notebook-text', 'Quarto'],
+    ['note.jsonc', 'braces', 'JSON'],
+    ['note.yaml', 'settings-2', 'Configuration'],
+    ['note.csv', 'table', 'Table'],
+    ['note.tsx', 'file-code-2', 'Source code'],
+    ['note.ipynb', 'notebook-text', 'Jupyter Notebook'],
+    ['https://untrusted.example/private.svg', 'image', 'Image'],
+    ['private.unknown', 'file', 'Document'],
+    ['__proto__', 'file', 'Document'],
+    ['', 'file', 'Document'],
+  ])
+    assert.deepEqual(presenceAssets(file), {
+      large_image: 'https://hibi.garden/favicon.png',
+      large_text: 'Hibi',
+      small_image: `https://hibi.garden/rpc/${icon}.png`,
+      small_text: label,
+    })
+})
+
+test('RPC coalesces file-type changes while names are hidden and keeps the elapsed session', async (t) => {
+  const server = await fixture(t)
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() })
+  const presence = new DiscordPresence([server.path])
+  t.after(() => presence.stop())
+  presence.update(config, '/private/start.md')
+  await until(() => presence.snapshot().state === 'connected')
+  const activities = () =>
+    server.frames
+      .filter((frame) => frame.value?.args?.activity)
+      .map((frame) => frame.value.args.activity)
+  assert.equal(activities()[0].assets.small_text, 'Markdown')
+  presence.update(config, '/private/intermediate.tex')
+  presence.update(config, '/private/latest.typ')
+  assert.equal(activities().length, 1)
+  t.mock.timers.tick(15_000)
+  await until(() => activities().length === 2)
+  assert.equal(
+    activities()[1].assets.small_image,
+    'https://hibi.garden/rpc/type.png',
+  )
+  assert.equal(
+    activities()[1].assets.large_image,
+    'https://hibi.garden/favicon.png',
+  )
+  assert.equal(
+    activities()[1].assets.large_image,
+    activities()[0].assets.large_image,
+  )
+  assert.equal(activities()[1].state, undefined)
+  assert.deepEqual(activities()[1].timestamps, activities()[0].timestamps)
+  assert.doesNotMatch(
+    JSON.stringify(activities()),
+    /private|start\.md|intermediate|latest/,
+  )
+  presence.update(config, '/private/another.typ')
+  t.mock.timers.tick(15_000)
+  await tick()
+  assert.equal(
+    activities().length,
+    2,
+    'renaming within the same format does not publish a hidden filename',
+  )
+  assert.equal(
+    server.connections(),
+    1,
+    'file-type artwork does not reconnect each refresh',
+  )
 })
 
 test('local RPC handles fragmented frames, ping, rate limits, reconnects, privacy opt-out and cleanup', async (t) => {
@@ -211,7 +321,7 @@ test('RPC rejects malformed frames, stops stale renderer leases, and never recon
   assert.equal(server.connections(), count)
 })
 
-test('native presence validates config, reads only opted-in filenames, and clears on app lifecycle events', async (t) => {
+test('native presence validates config, reads metadata for file types without reading content, and clears on app lifecycle events', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'hibi-discord-native-'))
   t.after(() => rm(root, { recursive: true, force: true }))
   const output = join(root, 'native.mjs')
@@ -263,16 +373,23 @@ test('native presence validates config, reads only opted-in filenames, and clear
     },
   }
   await addon.methods.sync(config, context)
-  assert.equal(reads, 0)
-  assert.equal(state.updates[0].name, '')
-  await addon.methods.sync({ ...config, showDocumentName: true }, context)
   assert.equal(reads, 1)
+  assert.equal(state.updates[0].name, 'private.md')
+  await addon.methods.sync({ ...config, showDocumentName: true }, context)
+  assert.equal(reads, 2)
   assert.equal(state.updates[1].name, 'private.md')
   await assert.rejects(
     addon.methods.sync({ ...config, applicationId: 'not-a-token' }, context),
     /application ID/,
   )
   assert.equal(state.updates.length, 2)
+  await addon.methods.sync({ ...config, applicationId: '' }, context)
+  assert.equal(
+    reads,
+    2,
+    'an unconfigured addon does not read document metadata',
+  )
+  assert.equal(state.updates[2].name, '')
   await addon.methods.setup('https://untrusted.example')
   assert.deepEqual(state.urls, ['https://discord.com/developers/applications'])
   addon.stop()
