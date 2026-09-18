@@ -7,6 +7,7 @@ Start with [editing](guides/editing.md), or choose a topic below.
 - [Editing, tabs, and saving](guides/editing.md)
 - [Keyboard shortcuts](editing/typing-and-shortcuts.md)
 - [Workspaces and folders](guides/workspaces.md)
+- [Import documents](guides/importing.md)
 - [Create, rename, move, and delete files](editing/explorer.md)
 - [Images, videos, links, and navigation](editing/media-and-navigation.md)
 - [Version history](editing/version-history.md)

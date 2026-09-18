@@ -85,6 +85,11 @@ export function compatibleAddonManifest(manifest: {
 
 /** Metadata used to list an addon before its code loads. */
 export type AddonManifest = {
+  /** Bundled native importers appear in the core Import dialog while enabled. */
+  importer?: Pick<
+    import('../shared/imports').Importer,
+    'instructions' | 'sources'
+  >
   id: string
   name: string
   description: string
@@ -479,6 +484,13 @@ export type NativeAddonContext = {
 /** Native handlers compiled with Hibi. Sideloaded renderer packages cannot register these handlers. */
 export type NativeAddon = {
   id: string
+  /** Convert a selected export in memory. Core validates paths and writes a new destination folder. */
+  import?: (
+    files: readonly import('../shared/imports').ImportFile[],
+  ) => Promise<{
+    files: import('../shared/imports').ImportFile[]
+    warnings?: string[]
+  }>
   stop?: () => void
   /** Trusted read-only handlers. No user-file changes or dialogs; private compilation caches are allowed. */
   queries?: Record<

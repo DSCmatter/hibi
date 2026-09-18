@@ -6,6 +6,7 @@ Addons can add commands, editor behavior, sidebar views, document formats, and t
 - [Adding functionality](adding-functionality.md)
 - [Settings and sidebar views](settings-and-sidebar-views.md)
 - [Document formats and syntax](document-formats-and-syntax.md)
+- [Creating an importer](creating-an-importer.md)
 - [Creating a theme](creating-a-theme.md)
 - [Sideloading and sharing](sideloading.md)
 - [Testing your addon](testing-your-addon.md)

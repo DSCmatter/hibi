@@ -74,6 +74,21 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 - [WorkspaceSnapshot](WorkspaceSnapshot.md)
 - [WorkspaceState](WorkspaceState.md)
 
+## Workspace settings
+
+- [WorkspaceManifest](WorkspaceManifest.md)
+- [WorkspacePreferences](WorkspacePreferences.md)
+- [WorkspaceSettings](WorkspaceSettings.md)
+- [WorkspaceSettingsAction](WorkspaceSettingsAction.md)
+
+## Importers
+
+- [Importer](Importer.md)
+- [ImportFile](ImportFile.md)
+- [ImportRequest](ImportRequest.md)
+- [ImportResult](ImportResult.md)
+- [ImportSource](ImportSource.md)
+
 ## Color schemes
 
 - [COLOR_TOKENS](COLOR_TOKENS.md)

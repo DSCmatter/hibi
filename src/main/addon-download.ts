@@ -1,7 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { crc32 } from 'node:zlib'
-import { type CentralDirectory, Open } from 'unzipper'
 import {
   addonPackageUrl,
   MAX_ADDON_BYTES,
@@ -9,6 +8,7 @@ import {
   MAX_ADDON_FILE_BYTES,
   validAddonPath,
 } from '../shared/addon-package.ts'
+import { openBoundedZip } from './zip-reader.ts'
 
 /** No cookies, credentials, or code execution; redirects must remain HTTPS. */
 export async function downloadAddon(
@@ -69,32 +69,7 @@ export async function unpackAddon(
 ): Promise<string> {
   if (zip.length > MAX_ADDON_BYTES || zip.length < 22)
     throw new Error('This is not a valid addon ZIP file.')
-  // Bound the central-directory parser before it allocates per-entry records.
-  let end = zip.length - 22
-  const minimum = Math.max(0, end - 65535)
-  for (; end >= minimum; end--)
-    if (
-      zip.readUInt32LE(end) === 0x06054b50 &&
-      end + 22 + zip.readUInt16LE(end + 20) === zip.length
-    )
-      break
-  if (
-    end < minimum ||
-    zip.readUInt16LE(end + 4) ||
-    zip.readUInt16LE(end + 6) ||
-    zip.readUInt16LE(end + 8) !== zip.readUInt16LE(end + 10) ||
-    zip.readUInt16LE(end + 10) > MAX_ADDON_ENTRIES ||
-    zip.readUInt32LE(end + 16) + zip.readUInt32LE(end + 12) !== end
-  )
-    throw new Error(
-      'Use one ZIP file with at most 1,000 entries. Split archives and ZIP64 are not supported.',
-    )
-  // unzipper 0.12 supports tailSize; its separately maintained types omit it.
-  const open = Open.buffer as (
-    data: Buffer,
-    options: { tailSize: number },
-  ) => Promise<CentralDirectory>
-  const directory = await open(zip, { tailSize: zip.length - end })
+  const directory = await openBoundedZip(zip, MAX_ADDON_ENTRIES)
   const manifests = directory.files.filter((file) =>
     /^(?:[^/]+\/)?hibi-addon\.json$/.test(file.path),
   )

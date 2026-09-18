@@ -9,6 +9,7 @@ import type {
   WorkspaceSnapshot,
   WorkspaceState,
 } from '../shared/workspace'
+import type { WorkspaceManifest } from '../shared/workspace-settings'
 import {
   getDocument,
   getDocumentPath,
@@ -18,9 +19,11 @@ import {
 } from './document'
 import { readMarkdown } from './files'
 import { getRecentWorkspaces, rememberWorkspace } from './recent-workspaces'
+import { workspaceIgnore, workspaceMetadata } from './workspace-metadata'
 
 let root: string | null = null
 let entries: WorkspaceEntry[] = []
+let manifest: WorkspaceManifest | null = null
 let watcher: FSWatcher | undefined
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
 let onChanged: () => void = () => {}
@@ -43,6 +46,7 @@ function relativePath(base: string, path: string): string | null {
 }
 
 export async function scanWorkspace(base: string): Promise<WorkspaceEntry[]> {
+  const ignored = await workspaceIgnore(base)
   let count = 0
   async function walk(directory: string): Promise<WorkspaceEntry[]> {
     const result: WorkspaceEntry[] = []
@@ -60,6 +64,7 @@ export async function scanWorkspace(base: string): Promise<WorkspaceEntry[]> {
         )
       const full = join(directory, child.name)
       const path = relative(base, full).split(sep).join('/')
+      if (ignored.ignores(path + (child.isDirectory() ? '/' : ''))) continue
       if (child.isDirectory()) {
         const nested = await walk(full)
         result.push({
@@ -123,7 +128,8 @@ export function getWorkspace(): WorkspaceState | null {
     }))
   return {
     id: workspaceId()!,
-    name: basename(root),
+    name: manifest?.name ?? basename(root),
+    manifest,
     entries: decorate(visible),
     activePath,
   }
@@ -132,8 +138,14 @@ export function getWorkspace(): WorkspaceState | null {
 export async function refreshWorkspace(): Promise<WorkspaceState | null> {
   const selected = root
   if (selected) {
-    const next = await scanWorkspace(selected)
-    if (root === selected) entries = next
+    const [next, metadata] = await Promise.all([
+      scanWorkspace(selected),
+      workspaceMetadata(selected),
+    ])
+    if (root === selected) {
+      entries = next
+      manifest = metadata.manifest
+    }
   }
   return getWorkspace()
 }
@@ -159,10 +171,12 @@ export async function loadWorkspace(
 ): Promise<WorkspaceState | null> {
   const nextRoot = await realpath(selected)
   const nextEntries = await scanWorkspace(nextRoot)
+  const metadata = await workspaceMetadata(nextRoot)
   watcher?.close()
   clearTimeout(refreshTimer)
   root = nextRoot
   entries = nextEntries
+  manifest = metadata.manifest
   try {
     watcher = watch(root, { recursive: true, persistent: false }, () => {
       clearTimeout(refreshTimer)
@@ -283,7 +297,11 @@ export async function snapshotWorkspace(): Promise<WorkspaceSnapshot> {
   await collect(tree)
   if (!pages.length)
     throw new Error('This workspace has no supported documents to export.')
-  return { name: basename(selected), pages }
+  return {
+    name:
+      (await workspaceMetadata(selected)).manifest?.name ?? basename(selected),
+    pages,
+  }
 }
 
 export async function indexWorkspace(): Promise<WorkspaceIndex | null> {

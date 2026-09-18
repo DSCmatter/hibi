@@ -2,7 +2,7 @@
 
 # AddonApp
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L206)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L211)
 
 Shared renderer actions used by the toolbar, palette, shortcuts, and addons.
 
@@ -29,7 +29,7 @@ type AddonApp = {
 
 ### runAction
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L207)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L212)
 
 ```typescript
 runAction: (command: AppCommand) => void
@@ -47,7 +47,7 @@ Related: [AppCommand](AppCommand.md).
 
 ### runCommand
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L208)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L213)
 
 ```typescript
 runCommand: (command: DocumentCommand) => Promise<boolean>

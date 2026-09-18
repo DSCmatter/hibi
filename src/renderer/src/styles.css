@@ -605,6 +605,16 @@ button:disabled {
   border-radius: var(--radius-panel);
   background: var(--surface);
 }
+.workspace-setting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-block: 8px;
+}
+#settings-workspace .ui-field {
+  width: min(320px, 100%);
+}
 .setting-row {
   display: flex;
   align-items: center;

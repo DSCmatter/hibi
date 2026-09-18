@@ -10,6 +10,8 @@ export const referenceSources = [
   ['src/shared/markdown-syntax.ts', 'Syntax', 'markdown-syntax-api'],
   ['src/shared/syntax.ts', 'Code languages', 'code-language-api'],
   ['src/shared/workspace.ts', 'Workspaces', 'workspace-api'],
+  ['src/shared/workspace-settings.ts', 'Workspace settings'],
+  ['src/shared/imports.ts', 'Importers'],
   ['src/shared/colorschemes.ts', 'Color schemes', 'colorscheme-api'],
   ['src/ui/dialogs.ts', 'Dialogs', 'dialog-api'],
   ['src/ui/menus.ts', 'Menus', 'menu-api'],

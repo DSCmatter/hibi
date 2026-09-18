@@ -1016,6 +1016,11 @@ function App() {
       case 'open-workspace':
         void openFolder()
         break
+      case 'import':
+        void import('./ImportDialog').then(({ openImportDialog }) =>
+          openImportDialog(dialogs, () => openSetting('workspace')),
+        )
+        break
       case 'find':
         openFind()
         break
@@ -1585,6 +1590,9 @@ function App() {
             selected={settingsCategory}
             onCategory={setSettingsCategory}
             onSetting={openSetting}
+            onWorkspaceChanged={() =>
+              applyDocumentOperation(() => window.hibi.getDocument(), false)
+            }
             showLineNumbers={showLineNumbers}
             onShowLineNumbers={setShowLineNumbers}
             spellCheck={spellCheck}

@@ -32,11 +32,13 @@ import {
   HOTKEY_CHANNELS,
   shortcutFromEvent,
 } from '../shared/hotkeys'
+import { IMPORT_CHANNELS } from '../shared/imports'
 import { MEDIA_CHANNELS } from '../shared/media'
 import { SIDELOAD_CHANNELS } from '../shared/sideload'
 import { startupMark, startupSpan } from '../shared/startup'
 import { UI_CASE_CHANNEL } from '../shared/ui-case'
 import { WORKSPACE_CHANNELS } from '../shared/workspace'
+import { WORKSPACE_SETTINGS_CHANNELS } from '../shared/workspace-settings'
 import {
   enableAddon,
   getAddonStates,
@@ -106,6 +108,11 @@ import {
   workspaceRoot,
 } from './workspace'
 import { workspaceAction } from './workspace-actions'
+import {
+  getWorkspaceSettings,
+  openStartupWorkspace,
+  updateWorkspaceSettings,
+} from './workspace-settings'
 
 startupMark('main-entry')
 app.setName('hibi')
@@ -432,6 +439,7 @@ function installMenu(): void {
           click: () =>
             mainWindow?.webContents.send(DOCUMENT_CHANNELS.requestRemote),
         },
+        { label: 'Import into workspace…', click: command('import') },
         {
           label: 'Save',
           accelerator: accelerator(hotkeys.save),
@@ -781,6 +789,25 @@ if (!app.requestSingleInstanceLock()) {
       handle(WORKSPACE_CHANNELS.open, (event) =>
         runFileOperation(event, openWorkspace),
       )
+      handle(IMPORT_CHANNELS.list, (event) => {
+        trustedWindow(event)
+        return import('./imports').then((module) => module.listImporters())
+      })
+      handle(IMPORT_CHANNELS.run, (event, request: unknown) =>
+        runFileOperation(event, (window) =>
+          import('./imports').then((module) =>
+            module.importIntoWorkspace(window, request),
+          ),
+        ),
+      )
+      handle(WORKSPACE_SETTINGS_CHANNELS.get, (event) =>
+        readAfterFileOperation(event, getWorkspaceSettings),
+      )
+      handle(WORKSPACE_SETTINGS_CHANNELS.update, (event, input: unknown) =>
+        runFileOperation(event, (window) =>
+          updateWorkspaceSettings(window, input),
+        ),
+      )
       handle(WORKSPACE_CHANNELS.recent, (event) => {
         trustedWindow(event)
         return getRecentWorkspaces()
@@ -814,6 +841,16 @@ if (!app.requestSingleInstanceLock()) {
           runFileOperation(event, async (window) => {
             let document = null
             const errors: string[] = []
+            try {
+              await openStartupWorkspace(window, externalFiles.length > 0)
+              if (getWorkspace()) document = getDocument()
+            } catch (error) {
+              errors.push(
+                error instanceof Error
+                  ? error.message
+                  : 'Could not open the startup workspace.',
+              )
+            }
             for (const path of externalFiles.splice(0)) {
               try {
                 if (!isDocumentName(path))

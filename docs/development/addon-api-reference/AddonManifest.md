@@ -11,6 +11,11 @@ Metadata used to list an addon before its code loads.
 
 ```typescript
 type AddonManifest = {
+  /** Bundled native importers appear in the core Import dialog while enabled. */
+  importer?: Pick<
+    import('../shared/imports').Importer,
+    'instructions' | 'sources'
+  >
   id: string
   name: string
   description: string
@@ -41,6 +46,7 @@ type AddonManifest = {
 
 **Properties**
 
+- [importer](#importer)
 - [id](#id)
 - [name](#name)
 - [description](#description)
@@ -55,9 +61,24 @@ type AddonManifest = {
 
 ## Properties
 
+### importer
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L89)
+
+Bundled native importers appear in the core Import dialog while enabled.
+
+```typescript
+importer?: Pick<
+    import('../shared/imports').Importer,
+    'instructions' | 'sources'
+  >
+```
+
+Related: [Importer](Importer.md).
+
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L88)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L93)
 
 ```typescript
 id: string
@@ -65,7 +86,7 @@ id: string
 
 ### name
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L89)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L94)
 
 ```typescript
 name: string
@@ -73,7 +94,7 @@ name: string
 
 ### description
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L90)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L95)
 
 ```typescript
 description: string
@@ -81,7 +102,7 @@ description: string
 
 ### apiVersion
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L91)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L96)
 
 ```typescript
 apiVersion: typeof ADDON_API_VERSION
@@ -91,7 +112,7 @@ Related: [ADDON_API_VERSION](ADDON_API_VERSION.md).
 
 ### kind
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L93)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L98)
 
 Existing API v1 addons default to extension.
 
@@ -101,7 +122,7 @@ kind?: 'theme' | 'extension'
 
 ### defaultEnabled
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L94)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L99)
 
 ```typescript
 defaultEnabled?: boolean
@@ -109,7 +130,7 @@ defaultEnabled?: boolean
 
 ### startup
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L96)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L101)
 
 Background-only UI/services can activate after editing is ready. Omit for schema/input addons.
 
@@ -119,7 +140,7 @@ startup?: 'background'
 
 ### version
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L98)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L103)
 
 Required plugin release version, separate from the host API version.
 
@@ -129,7 +150,7 @@ version: string
 
 ### fileExtensions
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L100)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L105)
 
 Additional source-file extensions, without dots. Files remain openable when disabled.
 
@@ -139,7 +160,7 @@ fileExtensions?: readonly string[]
 
 ### authors
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L101)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L106)
 
 ```typescript
 authors?: readonly AddonAuthor[]
@@ -149,7 +170,7 @@ Related: [AddonAuthor](AddonAuthor.md).
 
 ### licenses
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L103)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L108)
 
 Shipped third-party notices, shown under hibi's open source licenses.
 
@@ -164,4 +185,4 @@ licenses?: readonly {
 
 ## Related types
 
-[ADDON_API_VERSION](ADDON_API_VERSION.md), [authors](authors.md), [AddonAuthor](AddonAuthor.md).
+[Importer](Importer.md), [ADDON_API_VERSION](ADDON_API_VERSION.md), [authors](authors.md), [AddonAuthor](AddonAuthor.md).

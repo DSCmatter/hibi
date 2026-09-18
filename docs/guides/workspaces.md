@@ -8,11 +8,25 @@ Choose **Open a folder…** in the sidebar, use **Open workspace…** in the com
 
 ## Browse notes
 
+To bring files from another folder or writing app, see [Import documents](importing.md).
+
 Choose **Workspace** from the sidebar dropdown. Expand folders and select a file to open it. Arrow keys move focus, Left/Right collapse or expand a folder, and Enter opens a file.
 
 Opening a file selects its existing tab or creates one. In single-file mode, Hibi asks what to do with unsaved changes first. Use each item's menu to [create, rename, copy, move, or delete files](../editing/explorer.md).
 
 The tree updates when files change. It excludes hidden items, `node_modules`, and symbolic links. If Hibi reports that the folder is too large, open a smaller folder.
+
+## Set up a Hibi workspace
+
+In **Settings → Workspace**, turn on **Hibi workspace** to create `~/Documents/hibi`, or choose another folder. This is off by default. Changing the location assigns a different folder; **Relocate** moves the existing folder into the location you choose. When moving between disks, Hibi keeps the original copy.
+
+Choose what opens **At startup**: the empty state, your Hibi workspace, or another folder. Files opened from Finder or another application take precedence.
+
+## Name and configure a workspace
+
+Open any folder and choose **Create manifest** in Settings → Workspace. Hibi adds `.hibi.json`. Set a name, description, icon identifier, and optional default document. Renaming here changes the display name, leaving the folder path intact. The default document opens when Hibi starts in this workspace.
+
+The **Ignore rules** field writes `.hibiignore`. It uses gitignore syntax: `drafts/` hides a folder, `*.tmp` hides matching files, and `!keep.tmp` includes an otherwise ignored file. To include a file within an ignored folder, include its parent folder too. Ignored documents stay on disk and are omitted from workspace browsing and export.
 
 ## Use the page outline
 

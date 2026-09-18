@@ -17,6 +17,7 @@ export const actions = [
     key: 'shift+o',
   },
   { id: 'save', label: 'Save document', category: 'file', key: 's' },
+  { id: 'import', label: 'Import into workspace…', category: 'file', key: '' },
   { id: 'saveAs', label: 'Save as…', category: 'file', key: 'shift+s' },
   { id: 'history', label: 'Version history', category: 'file', key: '' },
   { id: 'find', label: 'Find in document', category: 'edit', key: 'f' },

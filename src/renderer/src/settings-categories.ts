@@ -2,6 +2,7 @@ import {
   Code,
   File,
   FileText,
+  Folder,
   Keyboard,
   PanelTop,
   Puzzle,
@@ -11,6 +12,7 @@ import {
 export const settingsCategories = [
   { id: 'hibi', label: 'Hibi', icon: File },
   { id: 'editor', label: 'Editor', icon: FileText },
+  { id: 'workspace', label: 'Workspace', icon: Folder },
   { id: 'formats', label: 'Formats', icon: FileText },
   { id: 'syntax', label: 'Syntax', icon: TextCursorInput },
   { id: 'code-syntax', label: 'Code highlighting', icon: Code },

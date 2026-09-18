@@ -2,7 +2,7 @@
 
 # NativeAddon
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L480)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L485)
 
 Native handlers compiled with Hibi. Sideloaded renderer packages cannot register these handlers.
 
@@ -12,6 +12,13 @@ Native handlers compiled with Hibi. Sideloaded renderer packages cannot register
 ```typescript
 type NativeAddon = {
   id: string
+  /** Convert a selected export in memory. Core validates paths and writes a new destination folder. */
+  import?: (
+    files: readonly import('../shared/imports').ImportFile[],
+  ) => Promise<{
+    files: import('../shared/imports').ImportFile[]
+    warnings?: string[]
+  }>
   stop?: () => void
   /** Trusted read-only handlers. No user-file changes or dialogs; private compilation caches are allowed. */
   queries?: Record<
@@ -37,13 +44,14 @@ type NativeAddon = {
 
 **Methods**
 
+- [import](#import)
 - [stop](#stop)
 
 ## Properties
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L481)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L486)
 
 ```typescript
 id: string
@@ -51,7 +59,7 @@ id: string
 
 ### queries
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L484)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L496)
 
 Trusted read-only handlers. No user-file changes or dialogs; private compilation caches are allowed.
 
@@ -66,7 +74,7 @@ Related: [NativeAddonContext](NativeAddonContext.md).
 
 ### methods
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L488)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L500)
 
 ```typescript
 methods: Record<
@@ -79,9 +87,34 @@ Related: [NativeAddonContext](NativeAddonContext.md).
 
 ## Methods
 
+### import
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L488)
+
+Convert a selected export in memory. Core validates paths and writes a new destination folder.
+
+```typescript
+import?: (
+    files: readonly import('../shared/imports').ImportFile[],
+  ) => Promise<{
+    files: import('../shared/imports').ImportFile[]
+    warnings?: string[]
+  }>
+```
+
+Related: [ImportFile](ImportFile.md).
+
+**Parameters**
+
+| Name | Type |
+| --- | --- |
+| <code>files</code> | <code>readonly import('../shared/imports').<a href="ImportFile.md">ImportFile</a>[]</code> |
+
+**Returns:** <code>Promise&lt;{ files: import('../shared/imports').<a href="ImportFile.md">ImportFile</a>[] warnings?: string[] }&gt;</code>
+
 ### stop
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L482)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L494)
 
 ```typescript
 stop?: () => void
@@ -91,4 +124,4 @@ stop?: () => void
 
 ## Related types
 
-[NativeAddonContext](NativeAddonContext.md).
+[ImportFile](ImportFile.md), [NativeAddonContext](NativeAddonContext.md).

@@ -2,7 +2,7 @@
 
 # MarkdownFlavor
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L242)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L247)
 
 Composable parser contributions. Declare descriptors on Addon.flavors for discovery.
 
@@ -58,7 +58,7 @@ type MarkdownFlavor = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L243)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L248)
 
 ```typescript
 id: string
@@ -66,7 +66,7 @@ id: string
 
 ### name
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L244)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L249)
 
 ```typescript
 name: string
@@ -74,7 +74,7 @@ name: string
 
 ### kind
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L245)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L250)
 
 ```typescript
 kind: 'dialect' | 'syntax'
@@ -82,7 +82,7 @@ kind: 'dialect' | 'syntax'
 
 ### description
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L246)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L251)
 
 ```typescript
 description: string
@@ -90,7 +90,7 @@ description: string
 
 ### readOnlyWhenDisabled
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L250)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L255)
 
 False when disabled syntax has a lossless built-in fallback, such as a code fence.
 
@@ -100,7 +100,7 @@ readOnlyWhenDisabled?: boolean
 
 ### markedOptions
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L251)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L256)
 
 ```typescript
 markedOptions?: { gfm?: boolean; breaks?: boolean }
@@ -108,7 +108,7 @@ markedOptions?: { gfm?: boolean; breaks?: boolean }
 
 ### richExtensions
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L252)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L257)
 
 ```typescript
 richExtensions?: readonly AnyExtension[]
@@ -116,7 +116,7 @@ richExtensions?: readonly AnyExtension[]
 
 ### export
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L254)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L259)
 
 Static exports run the same syntax parsers; their HTML is sanitized by the site.
 
@@ -139,7 +139,7 @@ Related: [RenderedMarkdown](RenderedMarkdown.md).
 
 ### detect
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L248)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L253)
 
 Content detection is a hint, not proof of the author's intended dialect.
 

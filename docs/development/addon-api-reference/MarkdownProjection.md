@@ -2,7 +2,7 @@
 
 # MarkdownProjection
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L236)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L241)
 
 <details>
 <summary>Declaration</summary>
@@ -32,7 +32,7 @@ type MarkdownProjection = {
 
 ### content
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L237)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L242)
 
 ```typescript
 content: string
@@ -40,7 +40,7 @@ content: string
 
 ### readOnly
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L239)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L244)
 
 ```typescript
 readOnly?: boolean
@@ -50,7 +50,7 @@ readOnly?: boolean
 
 ### serialize
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L238)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L243)
 
 ```typescript
 serialize: (content: string) => string

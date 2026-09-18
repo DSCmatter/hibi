@@ -9,6 +9,8 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/share
 
 ```typescript
 type WorkspaceState = {
+  /** Present when this folder contains .hibi.json. */
+  manifest?: import('./workspace-settings').WorkspaceManifest | null
   /** Opaque identity; changes when a different folder is opened. */
   id?: string
   name: string
@@ -23,6 +25,7 @@ type WorkspaceState = {
 
 **Properties**
 
+- [manifest](#manifest)
 - [id](#id)
 - [name](#name)
 - [entries](#entries)
@@ -30,9 +33,21 @@ type WorkspaceState = {
 
 ## Properties
 
-### id
+### manifest
 
 Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L30)
+
+Present when this folder contains .hibi.json.
+
+```typescript
+manifest?: import('./workspace-settings').WorkspaceManifest | null
+```
+
+Related: [WorkspaceManifest](WorkspaceManifest.md).
+
+### id
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L32)
 
 Opaque identity; changes when a different folder is opened.
 
@@ -42,7 +57,7 @@ id?: string
 
 ### name
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L31)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L33)
 
 ```typescript
 name: string
@@ -50,7 +65,7 @@ name: string
 
 ### entries
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L32)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L34)
 
 ```typescript
 entries: WorkspaceEntry[]
@@ -60,7 +75,7 @@ Related: [WorkspaceEntry](WorkspaceEntry.md).
 
 ### activePath
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L33)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L35)
 
 ```typescript
 activePath: string | null
@@ -68,4 +83,4 @@ activePath: string | null
 
 ## Related types
 
-[WorkspaceEntry](WorkspaceEntry.md).
+[WorkspaceManifest](WorkspaceManifest.md), [WorkspaceEntry](WorkspaceEntry.md).

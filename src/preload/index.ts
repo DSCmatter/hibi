@@ -10,10 +10,12 @@ import {
 import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
 import { type AppCommand, HOTKEY_CHANNELS } from '../shared/hotkeys'
+import { IMPORT_CHANNELS } from '../shared/imports'
 import { MEDIA_CHANNELS } from '../shared/media'
 import { SIDELOAD_CHANNELS } from '../shared/sideload'
 import { UI_CASE_CHANNEL } from '../shared/ui-case'
 import { WORKSPACE_CHANNELS, type WorkspaceState } from '../shared/workspace'
+import { WORKSPACE_SETTINGS_CHANNELS } from '../shared/workspace-settings'
 
 if (process.isMainFrame) {
   contextBridge.exposeInMainWorld('hibi', {
@@ -78,6 +80,13 @@ if (process.isMainFrame) {
     queryAddon: (id, method, input) =>
       ipcRenderer.invoke(ADDON_CHANNELS.query, id, method, input),
     getWorkspace: () => ipcRenderer.invoke(WORKSPACE_CHANNELS.get),
+    listImporters: () => ipcRenderer.invoke(IMPORT_CHANNELS.list),
+    importIntoWorkspace: (request) =>
+      ipcRenderer.invoke(IMPORT_CHANNELS.run, request),
+    getWorkspaceSettings: () =>
+      ipcRenderer.invoke(WORKSPACE_SETTINGS_CHANNELS.get),
+    updateWorkspaceSettings: (action) =>
+      ipcRenderer.invoke(WORKSPACE_SETTINGS_CHANNELS.update, action),
     getRecentWorkspaces: () => ipcRenderer.invoke(WORKSPACE_CHANNELS.recent),
     openRecentWorkspace: (id) =>
       ipcRenderer.invoke(WORKSPACE_CHANNELS.openRecent, id),

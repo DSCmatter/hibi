@@ -53,6 +53,10 @@ export type AppInfo = {
 }
 
 export type DesktopApi = {
+  listImporters: () => Promise<import('./imports').Importer[]>
+  importIntoWorkspace: (
+    request: import('./imports').ImportRequest,
+  ) => Promise<import('./imports').ImportResult | null>
   getAddonDocumentation: (
     id: string,
     path: string,
@@ -103,6 +107,12 @@ export type DesktopApi = {
   invokeAddon: (id: string, method: string, input?: unknown) => Promise<unknown>
   queryAddon: (id: string, method: string, input?: unknown) => Promise<unknown>
   getWorkspace: () => Promise<WorkspaceState | null>
+  getWorkspaceSettings: () => Promise<
+    import('./workspace-settings').WorkspaceSettings
+  >
+  updateWorkspaceSettings: (
+    action: import('./workspace-settings').WorkspaceSettingsAction,
+  ) => Promise<import('./workspace-settings').WorkspaceSettings>
   getRecentWorkspaces: () => Promise<import('./workspace').RecentWorkspace[]>
   openRecentWorkspace: (id: string) => Promise<WorkspaceState | null>
   getWorkspaceSnapshot: () => Promise<import('./workspace').WorkspaceSnapshot>

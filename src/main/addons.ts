@@ -152,6 +152,35 @@ export function getAddonStates(): AddonState[] {
     enabled: id === 'markdown' || (enabled[id] ?? defaultEnabled ?? false),
   }))
 }
+export function getImporters(): import('../shared/imports').Importer[] {
+  const enabled = new Set(
+    getAddonStates()
+      .filter((state) => state.enabled)
+      .map((state) => state.id),
+  )
+  return bundledManifests.flatMap((manifest) =>
+    manifest.importer && enabled.has(manifest.id)
+      ? [
+          {
+            id: manifest.id,
+            name: manifest.name.replace(/^Import from /, ''),
+            ...manifest.importer,
+          },
+        ]
+      : [],
+  )
+}
+export async function convertImport(
+  id: string,
+  files: readonly import('../shared/imports').ImportFile[],
+) {
+  if (!getImporters().some((importer) => importer.id === id))
+    throw new Error('Enable this importer in Settings → Addons first.')
+  const addon = await nativeAddon(id)
+  if (!addon?.import)
+    throw new Error('This addon does not provide an importer.')
+  return addon.import(files)
+}
 
 export async function enableAddon(
   id: unknown,

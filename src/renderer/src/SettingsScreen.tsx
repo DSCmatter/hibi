@@ -41,6 +41,7 @@ import { HotkeySettings } from './HotkeySettings'
 import { NotificationSettings } from './NotificationSettings'
 import { SyntaxSettings } from './SyntaxSettings'
 import { settingsCategories } from './settings-categories'
+import { WorkspaceSettings } from './WorkspaceSettings'
 
 class PluginSettingsBoundary extends Component<
   { children: ReactNode },
@@ -101,10 +102,12 @@ export function SettingsScreen({
   tabsEnabled,
   tabsBusy,
   onTabsEnabled,
+  onWorkspaceChanged,
 }: {
   discover: boolean
   selected: string
   onCategory: (category: string) => void
+  onWorkspaceChanged: () => Promise<void>
   onSetting: (category: string, id: string) => void
   onBack: () => void
   open: boolean
@@ -598,6 +601,18 @@ export function SettingsScreen({
               states={addonStates}
               setEnabled={onAddonEnabled}
               open={onCategory}
+            />
+          </section>
+          <section
+            id="settings-workspace"
+            role="tabpanel"
+            aria-labelledby="category-workspace"
+            aria-label="Workspace"
+            hidden={category !== 'workspace'}
+          >
+            <WorkspaceSettings
+              active={open && category === 'workspace'}
+              onChanged={onWorkspaceChanged}
             />
           </section>
           {pluginPages.map(({ manifest, Settings }) => (
