@@ -16,6 +16,8 @@ import { ColorschemeSettings } from '../../ui/ColorschemeSettings'
 import {
   Button,
   IconButton,
+  Panel,
+  PanelMessage,
   Select,
   SettingRow,
   Slider,
@@ -224,7 +226,14 @@ export function SettingsScreen({
           label={searching ? 'Settings search results' : 'Settings categories'}
           mode={searching ? 'tree' : 'tabs'}
           collapsible={false}
-          empty={<p className="settings-search-empty">No matching settings.</p>}
+          empty={
+            <Panel className="settings-search-empty">
+              <PanelMessage
+                icon={<Search size={32} strokeWidth={1.5} />}
+                title="No matching settings"
+              />
+            </Panel>
+          }
           idPrefix="category"
           panelPrefix="settings-"
           header={

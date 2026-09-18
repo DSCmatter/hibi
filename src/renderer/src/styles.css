@@ -526,9 +526,16 @@ button:disabled {
 .settings-searching [aria-level="2"] .sidebar-label {
   margin-left: var(--space-2);
 }
+.settings-searching .sidebar-scroll {
+  display: flex;
+  flex-direction: column;
+}
+.settings-searching .sidebar-empty {
+  display: flex;
+  flex: 1;
+}
 .settings-search-empty {
-  color: var(--muted);
-  padding: var(--space-3) var(--space-4);
+  flex: 1;
 }
 /* Each page covers its own scrolled content beneath the titlebar. Keeping this
    in the page's layer shares its position and opacity with the sidebar. */

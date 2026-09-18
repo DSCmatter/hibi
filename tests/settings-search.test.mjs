@@ -41,7 +41,7 @@ test('settings search groups controls, discovers enabled plugins, and reveals fi
   await search.fill('typst')
   assert.equal(await page.locator('#category-plugin-typst').count(), 0)
   await search.fill('zz-no-settings-zz')
-  await page.getByText('No matching settings.', { exact: true }).waitFor()
+  await page.getByText('No matching settings', { exact: true }).waitFor()
   await search.press('Escape')
   assert.equal(await search.inputValue(), '')
   await page.getByRole('tab', { name: 'Formats', exact: true }).click()
