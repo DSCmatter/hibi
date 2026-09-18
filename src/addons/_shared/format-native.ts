@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, extname, join } from 'node:path'
 import { app, utilityProcess } from 'electron'
 import type { AddonManifest, NativeAddon, NativeAddonContext } from '../api'
+import { type LatexPackageTask, packageName } from '../math/packages'
 import { documentProject } from './document-project'
 import { type FormatResult, formatSpec } from './format-specs'
 import type { FormatJob } from './format-worker'
@@ -40,14 +41,30 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
   const owned = new Set<() => void>()
   let cached: { key: string; result: FormatResult } | undefined
   let runningPreview: (() => void) | undefined
+  const latexCache = join(app.getPath('userData'), 'latex-packages')
+  let latexWork: Promise<unknown> = Promise.resolve()
+  let generation = 0
+  const serialized = <T>(operation: () => Promise<T>): Promise<T> => {
+    const owner = generation
+    const next = latexWork.then(() => {
+      if (owner !== generation)
+        throw new Error('The LaTeX plugin was disabled.')
+      return operation()
+    })
+    latexWork = next.catch(() => {})
+    return next
+  }
   const key = (data: Input) => JSON.stringify([data.documentId, data.source])
   async function execute(
     data: Input,
     context: NativeAddonContext,
     run = false,
     tools = false,
+    packages?: LatexPackageTask,
   ) {
-    const note = await context.document.path(data.documentId)
+    const owner = generation
+    const note = packages ? null : await context.document.path(data.documentId)
+    if (spec.engine === 'latex') await mkdir(latexCache, { recursive: true })
     const scratch = await mkdtemp(join(tmpdir(), 'hibi-format-'))
     // Explicit runs use a temporary sibling source so relative project imports keep working.
     const entry = join(
@@ -57,6 +74,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
     let cancel: (() => void) | undefined
     try {
       if (run) await writeFile(entry, data.source, { flag: 'wx', mode: 0o600 })
+      if (owner !== generation) throw new Error('Document rendering canceled.')
       const worker = utilityProcess.fork(
         join(app.getAppPath(), 'out/main/format-worker.js'),
         [],
@@ -111,7 +129,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
         cancel = () => finish(new Error('Document rendering canceled.'))
         owned.add(cancel)
         active.add(cancel)
-        if (!run && !tools && !data.export) {
+        if (!run && !tools && !packages && !data.export) {
           runningPreview?.()
           runningPreview = cancel
         }
@@ -119,10 +137,12 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
           () =>
             finish(
               new Error(
-                `The preview took longer than ${run ? 90 : 15} seconds. Try again.`,
+                packages
+                  ? 'The package request timed out. Try again.'
+                  : `The preview took longer than ${run ? 90 : 15} seconds. Try again.`,
               ),
             ),
-          run ? 90000 : 15000,
+          run || packages ? 90000 : 15000,
         )
         worker.once('error', (error) => finish(new Error(String(error))))
         worker.once('exit', () =>
@@ -154,6 +174,8 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
           entry,
           run,
           tools,
+          ...(spec.engine === 'latex' ? { latexCache } : {}),
+          ...(packages ? { packages } : {}),
         } satisfies FormatJob)
       })
     } finally {
@@ -175,6 +197,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
   return {
     id: spec.id,
     stop() {
+      generation += 1
       for (const cancel of owned) cancel()
       cached = undefined
     },
@@ -182,10 +205,39 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
       async render(value, context) {
         const data = input(value)
         if (cached?.key === key(data)) return cached.result
+        if (spec.engine === 'latex' && !data.export) return {}
         const result = await execute(data, context)
         return result
       },
       tools: (_value, context) => execute({ source: '' }, context, false, true),
+      ...(spec.engine === 'latex'
+        ? {
+            packages: (_value: unknown, context: NativeAddonContext) =>
+              serialized(
+                async () =>
+                  (await execute({ source: '' }, context, false, false, {}))
+                    .packages,
+              ),
+            'download-package': (
+              value: unknown,
+              context: NativeAddonContext,
+            ) => {
+              const name = packageName(value)
+              return serialized(
+                async () =>
+                  (
+                    await execute({ source: '' }, context, false, false, {
+                      name,
+                    })
+                  ).packages,
+              )
+            },
+            'clear-packages': () =>
+              serialized(async () => {
+                await rm(latexCache, { recursive: true, force: true })
+              }),
+          }
+        : {}),
       async image(value, context) {
         const data = value as { source?: string; documentId?: string }
         if (
@@ -224,12 +276,16 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
       async run(value, context) {
         const data = input(value)
         current(data, context)
-        const result = {
-          ...(await execute(data, context, true)),
-          executed: true,
+        const compile = async () => {
+          current(data, context)
+          const result = {
+            ...(await execute(data, context, true)),
+            executed: true,
+          }
+          cached = { key: key(data), result }
+          return result
         }
-        cached = { key: key(data), result }
-        return result
+        return spec.engine === 'latex' ? serialized(compile) : compile()
       },
       async export(value, context) {
         const data = input(value)

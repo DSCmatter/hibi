@@ -20,6 +20,7 @@ import { compile as compileSvelte } from 'svelte/compiler'
 // @ts-expect-error Svelte's generated server runtime has no declaration file.
 import * as svelteInternal from 'svelte/internal/server'
 import { render as renderSvelte } from 'svelte/server'
+import { type LatexPackageTask, latexPackages } from '../math/packages'
 import type { FormatResult, FormatSpec } from './format-specs'
 
 export type FormatJob = {
@@ -29,6 +30,8 @@ export type FormatJob = {
   entry: string
   run: boolean
   tools?: boolean
+  latexCache?: string
+  packages?: LatexPackageTask
 }
 const limit = 20 * 1024 * 1024
 const searchPath = [
@@ -63,6 +66,7 @@ async function command(
   args: string[],
   cwd: string,
   input?: string,
+  environment?: Record<string, string>,
 ) {
   let executable = await tool(name)
   let verbatim = false
@@ -89,7 +93,7 @@ async function command(
       windowsVerbatimArguments: verbatim,
       detached: process.platform !== 'win32',
       stdio: 'pipe',
-      env: { ...process.env, PATH: searchPath.join(delimiter) },
+      env: { ...process.env, PATH: searchPath.join(delimiter), ...environment },
     })
     if (child.pid) process.parentPort.postMessage({ child: child.pid })
     let stdout = '',
@@ -314,6 +318,8 @@ async function run(job: FormatJob): Promise<FormatResult> {
       'tectonic',
       ['-X', 'compile', '--untrusted', '--outdir', job.scratch, job.entry],
       cwd,
+      undefined,
+      latexEnvironment(job),
     )
     return {
       pdf: await output(
@@ -357,14 +363,32 @@ async function run(job: FormatJob): Promise<FormatResult> {
   }
 }
 
+function latexEnvironment(job: FormatJob) {
+  if (!job.latexCache)
+    throw new Error('The LaTeX download folder is unavailable.')
+  return { TECTONIC_CACHE_DIR: job.latexCache, TECTONIC_UNTRUSTED_MODE: '1' }
+}
+
 process.parentPort.once(
   'message',
   async ({ data: job }: { data: FormatJob }) => {
     try {
-      if (job.tools) {
+      if (job.packages) {
+        const environment = latexEnvironment(job)
+        const packages = await latexPackages(
+          job.packages,
+          job.scratch,
+          environment.TECTONIC_CACHE_DIR,
+          (args) =>
+            command('tectonic', args, job.scratch, undefined, environment),
+        )
+        process.parentPort.postMessage({ result: { packages } })
+      } else if (job.tools) {
         const names = [
           ...new Set([
-            ...(['html', 'mdx', 'mdsvex', 'markdoc'].includes(job.spec.reader)
+            ...(['html', 'mdx', 'mdsvex', 'markdoc', 'latex'].includes(
+              job.spec.reader,
+            )
               ? []
               : ['pandoc']),
             ...(job.spec.engine === 'latex'

@@ -314,6 +314,12 @@
   "8a0eb59d08f6": [
     "src/renderer/src/main.tsx"
   ],
+  "1d325ed3925e": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
+  "59cb301bb126": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
   "63c62e141b68": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
@@ -322,6 +328,9 @@
   ],
   "954d1afa8200": [
     "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "830121754331": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "7d9eb7acb13e": [
     "src/renderer/src/CommandPalette.tsx",
@@ -369,9 +378,6 @@
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/settings-categories.ts"
   ],
-  "890912754789": [
-    "src/addons/_shared/format-renderer.tsx"
-  ],
   "662b650e135e": [
     "src/addons/slash-commands/commands.ts"
   ],
@@ -418,9 +424,6 @@
   ],
   "16accd487c4e": [
     "src/addons/_shared/format-native.ts"
-  ],
-  "466db060f033": [
-    "src/addons/_shared/format-renderer.tsx"
   ],
   "88f4e736d27c": [
     "src/addons/_shared/format-worker.ts"
@@ -662,7 +665,20 @@
     "src/main/document.ts"
   ],
   "d6eafe823591": [
+    "src/addons/math/PackageSettings.tsx",
     "src/renderer/src/AddonSettings.tsx"
+  ],
+  "54dde5eafd65": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
+  "c807156b8e24": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
+  "f0b0738f75b8": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
+  "9c9c27064963": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "ad23f434e670": [
     "src/main/media.ts"
@@ -815,6 +831,9 @@
   ],
   "194e4e8f6e1f": [
     "src/renderer/src/workspace-menu.ts"
+  ],
+  "9529c2ba6831": [
+    "src/addons/math/packages.ts"
   ],
   "1a23abfde3ec": [
     "src/renderer/src/FormattingToolbar.tsx"
@@ -1199,6 +1218,9 @@
   "eed0e6220f2f": [
     "src/addons/math/syntax.ts"
   ],
+  "52a6b0babfd5": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
   "318655cea4bd": [
     "src/renderer/src/CodeSyntaxSettings.tsx"
   ],
@@ -1248,6 +1270,9 @@
   ],
   "c1788f811fbc": [
     "src/renderer/src/HibiSettings.tsx"
+  ],
+  "2981eae03a7a": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "830b524da49f": [
     "src/renderer/src/StartupPlaceholder.tsx"
@@ -1411,6 +1436,9 @@
   ],
   "5a859d101f66": [
     "src/addons/graph/Panel.tsx"
+  ],
+  "8918ba34c8fd": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "176723c84fa2": [
     "src/renderer/src/SettingsScreen.tsx"
@@ -1582,6 +1610,12 @@
   ],
   "af86c616ae9c": [
     "src/addons/_shared/FormatPdf.tsx"
+  ],
+  "7a9f39a2c3f1": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
+  "40a2085371b8": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "024148d6099b": [
     "src/site/main.tsx"
@@ -1897,6 +1931,12 @@
   "23e39291d613": [
     "src/renderer/src/RecoveryScreen.tsx"
   ],
+  "49c266baaaa7": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
+  "af8d1197c93c": [
+    "src/addons/math/PackageSettings.tsx"
+  ],
   "00ff7398c308": [
     "src/renderer/src/CommandPalette.tsx"
   ],
@@ -1905,6 +1945,9 @@
   ],
   "ea582e69cce7": [
     "src/site/main.tsx"
+  ],
+  "0a57174b2c85": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "255b076dd828": [
     "src/renderer/src/SettingsScreen.tsx"
@@ -1969,6 +2012,9 @@
   ],
   "a0f7f003f38e": [
     "src/renderer/src/main.tsx"
+  ],
+  "dce21c8b89ea": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "efca80330d7b": [
     "src/renderer/src/SettingsScreen.tsx"
@@ -2087,6 +2133,12 @@
   "90115ae3fa70": [
     "src/addons/textile/manifest.ts"
   ],
+  "4d1e54d66aa8": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "d54a660f8e25": [
+    "src/addons/_shared/format-native.ts"
+  ],
   "ce268f14cee4": [
     "src/addons/_shared/FormatPdf.tsx"
   ],
@@ -2185,6 +2237,9 @@
   ],
   "c7085d2772ec": [
     "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "a3a83b5e3ed9": [
+    "src/addons/_shared/format-native.ts"
   ],
   "823c933da249": [
     "src/renderer/src/main.tsx"
@@ -2685,6 +2740,9 @@
   "28391d3bc64e": [
     "src/addons/graph/Panel.tsx",
     "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "29ebc7448227": [
+    "src/addons/math/PackageSettings.tsx"
   ],
   "4abf37d06b2f": [
     "src/renderer/src/addon-overrides.ts"

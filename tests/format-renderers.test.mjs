@@ -204,8 +204,16 @@ test('format plugins render natively, keep previews inert, and run only on reque
     async () => {
       await writeFile(join(temp, 'included.tex'), 'Included equation: $x^2$.')
       const source =
-        '\\documentclass{article}\n\\begin{document}\n\\input{included.tex}\n\\end{document}'
+        '\\documentclass{article}\n\\usepackage{amsmath,amssymb,graphicx,xcolor}\n\\begin{document}\n\\textcolor{teal}{Package color}\\input{included.tex}\n\\end{document}'
       await open('document.tex', source, 'LaTeX')
+      assert.equal(await page.locator('.format-content').count(), 0)
+      assert.equal(await page.locator('.format-message').count(), 0)
+      assert.equal(
+        await page
+          .getByRole('button', { name: 'Export PDF', exact: true })
+          .isDisabled(),
+        true,
+      )
       await page
         .getByRole('button', { name: 'Compile document', exact: true })
         .click()
@@ -214,6 +222,8 @@ test('format plugins render natively, keep previews inert, and run only on reque
         .getByRole('button', { name: 'Compile document', exact: true })
         .click()
       await page.locator('.format-pdf canvas').waitFor({ timeout: 100000 })
+      await mkdir('test-results', { recursive: true })
+      await page.screenshot({ path: 'test-results/latex-preview.png' })
       const output = join(temp, 'document.pdf')
       await app.evaluate(({ dialog }, file) => {
         dialog.showSaveDialog = async () => ({
@@ -226,6 +236,50 @@ test('format plugins render natively, keep previews inert, and run only on reque
         .click()
       await page.getByText(uiName(`Exported to ${output}`, true)).waitFor()
       assert.equal((await readFile(output)).subarray(0, 5).toString(), '%PDF-')
+      await pressShortcut(app, `${mod}+,`)
+      await page.getByRole('tab', { name: 'LaTeX', exact: true }).click()
+      await page
+        .getByRole('textbox', { name: 'Search LaTeX packages' })
+        .fill('xcolor')
+      await page.getByRole('button', { name: 'Search', exact: true }).click()
+      const packageRow = page
+        .getByRole('listitem')
+        .filter({ has: page.locator('code').filter({ hasText: /^xcolor$/ }) })
+      await packageRow.getByText('Downloaded', { exact: true }).waitFor()
+      await packageRow
+        .getByRole('button', { name: 'Download xcolor', exact: true })
+        .click()
+      await page.waitForFunction(
+        () =>
+          !document.querySelector('[aria-label="Download xcolor"]')?.disabled,
+      )
+      await assert.rejects(query('math', 'download-package', '../bad'))
+      await mkdir('test-results', { recursive: true })
+      await page.screenshot({ path: 'test-results/latex-packages.png' })
+      await page.setViewportSize({ width: 480, height: 720 })
+      assert.ok(
+        await page
+          .locator('#settings-plugin-math')
+          .evaluate((panel) => panel.scrollWidth <= panel.clientWidth + 1),
+      )
+      await page.setViewportSize({ width: 1000, height: 720 })
+      await page
+        .getByRole('button', { name: 'Clear downloads', exact: true })
+        .click()
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: 'Clear downloads', exact: true })
+        .click()
+      await packageRow
+        .getByText('Downloaded', { exact: true })
+        .waitFor({ state: 'hidden' })
+      await assert.rejects(access(join(profile, 'latex-packages', 'files')))
+      assert.equal(await readFile(join(temp, 'document.tex'), 'utf8'), source)
+      await page.evaluate(async () => {
+        await window.hibi.setAddonEnabled('math', false)
+        await window.hibi.setAddonEnabled('math', true)
+      })
+      assert.ok((await query('math', 'packages')).names.includes('xcolor'))
     },
   )
   assert.equal(

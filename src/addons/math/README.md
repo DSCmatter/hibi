@@ -4,9 +4,11 @@ Turn on **LaTeX** in **Settings → Addons** to write LaTeX documents and add eq
 
 ## LaTeX documents
 
-Open a `.tex` file or choose **New LaTeX document**. You can edit the source or use side-by-side view to see a preview. Install Pandoc 3.11 or newer for automatic previews and HTML export. To create a PDF, install Tectonic, choose **Compile document**, and confirm. **Export PDF** saves the result.
+Open a `.tex` file or choose **New LaTeX document**. Install Tectonic, then choose **Compile document** in side-by-side view to preview the PDF. Choose **Export PDF** to save it.
 
 Use **Check tools** in the plugin's settings to check your installation. The tools must be available on your system's `PATH`. Save files included by your document before compiling; Hibi uses the active note's unsaved text.
+
+Tectonic downloads packages as needed. You can search for packages or clear downloads under **Settings → LaTeX → Packages**. Add them to your document with `\usepackage{package-name}`.
 
 ## Equations in Markdown
 

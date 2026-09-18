@@ -3,14 +3,6 @@
   contain: content;
   overflow-wrap: anywhere;
 }
-.format-preview .format-message {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
 .format-preview .format-content {
   line-height: 1.65;
   font-size: var(--text-editor);

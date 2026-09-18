@@ -72,7 +72,11 @@ Reuse the [document format APIs](development/document-formats.md) for views, for
 
 Keep the internal `math` ID stable for existing preferences and integrations. Markdown equations use KaTeX with `trust: false`, bounded macro expansion, and no shared user macros. Invalid equations show their source. Preserve complete `@font-face` rules and KaTeX math-family declarations in the editor and offline exports.
 
-Full `.tex` documents use a separate pipeline: Pandoc 3.11 or newer for the non-executing preview and HTML export, and explicit Tectonic compilation for PDF. Export the compiler's PDF bytes. Use the current unsaved buffer and saved local inputs from the document's folder.
+Full `.tex` documents preview and export the PDF produced by an explicit Tectonic compilation. Use the current unsaved buffer and saved local inputs from the document's folder. Documentation-site export can use Pandoc 3.11 or newer when no matching compiled PDF is cached.
+
+The package settings use Tectonic's default bundle. Downloading a package compiles a fixed document containing its validated `\usepackage` name, with `--untrusted` and `TECTONIC_UNTRUSTED_MODE=1`. Compilation and package jobs share the application's `latex-packages` cache through `TECTONIC_CACHE_DIR`. They are serialized so clearing downloads cannot interrupt a compilation. Disabling the addon cancels running workers and rejects queued jobs.
+
+Package operations use the existing native query API, which permits private compilation caches without locking document editing. Search lists `.sty` entries from `tectonic -X bundle search`; downloaded status checks Tectonic's cache manifests and their content blobs. Clearing downloads removes only Hibi's cache. The settings request the catalog only when the user searches and render at most 40 matching rows.
 
 ### Typst
 

@@ -9,7 +9,7 @@ Enable format plugins under **Settings → Addons**, then open **Formats** to co
 | Markdown | `.md`, `.markdown` | Formatted editing, source, side-by-side view, HTML |
 | Plain text | `.txt` | Source editing |
 | MDX | `.mdx` | Preview, React rendering, HTML |
-| LaTeX | `.tex` | Math-aware preview, PDF compilation |
+| LaTeX | `.tex` | Compiled PDF preview and export |
 | reStructuredText | `.rst` | Pandoc preview and HTML |
 | AsciiDoc | `.adoc`, `.asciidoc` | Pandoc preview and HTML |
 | Org mode | `.org` | Pandoc preview and HTML |

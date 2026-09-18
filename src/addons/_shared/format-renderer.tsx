@@ -278,11 +278,17 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
             </Button>
           )}
           <Button
-            disabled={!result || busy || running || !enabled}
+            disabled={
+              (!result?.pdf && spec.engine === 'latex') ||
+              !result ||
+              busy ||
+              running ||
+              !enabled
+            }
             onClick={() => void exportResult()}
           >
             <FileDown size={14} aria-hidden />
-            Export {result?.pdf ? 'PDF' : 'HTML'}
+            Export {result?.pdf || spec.engine === 'latex' ? 'PDF' : 'HTML'}
           </Button>
         </PreviewActions>
         {!enabled && (
@@ -290,13 +296,6 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
             title="Preview disabled"
             message="Enable this format’s preview in Settings → Syntax."
           />
-        )}
-        {enabled && spec.engine && !result?.executed && !result?.pdf && (
-          <p className="format-message">
-            {spec.engine === 'latex'
-              ? 'Compile the document to preview and export its PDF.'
-              : 'Code in this document runs only when you choose Run document.'}
-          </p>
         )}
         {(running || (busy && !result && !html)) && (
           <DocumentNotice

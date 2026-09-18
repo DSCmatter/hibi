@@ -23,7 +23,10 @@ export const formatSpec = (
   ...(backends[manifest.id] ?? { reader: manifest.id }),
 })
 
+export type LatexPackages = { names: string[]; downloaded: string[] }
+
 export type FormatResult = {
+  packages?: LatexPackages
   executed?: boolean
   html?: string
   pdf?: Uint8Array
