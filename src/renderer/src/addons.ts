@@ -181,11 +181,9 @@ export function useAddons(environment: Environment, documentName?: string) {
     }
   }, [running])
   useEffect(() => {
-    void Promise.all([
-      window.hibi.getAddonStates(),
-      window.hibi.getInstalledAddons(),
-    ])
-      .then(([states, installed]) => {
+    void window.hibi.bootstrap
+      .addons()
+      .then(({ states, packages: installed }) => {
         setStates(states)
         addonRegistry.hydrate(installed)
         setLoaded(true)

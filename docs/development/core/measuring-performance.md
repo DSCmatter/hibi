@@ -4,6 +4,8 @@ Measure a repeatable flow before changing it. Keep the document, profile, build,
 
 The optional [Diagnostics plugin](../../features/diagnostics.md) shows per-addon loading and startup times, host-invoked callback timings, renderer stalls, and native process metrics. It defaults on in `npm run dev` and off in production. Disable it when collecting baseline benchmarks: recording itself adds overhead. Saved addon preferences override either default.
 
+Preload begins document, addon, and recent-workspace reads before the renderer mounts. These promises remain independent: the recent list does not wait for addon discovery. Blank startup skips the external-file drain; queued files and a configured startup workspace still use it.
+
 ## Core benchmarks
 
 ```sh

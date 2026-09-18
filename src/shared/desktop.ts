@@ -1,4 +1,8 @@
 export const APP_INFO_CHANNEL = 'app:info'
+export const BOOTSTRAP_CHANNELS = {
+  document: 'bootstrap:document',
+  addons: 'bootstrap:addons',
+} as const
 export const DOCUMENT_CHANNELS = {
   get: 'document:get',
   update: 'document:update',
@@ -55,6 +59,21 @@ export type AppInfo = {
 }
 
 export type DesktopApi = {
+  /** Independent snapshots requested by preload while renderer modules load. */
+  bootstrap: {
+    document: () => Promise<{
+      info: AppInfo
+      document: DocumentState
+      hotkeys: Hotkeys
+      workspace: WorkspaceState | null
+      externalPending: boolean
+    }>
+    addons: () => Promise<{
+      states: AddonState[]
+      packages: import('./sideload').InstalledAddon[]
+    }>
+    recentWorkspaces: () => Promise<import('./workspace').RecentWorkspace[]>
+  }
   listImporters: () => Promise<import('./imports').Importer[]>
   importIntoWorkspace: (
     request: import('./imports').ImportRequest,

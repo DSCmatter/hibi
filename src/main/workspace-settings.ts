@@ -239,6 +239,15 @@ export async function updateWorkspaceSettings(
 }
 
 let startupOpened = false
+export async function startupWorkspacePending() {
+  if (startupOpened) return false
+  const prefs = await preferences()
+  return Boolean(
+    prefs.startup === 'managed'
+      ? prefs.enabled && prefs.path
+      : prefs.startup === 'folder' && prefs.startupFolder,
+  )
+}
 export async function openStartupWorkspace(
   window: BrowserWindow,
   hasExternalFiles: boolean,

@@ -21,6 +21,7 @@ import { APPEARANCE_CHANNEL } from '../shared/colorschemes'
 import {
   APP_INFO_CHANNEL,
   type AppInfo,
+  BOOTSTRAP_CHANNELS,
   DOCUMENT_CHANNELS,
 } from '../shared/desktop'
 import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
@@ -111,6 +112,7 @@ import { workspaceAction } from './workspace-actions'
 import {
   getWorkspaceSettings,
   openStartupWorkspace,
+  startupWorkspacePending,
   updateWorkspaceSettings,
 } from './workspace-settings'
 
@@ -556,18 +558,34 @@ if (!app.requestSingleInstanceLock()) {
             .createFromPath(appIcon)
             .resize({ width: 256, height: 256 }),
         )
+      const hotkeysReady = startupSpan('hotkeys', loadHotkeys)
+      const addonsReady = startupSpan('addons', loadAddons)
+      const documentReady = startupSpan(
+        'document-preferences',
+        loadDocumentPreferences,
+      )
+      const workspacePending = startupSpan(
+        'workspace-preferences',
+        startupWorkspacePending,
+      )
       const preferences = Promise.all([
-        startupSpan('hotkeys', loadHotkeys),
-        startupSpan('addons', loadAddons),
+        hotkeysReady,
+        addonsReady,
         startupSpan('ui-case', loadUiCase),
-        startupSpan('document-preferences', loadDocumentPreferences),
+        documentReady,
+        workspacePending,
       ])
       // Handle rejection immediately while appearance and renderer loading overlap it.
       void preferences.catch(() => {})
       await startupSpan('appearance', loadAppearance)
-      const handle: typeof ipcMain.handle = (channel, listener) =>
+      const handle = (
+        channel: string,
+        listener: Parameters<typeof ipcMain.handle>[1],
+        ready: Promise<unknown> = preferences,
+      ) =>
         ipcMain.handle(channel, async (...args) => {
-          await preferences
+          trustedWindow(args[0])
+          await ready
           return listener(...args)
         })
       protocol.handle('app', serveAsset)
@@ -598,14 +616,38 @@ if (!app.requestSingleInstanceLock()) {
         )
       }
 
-      handle(APP_INFO_CHANNEL, (event): AppInfo => {
-        trustedWindow(event)
-        return {
-          version: app.getVersion(),
-          electron: process.versions.electron,
-          platform: process.platform,
-        }
+      const appInfo = (): AppInfo => ({
+        version: app.getVersion(),
+        electron: process.versions.electron,
+        platform: process.platform,
       })
+      handle(
+        BOOTSTRAP_CHANNELS.document,
+        async () => ({
+          info: appInfo(),
+          document: getDocument(),
+          hotkeys,
+          workspace: getWorkspace(),
+          externalPending: externalFiles.length > 0 || (await workspacePending),
+        }),
+        Promise.all([documentReady, hotkeysReady, workspacePending]),
+      )
+      handle(
+        BOOTSTRAP_CHANNELS.addons,
+        () => ({
+          states: getAddonStates(),
+          packages: installedAddons(),
+        }),
+        addonsReady,
+      )
+      handle(
+        APP_INFO_CHANNEL,
+        (event): AppInfo => {
+          trustedWindow(event)
+          return appInfo()
+        },
+        Promise.resolve(),
+      )
       handle(
         SIDELOAD_CHANNELS.documentation,
         (event, id: unknown, path: unknown) => {
@@ -808,10 +850,14 @@ if (!app.requestSingleInstanceLock()) {
           updateWorkspaceSettings(window, input),
         ),
       )
-      handle(WORKSPACE_CHANNELS.recent, (event) => {
-        trustedWindow(event)
-        return getRecentWorkspaces()
-      })
+      handle(
+        WORKSPACE_CHANNELS.recent,
+        (event) => {
+          trustedWindow(event)
+          return getRecentWorkspaces()
+        },
+        Promise.resolve(),
+      )
       handle(WORKSPACE_CHANNELS.openRecent, (event, id: unknown) =>
         runFileOperation(event, () => openRecentWorkspace(id)),
       )

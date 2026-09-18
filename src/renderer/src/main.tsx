@@ -256,6 +256,7 @@ function App() {
   }, [focusOutlines])
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [failed, setFailed] = useState(false)
+  const initialExternalPending = useRef(false)
   const editorStarted = useRef(false)
   const [typing, setTyping] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -472,9 +473,6 @@ function App() {
     localStorage.removeItem('sidebar-open')
   }, [])
   useEffect(() => window.hibi.onWorkspaceChanged(setWorkspace), [])
-  useEffect(() => {
-    void window.hibi.getWorkspace().then(setWorkspace)
-  }, [])
   const [hotkeys, setHotkeys] = useState<Hotkeys>(() =>
     defaultHotkeys('darwin'),
   )
@@ -567,19 +565,18 @@ function App() {
   useEffect(() => {
     let active = true
     // Read the welcome list alongside document/addon state, before the editor mounts.
-    void window.hibi
-      .getRecentWorkspaces()
+    void window.hibi.bootstrap
+      .recentWorkspaces()
       .catch(() => [])
       .then((items) => {
         if (active) setRecentWorkspaces(items)
       })
-    Promise.all([
-      window.hibi.getAppInfo(),
-      window.hibi.getDocument(),
-      window.hibi.getHotkeys(),
-    ])
-      .then(([info, document, hotkeys]) => {
+    window.hibi.bootstrap
+      .document()
+      .then(({ info, document, hotkeys, workspace, externalPending }) => {
         if (active) {
+          initialExternalPending.current = externalPending
+          setWorkspace(workspace)
           setInfo(info)
           acceptDocument(document)
           setHotkeys(hotkeys)
@@ -599,7 +596,7 @@ function App() {
     if (!documentLoaded) return
     let stopped = false
     let running = false
-    let requested = true
+    let requested = initialExternalPending.current
     let timer: ReturnType<typeof setTimeout>
     const drain = async () => {
       if (stopped || running || !requested) return

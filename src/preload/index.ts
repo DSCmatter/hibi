@@ -4,6 +4,7 @@ import { ABOUT_CHANNELS } from '../shared/about'
 import { APPEARANCE_CHANNEL } from '../shared/colorschemes'
 import {
   APP_INFO_CHANNEL,
+  BOOTSTRAP_CHANNELS,
   type DesktopApi,
   DOCUMENT_CHANNELS,
 } from '../shared/desktop'
@@ -18,7 +19,21 @@ import { WORKSPACE_CHANNELS, type WorkspaceState } from '../shared/workspace'
 import { WORKSPACE_SETTINGS_CHANNELS } from '../shared/workspace-settings'
 
 if (process.isMainFrame) {
+  let externalPending = false
+  ipcRenderer.on(DOCUMENT_CHANNELS.externalPending, () => {
+    externalPending = true
+  })
+  const startupDocument = ipcRenderer.invoke(BOOTSTRAP_CHANNELS.document)
+  const startupAddons = ipcRenderer.invoke(BOOTSTRAP_CHANNELS.addons)
+  const startupRecent = ipcRenderer.invoke(WORKSPACE_CHANNELS.recent)
+  for (const pending of [startupDocument, startupAddons, startupRecent])
+    void pending.catch(() => {})
   contextBridge.exposeInMainWorld('hibi', {
+    bootstrap: {
+      document: () => startupDocument,
+      addons: () => startupAddons,
+      recentWorkspaces: () => startupRecent,
+    },
     getAddonDocumentation: (id, path) =>
       ipcRenderer.invoke(SIDELOAD_CHANNELS.documentation, id, path),
     openAddonDocumentationLink: (href) =>
@@ -122,10 +137,14 @@ if (process.isMainFrame) {
     updateDocument: (markdown) =>
       ipcRenderer.invoke(DOCUMENT_CHANNELS.update, markdown),
     openDocument: () => ipcRenderer.invoke(DOCUMENT_CHANNELS.open),
-    openExternalDocuments: () => ipcRenderer.invoke(DOCUMENT_CHANNELS.external),
+    openExternalDocuments: () => {
+      externalPending = false
+      return ipcRenderer.invoke(DOCUMENT_CHANNELS.external)
+    },
     onExternalDocuments: (callback) => {
       const listener = () => callback()
       ipcRenderer.on(DOCUMENT_CHANNELS.externalPending, listener)
+      if (externalPending) queueMicrotask(callback)
       return () =>
         ipcRenderer.removeListener(DOCUMENT_CHANNELS.externalPending, listener)
     },

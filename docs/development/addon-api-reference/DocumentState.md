@@ -2,7 +2,7 @@
 
 # DocumentState
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L24)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L28)
 
 <details>
 <summary>Declaration</summary>
@@ -53,7 +53,7 @@ type DocumentState = {
 
 ### tabId
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L26)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L30)
 
 Stable window-local tab identity, including across save and rename.
 
@@ -63,7 +63,7 @@ tabId: string
 
 ### tabs
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L27)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L31)
 
 ```typescript
 tabs: DocumentTab[]
@@ -73,7 +73,7 @@ Related: [DocumentTab](DocumentTab.md).
 
 ### tabsEnabled
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L29)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L33)
 
 False keeps only the active document open.
 
@@ -83,7 +83,7 @@ tabsEnabled: boolean
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L31)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L35)
 
 Opaque identity for per-file preferences. Contains no filesystem path.
 
@@ -93,7 +93,7 @@ id: string
 
 ### ephemeral
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L33)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L37)
 
 Workspace draft with a target name but no file on disk yet.
 
@@ -103,7 +103,7 @@ ephemeral: boolean
 
 ### markdown
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L34)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L38)
 
 ```typescript
 markdown: string
@@ -111,7 +111,7 @@ markdown: string
 
 ### savedMarkdown
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L35)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L39)
 
 ```typescript
 savedMarkdown: string
@@ -119,7 +119,7 @@ savedMarkdown: string
 
 ### name
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L36)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L40)
 
 ```typescript
 name: string
@@ -127,7 +127,7 @@ name: string
 
 ### dirty
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L37)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L41)
 
 ```typescript
 dirty: boolean
@@ -135,7 +135,7 @@ dirty: boolean
 
 ### revision
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L38)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L42)
 
 ```typescript
 revision: number
@@ -143,7 +143,7 @@ revision: number
 
 ### contentVersion
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L40)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L44)
 
 Advances on text changes within this tab and revision, including undo and redo.
 
@@ -153,7 +153,7 @@ contentVersion: number
 
 ### canAutosave
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L42)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L46)
 
 True only after this document has a real local save destination.
 
