@@ -201,6 +201,9 @@
 }
 .sidebar-items button > svg {
   flex-shrink: 0;
+}
+.sidebar-items button > svg:not(.sidebar-chevron),
+.sidebar-edit > svg:not(.sidebar-chevron) {
   width: 15px;
   height: 15px;
 }

@@ -148,21 +148,23 @@ test('empty entry, three views, and lossless source switching', {
       .isChecked(),
     false,
   )
-  await page
-    .getByRole('tab', { name: /^appearance$/i, exact: true })
-    .press('ArrowUp')
-  await page
-    .getByRole('tab', {
-      name: /^code highlighting$/i,
-      exact: true,
-      selected: true,
-    })
-    .waitFor()
+  const appearance = page.getByRole('tab', {
+    name: /^appearance$/i,
+    exact: true,
+  })
+  const previousTab = await appearance.evaluate((tab) => {
+    const tabs = [
+      ...tab.closest('[role="tablist"]').querySelectorAll('[role="tab"]'),
+    ]
+    return tabs[tabs.indexOf(tab) - 1].id
+  })
+  await appearance.press('ArrowUp')
+  await page.locator(`[id="${previousTab}"][aria-selected="true"]`).waitFor()
   assert.equal(
     await page
-      .getByRole('tab', { name: /^code highlighting$/i, exact: true })
-      .getAttribute('aria-selected'),
-    'true',
+      .locator(`[id="${previousTab}"]`)
+      .evaluate((tab) => tab === document.activeElement),
+    true,
   )
   await page.keyboard.press('Escape')
   assert.equal(

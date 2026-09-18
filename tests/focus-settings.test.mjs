@@ -169,6 +169,20 @@ test('status visibility, zen mode, settings groups, search clear and import noti
     await page.evaluate(() => localStorage.getItem('hibi:toolbar')),
     preferences.toolbar,
   )
+  await choose('Source view')
+  await choose('Enter zen mode')
+  await page.waitForFunction(() =>
+    document.activeElement?.classList.contains('cm-content'),
+  )
+  await page.getByRole('button', { name: 'Exit zen mode', exact: true }).click()
+  await page.waitForFunction(() =>
+    document.activeElement?.classList.contains('cm-content'),
+  )
+  assert.match(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    /A quiet place to write/,
+  )
+  await choose('Normal view')
   await page.reload()
   await editor.waitFor()
   assert.equal(

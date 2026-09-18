@@ -52,8 +52,8 @@ Prefix stored keys with your addon ID. Shared `SettingRow` controls are discover
 
 Set `settings` in your manifest to place the default page in a category and choose its icon:
 
-```typescript
-settings: { category: 'editing', icon: 'book-open' }
+```json
+{ "settings": { "category": "editing", "icon": "book-open" } }
 ```
 
 The built-in category IDs are `general`, `editing`, `interface`, and `addons`. Format pages default to `editing`; other addon pages default to `addons`. Supported manifest icons are `activity`, `audio-lines`, `book-open`, `braces`, `code`, `file`, `file-down`, `file-text`, `folder`, `keyboard`, `palette`, `puzzle`, `settings`, `sigma`, `tags`, and `type`. Unknown names use the addon icon.

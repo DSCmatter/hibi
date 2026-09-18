@@ -1122,7 +1122,9 @@ function App() {
         showTitlebar()
         requestAnimationFrame(() =>
           window.document
-            .querySelector<HTMLElement>('.editor-page [contenteditable="true"]')
+            .querySelector<HTMLElement>(
+              mode === 'normal' ? '.tiptap' : '.cm-content',
+            )
             ?.focus(),
         )
         break
