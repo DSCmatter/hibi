@@ -31,6 +31,8 @@ Use `npm run bench:input` to measure document-changing ProseMirror transactions 
 
 `HIBI_INPUT_RUNS=10 npm run bench:input` changes the sample count. Set `HIBI_BENCH_FOREGROUND=1` to focus isolated benchmark windows and include foreground editor behavior. The default keeps test windows hidden; custom caret work may therefore be absent. Benchmark instrumentation is installed by the driver and does not ship with the app.
 
+Set `HIBI_INPUT_ANALYSIS=1` to add a two-second CPU load in an isolated analyzer while measuring typing. The script installs a temporary benchmark-only addon in each disposable profile. Default runs and CodSpeed keep the normal core/default-addon workload.
+
 ## Read CI results
 
 The benchmarks workflow publishes results to CodSpeed for pull requests and `main`. It measures core CPU work and desktop elapsed time separately. Shared-runner desktop timings are noisy, so compare repeated results on the same runner configuration.

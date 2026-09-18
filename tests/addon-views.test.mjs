@@ -49,11 +49,14 @@ test('scoped views preserve sessions, pin documents, contain lazy failures, and 
         h('button', {onClick:() => setCount(count + 1)}, 'Count ' + count));
     }
     const panel = context.views.register({ id:'panel', label:'Fixture panel', location:'panel', lifetime:'session', Content });
+    const staged = panel.open({id:'staged'});
+    if (panel.open({id:'staged'}) !== staged) throw Error('staged instance was not reused');
+    staged.hide();
     const follow = context.views.register({ id:'follow', label:'Following view', Content });
     const lazy = React.lazy(() => new Promise(resolve => { window.finishView = () => resolve({default:Content}); }));
     const slow = context.views.register({ id:'slow', label:'Slow panel', location:'panel', Content:lazy });
     const broken = context.views.register({ id:'broken', label:'Broken panel', location:'panel', Content() { throw Error('view failure'); } });
-    window.viewsFixture = { context, panel, follow, slow, broken, handles: {} };
+    window.viewsFixture = { context, panel, follow, slow, broken, staged, handles: {} };
   }});`,
   )
   const app = await electron.launch({
@@ -74,6 +77,12 @@ test('scoped views preserve sessions, pin documents, contain lazy failures, and 
   })
   await editor.fill('first document')
   await page.waitForFunction(() => window.viewsFixture)
+  await page.evaluate(() => window.viewsFixture.staged.show())
+  await page
+    .getByRole('region', { name: 'Fixture panel' })
+    .getByRole('button', { name: 'Count 0' })
+    .waitFor()
+  await page.evaluate(() => window.viewsFixture.staged.close())
   const first = await page.evaluate(() => {
     const f = window.viewsFixture
     f.handles.pinned = f.panel.open({ id: 'first', binding: 'pinned' })

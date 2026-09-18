@@ -371,6 +371,7 @@ export function useAddons(
           {
             options: Parameters<ViewRegistration['open']>[0]
             handle?: ViewInstance
+            proxy?: ViewInstance
           }
         >()
         const remove = batch.register(`view:${view.id}`, () => {
@@ -389,22 +390,39 @@ export function useAddons(
               throw new Error('This view is no longer available.')
             if (registered) return registered.open(options)
             const key = options.id ?? 'default'
+            const previous = pending.get(key)
+            if (previous?.proxy) {
+              previous.options = options
+              return previous.proxy
+            }
             if (pending.size >= 8 && !pending.has(key))
               throw new Error('Close a plugin view before opening another.')
             const entry = { options } as {
               options: typeof options
               handle?: ViewInstance
+              proxy?: ViewInstance
             }
+            let closed = false
             pending.set(key, entry)
-            return {
+            entry.proxy = {
               id: `${id}.${view.id}:${key}`,
-              show: () => entry.handle?.show(),
+              show() {
+                if (disposed || removed || closed) return
+                if (!entry.handle) {
+                  if (registered) entry.handle = registered.open(entry.options)
+                  else pending.set(key, entry)
+                } else entry.handle.show()
+              },
               hide: () =>
                 entry.handle ? entry.handle.hide() : pending.delete(key),
-              close: () =>
-                entry.handle ? entry.handle.close() : pending.delete(key),
+              close() {
+                closed = true
+                if (entry.handle) entry.handle.close()
+                else pending.delete(key)
+              },
               focus: () => entry.handle?.focus(),
             }
+            return entry.proxy
           },
           dispose() {
             removed = true
@@ -555,6 +573,7 @@ export function useAddons(
                 )
               },
               cancel() {
+                if (disposed) return
                 void window.hibi.cancelAnalysis(id).catch(() => {})
               },
             },

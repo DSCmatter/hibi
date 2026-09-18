@@ -180,8 +180,16 @@ export const addonViews = {
       open: (options) => open(definition, options),
       dispose() {
         if (definitions.get(id) !== definition) return
-        for (const entry of [...instances.values()])
-          if (entry.definition === definition) entry.handle.close()
+        for (const entry of [...instances.values()]) {
+          if (entry.definition !== definition) continue
+          // Removing an addon leaves the shared sidebar open for its workspace fallback.
+          if (entry.definition.location === 'panel') entry.handle.close()
+          else {
+            if (activeSidebar === entry.id) activeSidebar = null
+            if (focusTarget === entry.id) focusTarget = null
+            instances.delete(entry.id)
+          }
+        }
         definitions.delete(id)
         publish()
       },
@@ -189,7 +197,13 @@ export const addonViews = {
   },
   selectSidebar(id: string, input?: unknown) {
     const definition = definitions.get(id)
-    if (!definition || definition.location === 'panel') return
+    if (!definition || definition.location === 'panel') {
+      if (activeSidebar) {
+        activeSidebar = null
+        publish()
+      }
+      return
+    }
     const current = activeSidebar && instances.get(activeSidebar)
     if (current && current.definition === definition) return
     open(definition, { input, focus: false }, false)

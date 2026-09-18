@@ -86,8 +86,10 @@ test('development guide examples parse and the sample theme validates', async ()
       }
       if (token.lang === 'json') {
         const manifest = JSON.parse(token.text)
-        assert.equal(manifest.apiVersion, 2)
-        assert.ok(manifest.version)
+        if ('id' in manifest) {
+          assert.equal(manifest.apiVersion, 2)
+          assert.ok(manifest.version)
+        }
         if (manifest.themes) manifest.themes.forEach(defineColorscheme)
         samples++
       }

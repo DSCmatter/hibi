@@ -6,4 +6,6 @@ Accepted changes are immediately folded into the main-process document snapshot.
 
 Desktop requests that read or act on document content pass through this barrier, including save, autosave, export, tab changes, and addon operations. Native window close also requests a barrier before checking unsaved documents. The legacy whole-source update method remains available and waits for earlier changes.
 
+Preload announces journal readiness before exposing editing APIs. Closing a window before that bridge exists does not wait for a response it cannot send; existing native snapshots still receive the unsaved-change check.
+
 The main-process snapshot survives a renderer crash. It is not a disk journal: a whole-app crash or power loss can still lose unsaved work. Autosave and ordinary saving provide disk persistence, including the existing checks for external file changes.

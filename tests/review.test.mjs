@@ -61,6 +61,15 @@ test('review highlights and fixes both editors, keeps undo, and disposes annotat
     path: 'test-results/review-findings.png',
     animations: 'disabled',
   })
+  await page.getByRole('button', { name: 'Pin review', exact: true }).click()
+  await page
+    .getByRole('region', { name: 'Pinned review', exact: true })
+    .waitFor()
+  await page.screenshot({
+    path: 'test-results/review-pinned.png',
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'Hide panel', exact: true }).click()
   await page
     .getByRole('button', { name: 'Apply: Change “teh” to “the”', exact: true })
     .click()

@@ -38,7 +38,7 @@ test('failed editor attachments stay read-only and disabling the addon restores 
     `export default () => ({
     start(context) {
       context.toolbar.register({id:'probe', label:'Failure probe', onClick(){}});
-      context.editor.registerRich({id:'first', attach() {
+      context.editor.registerRich({id:'a-first', attach() {
         return () => document.documentElement.dataset.partialDetached = 'true';
       }});
       context.editor.registerRich({id:'broken', attach() { throw new Error('rich failed'); }});
@@ -60,7 +60,10 @@ test('failed editor attachments stay read-only and disabling the addon restores 
   })
   const page = await app.firstWindow()
   page.setDefaultTimeout(6000)
-  await page.locator('.rich-pane .document-notice').waitFor()
+  await page
+    .locator('.rich-pane .document-notice')
+    .filter({ hasText: /editor plugin unavailable/i })
+    .waitFor()
   assert.equal(
     await page.locator('.tiptap').evaluate((el) => el.isContentEditable),
     false,

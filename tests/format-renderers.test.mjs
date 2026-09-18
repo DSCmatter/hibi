@@ -186,6 +186,12 @@ test('format plugins render natively, keep previews inert, and run only on reque
       .locator('.format-content span')
       .filter({ hasText: /^8$/ })
       .waitFor()
+      .catch(async (error) => {
+        throw new Error(
+          `${id} preview: ${(await page.locator('.format-preview').innerText()).slice(0, 2000)}`,
+          { cause: error },
+        )
+      })
     assert.equal(await readFile(marker, 'utf8'), 'ran')
     const output = join(temp, `${id}.html`)
     await app.evaluate(({ dialog }, file) => {

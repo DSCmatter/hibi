@@ -7,5 +7,6 @@ These guides cover working on Hibi itself. For an independent extension or theme
 - [Testing changes](testing-changes.md)
 - [Measuring performance](measuring-performance.md)
 - [Document persistence](document-persistence.md)
+- [Analysis isolation](analysis-isolation.md)
 - [Building the app](building-the-app.md)
 - [Writing documentation](writing-documentation.md)

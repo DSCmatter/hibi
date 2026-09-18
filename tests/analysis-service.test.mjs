@@ -259,6 +259,16 @@ test('analysis is process-isolated, bounded, connection-bound, and revoked on ca
   await page.getByRole('button', { name: 'Back to app', exact: true }).click()
   await editor.fill('probe restored')
   assert.equal((await run()).status, 'complete')
+  await editor.fill('delay after re-enable')
+  await page.evaluate(() => {
+    const c = window.analysisFixtures['probe-addon']
+    window.analysisPending = c.analysis.run(c.editor.getTextProjection())
+    window.stoppedAnalyzer.analysis.cancel()
+  })
+  assert.equal(
+    (await page.evaluate(() => window.analysisPending)).status,
+    'complete',
+  )
   await page.reload()
   await page
     .getByRole('textbox', { name: 'Document editor', exact: true })

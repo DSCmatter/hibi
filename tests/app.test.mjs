@@ -60,6 +60,11 @@ test('desktop launch, isolation, offline reload, and recovery', {
       node: 'undefined',
       process: 'undefined',
       api: [
+        'analyzeDocument',
+        'cancelAnalysis',
+        'appendDocumentChange',
+        'flushDocumentChanges',
+        'bootstrap',
         'getAddonDocumentation',
         'openAddonDocumentationLink',
         'getFileAssociations',

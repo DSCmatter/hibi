@@ -40,6 +40,7 @@ if (process.isMainFrame) {
         transport.send(DOCUMENT_CHANNELS.flushed, token, String(error)),
     )
   })
+  transport.send(DOCUMENT_CHANNELS.flushed, 'ready', null)
   let externalPending = false
   ipcRenderer.on(DOCUMENT_CHANNELS.externalPending, () => {
     externalPending = true

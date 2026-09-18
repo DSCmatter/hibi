@@ -348,6 +348,13 @@ function createWindow(): void {
   let allowClose = false
   let confirmingClose = false
   let rendererGone = false
+  let journalReady = false
+  window.webContents.on(
+    'did-start-navigation',
+    (_event, _url, _inPlace, isMainFrame) => {
+      if (isMainFrame) journalReady = false
+    },
+  )
   let flushRequest:
     | { token: string; resolve: () => void; reject: (error: Error) => void }
     | undefined
@@ -358,11 +365,15 @@ function createWindow(): void {
   ) => {
     if (
       event.sender !== window.webContents ||
-      token !== flushRequest?.token ||
       event.senderFrame !== event.sender.mainFrame ||
       !isTrustedRendererUrl(event.senderFrame.url, rendererUrl)
     )
       return
+    if (token === 'ready' && error === null) {
+      journalReady = true
+      return
+    }
+    if (token !== flushRequest?.token) return
     if (error === null) flushRequest?.resolve()
     else
       flushRequest?.reject(
@@ -373,7 +384,8 @@ function createWindow(): void {
   }
   ipcMain.on(DOCUMENT_CHANNELS.flushed, flushed)
   const flushRenderer = async () => {
-    if (rendererGone || window.webContents.isDestroyed()) return
+    if (!journalReady || rendererGone || window.webContents.isDestroyed())
+      return
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
       await new Promise<void>((resolve, reject) => {

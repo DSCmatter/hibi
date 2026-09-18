@@ -31,7 +31,7 @@ export function AddonSidebar({
 }) {
   const state = useSyncExternalStore(addonViews.subscribe, addonViews.snapshot)
   useEffect(() => {
-    if (open && view) addonViews.selectSidebar(view.id, input)
+    if (open) addonViews.selectSidebar(view?.id ?? 'workspace', input)
   }, [open, view, input])
   return (
     <Sidebar

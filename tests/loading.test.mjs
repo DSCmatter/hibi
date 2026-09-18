@@ -71,12 +71,12 @@ test('loading page is centered, animates, and respects reduced motion', {
   })
   const page = await app.firstWindow()
   await page.getByRole('textbox', { name: /document editor/i }).waitFor()
-  const state = await page.evaluate(() => window.hibi.getDocument())
+  const state = await page.evaluate(() => window.hibi.bootstrap.document())
   await app.evaluate(({ ipcMain }, state) => {
     globalThis.releaseLoading = []
-    ipcMain.removeHandler('document:get')
+    ipcMain.removeHandler('bootstrap:document')
     ipcMain.handle(
-      'document:get',
+      'bootstrap:document',
       () =>
         new Promise((resolve) =>
           globalThis.releaseLoading.push(() => resolve(state)),

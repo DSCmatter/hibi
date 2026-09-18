@@ -391,7 +391,10 @@ function App() {
   const addonHost = useAddons(
     {
       openSidebar: selectSidebarView,
-      closeSidebar: () => closeSidebar(false),
+      closeSidebar: () => {
+        if (sidebarOpen && !settingsOpen) closeSidebar(false)
+        else setSidebarOpen(false)
+      },
       async focusDocument(tabId) {
         if (!currentDocument.current?.tabs.some((tab) => tab.id === tabId))
           return false
