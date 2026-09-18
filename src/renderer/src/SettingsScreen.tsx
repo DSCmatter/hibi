@@ -652,9 +652,11 @@ export function SettingsScreen({
                         .join(' · ')}
                     >
                       {manifest.id === 'markdown' ? (
-                        <span className="setting-availability">
-                          Always available
-                        </span>
+                        <Toggle
+                          id={`plugin-format-${manifest.id}`}
+                          checked
+                          disabled
+                        />
                       ) : (
                         <Toggle
                           id={`plugin-format-${manifest.id}`}

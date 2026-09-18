@@ -27,7 +27,7 @@ export function DocumentNotice({
       role="status"
       aria-live="polite"
     >
-      <Icon size={20} aria-hidden />
+      <Icon size={variant === 'warning' ? 16 : 20} aria-hidden />
       <div>
         <p className="document-notice-title">{title}</p>
         {message && <p>{errorMessage(message)}</p>}

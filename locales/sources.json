@@ -123,11 +123,6 @@
   "c91da2e0203b": [
     "src/shared/hotkeys.ts"
   ],
-  "0fda37724cde": [
-    "src/renderer/src/AddonSettings.tsx",
-    "src/renderer/src/FormatsSettings.tsx",
-    "src/renderer/src/SettingsScreen.tsx"
-  ],
   "b7209017b20b": [
     "src/main/sideload.ts"
   ],
@@ -2282,7 +2277,6 @@
   ],
   "74a883a037bc": [
     "src/main/index.ts",
-    "src/renderer/src/FormatsSettings.tsx",
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/Titlebar.tsx"
   ],

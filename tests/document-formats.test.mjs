@@ -127,18 +127,12 @@ test('plain text stays literal and disabled addons stay out of formats', {
   await page
     .getByRole('button', { name: 'Markdown settings', exact: true })
     .click()
-  assert.equal(
-    await page
-      .getByRole('checkbox', { name: 'Enable format', exact: true })
-      .count(),
-    0,
-  )
-  assert.equal(
-    await page
-      .locator('#settings-plugin-markdown .setting-availability')
-      .textContent(),
-    'Always available',
-  )
+  const markdownToggle = page.getByRole('checkbox', {
+    name: 'Enable format',
+    exact: true,
+  })
+  assert.equal(await markdownToggle.isChecked(), true)
+  assert.equal(await markdownToggle.isDisabled(), true)
   const states = await page.evaluate(() =>
     window.hibi.setAddonEnabled('markdown', false),
   )

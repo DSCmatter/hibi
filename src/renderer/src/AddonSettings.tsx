@@ -224,7 +224,12 @@ export function AddonSettings({
                 </Button>
               )}
               {manifest.id === 'markdown' ? (
-                <span className="setting-availability">Always available</span>
+                <Toggle
+                  id={`addon-${manifest.id}`}
+                  aria-label={manifest.name}
+                  checked
+                  disabled
+                />
               ) : (
                 <Toggle
                   id={`addon-${manifest.id}`}

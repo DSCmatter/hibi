@@ -322,9 +322,13 @@ span.select-control > svg {
   margin-bottom: 0;
 }
 .document-notice[data-variant="warning"] {
+  align-items: center;
   color: var(--status-warning);
   background: color-mix(in srgb, var(--status-warning) 8%, var(--surface));
   border-color: color-mix(in srgb, var(--status-warning) 40%, var(--border));
+}
+.document-notice[data-variant="warning"] > svg {
+  margin-top: 0;
 }
 * {
   scrollbar-width: thin;

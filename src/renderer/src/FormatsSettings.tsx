@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { Search, Settings as SettingsIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Addon, AddonState } from '../../addons/api'
 import { errorMessage } from '../../shared/errors'
@@ -8,6 +8,7 @@ import {
 } from '../../shared/file-associations'
 import {
   Button,
+  IconButton,
   Panel,
   PanelMessage,
   SettingRow,
@@ -156,7 +157,7 @@ export function FormatsSettings({
           description=".txt · Built in"
         >
           {defaultButton('text')}
-          <span className="setting-availability">Always available</span>
+          <Toggle id="format-text" checked disabled />
         </SettingRow>
         {formats.map(({ manifest }) => (
           <SettingRow
@@ -171,14 +172,15 @@ export function FormatsSettings({
               .join(' · ')}
           >
             {defaultButton(manifest.id)}
-            <Button
+            <IconButton
               onClick={() => open(`plugin-${manifest.id}`)}
               aria-label={`${manifest.name} settings`}
+              title={`${manifest.name} settings`}
             >
-              Settings
-            </Button>
+              <SettingsIcon size={16} aria-hidden />
+            </IconButton>
             {manifest.id === 'markdown' ? (
-              <span className="setting-availability">Always available</span>
+              <Toggle id={`format-${manifest.id}`} checked disabled />
             ) : (
               <Toggle
                 id={`format-${manifest.id}`}
