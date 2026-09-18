@@ -34,3 +34,19 @@ The third stage removes eager CodeMirror imports from rich-editor cursor and scr
 The same ten-run startup benchmark now measures 464.6 ms median to editable and 471.3 ms to editor plus workspace-list readiness for fresh profiles, with p95 at 731.6 and 738.7 ms. Initial renderer JavaScript fell from 1,462,943 to 1,175,396 bytes. Warm readiness median was 456.8 ms. These local samples support the reduction; they do not establish a sub-500 ms tail or packaged foreground guarantee.
 
 The fourth stage adds `applySourceEdits()`: exact UTF-16 ranges, expected text, tab/revision/content-version validation, composition and busy guards, bounded idempotency, and one isolated CodeMirror undo operation. It updates addon snapshots synchronously and queues native persistence before observers can request a save. A real installed review-addon fixture tests multi-edit corrections, stale proposals, duplicate requests, immediate native reads, undo isolation, tab changes, and addon disposal. Rich edits return an explicit unsupported-view result; approximate navigation mappings are not used. The first full check of this stage passed all 162 tests; final checks also cover the added synchronous busy guard.
+
+The fifth stage maps existing code decorations and rebuilds the affected block range, with a full refresh for language changes. Differential tests compare it with full highlighting through 120 edits plus nested blocks and preference changes. The foreground benchmark now waits for its window to exist and verifies document focus before measuring.
+
+The complete repository check passed all 163 tests, including build, type checks, generated API references, local documentation links, UI copy catalogs, and lint (existing warnings remain).
+
+## Final measurements
+
+The latest ten-run fresh-profile startup result is 493.3 ms median to editable and 500.9 ms to editor plus workspace-list readiness, with readiness p95 at 515.3 ms. Warm readiness median is 470.5 ms. Initial renderer JavaScript is 1,179,022 bytes. The earlier 471.3 ms fresh-profile result shows why one run should not establish a sub-500 ms guarantee.
+
+Five repeated hidden-window input runs measured transaction p95 at 1.3 ms for blank notes, 2.8 ms for large notes, and 0.9 ms for code-heavy notes. Three foreground runs with verified document focus measured 1.0, 4.2, and 0.9 ms respectively. There is no foreground baseline for comparison. These CPU timings exclude deferred layout, painting, and compositor presentation. The driver endpoint still measures roughly 42–65 ms for the first key, so the first-response target remains unmet.
+
+## Remaining work
+
+Full-document Markdown serialization, outline scanning, and source IPC remain on the editing path. Incremental serialization needs round-trip differential coverage before replacing them. An ordered edit journal and explicit flush barriers need save, crash-recovery, close, and tab-replacement tests; this pass preserves the immediate full-source persistence path.
+
+Rich-text edit support still needs exact source projections. Shared review decorations, capability-specific SDK loading, staged schema activation, preservation levels, and isolated services remain open. The installed review addon is an integration-test fixture, not a shipped review plugin. Preload bootstrap overlap and the startup-workspace drain also remain unchanged. No Rust ports or snapshot experiments were made.

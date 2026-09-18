@@ -34,3 +34,5 @@ Keep correctness tests alongside performance work. Faster startup is useful only
 Formatting buttons refresh together before the next frame. Document changes and undo remain synchronous. Editor extensions are configured once per editor configuration, and the command list is built when the palette opens. Capability checks still use the current editor state, including selections, tables, and history.
 
 Blank rich-editor startup leaves CodeMirror unloaded. Source view loads its editor on demand, while code fences can load their language parsers independently. Cursor and linked-scroll code use the mounted source view without importing its runtime into the initial renderer bundle.
+
+Code highlighting maps existing decorations through edits and refreshes the affected block range. Language changes trigger a full refresh. The differential test compares incremental results with full highlighting through text edits, block conversion, deletion, nested blocks, and language changes.

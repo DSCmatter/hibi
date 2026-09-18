@@ -34,6 +34,7 @@ try {
       await mkdir(profile)
       const app = await launchBenchmarkApp(profile)
       try {
+        const page = await app.firstWindow()
         if (foreground)
           await app.evaluate(({ BrowserWindow }) => {
             const window = BrowserWindow.getAllWindows()[0]
@@ -41,8 +42,11 @@ try {
             window.show()
             window.focus()
           })
-        const page = await app.firstWindow()
         await waitForEditor(page)
+        if (foreground)
+          await page.waitForFunction(() => document.hasFocus(), undefined, {
+            timeout: 5000,
+          })
         if (fixture.title) {
           await selectBenchmarkFile(app, file)
           await openBenchmarkDocument(app, page, fixture.title)
