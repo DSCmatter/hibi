@@ -159,6 +159,12 @@ test('dependency settings discover addon requirements, manage shared paths, and 
     exact: true,
   })
   assert.equal(await pathField.inputValue(), custom.path)
+  await pathField.fill(custom.path)
+  await pathField.press('Enter')
+  await card
+    .getByRole('status')
+    .getByText(/^Executable available · v\d+/)
+    .waitFor()
   await pathField.fill(join(profile, 'missing executable'))
   await pathField.press('Enter')
   await card

@@ -48,8 +48,8 @@ function DependencyPath({
     }
   }
   const commit = () => {
-    if (draft !== null && draft !== (tool.path ?? ''))
-      void apply(draft ? { path: draft } : 'reset')
+    if (draft === (tool.path ?? '')) setDraft(null)
+    else if (draft !== null) void apply(draft ? { path: draft } : 'reset')
   }
   const invalid =
     !!error ||
