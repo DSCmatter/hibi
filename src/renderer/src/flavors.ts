@@ -28,7 +28,7 @@ const registry = new Map<string, RegisteredFlavor>()
 const listeners = new Set<() => void>()
 let snapshot: RegisteredFlavor[] = []
 const publish = () => {
-  snapshot = [...registry.values()]
+  snapshot = [...registry.values()].sort((a, b) => a.id.localeCompare(b.id))
   for (const listener of listeners) listener()
 }
 export const flavors = {

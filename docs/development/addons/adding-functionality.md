@@ -54,13 +54,13 @@ Listen to `onDocumentChange()` for text changes and `onProjectionChange()` for v
 
 ## Add a toolbar action
 
-Commands and toolbar buttons are separate registrations. Reuse the same function when both should do the same thing.
+Commands and toolbar buttons are separate registrations. Route the toolbar action through `commands.execute()` to use the command's lifecycle checks and diagnostics.
 
 ```typescript
 const greet = () => context.notify('Hello.')
 
 context.commands.register({ id: 'greet', label: 'Say hello', run: greet })
-context.toolbar.register({ id: 'greet', label: 'Say hello', onClick: greet })
+context.toolbar.register({ id: 'greet', label: 'Say hello', onClick: () => context.commands.execute('greet') })
 ```
 
 Toolbar and status-bar registrations return handles with `update` and `dispose` methods. Update an existing item when its value changes. Status-bar items should show useful state, such as a count, rather than repeat the addon name.

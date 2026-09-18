@@ -12,7 +12,9 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 - [ADDON_API_VERSION](ADDON_API_VERSION.md)
 - [AddonApp](AddonApp.md)
 - [AddonAuthor](AddonAuthor.md)
+- [AddonCapability](AddonCapability.md)
 - [AddonCommand](AddonCommand.md)
+- [AddonCommandDescriptor](AddonCommandDescriptor.md)
 - [AddonContext](AddonContext.md)
 - [AddonManifest](AddonManifest.md)
 - [AddonSlashCommand](AddonSlashCommand.md)
@@ -49,6 +51,8 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 
 ## Sideloading
 
+- [CapabilityFactory](CapabilityFactory.md)
+- [CapabilitySdk](CapabilitySdk.md)
 - [sdk](sdk.md)
 - [SideloadFactory](SideloadFactory.md)
 
@@ -201,6 +205,7 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 
 ## Document analysis
 
+- [projectionRange](projectionRange.md)
 - [TextDecoration](TextDecoration.md)
 - [TextProjection](TextProjection.md)
 

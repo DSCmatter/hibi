@@ -528,6 +528,9 @@
     "src/renderer/src/CommandPalette.tsx",
     "src/shared/hotkeys.ts"
   ],
+  "ecf83f59ca6c": [
+    "src/main/sideload.ts"
+  ],
   "b269dc4e81a5": [
     "src/renderer/src/CommandPalette.tsx"
   ],
@@ -708,6 +711,9 @@
   "9c78aa9fb78e": [
     "src/renderer/src/main.tsx"
   ],
+  "5dc1e07e8c69": [
+    "src/renderer/src/main.tsx"
+  ],
   "6704c0f053f8": [
     "src/renderer/src/HotkeySettings.tsx"
   ],
@@ -731,6 +737,9 @@
   ],
   "60acc53f13a5": [
     "src/ui/ColorschemeSettings.tsx"
+  ],
+  "a2e7d5bd8495": [
+    "src/main/sideload.ts"
   ],
   "e736541c1769": [
     "src/renderer/src/FormatsSettings.tsx"
@@ -870,6 +879,9 @@
   "02cdaabfca80": [
     "src/renderer/src/workspace-menu.ts"
   ],
+  "59ff98e399dd": [
+    "src/renderer/src/registration-batch.ts"
+  ],
   "4fc52a3c4c55": [
     "src/addons/diagnostics/Settings.tsx"
   ],
@@ -940,6 +952,9 @@
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/settings-categories.ts"
   ],
+  "2d65a6a59c86": [
+    "src/renderer/src/addons.ts"
+  ],
   "78c769f21aa4": [
     "src/renderer/src/Editor.tsx",
     "src/renderer/src/SourceEditor.tsx"
@@ -955,6 +970,9 @@
   ],
   "1d183389ad2b": [
     "src/renderer/src/Titlebar.tsx"
+  ],
+  "f1056ff3b7e2": [
+    "src/renderer/src/addons.ts"
   ],
   "61a62a841f54": [
     "src/addons/diagnostics/Settings.tsx",
@@ -985,6 +1003,9 @@
     "src/renderer/src/FlavorPicker.tsx"
   ],
   "6a3107f1f0fc": [
+    "src/renderer/src/addons.ts"
+  ],
+  "927a50daa425": [
     "src/renderer/src/addons.ts"
   ],
   "ea91f021982f": [
@@ -2693,8 +2714,17 @@
   "c89de18bbda0": [
     "src/main/addon-download.ts"
   ],
+  "90d9d5c6ec27": [
+    "src/main/sideload.ts"
+  ],
+  "5be6b50155f3": [
+    "src/main/sideload.ts"
+  ],
   "f71617647792": [
     "src/main/sideload.ts"
+  ],
+  "b3aaffb41ae2": [
+    "src/renderer/src/addons.ts"
   ],
   "08de2c73e925": [
     "src/main/addon-download.ts"
@@ -2711,10 +2741,16 @@
   "58bb3944d226": [
     "src/main/sideload.ts"
   ],
+  "1e152cb5f367": [
+    "src/renderer/src/addons.ts"
+  ],
   "217fd53d2b6e": [
     "src/main/sideload.ts"
   ],
   "46a7d61e52d1": [
+    "src/main/sideload.ts"
+  ],
+  "88aa7ff96fcd": [
     "src/main/sideload.ts"
   ],
   "2440b28c8988": [
@@ -2728,6 +2764,9 @@
   ],
   "7da468d62980": [
     "src/main/addons.ts"
+  ],
+  "14e2725ada95": [
+    "src/renderer/src/addons.ts"
   ],
   "da528ad51e33": [
     "src/main/media.ts"
@@ -2876,6 +2915,9 @@
   "b29376d8e035": [
     "src/main/links.ts"
   ],
+  "1f5c15aebf70": [
+    "src/renderer/src/addons.ts"
+  ],
   "8572af154dbc": [
     "src/main/addons.ts"
   ],
@@ -2886,6 +2928,7 @@
     "src/main/addons.ts"
   ],
   "0d3f68fa85cf": [
+    "src/renderer/src/addons.ts",
     "src/renderer/src/document-edits.ts"
   ],
   "c58889003b80": [
@@ -2908,6 +2951,9 @@
   ],
   "7ecbba2926b1": [
     "src/shared/colorschemes.ts"
+  ],
+  "77e59683be73": [
+    "src/renderer/src/addons.ts"
   ],
   "53d696e8d077": [
     "src/addons/typing-speed/index.ts"

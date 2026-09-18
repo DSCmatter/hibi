@@ -11,6 +11,7 @@ import {
   type AddonApp,
   type AddonCommand,
   type AddonContext,
+  type AddonManifest,
   type AddonState,
   compatibleAddonManifest,
   type MarkdownExtension,
@@ -43,6 +44,7 @@ import { explorerDecorations } from './explorer-decorations'
 import { flavors, renderMarkdown, renderMarkdownAsync } from './flavors'
 import { projectMarkdown } from './markdown'
 import { markdownSyntax } from './markdown-syntax'
+import { registrationBatch } from './registration-batch'
 import { toolbar } from './toolbar'
 
 export { addons } from './addon-registry'
@@ -78,7 +80,11 @@ type Environment = Omit<
   openSidebar: (id: string, input?: unknown) => void
 }
 
-export function useAddons(environment: Environment, documentName?: string) {
+export function useAddons(
+  environment: Environment,
+  documentName?: string,
+  activeView: import('../../shared/document-types').DocumentView = 'normal',
+) {
   const catalog = useSyncExternalStore(
     addonRegistry.subscribe,
     addonRegistry.snapshot,
@@ -97,12 +103,30 @@ export function useAddons(environment: Environment, documentName?: string) {
     new Map(),
   )
   const [loadFailed, setLoadFailed] = useState(false)
+  const [requested, setRequested] = useState<ReadonlySet<string>>(new Set())
+  const relevant = useCallback(
+    (manifest: AddonManifest) =>
+      requested.has(manifest.id) ||
+      (manifest.activation === 'command'
+        ? false
+        : manifest.activation === 'source'
+          ? activeView !== 'normal'
+          : manifest.activation === 'rich'
+            ? activeView !== 'markdown'
+            : true),
+    [activeView, requested],
+  )
   const required = useMemo(
     () =>
       new Set(
         catalog
           .filter((addon) => {
-            if (addon.manifest.startup === 'background') return false
+            if (!relevant(addon.manifest)) return false
+            if (
+              addon.manifest.startup === 'background' ||
+              addon.manifest.activation === 'command'
+            )
+              return false
             const extensions = addon.manifest.fileExtensions
             return (
               !extensions?.length ||
@@ -113,7 +137,7 @@ export function useAddons(environment: Environment, documentName?: string) {
           })
           .map((addon) => addon.manifest.id),
       ),
-    [catalog, documentName],
+    [catalog, documentName, relevant],
   )
   const enabledStates = states.filter((state) => state.enabled)
   const ready =
@@ -123,7 +147,13 @@ export function useAddons(environment: Environment, documentName?: string) {
       (state) => !required.has(state.id) || settled.has(state.id),
     )
   const allReady =
-    loaded && enabledStates.every((state) => settled.has(state.id))
+    loaded &&
+    enabledStates.every(
+      (state) =>
+        !catalog.some(
+          (addon) => addon.manifest.id === state.id && relevant(addon.manifest),
+        ) || settled.has(state.id),
+    )
   const sourceOnly =
     loadFailed ||
     enabledStates.some(
@@ -137,6 +167,74 @@ export function useAddons(environment: Environment, documentName?: string) {
   const views = useRef(new Map<string, SidebarView>()).current
   const [sidebarViews, setSidebarViews] = useState<SidebarView[]>([])
   const registered = useRef(new Map<string, RegisteredCommand>()).current
+  const started = useRef(new Set<string>()).current
+  const activation = useRef(
+    new Map<
+      string,
+      {
+        promise: Promise<void>
+        resolve: () => void
+        reject: (error: unknown) => void
+      }
+    >(),
+  ).current
+  const currentActivation = useRef({ states, settled, catalog })
+  currentActivation.current = { states, settled, catalog }
+  const executeCommand = useCallback(
+    async (owner: string, commandId: string) => {
+      if (
+        !currentActivation.current.states.some(
+          (state) => state.id === owner && state.enabled,
+        )
+      )
+        throw new Error('Enable this addon before running its command.')
+      if (!started.has(owner)) {
+        if (currentActivation.current.settled.get(owner) === false)
+          throw new Error(
+            'This addon could not start. Turn it off and on in Addons to retry.',
+          )
+        let pending = activation.get(owner)
+        if (!pending) {
+          let resolve!: () => void, reject!: (error: unknown) => void
+          const promise = new Promise<void>((yes, no) => {
+            resolve = yes
+            reject = no
+          })
+          const timer = setTimeout(() => {
+            activation.delete(owner)
+            reject(new Error('The addon did not finish starting. Try again.'))
+          }, 20000)
+          pending = {
+            promise,
+            resolve: () => {
+              clearTimeout(timer)
+              activation.delete(owner)
+              resolve()
+            },
+            reject: (error) => {
+              clearTimeout(timer)
+              activation.delete(owner)
+              reject(error)
+            },
+          }
+          activation.set(owner, pending)
+          void promise.catch(() => {})
+          setRequested((current) => new Set([...current, owner]))
+        }
+        await pending.promise
+      }
+      const command = registered.get(`${owner}.${commandId}`)
+      if (
+        !command ||
+        !currentActivation.current.states.some(
+          (state) => state.id === owner && state.enabled,
+        )
+      )
+        throw new Error('This command is no longer available.')
+      await command.run()
+    },
+    [activation, registered, started],
+  )
   const extensions = useRef(
     new Map<string, MarkdownExtension & { addonId: string }>(),
   ).current
@@ -147,6 +245,15 @@ export function useAddons(environment: Environment, documentName?: string) {
     new Map<string, RichExtension & { addonId: string }>(),
   ).current
   const [richExtensions, setRichExtensions] = useState<RichExtension[]>([])
+  const publishRich = useCallback(() => {
+    setRichExtensions((current) => {
+      const next = [...rich.values()].sort((a, b) => a.id.localeCompare(b.id))
+      return current.length === next.length &&
+        current.every((entry, index) => entry === next[index])
+        ? current
+        : next
+    })
+  }, [rich])
   const sources = useRef(
     new Map<string, SourceExtension & { addonId: string }>(),
   ).current
@@ -155,7 +262,9 @@ export function useAddons(environment: Environment, documentName?: string) {
   )
   const publishSources = useCallback(() => {
     setSourceExtensions((current) => {
-      const next = [...sources.values()]
+      const next = [...sources.values()].sort((a, b) =>
+        a.id.localeCompare(b.id),
+      )
       return current.length === next.length &&
         current.every((entry, index) => entry === next[index])
         ? current
@@ -164,7 +273,9 @@ export function useAddons(environment: Environment, documentName?: string) {
   }, [sources])
   const publishExtensions = useCallback(() => {
     setMarkdownExtensions((current) => {
-      const next = [...extensions.values()]
+      const next = [...extensions.values()].sort((a, b) =>
+        a.id.localeCompare(b.id),
+      )
       return current.length === next.length &&
         current.every((entry, index) => entry === next[index])
         ? current
@@ -180,8 +291,10 @@ export function useAddons(environment: Environment, documentName?: string) {
     return () => {
       mounted.current = false
       for (const runtime of running.values()) runtime.stop()
+      for (const request of activation.values())
+        request.reject(new Error('The addon host stopped.'))
     }
-  }, [running])
+  }, [running, activation])
   useEffect(() => {
     void window.hibi.bootstrap
       .addons()
@@ -202,7 +315,8 @@ export function useAddons(environment: Environment, documentName?: string) {
     for (const [id, runtime] of running) {
       if (
         !states.some((state) => state.id === id && state.enabled) ||
-        !catalog.includes(runtime.addon)
+        !catalog.includes(runtime.addon) ||
+        !relevant(runtime.addon.manifest)
       )
         runtime.stop()
     }
@@ -210,6 +324,7 @@ export function useAddons(environment: Environment, documentName?: string) {
       const id = addon.manifest.id
       if (
         running.has(id) ||
+        !relevant(addon.manifest) ||
         settled.get(id) === false ||
         (!required.has(id) && !ready) ||
         !states.some((state) => state.id === id && state.enabled)
@@ -227,6 +342,27 @@ export function useAddons(environment: Environment, documentName?: string) {
       const cleanups = new Set<() => void>()
       const editScope = documentEdits.scope(() => latest.current.isBusy())
       const annotationScope = editorAnnotations.scope(id)
+      const batch = registrationBatch(addon.manifest.capabilities !== undefined)
+      const assertSchemaActivation = () => {
+        if (
+          addon.manifest.activation ||
+          (addon.manifest.capabilities !== undefined &&
+            addon.manifest.startup === 'background')
+        )
+          throw new Error(
+            'Editor-view and command activation cannot register document syntax. Use startup activation for this addon.',
+          )
+      }
+      const assertInputActivation = () => {
+        if (
+          addon.manifest.capabilities !== undefined &&
+          (addon.manifest.activation === 'command' ||
+            addon.manifest.startup === 'background')
+        )
+          throw new Error(
+            'Editor integrations must finish before input is enabled. Use startup or editor-view activation for this addon.',
+          )
+      }
       const observe = (
         subscribe: (listener: () => void) => () => void,
         listener: () => void,
@@ -248,6 +384,10 @@ export function useAddons(environment: Environment, documentName?: string) {
       const stop = () => {
         if (disposed) return
         disposed = true
+        started.delete(id)
+        activation
+          .get(id)
+          ?.reject(new Error('The addon stopped before its command could run.'))
         editScope.dispose()
         annotationScope.dispose()
         running.delete(id)
@@ -265,7 +405,7 @@ export function useAddons(environment: Environment, documentName?: string) {
           if (extension.addonId === id) sources.delete(key)
         for (const [key, extension] of rich)
           if (extension.addonId === id) rich.delete(key)
-        if (mounted.current) setRichExtensions([...rich.values()])
+        if (mounted.current) publishRich()
         for (const [key, item] of status)
           if (item.addonId === id) status.delete(key)
         if (mounted.current) setStatusItems([...status.values()])
@@ -277,6 +417,7 @@ export function useAddons(environment: Environment, documentName?: string) {
           disposeAll(
             [
               () => addon.stop?.(),
+              () => batch.dispose(),
               ...callbacks,
               () => dialogScope.dispose(),
               () => toastScope.dispose(),
@@ -336,26 +477,55 @@ export function useAddons(environment: Environment, documentName?: string) {
                     `This plugin supplied a duplicate or invalid sidebar view: ${key}.`,
                   )
                 const entry = { ...view, id: key }
-                views.set(key, entry)
-                setSidebarViews([...views.values()])
-                const remove = () => {
-                  if (views.get(key) !== entry) return
-                  views.delete(key)
-                  if (mounted.current) setSidebarViews([...views.values()])
-                  cleanups.delete(remove)
-                }
+                let pendingOpen = false,
+                  pendingInput: unknown
+                const remove = batch.register(`view:${view.id}`, () => {
+                  views.set(key, entry)
+                  setSidebarViews([...views.values()])
+                  if (pendingOpen) latest.current.openSidebar(key, pendingInput)
+                  return () => {
+                    if (views.get(key) !== entry) return
+                    views.delete(key)
+                    if (mounted.current) setSidebarViews([...views.values()])
+                    cleanups.delete(remove)
+                  }
+                })
                 cleanups.add(remove)
                 return {
                   open(input) {
-                    if (!disposed && views.get(key) === entry)
+                    if (disposed) return
+                    if (views.get(key) === entry)
                       latest.current.openSidebar(key, input)
+                    else {
+                      pendingOpen = true
+                      pendingInput = input
+                    }
                   },
                   dispose: remove,
                 }
               },
             },
             toasts: toastScope.api,
-            toolbar: toolbarScope.api,
+            toolbar: {
+              ...toolbarScope.api,
+              register(item) {
+                let current = item
+                let handle:
+                  | ReturnType<AddonContext['toolbar']['register']>
+                  | undefined
+                const remove = batch.register(`toolbar:${item.id}`, () => {
+                  handle = toolbarScope.api.register(current)
+                  return () => handle?.dispose()
+                })
+                return {
+                  update(changes) {
+                    current = { ...current, ...changes }
+                    handle?.update(changes)
+                  },
+                  dispose: remove,
+                }
+              },
+            },
             tooltips: tooltipScope.api,
             app,
             styles: overrides.styles,
@@ -429,7 +599,10 @@ export function useAddons(environment: Environment, documentName?: string) {
               },
               registerSyntax(feature) {
                 if (disposed) return () => {}
-                const remove = markdownSyntax.register(id, feature)
+                assertSchemaActivation()
+                const remove = batch.register(`syntax:${feature.id}`, () =>
+                  markdownSyntax.register(id, feature),
+                )
                 cleanups.add(remove)
                 return () => {
                   remove()
@@ -472,10 +645,12 @@ export function useAddons(environment: Environment, documentName?: string) {
               },
               registerDocumentFormat(format) {
                 if (disposed) return () => {}
-                const remove = documentFormats.register(
-                  id,
-                  format,
-                  addon.manifest.fileExtensions ?? [],
+                const remove = batch.register(`format:${format.id}`, () =>
+                  documentFormats.register(
+                    id,
+                    format,
+                    addon.manifest.fileExtensions ?? [],
+                  ),
                 )
                 cleanups.add(remove)
                 return () => {
@@ -497,7 +672,9 @@ export function useAddons(environment: Environment, documentName?: string) {
               },
               registerCodeLanguage(language) {
                 if (disposed) return () => {}
-                const remove = codeLanguages.register(id, language)
+                const remove = batch.register(`language:${language.id}`, () =>
+                  codeLanguages.register(id, language),
+                )
                 const cleanup = () => {
                   remove()
                   cleanups.delete(cleanup)
@@ -508,7 +685,10 @@ export function useAddons(environment: Environment, documentName?: string) {
               resolveCodeLanguage: codeLanguages.resolve,
               registerFlavor(flavor) {
                 if (disposed) return () => {}
-                const remove = flavors.register(id, flavor)
+                assertSchemaActivation()
+                const remove = batch.register(`flavor:${flavor.id}`, () =>
+                  flavors.register(id, flavor),
+                )
                 const cleanup = () => {
                   remove()
                   cleanups.delete(cleanup)
@@ -562,15 +742,16 @@ export function useAddons(environment: Environment, documentName?: string) {
               },
               registerRich(extension) {
                 if (disposed) return () => {}
+                assertInputActivation()
                 const key = `${id}.${extension.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(extension.id) || rich.has(key))
                   throw new Error(
                     `This plugin supplied a duplicate or invalid editor feature: ${key}.`,
                   )
-                rich.set(key, {
+                const entry = {
                   id: key,
                   addonId: id,
-                  attach(editor) {
+                  attach(editor: Parameters<RichExtension['attach']>[0]) {
                     if (disposed) return () => {}
                     try {
                       const detach = performanceDiagnostics.measure(
@@ -596,26 +777,27 @@ export function useAddons(environment: Environment, documentName?: string) {
                       )
                     }
                   },
-                })
-                if (mounted.current) setRichExtensions([...rich.values()])
-                let active = true
-                return () => {
-                  if (!active || disposed) return
-                  active = false
-                  if (rich.delete(key) && mounted.current)
-                    setRichExtensions([...rich.values()])
                 }
+                return batch.register(`rich:${extension.id}`, () => {
+                  rich.set(key, entry)
+                  if (mounted.current) publishRich()
+                  return () => {
+                    if (rich.delete(key) && !disposed && mounted.current)
+                      publishRich()
+                  }
+                })
               },
               runCommand: (command) =>
                 disposed ? Promise.resolve(false) : app.runCommand(command),
               registerSource(extension) {
                 if (disposed) return () => {}
+                assertInputActivation()
                 const key = `${id}.${extension.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(extension.id) || sources.has(key))
                   throw new Error(
                     `This plugin supplied a duplicate or invalid source-editor feature: ${key}.`,
                   )
-                sources.set(key, {
+                const entry = {
                   id: key,
                   addonId: id,
                   async create() {
@@ -634,18 +816,22 @@ export function useAddons(environment: Environment, documentName?: string) {
                       )
                     }
                   },
-                })
-                if (mounted.current) publishSources()
-                return () => {
-                  sources.delete(key)
-                  if (!disposed && mounted.current) publishSources()
                 }
+                return batch.register(`source:${extension.id}`, () => {
+                  sources.set(key, entry)
+                  if (mounted.current) publishSources()
+                  return () => {
+                    sources.delete(key)
+                    if (!disposed && mounted.current) publishSources()
+                  }
+                })
               },
               updateMarkdown(transform, options) {
                 if (!disposed) latest.current.updateMarkdown(transform, options)
               },
               registerMarkdown(extension) {
                 if (disposed) return () => {}
+                assertSchemaActivation()
                 const key = `${id}.${extension.id}`
                 if (
                   !/^[a-z][a-z0-9-]*$/.test(extension.id) ||
@@ -654,11 +840,11 @@ export function useAddons(environment: Environment, documentName?: string) {
                   throw new Error(
                     `This plugin supplied a duplicate or invalid Markdown feature: ${key}.`,
                   )
-                extensions.set(key, {
+                const entry = {
                   id: key,
                   addonId: id,
                   ...(extension.Editor ? { Editor: extension.Editor } : {}),
-                  parse(source) {
+                  parse(source: string) {
                     if (disposed) return null
                     try {
                       return extension.parse(source)
@@ -671,15 +857,22 @@ export function useAddons(environment: Environment, documentName?: string) {
                       }
                     }
                   },
-                })
-                if (mounted.current) publishExtensions()
-                return () => {
-                  extensions.delete(key)
-                  if (!disposed && mounted.current) publishExtensions()
                 }
+                return batch.register(`projection:${extension.id}`, () => {
+                  extensions.set(key, entry)
+                  if (mounted.current) publishExtensions()
+                  return () => {
+                    extensions.delete(key)
+                    if (!disposed && mounted.current) publishExtensions()
+                  }
+                })
               },
             },
             commands: {
+              execute: (command) =>
+                disposed
+                  ? Promise.reject(new Error('This addon has stopped.'))
+                  : executeCommand(id, command),
               getSlashCommands() {
                 if (disposed) return []
                 const source = latest.current.getMarkdown()
@@ -700,7 +893,7 @@ export function useAddons(environment: Environment, documentName?: string) {
                     `This plugin supplied a duplicate or invalid command: ${key}.`,
                   )
                 let active = true
-                registered.set(key, {
+                const entry: RegisteredCommand = {
                   ...command,
                   id: key,
                   addonId: id,
@@ -741,15 +934,17 @@ export function useAddons(environment: Environment, documentName?: string) {
                       latest.current.error(error)
                     }
                   },
-                })
-                if (mounted.current) setCommands([...registered.values()])
-                return () => {
-                  if (!active || disposed) return
-                  active = false
-                  registered.delete(key)
-                  if (!disposed && mounted.current)
-                    setCommands([...registered.values()])
                 }
+                return batch.register(`command:${command.id}`, () => {
+                  registered.set(key, entry)
+                  if (mounted.current) setCommands([...registered.values()])
+                  return () => {
+                    active = false
+                    registered.delete(key)
+                    if (!disposed && mounted.current)
+                      setCommands([...registered.values()])
+                  }
+                })
               },
             },
             workspace: {
@@ -833,20 +1028,25 @@ export function useAddons(environment: Environment, documentName?: string) {
             async () => {
               await start()
               if (disposed) startDetail.status = 'cancelled'
+              else batch.commit()
             },
             startDetail,
           )
-        const starting = required.has(id)
-          ? measuredStart()
-          : new Promise<void>((resolve) =>
-              requestIdleCallback(() => resolve(), { timeout: 1000 }),
-            ).then(() => {
-              if (!disposed) return measuredStart()
-            })
+        const starting =
+          required.has(id) || requested.has(id)
+            ? measuredStart()
+            : new Promise<void>((resolve) =>
+                requestIdleCallback(() => resolve(), { timeout: 1000 }),
+              ).then(() => {
+                if (!disposed) return measuredStart()
+              })
         void starting
           .then(() => {
-            if (!disposed)
+            if (!disposed) {
+              started.add(id)
               setSettled((current) => new Map(current).set(id, true))
+              activation.get(id)?.resolve()
+            }
           })
           .catch((error: unknown) => {
             if (disposed) return
@@ -865,6 +1065,11 @@ export function useAddons(environment: Environment, documentName?: string) {
     setCommands([...registered.values()])
   }, [
     catalog,
+    relevant,
+    requested,
+    activation,
+    started,
+    executeCommand,
     loaded,
     documentName,
     states,
@@ -877,6 +1082,7 @@ export function useAddons(environment: Environment, documentName?: string) {
     status,
     app,
     rich,
+    publishRich,
     dialogService,
     toastService,
     views,
@@ -886,6 +1092,12 @@ export function useAddons(environment: Environment, documentName?: string) {
   ])
   async function setEnabled(id: string, enabled: boolean) {
     try {
+      if (!enabled)
+        setRequested((current) => {
+          const next = new Set(current)
+          next.delete(id)
+          return next
+        })
       setSettled((current) => {
         const next = new Map(current)
         next.delete(id)
@@ -922,6 +1134,31 @@ export function useAddons(environment: Environment, documentName?: string) {
       latest.current.error(error)
     }
   }
+  const visibleCommands = useMemo(
+    () => [
+      ...commands,
+      ...catalog
+        .filter((addon) =>
+          states.some(
+            (state) => state.id === addon.manifest.id && state.enabled,
+          ),
+        )
+        .flatMap((addon) =>
+          (addon.manifest.commands ?? [])
+            .filter(
+              (command) =>
+                !registered.has(`${addon.manifest.id}.${command.id}`),
+            )
+            .map((command) => ({
+              ...command,
+              id: `${addon.manifest.id}.${command.id}`,
+              addonId: addon.manifest.id,
+              run: () => executeCommand(addon.manifest.id, command.id),
+            })),
+        ),
+    ],
+    [commands, catalog, states, registered, executeCommand],
+  )
   return {
     catalog,
     ready,
@@ -929,7 +1166,7 @@ export function useAddons(environment: Environment, documentName?: string) {
     sourceOnly,
     app,
     states,
-    commands,
+    commands: visibleCommands,
     markdownExtensions,
     richExtensions,
     sourceExtensions,

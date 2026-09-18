@@ -1,0 +1,5 @@
+export * as commands from '@codemirror/commands'
+export * as language from '@codemirror/language'
+export * as state from '@codemirror/state'
+export * as view from '@codemirror/view'
+export * as highlight from '@lezer/highlight'

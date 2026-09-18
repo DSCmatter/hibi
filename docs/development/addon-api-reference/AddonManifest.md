@@ -2,9 +2,7 @@
 
 # AddonManifest
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L87)
-
-Metadata used to list an addon before its code loads.
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L93)
 
 <details>
 <summary>Declaration</summary>
@@ -25,6 +23,13 @@ type AddonManifest = {
   defaultEnabled?: boolean
   /** Background-only UI/services can activate after editing is ready. Omit for schema/input addons. */
   startup?: 'background'
+  /** Omit for the legacy all-engines SDK. An empty array loads no UI or editor SDK.
+   * Declaring capabilities also stages editor registrations until start() succeeds.
+   */
+  capabilities?: readonly AddonCapability[]
+  /** Command activation needs inert command descriptors. View activation is for editor behavior, not schemas. */
+  activation?: 'command' | 'source' | 'rich'
+  commands?: readonly AddonCommandDescriptor[]
   /** Required plugin release version, separate from the host API version. */
   version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
@@ -54,6 +59,9 @@ type AddonManifest = {
 - [kind](#kind)
 - [defaultEnabled](#defaultenabled)
 - [startup](#startup)
+- [capabilities](#capabilities)
+- [activation](#activation)
+- [commands](#commands)
 - [version](#version)
 - [fileExtensions](#fileextensions)
 - [authors](#authors)
@@ -63,7 +71,7 @@ type AddonManifest = {
 
 ### importer
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L89)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L95)
 
 Bundled native importers appear in the core Import dialog while enabled.
 
@@ -78,7 +86,7 @@ Related: [Importer](Importer.md).
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L93)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L99)
 
 ```typescript
 id: string
@@ -86,7 +94,7 @@ id: string
 
 ### name
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L94)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L100)
 
 ```typescript
 name: string
@@ -94,7 +102,7 @@ name: string
 
 ### description
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L95)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L101)
 
 ```typescript
 description: string
@@ -102,7 +110,7 @@ description: string
 
 ### apiVersion
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L96)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L102)
 
 ```typescript
 apiVersion: typeof ADDON_API_VERSION
@@ -112,7 +120,7 @@ Related: [ADDON_API_VERSION](ADDON_API_VERSION.md).
 
 ### kind
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L98)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L104)
 
 Existing API v1 addons default to extension.
 
@@ -122,7 +130,7 @@ kind?: 'theme' | 'extension'
 
 ### defaultEnabled
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L99)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L105)
 
 ```typescript
 defaultEnabled?: boolean
@@ -130,7 +138,7 @@ defaultEnabled?: boolean
 
 ### startup
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L101)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L107)
 
 Background-only UI/services can activate after editing is ready. Omit for schema/input addons.
 
@@ -138,9 +146,42 @@ Background-only UI/services can activate after editing is ready. Omit for schema
 startup?: 'background'
 ```
 
+### capabilities
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L111)
+
+Omit for the legacy all-engines SDK. An empty array loads no UI or editor SDK.
+Declaring capabilities also stages editor registrations until start() succeeds.
+
+```typescript
+capabilities?: readonly AddonCapability[]
+```
+
+Related: [AddonCapability](AddonCapability.md).
+
+### activation
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L113)
+
+Command activation needs inert command descriptors. View activation is for editor behavior, not schemas.
+
+```typescript
+activation?: 'command' | 'source' | 'rich'
+```
+
+### commands
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L114)
+
+```typescript
+commands?: readonly AddonCommandDescriptor[]
+```
+
+Related: [AddonCommandDescriptor](AddonCommandDescriptor.md).
+
 ### version
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L103)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L116)
 
 Required plugin release version, separate from the host API version.
 
@@ -150,7 +191,7 @@ version: string
 
 ### fileExtensions
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L105)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L118)
 
 Additional source-file extensions, without dots. Files remain openable when disabled.
 
@@ -160,7 +201,7 @@ fileExtensions?: readonly string[]
 
 ### authors
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L106)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L119)
 
 ```typescript
 authors?: readonly AddonAuthor[]
@@ -170,7 +211,7 @@ Related: [AddonAuthor](AddonAuthor.md).
 
 ### licenses
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L108)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L121)
 
 Shipped third-party notices, shown under hibi's open source licenses.
 
@@ -185,4 +226,4 @@ licenses?: readonly {
 
 ## Related types
 
-[Importer](Importer.md), [ADDON_API_VERSION](ADDON_API_VERSION.md), [authors](authors.md), [AddonAuthor](AddonAuthor.md).
+[Importer](Importer.md), [ADDON_API_VERSION](ADDON_API_VERSION.md), [AddonCapability](AddonCapability.md), [AddonCommandDescriptor](AddonCommandDescriptor.md), [authors](authors.md), [AddonAuthor](AddonAuthor.md).

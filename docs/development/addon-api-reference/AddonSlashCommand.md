@@ -2,7 +2,7 @@
 
 # AddonSlashCommand
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L229)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L242)
 
 <details>
 <summary>Declaration</summary>
@@ -37,7 +37,7 @@ type AddonSlashCommand = {
 
 ### label
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L230)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L243)
 
 ```typescript
 label: string
@@ -45,7 +45,7 @@ label: string
 
 ### description
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L231)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L244)
 
 ```typescript
 description: string
@@ -53,7 +53,7 @@ description: string
 
 ### keywords
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L232)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L245)
 
 ```typescript
 keywords?: string
@@ -63,7 +63,7 @@ keywords?: string
 
 ### when
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L233)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L246)
 
 ```typescript
 when?: (source: string) => boolean
@@ -79,7 +79,7 @@ when?: (source: string) => boolean
 
 ### transform
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L235)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L248)
 
 Receives the complete note with the slash query removed. Null cancels.
 

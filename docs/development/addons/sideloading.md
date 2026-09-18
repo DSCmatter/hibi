@@ -37,6 +37,22 @@ Add a readme that explains how to use the command. This example is already JavaS
 
 Use the factory's `React`, `ui`, `tiptap`, `codeMirror`, and `markdown` values instead of bundling second copies of those libraries. Relative imports may load other compiled files in your package. Do not import from Hibi's source tree in an installed package.
 
+## Load only the SDK you need
+
+New packages can declare `capabilities` in the manifest. Use `ui` for React and shared controls, `rich` for Tiptap, `source` for CodeMirror, and `markdown` for Marked. An empty array supplies only the lightweight `documents` helpers. Packages that omit this field retain the legacy SDK with all engines.
+
+```json
+{
+  "capabilities": [],
+  "activation": "command",
+  "commands": [{ "id": "greet", "label": "Say hello" }]
+}
+```
+
+Add these fields to the greeting package above to keep its runtime unloaded until the command is invoked. The command descriptor is plain metadata; its ID must match the runtime registration. A source-only integration can use `activation: 'source'`, while `rich` activation runs in visual or split view. Omit activation for document formats and syntax that must exist before editing.
+
+Declaring capabilities also stages editor configuration, commands, toolbar items, and sidebar views until `start()` finishes. Registrations are published in stable ID order and removed if startup fails. Document syntax cannot use command or view activation, and background packages cannot install required editor integrations. These SDK choices control loading; renderer packages still run trusted code.
+
 ## Install it locally
 
 Run **Install theme or extension…** from the command palette and choose the package folder. Review it, install it, then enable it in **Settings → Addons**. If you already have a source addon with the same ID, use a different ID for this package.

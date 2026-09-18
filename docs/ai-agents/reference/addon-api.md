@@ -6,6 +6,8 @@ See the [addon API reference](../../development/addon-api-reference/README.md).
 
 - [ADDON_API_VERSION](../../development/addon-api-reference/ADDON_API_VERSION.md)
 - [compatibleAddonManifest](../../development/addon-api-reference/compatibleAddonManifest.md)
+- [AddonCapability](../../development/addon-api-reference/AddonCapability.md)
+- [AddonCommandDescriptor](../../development/addon-api-reference/AddonCommandDescriptor.md)
 - [AddonManifest](../../development/addon-api-reference/AddonManifest.md)
 - [AddonAuthor](../../development/addon-api-reference/AddonAuthor.md)
 - [SourceExtension](../../development/addon-api-reference/SourceExtension.md)

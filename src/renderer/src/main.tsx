@@ -444,7 +444,22 @@ function App() {
         ),
     },
     document?.name,
+    documentFormat?.views && !documentFormat.views.includes(selectedMode)
+      ? documentFormat.views.includes('side-by-side')
+        ? 'side-by-side'
+        : 'markdown'
+      : selectedMode,
   )
+  // Retain the installed schema while required addons finish registering their replacement.
+  const editorConfiguration = useRef({
+    flavors: chosenFlavors,
+    projections: addonHost.markdownExtensions,
+  })
+  if (addonHost.ready)
+    editorConfiguration.current = {
+      flavors: chosenFlavors,
+      projections: addonHost.markdownExtensions,
+    }
   const availableViews = addonHost.sourceOnly
     ? ['markdown' as const]
     : documentFormats.views(document?.name ?? 'untitled.md')
@@ -1347,7 +1362,15 @@ function App() {
         category: 'addons' as const,
         keywords: command.keywords ?? '',
         run: () => {
-          void command.run()
+          void Promise.resolve()
+            .then(() => command.run())
+            .catch((error) =>
+              setError(
+                error instanceof Error
+                  ? error.message
+                  : 'Could not run this command.',
+              ),
+            )
         },
       })),
     )
@@ -1687,7 +1710,7 @@ function App() {
               formatName={sourceName}
               onAttach={attachMedia}
               onLink={openLink}
-              flavors={chosenFlavors}
+              flavors={editorConfiguration.current.flavors}
               unsupportedFlavor={unsupportedFlavor || addonHost.sourceOnly}
               sourceExtensions={addonHost.sourceExtensions}
               richExtensions={addonHost.richExtensions}
@@ -1695,7 +1718,7 @@ function App() {
               showLineNumbers={showLineNumbers}
               spellCheck={spellCheck}
               cursorSettings={cursorSettings}
-              markdownExtensions={addonHost.markdownExtensions}
+              markdownExtensions={editorConfiguration.current.projections}
               key={`${document.revision}-${resetEditor}-${markdownDocument ? 'markdown' : documentExtension(document.name)}`}
               value={document.markdown}
               onChange={updateMarkdown}

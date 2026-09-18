@@ -1,6 +1,7 @@
 import { type ComponentType, lazy } from 'react'
 import type { Addon, AddonManifest, MarkdownFlavor } from '../../addons/api'
 import type { SideloadFactory } from '../../addons/sdk'
+import { type CapabilitySdk, loadAddonSdk } from '../../addons/sdk-loader'
 import type { InstalledAddon } from '../../shared/sideload'
 import { startupSpan } from '../../shared/startup'
 
@@ -120,14 +121,16 @@ function installedAddon(item: InstalledAddon): Addon {
           'This plugin is missing its startup file. Reinstall it.',
         )
       const url = item.url
-      const [module, { sdk }] = await startupSpan(
+      const [module, sdk] = await startupSpan(
         `addon-load:${item.manifest.id}`,
         () =>
           Promise.all([
             import(/* @vite-ignore */ url) as Promise<{
-              default?: SideloadFactory
+              default?:
+                | SideloadFactory
+                | ((sdk: CapabilitySdk) => Omit<Addon, 'manifest'>)
             }>,
-            import('../../addons/sdk'),
+            loadAddonSdk(item.manifest.capabilities),
           ]),
         { addonName: item.manifest.name },
       )
@@ -136,7 +139,10 @@ function installedAddon(item: InstalledAddon): Addon {
         throw new Error(
           'This plugin has no valid startup function. Contact its author.',
         )
-      const definition = module.default(sdk)
+      // The manifest selects the new optional SDK or the unchanged legacy factory contract.
+      const definition = (
+        module.default as (host: typeof sdk) => Omit<Addon, 'manifest'>
+      )(sdk)
       if (
         !definition ||
         typeof definition.start !== 'function' ||

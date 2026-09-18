@@ -2,14 +2,15 @@
 
 # sdk
 
-Constant · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/sdk.ts#L13)
+Constant · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/sdk.ts#L10)
 
 ```typescript
 const sdk = {
+  documents,
   React,
   ui,
   tiptap,
-  codeMirror: { commands, state, view, language, highlight },
+  codeMirror: { ...codeMirror },
   markdown: { Marked },
 }
 ```

@@ -2,7 +2,7 @@
 
 # SideloadFactory
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/sdk.ts#L21)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/sdk.ts#L19)
 
 Export this factory as the default export of a package's compiled ES module.
 

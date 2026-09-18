@@ -9,5 +9,6 @@ export default {
   description: 'Find repeated words and common English typos.',
   defaultEnabled: false,
   startup: 'background',
+  capabilities: ['ui'],
   authors: [authors.may],
 } satisfies AddonManifest

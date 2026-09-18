@@ -1,20 +1,18 @@
 /** Runtime dependencies shared with explicitly installed renderer extensions. */
-import * as commands from '@codemirror/commands'
-import * as language from '@codemirror/language'
-import * as state from '@codemirror/state'
-import * as view from '@codemirror/view'
-import * as highlight from '@lezer/highlight'
 import * as tiptap from '@tiptap/core'
 import { Marked } from 'marked'
 import * as React from 'react'
+import * as documents from '../shared/document-projection'
 import type { Addon } from './api'
+import * as codeMirror from './sdk-source'
 import * as ui from './ui'
 
 export const sdk = {
+  documents,
   React,
   ui,
   tiptap,
-  codeMirror: { commands, state, view, language, highlight },
+  codeMirror: { ...codeMirror },
   markdown: { Marked },
 }
 /** Export this factory as the default export of a package's compiled ES module. */

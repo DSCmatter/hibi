@@ -84,6 +84,12 @@ export function compatibleAddonManifest(manifest: {
 }
 
 /** Metadata used to list an addon before its code loads. */
+export type AddonCapability = 'ui' | 'rich' | 'source' | 'markdown'
+export type AddonCommandDescriptor = {
+  id: string
+  label: string
+  keywords?: string
+}
 export type AddonManifest = {
   /** Bundled native importers appear in the core Import dialog while enabled. */
   importer?: Pick<
@@ -99,6 +105,13 @@ export type AddonManifest = {
   defaultEnabled?: boolean
   /** Background-only UI/services can activate after editing is ready. Omit for schema/input addons. */
   startup?: 'background'
+  /** Omit for the legacy all-engines SDK. An empty array loads no UI or editor SDK.
+   * Declaring capabilities also stages editor registrations until start() succeeds.
+   */
+  capabilities?: readonly AddonCapability[]
+  /** Command activation needs inert command descriptors. View activation is for editor behavior, not schemas. */
+  activation?: 'command' | 'source' | 'rich'
+  commands?: readonly AddonCommandDescriptor[]
   /** Required plugin release version, separate from the host API version. */
   version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
@@ -442,6 +455,8 @@ export type AddonContext = {
     ) => void
   }
   commands: {
+    /** Invoke this addon's registered command through the same guarded dispatcher as the palette. */
+    execute: (id: string) => Promise<void>
     register: (command: AddonCommand) => () => void
     /** Enabled commands whose slash action is available for the active note. */
     getSlashCommands: () => readonly (AddonSlashCommand & { id: string })[]

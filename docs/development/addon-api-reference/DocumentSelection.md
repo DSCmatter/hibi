@@ -2,7 +2,7 @@
 
 # DocumentSelection
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L284)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L297)
 
 <details>
 <summary>Declaration</summary>
@@ -31,7 +31,7 @@ type DocumentSelection = {
 
 ### source
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L285)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L298)
 
 ```typescript
 source: string
@@ -39,7 +39,7 @@ source: string
 
 ### from
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L286)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L299)
 
 ```typescript
 from: number
@@ -47,7 +47,7 @@ from: number
 
 ### to
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L287)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L300)
 
 ```typescript
 to: number
@@ -55,7 +55,7 @@ to: number
 
 ### values
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L288)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L301)
 
 ```typescript
 values?: { url: string; alt: string } | undefined

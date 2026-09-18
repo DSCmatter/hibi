@@ -93,6 +93,45 @@ function manifest(value: unknown): {
     (data.kind === 'theme' || !validDocumentExtensions(data.fileExtensions))
   )
     throw new Error('The addon lists invalid file extensions.')
+  if (
+    data.capabilities !== undefined &&
+    (!Array.isArray(data.capabilities) ||
+      data.capabilities.length > 4 ||
+      new Set(data.capabilities).size !== data.capabilities.length ||
+      data.capabilities.some(
+        (value) => !['ui', 'rich', 'source', 'markdown'].includes(value),
+      ))
+  )
+    throw new Error('The addon lists invalid SDK capabilities.')
+  if (
+    data.activation !== undefined &&
+    !['command', 'source', 'rich'].includes(String(data.activation))
+  )
+    throw new Error('The addon activation mode is invalid.')
+  if (
+    data.commands !== undefined &&
+    (!Array.isArray(data.commands) ||
+      data.commands.length > 64 ||
+      new Set(data.commands.map((command) => command?.id)).size !==
+        data.commands.length ||
+      data.commands.some(
+        (command) =>
+          !command ||
+          !validId(command.id) ||
+          !string(command.label, 100) ||
+          (command.keywords !== undefined && !string(command.keywords, 300)),
+      ))
+  )
+    throw new Error('The addon command descriptors are invalid.')
+  if (
+    data.activation === 'command' &&
+    (!Array.isArray(data.commands) || !data.commands.length)
+  )
+    throw new Error('Command-activated addons must declare their commands.')
+  if (data.activation !== undefined && data.capabilities === undefined)
+    throw new Error(
+      'Declare SDK capabilities before choosing an activation mode.',
+    )
   const base: AddonManifest = {
     id: data.id,
     name: data.name,
@@ -102,6 +141,23 @@ function manifest(value: unknown): {
     version: data.version,
     authors: data.authors,
     defaultEnabled: false,
+    ...(data.capabilities === undefined
+      ? {}
+      : {
+          capabilities: data.capabilities as NonNullable<
+            AddonManifest['capabilities']
+          >,
+        }),
+    ...(data.activation === undefined
+      ? {}
+      : {
+          activation: data.activation as NonNullable<
+            AddonManifest['activation']
+          >,
+        }),
+    ...(data.commands === undefined
+      ? {}
+      : { commands: data.commands as NonNullable<AddonManifest['commands']> }),
     ...(data.startup === 'background'
       ? { startup: 'background' as const }
       : {}),
@@ -116,6 +172,9 @@ function manifest(value: unknown): {
   }
   if (base.kind === 'theme') {
     if (
+      data.capabilities !== undefined ||
+      data.activation !== undefined ||
+      data.commands !== undefined ||
       data.entry !== undefined ||
       !Array.isArray(data.themes) ||
       !data.themes.length ||
