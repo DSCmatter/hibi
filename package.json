@@ -114,6 +114,9 @@
     "vitest": "4.1.11",
     "yaml": "2.9.1"
   },
+  "overrides": {
+    "lodash-es": "4.18.1"
+  },
   "dependencies": {
     "@myriaddreamin/typst-ts-node-compiler": "0.7.0",
     "esbuild": "0.28.2"
