@@ -19,6 +19,7 @@ import type {
   DocumentState,
 } from '../../shared/desktop'
 import { MAX_DOCUMENT_BYTES } from '../../shared/desktop'
+import { sourceChange } from '../../shared/document-journal'
 import {
   type AppCommand,
   actions,
@@ -778,9 +779,18 @@ function App() {
       setResetEditor((value) => value + 1)
       return
     }
-    // Queue native persistence before synchronous addon observers can request a save.
+    const current = currentDocument.current
+    if (!current || current.markdown === markdown) return
+    const change = sourceChange(current.markdown, markdown)!
+    // Enqueue the ordered delta before observers can request a save or tab change.
     void window.hibi
-      .updateDocument(markdown)
+      .appendDocumentChange({
+        ...change,
+        tabId: current.tabId,
+        revision: current.revision,
+        baseVersion: current.contentVersion,
+        contentVersion: current.contentVersion + 1,
+      })
       .catch((error: unknown) =>
         setError(
           error instanceof Error
@@ -788,7 +798,6 @@ function App() {
             : 'Could not keep your latest changes.',
         ),
       )
-    const current = currentDocument.current
     if (current) {
       const next = {
         ...current,

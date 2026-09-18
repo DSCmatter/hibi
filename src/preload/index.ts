@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { contextBridge, ipcRenderer as transport, webUtils } from 'electron'
 import { ADDON_CHANNELS } from '../addons/api'
 import { ABOUT_CHANNELS } from '../shared/about'
 import { APPEARANCE_CHANNEL } from '../shared/colorschemes'
@@ -8,6 +8,7 @@ import {
   type DesktopApi,
   DOCUMENT_CHANNELS,
 } from '../shared/desktop'
+import { createDocumentJournal } from '../shared/document-journal'
 import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
 import { type AppCommand, HOTKEY_CHANNELS } from '../shared/hotkeys'
@@ -19,6 +20,25 @@ import { WORKSPACE_CHANNELS, type WorkspaceState } from '../shared/workspace'
 import { WORKSPACE_SETTINGS_CHANNELS } from '../shared/workspace-settings'
 
 if (process.isMainFrame) {
+  const journal = createDocumentJournal((change) =>
+    transport.invoke(DOCUMENT_CHANNELS.append, change),
+  )
+  const invoke: typeof transport.invoke = (channel, ...args) =>
+    journal.hasPending()
+      ? journal.flush().then(() => transport.invoke(channel, ...args))
+      : transport.invoke(channel, ...args)
+  const ipcRenderer = {
+    invoke,
+    on: transport.on.bind(transport),
+    removeListener: transport.removeListener.bind(transport),
+  }
+  transport.on(DOCUMENT_CHANNELS.flush, (_event, token: string) => {
+    void journal.flush().then(
+      () => transport.send(DOCUMENT_CHANNELS.flushed, token, null),
+      (error) =>
+        transport.send(DOCUMENT_CHANNELS.flushed, token, String(error)),
+    )
+  })
   let externalPending = false
   ipcRenderer.on(DOCUMENT_CHANNELS.externalPending, () => {
     externalPending = true
@@ -29,6 +49,8 @@ if (process.isMainFrame) {
   for (const pending of [startupDocument, startupAddons, startupRecent])
     void pending.catch(() => {})
   contextBridge.exposeInMainWorld('hibi', {
+    appendDocumentChange: journal.append,
+    flushDocumentChanges: journal.flush,
     bootstrap: {
       document: () => startupDocument,
       addons: () => startupAddons,

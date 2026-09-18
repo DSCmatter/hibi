@@ -552,6 +552,9 @@
   "22a970d2e5b1": [
     "src/addons/diagnostics/Settings.tsx"
   ],
+  "8c3440194015": [
+    "src/shared/document-journal.ts"
+  ],
   "dc273117482b": [
     "src/addons/graph/Panel.tsx"
   ],
@@ -590,6 +593,12 @@
   ],
   "8ee887cb7d7b": [
     "src/renderer/src/main.tsx"
+  ],
+  "de9388be34be": [
+    "src/shared/document-journal.ts"
+  ],
+  "1c18bf5e3856": [
+    "src/main/index.ts"
   ],
   "4f995b757108": [
     "src/renderer/src/main.tsx"
@@ -1441,6 +1450,9 @@
   ],
   "440c06b497b1": [
     "src/main/file-associations.ts"
+  ],
+  "5a2f299940cc": [
+    "src/shared/document-journal.ts"
   ],
   "194c34611a1c": [
     "src/shared/document-edits.ts"
@@ -2692,6 +2704,15 @@
   "96c5ae0b5065": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
+  "67f711ac6cb8": [
+    "src/shared/document-journal.ts"
+  ],
+  "f515fa45ca50": [
+    "src/shared/document-journal.ts"
+  ],
+  "c93782bc8528": [
+    "src/shared/document-journal.ts"
+  ],
   "6ad5e9ddb386": [
     "src/main/links.ts"
   ],
@@ -2732,6 +2753,12 @@
   ],
   "aab4c81b2baa": [
     "src/shared/document-edits.ts"
+  ],
+  "e786eb038293": [
+    "src/main/index.ts"
+  ],
+  "c6a567e88234": [
+    "src/main/index.ts"
   ],
   "4ef953980674": [
     "src/renderer/src/SourceEditor.tsx"
@@ -2834,6 +2861,9 @@
   ],
   "2d715c5a75aa": [
     "src/main/addons.ts"
+  ],
+  "27f866079733": [
+    "src/shared/document-journal.ts"
   ],
   "d834f457b6f0": [
     "src/shared/colorschemes.ts"

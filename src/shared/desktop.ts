@@ -6,6 +6,9 @@ export const BOOTSTRAP_CHANNELS = {
 export const DOCUMENT_CHANNELS = {
   get: 'document:get',
   update: 'document:update',
+  append: 'document:append',
+  flush: 'document:flush',
+  flushed: 'document:flushed',
   open: 'document:open',
   external: 'document:external',
   externalPending: 'document:external-pending',
@@ -158,6 +161,10 @@ export type DesktopApi = {
   ) => Promise<DocumentState>
   setTabsEnabled: (enabled: boolean) => Promise<DocumentState>
   updateDocument: (markdown: string) => Promise<void>
+  appendDocumentChange: (
+    change: import('./document-journal').DocumentChange,
+  ) => Promise<import('./document-journal').DocumentAcknowledgment>
+  flushDocumentChanges: () => Promise<void>
   openDocument: () => Promise<DocumentState | null>
   openExternalDocuments: () => Promise<{
     document: DocumentState | null

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { basename, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron'
@@ -23,7 +24,9 @@ import {
   type AppInfo,
   BOOTSTRAP_CHANNELS,
   DOCUMENT_CHANNELS,
+  MAX_DOCUMENT_BYTES,
 } from '../shared/desktop'
+import { createJournalReceiver } from '../shared/document-journal'
 import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
 import {
@@ -187,7 +190,9 @@ app.on('before-quit', () => {
   quitting = true
 })
 
-function trustedWindow(event: IpcMainInvokeEvent): BrowserWindow {
+function trustedWindow(
+  event: Pick<IpcMainInvokeEvent, 'sender' | 'senderFrame'>,
+): BrowserWindow {
   if (
     !mainWindow ||
     event.sender !== mainWindow.webContents ||
@@ -273,6 +278,11 @@ async function serveAsset(request: Request): Promise<Response> {
 }
 
 let windowSetupReady = false
+const appendDocumentChange = createJournalReceiver(
+  getDocument,
+  updateDocument,
+  MAX_DOCUMENT_BYTES,
+)
 function createWindow(): void {
   if (!windowSetupReady) return
   startupMark('window-start')
@@ -328,12 +338,61 @@ function createWindow(): void {
   })
   let allowClose = false
   let confirmingClose = false
+  let rendererGone = false
+  let flushRequest:
+    | { token: string; resolve: () => void; reject: (error: Error) => void }
+    | undefined
+  const flushed = (
+    event: Electron.IpcMainEvent,
+    token: unknown,
+    error: unknown,
+  ) => {
+    if (
+      event.sender !== window.webContents ||
+      token !== flushRequest?.token ||
+      event.senderFrame !== event.sender.mainFrame ||
+      !isTrustedRendererUrl(event.senderFrame.url, rendererUrl)
+    )
+      return
+    if (error === null) flushRequest?.resolve()
+    else
+      flushRequest?.reject(
+        new Error(
+          'Could not confirm the latest edits. Keep this window open and try again.',
+        ),
+      )
+  }
+  ipcMain.on(DOCUMENT_CHANNELS.flushed, flushed)
+  const flushRenderer = async () => {
+    if (rendererGone || window.webContents.isDestroyed()) return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const token = randomUUID()
+        flushRequest = { token, resolve, reject }
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                'The editor did not confirm its latest changes. Try closing again when it responds.',
+              ),
+            ),
+          5000,
+        )
+        window.webContents.send(DOCUMENT_CHANNELS.flush, token)
+      })
+    } finally {
+      clearTimeout(timer)
+      flushRequest = undefined
+    }
+  }
   window.on('close', (event) => {
-    if (allowClose || (!hasUnsavedDocuments() && !fileOperation)) return
+    if (allowClose) return
     event.preventDefault()
     if (confirmingClose) return
     confirmingClose = true
     void (async () => {
+      await flushRenderer()
       await fileOperation?.catch(() => undefined)
       if (await confirmDiscardAll(window)) {
         discardChanges()
@@ -363,6 +422,10 @@ function createWindow(): void {
     else window.show()
   })
   window.on('closed', () => {
+    ipcMain.removeListener(DOCUMENT_CHANNELS.flushed, flushed)
+    flushRequest?.reject(
+      new Error('The editor closed before confirming its changes.'),
+    )
     mainWindow = null
   })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
@@ -380,6 +443,8 @@ function createWindow(): void {
     event.preventDefault(),
   )
   window.webContents.on('render-process-gone', (_event, details) => {
+    rendererGone = true
+    flushRequest?.resolve()
     console.error('renderer exited:', details.reason, details.exitCode)
     if (details.reason === 'clean-exit' || window.isDestroyed()) return
     void dialog
@@ -399,6 +464,9 @@ function createWindow(): void {
         console.error(error)
         app.quit()
       })
+  })
+  window.webContents.on('did-finish-load', () => {
+    rendererGone = false
   })
   void window.loadURL(rendererUrl).catch((error: unknown) => {
     // Vite dependency optimization can replace the initial navigation with a reload.
@@ -878,6 +946,12 @@ if (!app.requestSingleInstanceLock()) {
         const window = trustedWindow(event)
         updateDocument(value)
         window.setDocumentEdited(hasUnsavedDocuments())
+      })
+      handle(DOCUMENT_CHANNELS.append, (event, change: unknown) => {
+        const window = trustedWindow(event)
+        const ack = appendDocumentChange(change)
+        window.setDocumentEdited(hasUnsavedDocuments())
+        return ack
       })
       handle(DOCUMENT_CHANNELS.open, (event) =>
         runFileOperation(event, openDocument),

@@ -54,7 +54,7 @@ Five repeated hidden-window input runs measured transaction p95 at 1.3 ms for bl
 The continuation starts at `30984ba`. Complete these stages with progressive commits and regression checks. Rust and runtime snapshot experiments remain excluded.
 
 - [x] Start independent bootstrap reads in preload and skip empty startup drains.
-- [ ] Add an ordered source-change journal and explicit persistence barriers.
+- [x] Add an ordered source-change journal and explicit persistence barriers.
 - [ ] Cache compatible Markdown serialization and avoid closed-outline scans, with differential tests.
 - [ ] Add exact rich-text projections, shared review decorations, and a shipped local review addon.
 - [ ] Add capability-specific SDK loading, deterministic staged activation, and preservation contracts.
@@ -63,6 +63,8 @@ The continuation starts at `30984ba`. Complete these stages with progressive com
 - [ ] Complete correctness, performance, documentation, and repository checks; record measured results.
 
 Bootstrap now overlaps renderer evaluation with independent document, addon, and recent-workspace reads. The main-process document read waits only for document and shortcut preferences; recent-workspace and app-info reads do not wait for addon discovery. Preload retains early external-file notifications, and a blank launch skips the empty drain. The built app passed startup, module-loading, external-file, workspace-settings, and actual development-reload tests (seven tests).
+
+The persistence stage sends ordered source replacements and acknowledges content versions. Accepted changes immediately update the main-process recovery snapshot. Preload retries unacknowledged edits before document operations, and native close requests the same barrier. Four protocol tests, nine existing file/autosave/tab/edit/reload checks, and a real renderer-crash/native-close integration passed. The integration deliberately delays delivery and loses an acknowledgment. Recovery is process-local, not durable against a whole-app crash.
 
 Full-document Markdown serialization, outline scanning, and source IPC remain on the editing path. Incremental serialization needs round-trip differential coverage before replacing them. An ordered edit journal and explicit flush barriers need save, crash-recovery, close, and tab-replacement tests; this pass preserves the immediate full-source persistence path.
 
