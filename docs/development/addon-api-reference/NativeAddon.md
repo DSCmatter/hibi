@@ -2,7 +2,7 @@
 
 # NativeAddon
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L495)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L509)
 
 Native handlers compiled with Hibi. Sideloaded renderer packages cannot register these handlers.
 
@@ -51,7 +51,7 @@ type NativeAddon = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L496)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L510)
 
 ```typescript
 id: string
@@ -59,7 +59,7 @@ id: string
 
 ### queries
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L506)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L520)
 
 Trusted read-only handlers. No user-file changes or dialogs; private compilation caches are allowed.
 
@@ -74,7 +74,7 @@ Related: [NativeAddonContext](NativeAddonContext.md).
 
 ### methods
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L510)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L524)
 
 ```typescript
 methods: Record<
@@ -89,7 +89,7 @@ Related: [NativeAddonContext](NativeAddonContext.md).
 
 ### import
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L498)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L512)
 
 Convert a selected export in memory. Core validates paths and writes a new destination folder.
 
@@ -114,7 +114,7 @@ Related: [ImportFile](ImportFile.md).
 
 ### stop
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L504)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L518)
 
 ```typescript
 stop?: () => void

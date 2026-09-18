@@ -20,7 +20,7 @@ The transform receives the current source. Return the replacement text, or `null
 
 `getDocument()` includes `tabId`, `revision`, and `contentVersion`. The revision identifies a replacement editor; the content version advances when text changes, including undo and redo. If you calculate a result asynchronously, compare all three before using it. A matching file name alone does not mean the document is unchanged.
 
-For edits calculated from an earlier snapshot, use `applySourceEdits()` in source view. It validates the version and exact text before applying all changes in one undo operation. Offsets count UTF-16 code units in the complete document source, including frontmatter. Rich view returns `unsupported-view`; navigation position maps must not be used to build edit ranges.
+For edits calculated from an earlier snapshot, use `applySourceEdits()`. It validates the version and exact text before applying all changes in one undo operation. Offsets count UTF-16 code units in the complete document source, including frontmatter. Rich view accepts literal text replacements only when the host can prove their exact location and preserve the surrounding structure. Other ranges return `unsupported-view`. Navigation position maps must not be used to build edit ranges.
 
 ```typescript
 const document = context.editor.getDocument()
@@ -38,7 +38,19 @@ if (document) {
 
 Handle `stale` by calculating a new proposal from the latest snapshot, and `composing` by waiting until text composition finishes. A stopped addon receives `disposed`. Reusing a request ID with different edits is invalid. Retries with the same payload return the original result while it remains in the addon's bounded cache: at most 128 requests and 8 Mi UTF-16 units of serialized payloads. After eviction, the version check still prevents an old content-changing edit from being applied again.
 
-A request can contain up to 256 non-overlapping changes. Each change must include its exact `expectedText`; insertions use an empty string. Edits cannot split a surrogate pair or share an insertion boundary. Inserted and expected text together are limited to 4 Mi UTF-16 units, the serialized request to 8 Mi units, and the resulting document to Hibi's 2 MiB UTF-8 limit. The API retains the current immediate save and recovery path; it does not add a background edit journal.
+A request can contain up to 256 non-overlapping changes in source view or 32 in rich view. Each change must include its exact `expectedText`; insertions use an empty string. Edits cannot split a surrogate pair or share an insertion boundary. Inserted and expected text together are limited to 4 Mi UTF-16 units, the serialized request to 8 Mi units, and the resulting document to Hibi's 2 MiB UTF-8 limit. Changes use the host's ordered persistence journal and save barriers.
+
+Rich edits keep their exact before/after source for undo in a per-editor cache of up to 32 snapshots and 8 Mi UTF-16 units. Older entries still use normal rich-editor undo, which may normalize Markdown formatting. A schema change creates a new editor and follows the syntax transition policy.
+
+## Analyze and mark text
+
+`getTextProjection()` lazily returns literal text with exact spans back to the source. It excludes Markdown code, metadata, destinations, and text that cannot be mapped safely. A projection has its own `id` as well as the document identity and content version. Include that ID as `projectionId` in edit requests so a view or schema change also invalidates stale results.
+
+Offsets in the projection's `text` differ from source offsets. Find a containing span and translate using `span.sourceFrom + offset - span.from`. A result crossing spans is not an exact edit range. Keep the corresponding source substring as `expectedText`.
+
+Use `setDecorations(projection.id, decorations)` to underline up to 32 analysis ranges in the active editor. Each decoration has an ID, `from`, `to`, a short `message`, and an optional `severity` of `info` or `warning`. Invalid or stale results return `false`. Call `clearDecorations()` to remove them; stopping the addon also clears them. Unaffected marks move with ordinary edits only while their exact source text still matches. Rich view omits ranges it cannot prove.
+
+Listen to `onDocumentChange()` for text changes and `onProjectionChange()` for view or schema changes. The built-in Review addon demonstrates asynchronous checks, annotations, stale-result handling, and one-step fixes.
 
 ## Add a toolbar action
 

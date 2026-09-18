@@ -2,7 +2,7 @@
 
 # MarkdownExtension
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L320)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L322)
 
 <details>
 <summary>Declaration</summary>
@@ -34,7 +34,7 @@ type MarkdownExtension = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L321)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L323)
 
 ```typescript
 id: string
@@ -42,7 +42,7 @@ id: string
 
 ### Editor
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L325)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L327)
 
 Optional properties UI above the rich editor. Receives the complete source.
 
@@ -56,7 +56,7 @@ Related: [MarkdownEditorProps](MarkdownEditorProps.md).
 
 ### parse
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L323)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L325)
 
 Pure source-to-body projection; return null for unrecognized documents.
 

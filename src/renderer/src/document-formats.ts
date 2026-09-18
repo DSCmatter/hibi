@@ -1,6 +1,7 @@
 import { createElement } from 'react'
 import type { DocumentFormat } from '../../addons/api'
 import type { DocumentState } from '../../shared/desktop'
+import type { sourceChange } from '../../shared/document-journal'
 import {
   type DocumentView,
   documentExtension,
@@ -93,13 +94,34 @@ export const documentFormats = {
 let active: DocumentState | null = null
 let published: DocumentState | null = null
 const observers = new Set<(document: Readonly<DocumentState>) => void>()
+const changeObservers = new Set<
+  (
+    document: Readonly<DocumentState> | null,
+    change: ReturnType<typeof sourceChange>,
+  ) => void
+>()
 export const editorDocument = {
   get: () => active,
-  publish(document: DocumentState | null) {
+  publish(
+    document: DocumentState | null,
+    change: ReturnType<typeof sourceChange> = null,
+  ) {
     if (document === published) return
     published = document
     active = document ? Object.freeze({ ...document }) : null
+    for (const observer of changeObservers) observer(active, change)
     if (active) for (const observer of observers) observer(active)
+  },
+  subscribeChanges(
+    observer: (
+      document: Readonly<DocumentState> | null,
+      change: ReturnType<typeof sourceChange>,
+    ) => void,
+  ) {
+    changeObservers.add(observer)
+    return () => {
+      changeObservers.delete(observer)
+    }
   },
   subscribe(observer: (document: Readonly<DocumentState>) => void) {
     observers.add(observer)

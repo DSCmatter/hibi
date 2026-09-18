@@ -199,6 +199,11 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 
 - [AppCommand](AppCommand.md)
 
+## Document analysis
+
+- [TextDecoration](TextDecoration.md)
+- [TextProjection](TextProjection.md)
+
 ## Media
 
 - [MediaAttachment](MediaAttachment.md)

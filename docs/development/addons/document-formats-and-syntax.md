@@ -38,6 +38,8 @@ Use [MarkdownFlavor](../addon-api-reference/MarkdownFlavor.md) for a Markdown di
 
 The Markdown, frontmatter, and Typst addons in `src/addons/` provide working examples. Disabling a format must never delete or rewrite its documents.
 
+For an unchanged contiguous body, a `MarkdownProjection` can declare `sourceOffset`: its exact UTF-16 start in the input. Hibi validates and composes these offsets before allowing rich-text edits. Omit it for transformed or generated content; those projections remain readable but cannot receive exact rich-text fixes.
+
 ### Serialization caching
 
 Set `serialization: 'block-local'` only when each top-level block can serialize independently and the document joins those blocks with two newlines. Hibi caches by immutable block, its index, the previous block, and document attributes. A serializer must not depend on other blocks, mutable external state, or a custom document-level join. Leave this property out to use full-document serialization.

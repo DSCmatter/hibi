@@ -5,14 +5,21 @@ import {
   sourceEditMatches,
 } from '../../shared/document-edits.ts'
 import { editorDocument } from './document-formats'
+import { documentProjections } from './document-projections'
 
-let handler: ((request: SourceEditRequest) => SourceEditResult) | null = null
+const handlers = new Map<
+  string,
+  (request: SourceEditRequest) => SourceEditResult
+>()
 let applying = false
 export const documentEdits = {
-  register(next: NonNullable<typeof handler>) {
-    handler = next
+  register(
+    next: (request: SourceEditRequest) => SourceEditResult,
+    kind: 'source' | 'rich' = 'source',
+  ) {
+    handlers.set(kind, next)
     return () => {
-      if (handler === next) handler = null
+      if (handlers.get(kind) === next) handlers.delete(kind)
     }
   },
   scope(isBusy: () => boolean) {
@@ -65,15 +72,25 @@ export const documentEdits = {
                 status: 'busy',
                 message: 'The document is busy. Try again in a moment.',
               }
-            : !current || !sourceEditMatches(request, current)
+            : !current ||
+                !sourceEditMatches(request, current) ||
+                (request.projectionId !== undefined &&
+                  request.projectionId !== documentProjections.get()?.id)
               ? {
                   status: 'stale',
                   message: 'The document changed. Review the edits again.',
                 }
-              : (handler?.(request) ?? {
-                  status: 'unsupported-view',
-                  message: 'Open source view to apply these edits.',
-                })
+              : (() => {
+                  for (const handler of handlers.values()) {
+                    const result = handler(request)
+                    if (result.status !== 'unsupported-view') return result
+                  }
+                  return {
+                    status: 'unsupported-view' as const,
+                    message:
+                      'This range cannot be edited in this view. Open source view to apply it.',
+                  }
+                })()
           Object.freeze(result)
           results.set(request.requestId, { fingerprint, result })
           cachedSize += fingerprint.length

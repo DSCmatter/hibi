@@ -808,7 +808,7 @@ function App() {
       }
       currentDocument.current = next
       setDocument(next)
-      editorDocument.publish(next)
+      editorDocument.publish(next, change)
     }
   }
 

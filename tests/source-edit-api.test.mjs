@@ -77,7 +77,10 @@ test('a review addon applies source edits atomically, preserves undo, and reject
     const { context, review } = window.reviewFixture
     return context.editor.applySourceEdits(review())
   })
-  assert.equal(richResult.status, 'unsupported-view')
+  assert.equal(richResult.status, 'applied')
+  await page.evaluate(() =>
+    document.querySelector('.tiptap').editor.commands.undo(),
+  )
   await page.getByRole('button', { name: 'Source view', exact: true }).click()
   await page.waitForFunction(
     () => document.querySelector('.cm-content')?.isContentEditable,

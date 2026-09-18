@@ -23,6 +23,7 @@ export function projectMarkdown(
 ): MarkdownProjection {
   let result: MarkdownProjection = {
     content: source,
+    sourceOffset: 0,
     serialize: (content) => content,
   }
   for (const adapter of adapters) {
@@ -31,6 +32,16 @@ export function projectMarkdown(
     const previous = result
     result = {
       content: next.content,
+      ...(previous.sourceOffset !== undefined &&
+      next.sourceOffset !== undefined &&
+      Number.isSafeInteger(next.sourceOffset) &&
+      next.sourceOffset >= 0 &&
+      previous.content.slice(
+        next.sourceOffset,
+        next.sourceOffset + next.content.length,
+      ) === next.content
+        ? { sourceOffset: previous.sourceOffset + next.sourceOffset }
+        : {}),
       serialize: (content) => previous.serialize(next.serialize(content)),
       readOnly: Boolean(previous.readOnly || next.readOnly),
     }

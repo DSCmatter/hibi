@@ -135,6 +135,9 @@
   "9ade719b95a9": [
     "src/renderer/src/document-edits.ts"
   ],
+  "293aad4970e4": [
+    "src/renderer/src/Editor.tsx"
+  ],
   "bcd26bd0c90a": [
     "src/main/import-files.ts"
   ],
@@ -163,6 +166,12 @@
   ],
   "a1e57e3c2176": [
     "src/addons/frontmatter/Properties.tsx"
+  ],
+  "2ca103b50a02": [
+    "src/addons/review/index.tsx"
+  ],
+  "0865ce9b7f79": [
+    "src/addons/review/index.tsx"
   ],
   "345116e83679": [
     "src/renderer/src/EditorToolbar.tsx"
@@ -295,6 +304,9 @@
   "c40fbdd563d3": [
     "src/addons/git/Panel.tsx"
   ],
+  "fb7099ad8e81": [
+    "src/addons/review/index.tsx"
+  ],
   "a03ab618feb8": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
@@ -303,6 +315,9 @@
   ],
   "7164b51d91dc": [
     "src/addons/_shared/format-renderer.tsx"
+  ],
+  "41b0c55f9c04": [
+    "src/addons/review/index.tsx"
   ],
   "7346030400bf": [
     "src/addons/slash-commands/commands.ts",
@@ -569,6 +584,9 @@
   ],
   "d6fac84c4dc9": [
     "src/renderer/src/workspace-menu.ts"
+  ],
+  "a4d87e231bb4": [
+    "src/addons/review/index.tsx"
   ],
   "e9cddf67a523": [
     "src/renderer/src/FormattingToolbar.tsx"
@@ -1134,7 +1152,11 @@
   "0657af78ec64": [
     "src/renderer/src/FindBar.tsx"
   ],
+  "cb86b77b0dde": [
+    "src/addons/review/manifest.ts"
+  ],
   "954d05631f82": [
+    "src/renderer/src/Editor.tsx",
     "src/renderer/src/SourceEditor.tsx"
   ],
   "358fbe3b898f": [
@@ -1820,6 +1842,9 @@
   "0812456184c0": [
     "src/addons/diagnostics/Settings.tsx"
   ],
+  "c5d898bc9207": [
+    "src/addons/review/index.tsx"
+  ],
   "b57d852b14d2": [
     "src/addons/tags/Panel.tsx"
   ],
@@ -1914,6 +1939,9 @@
   "8e2f19847da3": [
     "src/addons/typst/index.tsx"
   ],
+  "859cdf7ffc45": [
+    "src/addons/review/index.tsx"
+  ],
   "d7459cc0930d": [
     "src/addons/typst/index.tsx"
   ],
@@ -1968,8 +1996,7 @@
     "src/renderer/src/main.tsx"
   ],
   "2b249c749333": [
-    "src/renderer/src/SourceEditor.tsx",
-    "src/renderer/src/document-edits.ts"
+    "src/renderer/src/SourceEditor.tsx"
   ],
   "80cb8a06e27d": [
     "src/addons/git/native.ts"
@@ -2318,8 +2345,15 @@
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/main.tsx"
   ],
+  "aff0766a5290": [
+    "src/addons/review/index.tsx",
+    "src/addons/review/manifest.ts"
+  ],
   "5f3ceab57e9e": [
     "src/addons/git/manifest.ts"
+  ],
+  "8612007e996d": [
+    "src/addons/review/index.tsx"
   ],
   "a6334b558b9f": [
     "src/renderer/src/FormattingToolbar.tsx"
@@ -2723,6 +2757,7 @@
     "src/main/document.ts"
   ],
   "2a4bec529492": [
+    "src/renderer/src/Editor.tsx",
     "src/renderer/src/SourceEditor.tsx",
     "src/renderer/src/document-edits.ts"
   ],
@@ -2990,6 +3025,12 @@
   ],
   "7ba2680fe80c": [
     "src/renderer/src/addon-registry.ts"
+  ],
+  "5089081cf601": [
+    "src/renderer/src/document-edits.ts"
+  ],
+  "7a31e879dbe6": [
+    "src/renderer/src/Editor.tsx"
   ],
   "73003d179a64": [
     "src/main/addon-repository.ts"

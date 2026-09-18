@@ -40,13 +40,19 @@ import { DocumentNotice } from '../../ui/DocumentNotice'
 import { codeHighlighter, codeLanguages } from './code-languages'
 import { documentEdits } from './document-edits'
 import { editorDocument } from './document-formats'
+import { documentProjections } from './document-projections'
 import type { FindMove, FindStatus } from './FindBar'
+import {
+  observeSourceAnnotations,
+  sourceAnnotationExtension,
+} from './source-annotations'
 import {
   formattingKeymap,
   type SourceFormatting,
   sourceFormatting,
 } from './source-formatting'
 import { registerSourceView } from './source-view'
+import { textProjection } from './text-projection'
 
 const externalChange = Annotation.define<boolean>()
 const highlighting = HighlightStyle.define([
@@ -207,6 +213,7 @@ export function SourceEditor({
           numbers.current.of([]),
           language.of(markdown()),
           history(),
+          sourceAnnotationExtension,
           EditorView.domEventHandlers({
             blur(_event, view) {
               const selection = view.state.selection
@@ -306,6 +313,28 @@ export function SourceEditor({
       }),
     })
     view.current = editor
+    const removeAnnotations = observeSourceAnnotations(editor)
+    const unregisterProjection = documentProjections.register(
+      'source',
+      (cached) => {
+        const context = editContext.current
+        const current = editorDocument.get()
+        if (
+          !context.editTarget ||
+          context.disabled ||
+          !context.inputReady ||
+          !current ||
+          current.tabId !== context.document.tabId ||
+          current.revision !== context.document.revision ||
+          editor.state.doc.toString() !== current.markdown
+        )
+          return null
+        return (
+          cached ??
+          textProjection(current.markdown, parserOptions.current.markdownMode)
+        )
+      },
+    )
     const unregisterEdits = documentEdits.register((request) => {
       const context = editContext.current
       const current = editorDocument.get()
@@ -417,6 +446,8 @@ export function SourceEditor({
       reportFormatting.current(null)
       unregister()
       unregisterEdits()
+      unregisterProjection()
+      removeAnnotations()
       editor.destroy()
       view.current = null
     }

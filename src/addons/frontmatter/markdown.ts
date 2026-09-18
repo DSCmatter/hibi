@@ -28,6 +28,7 @@ export function parseFrontmatter(source: string): MarkdownProjection | null {
   if (!block) return null
   return {
     content: block.content,
+    sourceOffset: block.prefix.length,
     serialize: (content) =>
       block.prefix +
       (content && !block.prefix.endsWith('\n') ? block.eol : '') +

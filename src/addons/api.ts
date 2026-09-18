@@ -240,6 +240,8 @@ export type AddonState = { id: string; enabled: boolean }
 
 export type MarkdownProjection = {
   content: string
+  /** Exact start of an unchanged contiguous body in the input source. Omit for non-identity projections. */
+  sourceOffset?: number
   serialize: (content: string) => string
   readOnly?: boolean
 }
@@ -368,10 +370,22 @@ export type AddonContext = {
   patches: PatchApi
   statusBar: { register: (item: StatusItem) => StatusHandle }
   editor: {
-    /** Apply version-checked UTF-16 source edits as one undo operation. Rich view is not supported. */
+    /** Apply version-checked UTF-16 source edits as one undo operation. Rich view accepts only proven literal text edits. */
     applySourceEdits: (
       request: import('../shared/document-edits').SourceEditRequest,
     ) => import('../shared/document-edits').SourceEditResult
+    /** Lazily read exact literal text spans for analysis; null while the active editor is unavailable. */
+    getTextProjection: () => Readonly<
+      import('../shared/document-projection').TextProjection
+    > | null
+    /** Show up to 32 exact analysis ranges. Returns false for stale or invalid projections. */
+    setDecorations: (
+      projectionId: string,
+      decorations: readonly import('../shared/document-projection').TextDecoration[],
+    ) => boolean
+    clearDecorations: () => void
+    /** Observe changes to the active view or schema; text changes use onDocumentChange. */
+    onProjectionChange: (listener: () => void) => () => void
     /** Read the active document, or null when no editor document is available. */
     getDocument: () => Readonly<
       import('../shared/desktop').DocumentState

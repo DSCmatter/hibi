@@ -11,6 +11,7 @@ Start with [editing](guides/editing.md), or choose a topic below.
 - [Create, rename, move, and delete files](editing/explorer.md)
 - [Images, videos, links, and navigation](editing/media-and-navigation.md)
 - [Version history](editing/version-history.md)
+- [Review a document](guides/reviewing.md)
 - [Graphs and tags](editing/graph-and-tags.md)
 
 ## Make Hibi yours

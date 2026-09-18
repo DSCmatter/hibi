@@ -10,6 +10,8 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addon
 ```typescript
 type MarkdownProjection = {
   content: string
+  /** Exact start of an unchanged contiguous body in the input source. Omit for non-identity projections. */
+  sourceOffset?: number
   serialize: (content: string) => string
   readOnly?: boolean
 }
@@ -22,6 +24,7 @@ type MarkdownProjection = {
 **Properties**
 
 - [content](#content)
+- [sourceOffset](#sourceoffset)
 - [readOnly](#readonly)
 
 **Methods**
@@ -38,9 +41,19 @@ type MarkdownProjection = {
 content: string
 ```
 
-### readOnly
+### sourceOffset
 
 Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L244)
+
+Exact start of an unchanged contiguous body in the input source. Omit for non-identity projections.
+
+```typescript
+sourceOffset?: number
+```
+
+### readOnly
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L246)
 
 ```typescript
 readOnly?: boolean
@@ -50,7 +63,7 @@ readOnly?: boolean
 
 ### serialize
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L243)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L245)
 
 ```typescript
 serialize: (content: string) => string

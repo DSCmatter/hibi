@@ -36,6 +36,8 @@ import { colorschemes } from './colorschemes'
 import { disposeAll } from './dispose'
 import { documentEdits } from './document-edits'
 import { documentFormats, editorDocument } from './document-formats'
+import { documentProjections } from './document-projections'
+import { editorAnnotations } from './editor-annotations'
 import { onEditorInput, onEditorKeyEvent } from './editor-events'
 import { explorerDecorations } from './explorer-decorations'
 import { flavors, renderMarkdown, renderMarkdownAsync } from './flavors'
@@ -224,6 +226,7 @@ export function useAddons(environment: Environment, documentName?: string) {
       const tooltipScope = createTooltipScope()
       const cleanups = new Set<() => void>()
       const editScope = documentEdits.scope(() => latest.current.isBusy())
+      const annotationScope = editorAnnotations.scope(id)
       const observe = (
         subscribe: (listener: () => void) => () => void,
         listener: () => void,
@@ -246,6 +249,7 @@ export function useAddons(environment: Environment, documentName?: string) {
         if (disposed) return
         disposed = true
         editScope.dispose()
+        annotationScope.dispose()
         running.delete(id)
         if (mounted.current)
           setSettled((current) => {
@@ -440,6 +444,12 @@ export function useAddons(environment: Environment, documentName?: string) {
                 observe(codeLanguages.subscribe, listener),
               renderCode: codeHtml,
               getDocument: () => editorDocument.get(),
+              getTextProjection: () =>
+                disposed ? null : documentProjections.get(),
+              setDecorations: annotationScope.set,
+              clearDecorations: annotationScope.clear,
+              onProjectionChange: (listener) =>
+                observe(documentProjections.subscribe, listener),
               applySourceEdits: (request) => editScope.apply(request),
               onDocumentChange(listener) {
                 if (disposed) return () => {}

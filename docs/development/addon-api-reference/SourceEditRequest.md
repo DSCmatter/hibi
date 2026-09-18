@@ -13,6 +13,8 @@ type SourceEditRequest = {
   tabId: string
   revision: number
   contentVersion: number
+  /** Optional exact analysis/schema identity returned by getTextProjection(). */
+  projectionId?: string
   changes: readonly SourceEdit[]
 }
 ```
@@ -27,6 +29,7 @@ type SourceEditRequest = {
 - [tabId](#tabid)
 - [revision](#revision)
 - [contentVersion](#contentversion)
+- [projectionId](#projectionid)
 - [changes](#changes)
 
 ## Properties
@@ -63,9 +66,19 @@ revision: number
 contentVersion: number
 ```
 
+### projectionId
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/document-edits.ts#L17)
+
+Optional exact analysis/schema identity returned by getTextProjection().
+
+```typescript
+projectionId?: string
+```
+
 ### changes
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/document-edits.ts#L16)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/document-edits.ts#L18)
 
 ```typescript
 changes: readonly SourceEdit[]

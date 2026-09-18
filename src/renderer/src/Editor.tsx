@@ -1,4 +1,6 @@
 import type { Editor } from '@tiptap/core'
+import { closeHistory } from '@tiptap/pm/history'
+import type { Node as RichNode } from '@tiptap/pm/model'
 import { AllSelection, TextSelection } from '@tiptap/pm/state'
 import { EditorContent, useEditor } from '@tiptap/react'
 import {
@@ -26,11 +28,16 @@ import type {
   SourceExtension,
 } from '../../addons/api'
 import type { DocumentState } from '../../shared/desktop'
+import { MAX_DOCUMENT_BYTES } from '../../shared/desktop'
+import { editedSource, sourceEditMatches } from '../../shared/document-edits'
 import type { DocumentView } from '../../shared/document-types'
 import { isMediaFile } from '../../shared/media'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { performanceDiagnostics } from '../../ui/diagnostics'
 import { documentImage } from './DocumentImage'
+import { documentEdits } from './document-edits'
+import { editorDocument } from './document-formats'
+import { documentProjections } from './document-projections'
 import { type CursorSettings, EditorCursor } from './EditorCursor'
 import { emitEditorKeyEvent } from './editor-events'
 import { FindBar, type FindMove, type FindStatus } from './FindBar'
@@ -47,7 +54,10 @@ import { markdownPositions } from './markdown-positions'
 import { markdownSerializer } from './markdown-serialization'
 import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
+import { observeRichAnnotations } from './rich-annotations'
+import { exactRichRange } from './rich-text-range'
 import { revealSourcePosition, sourceView } from './source-view'
+import { textProjection } from './text-projection'
 
 const SourceEditor = lazy(() =>
   import('./SourceEditor').then((module) => ({ default: module.SourceEditor })),
@@ -109,6 +119,12 @@ export function MarkdownEditor({
   outlineActive: boolean
 }) {
   const markdownDocument = format?.editing === 'markdown'
+  const exactSource = useRef<{ source: string; document: RichNode } | null>(
+    null,
+  )
+  const exactHistory = useRef(
+    new WeakMap<Editor, Map<string, { source: string; document: RichNode }>>(),
+  )
   const serializers = useRef(
     new WeakMap<Editor, ReturnType<typeof markdownSerializer>>(),
   )
@@ -283,7 +299,12 @@ export function MarkdownEditor({
           'Markdown serialization',
           () => serialize(editor.state.doc),
         )
-        const source = projection.serialize(serialized.source)
+        const preserved =
+          exactSource.current ??
+          exactHistory.current.get(editor)?.get(serialized.source)
+        const source = preserved?.document.eq(editor.state.doc)
+          ? preserved.source
+          : projection.serialize(serialized.source)
         generated.current = {
           source,
           body: serialized.source,
@@ -313,6 +334,178 @@ export function MarkdownEditor({
       () => serialize(editor.state.doc),
     )
   }, [editor, markdownDocument, flavors])
+  const richEditContext = useRef({
+    document: documentState,
+    mode,
+    findTarget,
+    disabled,
+    sourceOnly,
+    markdownExtensions,
+  })
+  richEditContext.current = {
+    document: documentState,
+    mode,
+    findTarget,
+    disabled,
+    sourceOnly,
+    markdownExtensions,
+  }
+  useEffect(() => {
+    if (!editor?.markdown || !markdownDocument) return
+    const body = () => {
+      const context = richEditContext.current
+      const current = editorDocument.get()
+      if (
+        editor.isDestroyed ||
+        context.findTarget !== 'rich' ||
+        context.mode === 'markdown' ||
+        context.disabled ||
+        context.sourceOnly ||
+        !editor.isEditable ||
+        !current ||
+        current.tabId !== context.document.tabId ||
+        current.revision !== context.document.revision
+      )
+        return null
+      const projection = projectMarkdown(
+        current.markdown,
+        context.markdownExtensions,
+      )
+      if (
+        projection.readOnly ||
+        projection.sourceOffset === undefined ||
+        projection.serialize(projection.content) !== current.markdown
+      )
+        return null
+      return { current, projection }
+    }
+    const removeAnnotations = observeRichAnnotations(
+      editor,
+      () => body()?.projection ?? null,
+    )
+    const removeProjection = documentProjections.register('rich', (cached) => {
+      const value = body()
+      return value
+        ? (cached ??
+            textProjection(
+              value.projection.content,
+              true,
+              value.projection.sourceOffset,
+            ))
+        : null
+    })
+    const removeEdits = documentEdits.register((request) => {
+      const value = body()
+      const unsupported = {
+        status: 'unsupported-view' as const,
+        message: 'This range needs source view.',
+      }
+      if (!value) return unsupported
+      const { current, projection } = value
+      if (!sourceEditMatches(request, current))
+        return {
+          status: 'stale',
+          message: 'The document changed. Review the edits again.',
+        }
+      if (editor.view.composing)
+        return {
+          status: 'composing',
+          message: 'Finish composing text before applying edits.',
+        }
+      if (request.changes.length > 32) return unsupported
+      try {
+        const source = editedSource(
+          current.markdown,
+          request.changes,
+          MAX_DOCUMENT_BYTES,
+        )
+        if (source === current.markdown)
+          return { status: 'applied', contentVersion: current.contentVersion }
+        const offset = projection.sourceOffset!
+        const suffix =
+          current.markdown.length - offset - projection.content.length
+        const nextBody = source.slice(offset, source.length - suffix)
+        if (projection.serialize(nextBody) !== source) return unsupported
+        const ranges = request.changes.map((change) => {
+          if (/[\r\n]/.test(change.insert)) return null
+          const range = exactRichRange(
+            editor.state.doc,
+            editor.markdown!,
+            projection.content,
+            change.from - offset,
+            change.to - offset,
+          )
+          return range ? { ...range, insert: change.insert } : null
+        })
+        if (ranges.some((range) => !range)) return unsupported
+        const tr = closeHistory(editor.state.tr)
+        let boundary = editor.state.doc.content.size + 1
+        for (const range of ranges.toReversed()) {
+          if (!range || range.to > boundary) return unsupported
+          boundary = range.from
+          if (range.insert)
+            tr.replaceWith(
+              range.from,
+              range.to,
+              editor.schema.text(range.insert, range.marks),
+            )
+          else tr.delete(range.from, range.to)
+        }
+        const expected = editor.schema.nodeFromJSON(
+          editor.markdown!.parse(nextBody),
+        )
+        if (
+          !tr.doc.eq(expected) ||
+          !editor.state.applyTransaction(tr).state.doc.eq(expected)
+        )
+          return unsupported
+        let history = exactHistory.current.get(editor)
+        if (!history) {
+          history = new Map()
+          exactHistory.current.set(editor, history)
+        }
+        history.set(editor.markdown!.serialize(editor.state.doc.toJSON()), {
+          source: current.markdown,
+          document: editor.state.doc,
+        })
+        history.set(editor.markdown!.serialize(expected.toJSON()), {
+          source,
+          document: expected,
+        })
+        let size = [...history].reduce(
+          (size, [body, entry]) => size + body.length + entry.source.length,
+          0,
+        )
+        while (history.size > 32 || size > 8 * 1024 * 1024) {
+          const first = history.keys().next().value!
+          size -= first.length + history.get(first)!.source.length
+          history.delete(first)
+        }
+        exactSource.current = { source, document: expected }
+        editor.view.dispatch(tr)
+        editor.view.dispatch(closeHistory(editor.state.tr))
+        if (!editor.state.doc.eq(expected))
+          return {
+            status: 'invalid',
+            message:
+              'An editor extension changed this edit. Review the document before continuing.',
+          }
+        return {
+          status: 'applied',
+          contentVersion: editorDocument.get()!.contentVersion,
+        }
+      } catch (error) {
+        return { status: 'invalid', message: String(error) }
+      } finally {
+        exactSource.current = null
+      }
+    }, 'rich')
+    return () => {
+      removeEdits()
+      removeProjection()
+      removeAnnotations()
+    }
+  }, [editor, markdownDocument])
   // biome-ignore lint/correctness/useExhaustiveDependencies: initial focus belongs to this editor instance, never subsequent mode or document updates.
   useLayoutEffect(() => {
     if (!editor || !markdownDocument || paneMode === 'markdown') return
@@ -423,6 +616,10 @@ export function MarkdownEditor({
     onActiveOutline,
   ])
   const handledOutline = useRef<OutlineRequest | null>(outlineTarget)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: these transitions invalidate the exact projection even when text is unchanged.
+  useEffect(() => {
+    documentProjections.invalidate()
+  }, [mode, findTarget, sourceReady, syntaxVersion, flavors])
   useEffect(() => {
     if (!editor || !outlineTarget || handledOutline.current === outlineTarget)
       return

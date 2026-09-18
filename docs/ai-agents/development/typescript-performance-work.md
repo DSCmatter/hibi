@@ -56,7 +56,7 @@ The continuation starts at `30984ba`. Complete these stages with progressive com
 - [x] Start independent bootstrap reads in preload and skip empty startup drains.
 - [x] Add an ordered source-change journal and explicit persistence barriers.
 - [x] Cache compatible Markdown serialization and avoid closed-outline scans, with differential tests.
-- [ ] Add exact rich-text projections, shared review decorations, and a shipped local review addon.
+- [x] Add exact rich-text projections, shared review decorations, and a shipped local review addon.
 - [ ] Add capability-specific SDK loading, deterministic staged activation, and preservation contracts.
 - [ ] Add scoped document views and shared command invocation where the review workflow needs them.
 - [ ] Run the review analyzer in a bounded isolated service with cancellation and revocation tests.
@@ -67,6 +67,8 @@ Bootstrap now overlaps renderer evaluation with independent document, addon, and
 The persistence stage sends ordered source replacements and acknowledges content versions. Accepted changes immediately update the main-process recovery snapshot. Preload retries unacknowledged edits before document operations, and native close requests the same barrier. Four protocol tests, nine existing file/autosave/tab/edit/reload checks, and a real renderer-crash/native-close integration passed. The integration deliberately delays delivery and loses an acknowledgment. Recovery is process-local, not durable against a whole-app crash.
 
 Compatible serializers now cache immutable top-level blocks with their index, previous block, and parent attributes. Existing undeclared serializers use the full path. The cache is primed before editing; source-preservation checks reuse the same blocks, and a closed outline has no transaction subscription. Differential tests match the full manager across 160 edits, marks, nested lists, tables, code, Unicode, blank paragraphs, and custom document serialization. Seventeen app checks passed. Three input runs per fixture measured transaction p95 at 0.9, 1.6, and 0.8 ms for blank, large, and code-heavy notes. Full `getMarkdown()` calls on that path fell to zero. These are local hidden-window samples, not a presentation-time guarantee.
+
+The Review addon now uses exact text projections and shared annotations in both editors. Rich fixes prove a literal range through parser equivalence and a marker replacement; they never use the navigation mapper. Metadata offsets are explicit, stale view/schema identities are rejected, and unsafe markup or appended document transformations require source view. Exact before/after source is retained in a bounded per-editor undo cache. The local analyzer currently uses a dedicated worker with one active and one replaceable queued snapshot; the stronger isolated-service boundary remains a later stage below. Six projection/serialization unit tests and nine app checks passed, including the shipped review workflow, metadata, undo, composition, stale results, and appended changes. Empty annotation updates initially interfered with selection; both adapters now skip those transactions.
 
 Full-document Markdown serialization, outline scanning, and source IPC remain on the editing path. Incremental serialization needs round-trip differential coverage before replacing them. An ordered edit journal and explicit flush barriers need save, crash-recovery, close, and tab-replacement tests; this pass preserves the immediate full-source persistence path.
 

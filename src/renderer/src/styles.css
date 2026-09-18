@@ -1,6 +1,14 @@
 @import "../../ui/tokens.css";
 @import "../../ui/syntax.css";
 @import "../../ui/markdown-literal.css";
+
+.editor-annotation {
+  text-decoration: underline wavy var(--status-warning);
+  text-underline-offset: 3px;
+}
+.editor-annotation[data-severity="info"] {
+  text-decoration-color: var(--accent);
+}
 @font-face {
   font-family: "Geist";
   src: url("../../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2")

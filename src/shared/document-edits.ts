@@ -13,6 +13,8 @@ export type SourceEditRequest = {
   tabId: string
   revision: number
   contentVersion: number
+  /** Optional exact analysis/schema identity returned by getTextProjection(). */
+  projectionId?: string
   changes: readonly SourceEdit[]
 }
 export type SourceEditResult =
@@ -41,6 +43,9 @@ export function parseSourceEditRequest(value: unknown): SourceEditRequest {
     input.revision! < 0 ||
     !Number.isSafeInteger(input.contentVersion) ||
     input.contentVersion! < 0 ||
+    (input.projectionId !== undefined &&
+      (typeof input.projectionId !== 'string' ||
+        input.projectionId.length > 256)) ||
     !Array.isArray(input.changes) ||
     !input.changes.length ||
     input.changes.length > 256
@@ -76,6 +81,9 @@ export function parseSourceEditRequest(value: unknown): SourceEditRequest {
     tabId: input.tabId,
     revision: input.revision!,
     contentVersion: input.contentVersion!,
+    ...(input.projectionId === undefined
+      ? {}
+      : { projectionId: input.projectionId }),
     changes,
   }
 }
