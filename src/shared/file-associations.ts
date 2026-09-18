@@ -33,6 +33,12 @@ export const fileAssociations = {
   djot: { name: 'Djot', ext: ['dj'], mimeType: 'text/x-djot' },
   textile: { name: 'Textile', ext: ['textile'], mimeType: 'text/x-textile' },
   creole: { name: 'Creole', ext: ['creole'], mimeType: 'text/x-creole' },
+  mermaid: {
+    name: 'Mermaid',
+    ext: ['mmd', 'mermaid'],
+    mimeType: 'text/x-mermaid',
+  },
+  bbcode: { name: 'BBCode', ext: ['bbcode', 'bbc'], mimeType: 'text/x-bbcode' },
 }
 export const DESKTOP_APP_ID = 'com.ryanaque.hibi'
 export const ASSOCIATION_CHANNELS = {

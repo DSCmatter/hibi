@@ -1,0 +1,86 @@
+import css from '../_shared/format-style.css?inline'
+import { localPreview } from '../_shared/local-preview'
+import { defineAddon } from '../api'
+import { mermaidNode } from './Block'
+import { mermaidLanguage } from './language'
+import manifest from './manifest'
+import { renderDiagram } from './render'
+
+export default defineAddon({
+  manifest,
+  start(context) {
+    context.styles.register(
+      'preview',
+      `${css}\n.mermaid-block{position:relative;padding:16px;border:1px solid var(--border);border-radius:var(--radius-control)}.mermaid-block>button{position:absolute;right:8px;top:8px}.mermaid-block>img{display:block;max-width:100%;margin:auto}`,
+    )
+    context.editor.registerCodeLanguage({
+      id: 'mermaid',
+      aliases: manifest.fileExtensions,
+      language: mermaidLanguage,
+    })
+    context.editor.registerDocumentSyntax({
+      id: 'preview',
+      label: 'Mermaid preview',
+      group: 'Mermaid',
+      level: 'block',
+    })
+    const render = async (source: string) => ({
+      html: await renderDiagram(source),
+      css,
+    })
+    context.editor.registerDocumentFormat({
+      id: 'mermaid',
+      name: 'Mermaid',
+      extensions: manifest.fileExtensions,
+      language: mermaidLanguage,
+      codeLanguage: 'mermaid',
+      views: ['side-by-side', 'markdown'],
+      Preview: localPreview(context, render),
+      render,
+    })
+    context.editor.registerSyntax({
+      id: 'blocks',
+      label: 'Mermaid diagrams',
+      group: 'Mermaid',
+      level: 'block',
+      extensions: ['mermaidBlock'],
+      matches: (token) =>
+        token.type === 'mermaidBlock' ||
+        (token.type === 'code' && token.lang === 'mermaid'),
+    })
+    context.editor.registerFlavor({
+      id: 'blocks',
+      name: 'Mermaid diagrams',
+      description: 'Render Mermaid code blocks.',
+      kind: 'syntax',
+      readOnlyWhenDisabled: false,
+      detect: (source) => /^ {0,3}(?:`{3,}|~{3,})mermaid\s*$/im.test(source),
+      richExtensions: [mermaidNode(context)],
+      export: {
+        async transform(rendered) {
+          const document = new DOMParser().parseFromString(
+            rendered.html,
+            'text/html',
+          )
+          for (const code of document.querySelectorAll(
+            'pre > code.language-mermaid',
+          )) {
+            if (code.parentElement)
+              code.parentElement.outerHTML = await renderDiagram(
+                code.textContent ?? '',
+              )
+          }
+          return { ...rendered, html: document.body.innerHTML }
+        },
+      },
+    })
+    context.commands.register({
+      id: 'new',
+      label: 'New Mermaid diagram',
+      run: async () => {
+        if (await context.native.invoke('create'))
+          context.app.runAction('side-by-side')
+      },
+    })
+  },
+})

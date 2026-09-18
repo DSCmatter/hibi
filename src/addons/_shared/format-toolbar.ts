@@ -50,6 +50,38 @@ const table = '| Column 1 | Column 2 |\n| --- | --- |\n|  |  |'
 const markdownLink = (url: string, label: string) =>
   `[${label.replace(/[\\[\]]/g, '\\$&')}](${url.replace(/[\\()]/g, '\\$&').replaceAll(' ', '%20')})`
 const rules: Record<string, Rules> = {
+  bbcode: {
+    marks: {
+      bold: ['[b]', '[/b]'],
+      italic: ['[i]', '[/i]'],
+      strike: ['[s]', '[/s]'],
+    },
+    heading: (_level, text) => text,
+    levels: 0,
+    strip: /$^/,
+    lines: {},
+    blocks: {
+      quote: (text) => `[quote]${text}[/quote]`,
+      'code-block': (text) => `[code]${text}[/code]`,
+      'bullet-list': (text) =>
+        `[list]\n${text
+          .split('\n')
+          .map((line) => `[*]${line}`)
+          .join('\n')}\n[/list]`,
+      'numbered-list': (text) =>
+        `[list=1]\n${text
+          .split('\n')
+          .map((line) => `[*]${line}`)
+          .join('\n')}\n[/list]`,
+    },
+    link: (url, label) =>
+      `[url=${url.replace(/[[\]\r\n]/g, encodeURIComponent)}]${label}[/url]`,
+    image: (url) =>
+      `[img]${url.replace(/[[\]\r\n]/g, encodeURIComponent)}[/img]`,
+    divider: '',
+    break: '\n',
+    table: '',
+  },
   typst: {
     marks: {
       bold: ['*', '*'],
