@@ -20,7 +20,8 @@ type DocumentFormat = {
   views?: readonly import('../shared/document-types').DocumentView[]
   /** Map the shared toolbar and shortcuts to this format; Markdown variants can reuse its mapper. */
   formatting?: 'markdown' | DocumentFormatting
-  language: import('@codemirror/language').Language
+  /** Optional eager source parser. Prefer codeLanguage with a lazy language registration. Omit for plain text. */
+  language?: import('@codemirror/language').Language
   Preview: ComponentType<DocumentPreviewProps>
   insertMedia?: (
     attachments: readonly import('../shared/media').MediaAttachment[],
@@ -122,15 +123,17 @@ Related: [DocumentFormatting](DocumentFormatting.md).
 
 ### language
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L307)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L308)
+
+Optional eager source parser. Prefer codeLanguage with a lazy language registration. Omit for plain text.
 
 ```typescript
-language: import('@codemirror/language').Language
+language?: import('@codemirror/language').Language
 ```
 
 ### Preview
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L308)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L309)
 
 ```typescript
 Preview: ComponentType<DocumentPreviewProps>
@@ -142,7 +145,7 @@ Related: [DocumentPreviewProps](DocumentPreviewProps.md).
 
 ### insertMedia
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L309)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L310)
 
 ```typescript
 insertMedia?: (
@@ -162,7 +165,7 @@ Related: [MediaAttachment](MediaAttachment.md).
 
 ### render
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L312)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L313)
 
 ```typescript
 render?: (source: string, documentId?: string) => Promise<RenderedMarkdown>

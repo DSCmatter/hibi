@@ -1,4 +1,3 @@
-import { EditorView as SourceView } from '@codemirror/view'
 import { AllSelection, TextSelection } from '@tiptap/pm/state'
 import { EditorContent, useEditor } from '@tiptap/react'
 import {
@@ -45,6 +44,7 @@ import {
 import { markdownPositions } from './markdown-positions'
 import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
+import { revealSourcePosition, sourceView } from './source-view'
 
 const SourceEditor = lazy(() =>
   import('./SourceEditor').then((module) => ({ default: module.SourceEditor })),
@@ -197,12 +197,6 @@ export function MarkdownEditor({
     )
   }, [paneMode])
   useEffect(() => {
-    const idle = requestIdleCallback(() => {
-      void import('./SourceEditor').catch(() => {})
-    })
-    return () => cancelIdleCallback(idle)
-  }, [])
-  useEffect(() => {
     if (mode !== 'normal') setSourceMounted(true)
   }, [mode])
   // biome-ignore lint/correctness/useExhaustiveDependencies: syntax changes rebuild configured extensions even when the flavor identities stay unchanged.
@@ -306,7 +300,7 @@ export function MarkdownEditor({
       let selected: string | null = null
       if (findTarget === 'source') {
         const element = root?.querySelector<HTMLElement>('.cm-content')
-        const view = element && SourceView.findFromDOM(element)
+        const view = element && sourceView(element)
         const { source, body } = scrollContent.current
         const offset = source.lastIndexOf(body)
         if (
@@ -383,7 +377,7 @@ export function MarkdownEditor({
         .run()
     } else {
       const element = content.current?.querySelector<HTMLElement>('.cm-content')
-      const view = element && SourceView.findFromDOM(element)
+      const view = element && sourceView(element)
       if (!view) return
       const offset = value.lastIndexOf(projection.content)
       const mapped = markdownPositions(projection.content, editor.state.doc)(
@@ -393,10 +387,7 @@ export function MarkdownEditor({
       if (offset < 0 || mapped === null) return
       handledOutline.current = outlineTarget
       const anchor = Math.min(view.state.doc.length, offset + mapped)
-      view.dispatch({
-        selection: { anchor },
-        effects: SourceView.scrollIntoView(anchor, { y: 'start', yMargin: 48 }),
-      })
+      revealSourcePosition(view, anchor)
       view.focus()
     }
   }, [editor, outlineTarget, mode, sourceReady, value, projection.content])

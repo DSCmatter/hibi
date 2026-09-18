@@ -1,6 +1,6 @@
-import { EditorView } from '@codemirror/view'
 import type { Editor } from '@tiptap/core'
 import { markdownPositions } from './markdown-positions'
+import { sourceView } from './source-view'
 
 /** Markdown follows text positions; other preview formats keep proportional scrolling. */
 export function linkScroll(
@@ -24,7 +24,7 @@ export function linkScroll(
   function anchoredTop(target: HTMLElement): number | null {
     if (!markdown || markdown.editor.isDestroyed) return null
     const content = second.querySelector<HTMLElement>('.cm-content')
-    const view = content && EditorView.findFromDOM(content)
+    const view = content && sourceView(content)
     if (!view) return null
     const editor = markdown.editor
     const text = markdown.content()

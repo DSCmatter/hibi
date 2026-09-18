@@ -304,7 +304,8 @@ export type DocumentFormat = {
   views?: readonly import('../shared/document-types').DocumentView[]
   /** Map the shared toolbar and shortcuts to this format; Markdown variants can reuse its mapper. */
   formatting?: 'markdown' | DocumentFormatting
-  language: import('@codemirror/language').Language
+  /** Optional eager source parser. Prefer codeLanguage with a lazy language registration. Omit for plain text. */
+  language?: import('@codemirror/language').Language
   Preview: ComponentType<DocumentPreviewProps>
   insertMedia?: (
     attachments: readonly import('../shared/media').MediaAttachment[],

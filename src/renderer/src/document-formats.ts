@@ -1,4 +1,3 @@
-import { StreamLanguage } from '@codemirror/language'
 import { createElement } from 'react'
 import type { DocumentFormat } from '../../addons/api'
 import type { DocumentState } from '../../shared/desktop'
@@ -14,12 +13,6 @@ const plainText: DocumentFormat = {
   name: 'Plain text',
   extensions: ['txt'],
   views: ['markdown'],
-  language: StreamLanguage.define({
-    token(stream) {
-      stream.skipToEnd()
-      return null
-    },
-  }),
   Preview: ({ value }) =>
     createElement('pre', { className: 'plain-text-preview' }, value),
   render: async (source) => ({

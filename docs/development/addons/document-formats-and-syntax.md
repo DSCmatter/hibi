@@ -4,7 +4,7 @@ Register a [DocumentFormat](../addon-api-reference/DocumentFormat.md) to add a f
 
 ## Choose the supported views
 
-Every format supports source view, called `markdown` in the API. Include `split` in `views` when your format has a useful preview. Include `normal` only when it has an editable visual view. Set `editing: 'markdown'` only for formats that can use Hibi's Markdown editor without losing content.
+Every format supports source view, called `markdown` in the API. Include `side-by-side` in `views` when your format has a useful preview. Include `normal` only when it has an editable visual view. Set `editing: 'markdown'` only for formats that can use Hibi's Markdown editor without losing content.
 
 The `Preview` component receives the source in `value` and the current document in `document`. Its `toolbar` prop is the host's pinned action area. Render shared [PreviewActions](../addon-api-reference/PreviewActions.md) into that target for compile, run, or export buttons.
 
@@ -13,6 +13,18 @@ The `Preview` component receives the source in `value` and the current document 
 Set `formatting: 'markdown'` for Markdown-compatible formats. Otherwise, provide [DocumentFormatting](../addon-api-reference/DocumentFormatting.md): an action list and an `apply` function that returns a source edit. Returning `null` leaves the selection unchanged. This connects the shared toolbar and shortcuts to your format.
 
 Register a [CodeLanguage](../addon-api-reference/CodeLanguage.md) for syntax highlighting and put its ID in the format's `codeLanguage`. Register format-specific rendering options through `registerDocumentSyntax()`. These entries appear while the addon is enabled.
+
+Use `load` to import a parser when it is first needed. Existing registrations with a `language` object remain supported. A format can omit its own `language` when it uses `codeLanguage`, or when its source is plain text.
+
+```typescript
+context.editor.registerCodeLanguage({
+  id: 'javascript',
+  aliases: ['js'],
+  load: () => import('@codemirror/lang-javascript').then(module => module.javascript().language),
+})
+```
+
+Hibi shares an in-flight load across aliases. Disabling or removing an addon while its parser loads cannot restore that registration after it finishes.
 
 ## Support export
 

@@ -7,6 +7,46 @@ import {
   highlightCode,
 } from '../src/renderer/src/code-languages.ts'
 
+test('lazy addon parsers deduplicate aliases and cannot return after removal', async () => {
+  const language = StreamLanguage.define({
+    token(stream) {
+      stream.skipToEnd()
+      return 'keyword'
+    },
+  })
+  let calls = 0,
+    finish
+  const load = () => {
+    calls++
+    return new Promise((resolve) => {
+      finish = resolve
+    })
+  }
+  const remove = codeLanguages.register('lazy', {
+    id: 'lazy-code',
+    aliases: ['lazy-alias'],
+    load,
+  })
+  assert.equal(calls, 0)
+  const first = codeLanguages.ensure('lazy-code'),
+    alias = codeLanguages.ensure('lazy-alias')
+  await Promise.resolve()
+  assert.equal(calls, 1)
+  remove()
+  finish(language)
+  assert.deepEqual(await Promise.all([first, alias]), [null, null])
+  assert.equal(codeLanguages.resolve('lazy-code'), null)
+  const removeNext = codeLanguages.register('lazy', {
+    id: 'lazy-code',
+    load: async () => language,
+  })
+  assert.equal(await codeLanguages.ensure('lazy-code'), language)
+  codeLanguages.setEnabled('lazy-code', false)
+  assert.equal(codeLanguages.resolve('lazy-code'), null)
+  codeLanguages.setEnabled('lazy-code', true)
+  removeNext()
+})
+
 test('common fenced-code languages highlight without executing or changing code', async () => {
   const cases = {
     js: 'const answer = "<script>alert(1)</script>"; // café 💚',

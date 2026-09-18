@@ -41,6 +41,7 @@ import {
   type SourceFormatting,
   sourceFormatting,
 } from './source-formatting'
+import { registerSourceView } from './source-view'
 
 const externalChange = Annotation.define<boolean>()
 const highlighting = HighlightStyle.define([
@@ -132,7 +133,9 @@ export function SourceEditor({
   >(null)
   const [measured, setMeasured] = useState(false)
   const [extensionError, setExtensionError] = useState('')
-  const inputReady = installedExtensions === sourceExtensions
+  const [languageError, setLanguageError] = useState('')
+  const [languageReady, setLanguageReady] = useState(!codeLanguage)
+  const inputReady = installedExtensions === sourceExtensions && languageReady
   const change = useRef(onChange)
   const initialValue = useRef(value)
   const appliedRevision = useRef(externalRevision)
@@ -292,7 +295,36 @@ export function SourceEditor({
       }),
     })
     view.current = editor
+    let disposed = false
+    const unregister = registerSourceView(editor, (anchor) =>
+      editor.dispatch({
+        selection: { anchor },
+        effects: EditorView.scrollIntoView(anchor, { y: 'start', yMargin: 48 }),
+      }),
+    )
     configureParser.current = () => {
+      const id = parserOptions.current.codeLanguage
+      const enabled = () =>
+        codeLanguages
+          .snapshot()
+          .some(
+            (entry) =>
+              (entry.id === id || entry.aliases.includes(id ?? '')) &&
+              entry.enabled,
+          )
+      const waiting = !!id && enabled() && !codeLanguages.resolve(id)
+      setLanguageReady(!waiting)
+      setLanguageError('')
+      if (waiting)
+        void codeLanguages.ensure(id).then((language) => {
+          if (
+            !disposed &&
+            parserOptions.current.codeLanguage === id &&
+            !language &&
+            enabled()
+          )
+            setLanguageError(`Could not load the ${id} editor language.`)
+        })
       editor.dispatch({ effects: language.reconfigure(markdown()) })
       formatting.current = sourceFormatting(
         editor,
@@ -302,11 +334,8 @@ export function SourceEditor({
       )
       reportFormatting.current(formatting.current)
     }
-    const unsubscribe = codeLanguages.subscribe(() =>
-      editor.dispatch({ effects: language.reconfigure(markdown()) }),
-    )
+    const unsubscribe = codeLanguages.subscribe(() => configureParser.current())
     configureParser.current()
-    let disposed = false
     const measure = () => {
       if (!disposed)
         editor.requestMeasure({
@@ -321,6 +350,7 @@ export function SourceEditor({
       disposed = true
       formatting.current = null
       reportFormatting.current(null)
+      unregister()
       editor.destroy()
       view.current = null
     }
@@ -330,7 +360,6 @@ export function SourceEditor({
     let canceled = false
     const editor = view.current
     setExtensionError('')
-    ready.current('loading')
     void Promise.all(
       sourceExtensions.map(async (extension) => extension.create()),
     )
@@ -343,7 +372,6 @@ export function SourceEditor({
       .catch((error: unknown) => {
         if (!canceled) {
           setExtensionError(String(error))
-          ready.current('failed')
         }
       })
     return () => {
@@ -351,8 +379,14 @@ export function SourceEditor({
     }
   }, [sourceExtensions])
   useEffect(() => {
-    if (inputReady && measured) ready.current('ready')
-  }, [inputReady, measured])
+    ready.current(
+      extensionError || languageError
+        ? 'failed'
+        : inputReady && measured
+          ? 'ready'
+          : 'loading',
+    )
+  }, [inputReady, measured, extensionError, languageError])
 
   useEffect(() => {
     // Only reconcile edits from the other pane; never replay our own stale props.
@@ -428,10 +462,10 @@ export function SourceEditor({
 
   return (
     <>
-      {extensionError && (
+      {(extensionError || languageError) && (
         <DocumentNotice
           title="Editor plugin unavailable"
-          message={extensionError}
+          message={extensionError || languageError}
         />
       )}
       <div className="source-editor" ref={host} />

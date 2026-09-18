@@ -1,4 +1,3 @@
-import { EditorView } from '@codemirror/view'
 import {
   type CSSProperties,
   type RefObject,
@@ -8,6 +7,7 @@ import {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { sourceView } from './source-view'
 
 export type CursorSettings = {
   style: 'bar' | 'outline' | 'block' | 'underline'
@@ -107,7 +107,7 @@ export function EditorCursor({
       const fallback = anchor.getBoundingClientRect()
       const fontSize = Number.parseFloat(getComputedStyle(anchor).fontSize)
       const source = active.classList.contains('cm-content')
-        ? EditorView.findFromDOM(active)
+        ? sourceView(active)
         : null
       // DOM ranges around CodeMirror's empty-line placeholder have line-box
       // geometry, not caret geometry. Let the editor resolve its own position.

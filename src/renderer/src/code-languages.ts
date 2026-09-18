@@ -1,10 +1,13 @@
-import { type Language, StreamLanguage } from '@codemirror/language'
+import type { Language, StreamParser } from '@codemirror/language'
 import { highlightTree, tagHighlighter, tags } from '@lezer/highlight'
 import type { CodeLanguage } from '../../shared/syntax'
 
-const builtin: (Omit<CodeLanguage, 'language'> & {
-  load: () => Promise<Language>
-})[] = [
+async function streamLanguage<T>(parser: StreamParser<T>) {
+  const { StreamLanguage } = await import('@codemirror/language')
+  return StreamLanguage.define(parser)
+}
+
+const builtin: CodeLanguage[] = [
   {
     id: 'javascript',
     aliases: ['js', 'mjs', 'cjs'],
@@ -88,7 +91,7 @@ const builtin: (Omit<CodeLanguage, 'language'> & {
     aliases: ['sh', 'bash', 'zsh'],
     load: () =>
       import('@codemirror/legacy-modes/mode/shell').then((m) =>
-        StreamLanguage.define(m.shell),
+        streamLanguage(m.shell),
       ),
   },
   {
@@ -96,7 +99,7 @@ const builtin: (Omit<CodeLanguage, 'language'> & {
     aliases: ['ps1'],
     load: () =>
       import('@codemirror/legacy-modes/mode/powershell').then((m) =>
-        StreamLanguage.define(m.powerShell),
+        streamLanguage(m.powerShell),
       ),
   },
   {
@@ -104,7 +107,7 @@ const builtin: (Omit<CodeLanguage, 'language'> & {
     aliases: ['cs', 'c#'],
     load: () =>
       import('@codemirror/legacy-modes/mode/clike').then((m) =>
-        StreamLanguage.define(m.csharp),
+        streamLanguage(m.csharp),
       ),
   },
   {
@@ -112,21 +115,21 @@ const builtin: (Omit<CodeLanguage, 'language'> & {
     aliases: ['rb'],
     load: () =>
       import('@codemirror/legacy-modes/mode/ruby').then((m) =>
-        StreamLanguage.define(m.ruby),
+        streamLanguage(m.ruby),
       ),
   },
   {
     id: 'swift',
     load: () =>
       import('@codemirror/legacy-modes/mode/swift').then((m) =>
-        StreamLanguage.define(m.swift),
+        streamLanguage(m.swift),
       ),
   },
   {
     id: 'toml',
     load: () =>
       import('@codemirror/legacy-modes/mode/toml').then((m) =>
-        StreamLanguage.define(m.toml),
+        streamLanguage(m.toml),
       ),
   },
   {
@@ -134,17 +137,18 @@ const builtin: (Omit<CodeLanguage, 'language'> & {
     aliases: ['docker'],
     load: () =>
       import('@codemirror/legacy-modes/mode/dockerfile').then((m) =>
-        StreamLanguage.define(m.dockerFile),
+        streamLanguage(m.dockerFile),
       ),
   },
 ]
-const loaded = new Map<string, Language>()
-const pending = new Map<string, Promise<Language | null>>()
-const failed = new Set<string>()
+const loaded = new WeakMap<CodeLanguage, Language>()
+const pending = new Map<CodeLanguage, Promise<Language | null>>()
+const failed = new WeakSet<CodeLanguage>()
 const registered = new Map<string, CodeLanguage>()
 const listeners = new Set<() => void>()
 let version = 0
-let languages = new Map<string, CodeLanguage['language']>()
+let languages = new Map<string, Language>()
+let definitions = new Map<string, CodeLanguage>()
 let aliases = new Map<string, string>()
 let catalog: readonly {
   id: string
@@ -164,25 +168,28 @@ try {
 }
 function publish() {
   languages = new Map()
+  definitions = new Map()
   aliases = new Map()
   const entries = new Map<string, (typeof catalog)[number]>()
-  const definitions = [
+  const entriesWithOwner = [
     ...builtin.map((entry) => ({
-      ...entry,
-      language: loaded.get(entry.id),
+      entry,
       owner: 'built-in',
     })),
     ...[...registered].map(([key, entry]) => ({
-      ...entry,
+      entry,
       owner: key.slice(0, key.length - entry.id.length - 1),
     })),
   ]
-  for (const entry of definitions) {
-    if (entry.language) languages.set(entry.id.toLowerCase(), entry.language)
+  for (const { entry, owner } of entriesWithOwner) {
+    const language = entry.language ?? loaded.get(entry)
+    definitions.set(entry.id.toLowerCase(), entry)
+    languages.delete(entry.id.toLowerCase())
+    if (language) languages.set(entry.id.toLowerCase(), language)
     entries.set(entry.id.toLowerCase(), {
       id: entry.id.toLowerCase(),
       aliases: [],
-      owner: entry.owner,
+      owner,
       enabled: !disabled.has(entry.id.toLowerCase()),
     })
     for (const name of [entry.id, ...(entry.aliases ?? [])])
@@ -237,26 +244,29 @@ export const codeLanguages = {
   async ensure(info: string): Promise<Language | null> {
     const id =
       aliases.get(info.trim().split(/\s+/)[0]?.toLowerCase() ?? '') ?? ''
-    if (disabled.has(id) || failed.has(id)) return null
+    const definition = definitions.get(id)
+    if (disabled.has(id) || !definition || failed.has(definition)) return null
     if (languages.has(id)) return languages.get(id) ?? null
-    const definition = builtin.find((entry) => entry.id === id)
-    if (!definition) return null
-    let loading = pending.get(id)
+    if (!definition.load) return null
+    let loading = pending.get(definition)
     if (!loading) {
-      loading = definition
-        .load()
+      loading = Promise.resolve()
+        .then(() => definition.load!())
         .then((language) => {
-          loaded.set(id, language)
+          if (!validLanguage(language))
+            throw new Error('invalid code language.')
+          loaded.set(definition, language)
+          if (definitions.get(id) !== definition) return null
           publish()
           return disabled.has(id) ? null : language
         })
         .catch((error: unknown) => {
-          failed.add(id)
+          failed.add(definition)
           console.error(`Could not load code language: ${id}`, error)
           return null
         })
-        .finally(() => pending.delete(id))
-      pending.set(id, loading)
+        .finally(() => pending.delete(definition))
+      pending.set(definition, loading)
     }
     return loading
   },
@@ -277,8 +287,10 @@ export const codeLanguages = {
         (name) =>
           typeof name !== 'string' || !/^[a-z][a-z0-9_+#.-]*$/i.test(name),
       ) ||
-      typeof entry.language?.parser?.parse !== 'function' ||
-      typeof entry.language?.parser?.startParse !== 'function'
+      !(
+        (typeof entry.load === 'function' && entry.language === undefined) ||
+        (entry.load === undefined && validLanguage(entry.language))
+      )
     )
       throw new Error('invalid or duplicate code language.')
     const contribution = { ...entry }
@@ -290,6 +302,13 @@ export const codeLanguages = {
       publish()
     }
   },
+}
+
+function validLanguage(language: Language | undefined): language is Language {
+  return (
+    typeof language?.parser?.parse === 'function' &&
+    typeof language?.parser?.startParse === 'function'
+  )
 }
 
 export const codeHighlighter = tagHighlighter([

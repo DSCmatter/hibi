@@ -4,5 +4,7 @@ import type { Language } from '@codemirror/language'
 export type CodeLanguage = {
   id: string
   aliases?: readonly string[]
-  language: Language
-}
+} & (
+  | { language: Language; load?: never }
+  | { language?: never; load: () => Promise<Language> }
+)

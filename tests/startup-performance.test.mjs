@@ -75,10 +75,8 @@ test('blank startup leaves disabled runtimes and closed settings unloaded and so
     initial,
     /src\/renderer\/src\/(?:SettingsScreen|VersionHistory)\.tsx/,
   )
-  assert.doesNotMatch(
-    initial,
-    /@codemirror\/(?:lang-rust|lang-python|lang-java|lang-sql)\//,
-  )
+  assert.doesNotMatch(initial, /@codemirror\//)
+  assert.doesNotMatch(initial, /src\/renderer\/src\/SourceEditor\.tsx/)
   await page.evaluate(() => {
     const editor = document.querySelector('.editor-surface')
     const height = editor.getBoundingClientRect().height

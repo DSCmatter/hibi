@@ -1,8 +1,8 @@
-import { EditorView } from '@codemirror/view'
 import type { Editor } from '@tiptap/core'
 import { type RefObject, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { markdownPositions } from './markdown-positions'
+import { sourceView as findSourceView } from './source-view'
 
 export function MirrorCursor({
   editor,
@@ -41,7 +41,7 @@ export function MirrorCursor({
       const focused = document.activeElement
       const sourceElement =
         root.current?.querySelector<HTMLElement>('.cm-content')
-      const sourceView = sourceElement && EditorView.findFromDOM(sourceElement)
+      const sourceView = sourceElement && findSourceView(sourceElement)
       const richFocus = focused === editor.view.dom
       const sourceFocus = focused === sourceElement
       if (

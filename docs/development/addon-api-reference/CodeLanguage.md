@@ -13,8 +13,10 @@ One parser serves source fences, rich code blocks, and static exports.
 type CodeLanguage = {
   id: string
   aliases?: readonly string[]
-  language: Language
-}
+} & (
+  | { language: Language; load?: never }
+  | { language?: never; load: () => Promise<Language> }
+)
 ```
 
 </details>
@@ -25,7 +27,6 @@ type CodeLanguage = {
 
 - [id](#id)
 - [aliases](#aliases)
-- [language](#language)
 
 ## Properties
 
@@ -43,12 +44,4 @@ Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/
 
 ```typescript
 aliases?: readonly string[]
-```
-
-### language
-
-[Source](https://github.com/schmayterling/hibi/blob/main/src/shared/syntax.ts#L7)
-
-```typescript
-language: Language
 ```
