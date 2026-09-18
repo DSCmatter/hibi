@@ -644,6 +644,10 @@ button:disabled {
   position: relative;
   z-index: 1;
 }
+.setting-row-openable > :not(.setting-row-action) {
+  position: relative;
+  z-index: 1;
+}
 .setting-row-action:focus-visible {
   outline: none;
 }
@@ -726,8 +730,6 @@ button:disabled {
   margin-top: 0;
 }
 .addon-actions {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex-shrink: 0;
   max-width: 100%;
