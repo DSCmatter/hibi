@@ -60,6 +60,11 @@ test('desktop launch, isolation, offline reload, and recovery', {
       node: 'undefined',
       process: 'undefined',
       api: [
+        'getDependencies',
+        'checkDependency',
+        'installDependency',
+        'configureDependency',
+        'openDependencyGuide',
         'analyzeDocument',
         'cancelAnalysis',
         'appendDocumentChange',

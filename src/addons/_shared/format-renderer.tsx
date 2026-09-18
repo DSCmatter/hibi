@@ -10,6 +10,7 @@ import { PreviewActions } from '../../ui/PreviewActions'
 import {
   type AddonContext,
   type AddonManifest,
+  type DependencyApi,
   type DocumentPreviewProps,
   defineAddon,
   type RenderedMarkdown,
@@ -339,7 +340,13 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
   })
 }
 
-export function FormatSettings({ spec }: { spec: FormatSpec }) {
+export function FormatSettings({
+  spec,
+  dependencies,
+}: {
+  spec: FormatSpec
+  dependencies?: DependencyApi | undefined
+}) {
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   return (
@@ -366,6 +373,11 @@ export function FormatSettings({ spec }: { spec: FormatSpec }) {
           >
             Check tools
           </Button>
+          {dependencies && (
+            <Button onClick={() => dependencies.openSettings()}>
+              Manage dependencies
+            </Button>
+          )}
         </SettingRow>
       </div>
       {status && <DocumentNotice title="Preview tools" message={status} />}
@@ -375,9 +387,18 @@ export function FormatSettings({ spec }: { spec: FormatSpec }) {
 
 export function formatAddon(manifest: AddonManifest) {
   const spec = formatSpec(manifest)
+  let dependencies: DependencyApi | undefined
   return defineAddon({
     manifest,
-    Settings: () => <FormatSettings spec={spec} />,
-    start: (context) => startFormat(context, spec),
+    Settings: () => <FormatSettings spec={spec} dependencies={dependencies} />,
+    start: (context) => {
+      dependencies = manifest.dependencies?.length
+        ? context.dependencies
+        : undefined
+      startFormat(context, spec)
+    },
+    stop: () => {
+      dependencies = undefined
+    },
   })
 }

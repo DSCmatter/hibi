@@ -3,6 +3,7 @@ import { ADDON_CHANNELS } from '../addons/api'
 import { ABOUT_CHANNELS } from '../shared/about'
 import { ANALYSIS_CHANNELS } from '../shared/analysis'
 import { APPEARANCE_CHANNEL } from '../shared/colorschemes'
+import { DEPENDENCY_CHANNELS } from '../shared/dependencies'
 import {
   APP_INFO_CHANNEL,
   BOOTSTRAP_CHANNELS,
@@ -51,6 +52,16 @@ if (process.isMainFrame) {
   for (const pending of [startupDocument, startupAddons, startupRecent])
     void pending.catch(() => {})
   contextBridge.exposeInMainWorld('hibi', {
+    getDependencies: (owner) =>
+      transport.invoke(DEPENDENCY_CHANNELS.list, owner),
+    checkDependency: (target) =>
+      transport.invoke(DEPENDENCY_CHANNELS.check, target),
+    installDependency: (target) =>
+      transport.invoke(DEPENDENCY_CHANNELS.install, target),
+    configureDependency: (key, action) =>
+      transport.invoke(DEPENDENCY_CHANNELS.path, key, action),
+    openDependencyGuide: (key) =>
+      transport.invoke(DEPENDENCY_CHANNELS.guide, key),
     analyzeDocument: (owner, projection) =>
       ipcRenderer.invoke(ANALYSIS_CHANNELS.run, owner, projection),
     cancelAnalysis: (owner) =>

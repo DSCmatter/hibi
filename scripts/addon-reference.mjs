@@ -18,6 +18,12 @@ export const referenceSources = [
   ['src/shared/workspace.ts', 'Workspaces', 'workspace-api'],
   ['src/shared/workspace-settings.ts', 'Workspace settings'],
   ['src/shared/imports.ts', 'Importers'],
+  [
+    'src/shared/dependencies.ts',
+    'Dependencies',
+    null,
+    ['AddonDependency', 'DependencyApi', 'DependencyState'],
+  ],
   ['src/shared/colorschemes.ts', 'Color schemes', 'colorscheme-api'],
   ['src/ui/dialogs.ts', 'Dialogs', 'dialog-api'],
   ['src/ui/menus.ts', 'Menus', 'menu-api'],

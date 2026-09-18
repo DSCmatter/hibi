@@ -9,6 +9,7 @@ import {
   type NativeAddon,
 } from '../addons/api'
 import { addonDefaultEnabled } from '../shared/addon-defaults'
+import { parseDependencies } from '../shared/dependencies'
 import { validDocumentExtensions } from '../shared/document-types'
 import { exportedAppearance } from './appearance'
 import {
@@ -78,6 +79,7 @@ const manifests = () => [
   ...bundledManifests,
   ...installedAddons().map((addon) => addon.manifest),
 ]
+export const getAddonManifests = manifests
 
 export function getAddonLicenses() {
   return manifests().flatMap((manifest) =>
@@ -122,9 +124,11 @@ export async function loadAddons(): Promise<void> {
   ])
   const ids = new Set<string>()
   for (const manifest of manifests()) {
+    const dependencies = parseDependencies(manifest.dependencies)
     if (
       !/^[a-z][a-z0-9-]*$/.test(manifest.id) ||
       ids.has(manifest.id) ||
+      (manifest.kind === 'theme' && dependencies.length > 0) ||
       (manifest.fileExtensions !== undefined &&
         !validDocumentExtensions(manifest.fileExtensions)) ||
       !compatibleAddonManifest(manifest)
@@ -279,6 +283,10 @@ export async function invokeAddon(
   if (!handler)
     throw new Error('This addon does not support the requested action.')
   return handler(input, {
+    dependencies: {
+      resolve: async (dependency) =>
+        (await import('./dependencies')).resolveDependency(id, dependency),
+    },
     document: {
       get: getDocument,
       async path(id) {

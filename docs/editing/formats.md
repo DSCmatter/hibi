@@ -32,7 +32,7 @@ Plain text uses Source view. Formats without a visual editor offer source and si
 
 ## Install required tools
 
-Some formats need tools installed separately. Use **Check tools** in the addon's settings to check whether Hibi can find them.
+Some formats need tools installed separately. Open **Settings → Dependencies** to check availability, see which addons need each tool, choose an executable, or install a missing tool. **Manage dependencies** in a format's settings opens the same page.
 
 | Format | Required tools |
 | --- | --- |
@@ -41,7 +41,7 @@ Some formats need tools installed separately. Use **Check tools** in the addon's
 | R Markdown execution | R, the `rmarkdown` package, and its rendering dependencies |
 | Quarto execution | Quarto and the document's R or Jupyter runtime |
 
-These tools must be on your system's `PATH`, which tells apps where to find programs. Hibi includes the tools needed for Typst, Markdoc, MDX, MDsveX, HTML previews, and inline LaTeX math.
+Hibi searches your system's `PATH` and common installation directories, or uses the executable you choose in [Dependencies](../features/dependencies.md). Hibi includes the tools needed for Typst, Markdoc, MDX, MDsveX, HTML previews, and inline LaTeX math.
 
 ## Run or compile a document
 

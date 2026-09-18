@@ -2,7 +2,7 @@
 
 # AddonView
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L402)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L409)
 
 <details>
 <summary>Declaration</summary>
@@ -36,7 +36,7 @@ type AddonView = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L403)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L410)
 
 ```typescript
 id: string
@@ -44,7 +44,7 @@ id: string
 
 ### label
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L404)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L411)
 
 ```typescript
 label: string
@@ -52,7 +52,7 @@ label: string
 
 ### icon
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L405)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L412)
 
 ```typescript
 icon?: SidebarView['icon']
@@ -62,7 +62,7 @@ Related: [SidebarView](SidebarView.md).
 
 ### location
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L406)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L413)
 
 ```typescript
 location?: 'sidebar' | 'panel'
@@ -70,7 +70,7 @@ location?: 'sidebar' | 'panel'
 
 ### lifetime
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L408)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L415)
 
 Visible views unmount when hidden; session views retain local state until closed or disposed.
 
@@ -80,7 +80,7 @@ lifetime?: 'visible' | 'session'
 
 ### Content
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L409)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L416)
 
 ```typescript
 Content: ComponentType<AddonViewProps>

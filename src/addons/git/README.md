@@ -2,6 +2,8 @@
 
 Review and commit changes to your notes. Install Git, turn on **Git** in **Settings → Addons**, and open your repository's root folder as a workspace. Then choose **Git** from the sidebar view menu.
 
+Use **Settings → Dependencies** to check Git, choose an executable, or install it with a supported package manager. Git operations use that selected path.
+
 ## Commit your changes
 
 Save your notes first, because Git reads the files on disk. Select a changed file to review it, stage the changes you want to include, then click the commit icon and enter a message.

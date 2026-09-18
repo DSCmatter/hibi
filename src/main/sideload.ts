@@ -27,6 +27,7 @@ import {
   type ColorschemeInput,
   defineColorscheme,
 } from '../shared/colorschemes'
+import { parseDependencies } from '../shared/dependencies'
 import { parseSyntaxDescriptors } from '../shared/preservation'
 import type { InstalledAddon } from '../shared/sideload'
 import { downloadRepository, repositoryUrl } from './addon-repository'
@@ -162,6 +163,9 @@ function manifest(value: unknown): {
     version: data.version,
     authors: data.authors,
     defaultEnabled: false,
+    ...(data.dependencies === undefined
+      ? {}
+      : { dependencies: parseDependencies(data.dependencies) }),
     ...(data.settings === undefined
       ? {}
       : { settings: settingsMetadata(data.settings) }),
@@ -207,6 +211,7 @@ function manifest(value: unknown): {
       data.capabilities !== undefined ||
       data.activation !== undefined ||
       data.commands !== undefined ||
+      data.dependencies !== undefined ||
       data.entry !== undefined ||
       !Array.isArray(data.themes) ||
       !data.themes.length ||

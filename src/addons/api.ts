@@ -16,6 +16,11 @@ import type {
 import type { CodeLanguage } from '../shared/syntax'
 
 export type {
+  AddonDependency,
+  DependencyApi,
+  DependencyState,
+} from '../shared/dependencies'
+export type {
   DocumentSyntaxFeature,
   MarkdownSyntaxFeature,
 } from '../shared/markdown-syntax'
@@ -129,6 +134,8 @@ export type AddonManifest = {
   fileExtensions?: readonly string[]
   /** Placement and Lucide icon name for the addon's default settings page. */
   settings?: { category?: string; icon?: string }
+  /** External CLI requirements. The host checks and installs these without executing addon-supplied shell commands. */
+  dependencies?: readonly import('../shared/dependencies').AddonDependency[]
   authors?: readonly AddonAuthor[]
   /** Shipped third-party notices, shown under hibi's open source licenses. */
   licenses?: readonly {
@@ -448,6 +455,7 @@ export type SettingsApi = {
 
 /** APIs available while your renderer addon is enabled. Registrations are removed when it stops. */
 export type AddonContext = {
+  dependencies: import('../shared/dependencies').DependencyApi
   /** Enabled addon settings. Registrations are removed when the addon stops. */
   settings: SettingsApi
   colorschemes: {
@@ -579,6 +587,8 @@ export type Addon = {
 
 /** Native modules are trusted application code, never loaded from a workspace. */
 export type NativeAddonContext = {
+  /** Resolve declared tools, including user-selected paths. Native modules must not bypass this for managed dependencies. */
+  dependencies: { resolve: (id: string) => Promise<string | null> }
   document: {
     get: () => import('../shared/desktop').DocumentState
     /** Current document or a document in the selected workspace, addressed by opaque id. */

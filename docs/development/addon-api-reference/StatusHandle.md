@@ -2,7 +2,7 @@
 
 # StatusHandle
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L189)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L196)
 
 <details>
 <summary>Declaration</summary>
@@ -27,7 +27,7 @@ type StatusHandle = {
 
 ### update
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L190)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L197)
 
 ```typescript
 update: (changes: Partial<Omit<StatusItem, 'id'>>) => void
@@ -45,7 +45,7 @@ Related: [StatusItem](StatusItem.md).
 
 ### dispose
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L191)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L198)
 
 ```typescript
 dispose: () => void

@@ -404,6 +404,7 @@ function App() {
   }, [cursorSettings])
   const addonHost = useAddons(
     {
+      openDependencySettings: () => openSetting('dependencies'),
       openSidebar: selectSidebarView,
       closeSidebar: () => {
         if (sidebarOpen && !settingsOpen) closeSidebar(false)

@@ -9,6 +9,7 @@ import {
   FileText,
   Folder,
   Keyboard,
+  Package,
   Palette,
   PanelTop,
   Puzzle,
@@ -42,6 +43,12 @@ export const settingsCategories = [
   },
   { id: 'hotkeys', label: 'Hotkeys', icon: Keyboard, category: 'interface' },
   { id: 'addons', label: 'Addons', icon: Puzzle, category: 'addons' },
+  {
+    id: 'dependencies',
+    label: 'Dependencies',
+    icon: Package,
+    category: 'addons',
+  },
 ] as const
 
 const icons = {

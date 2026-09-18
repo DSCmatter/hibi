@@ -20,6 +20,7 @@ import { ADDON_CHANNELS } from '../addons/api'
 import { ABOUT_CHANNELS, SPONSOR_URL } from '../shared/about'
 import { ANALYSIS_CHANNELS } from '../shared/analysis'
 import { APPEARANCE_CHANNEL } from '../shared/colorschemes'
+import { DEPENDENCY_CHANNELS } from '../shared/dependencies'
 import {
   APP_INFO_CHANNEL,
   type AppInfo,
@@ -751,6 +752,40 @@ if (!app.requestSingleInstanceLock()) {
       handle(ASSOCIATION_CHANNELS.get, async (event) => {
         trustedWindow(event)
         return (await import('./file-associations')).getFileAssociations()
+      })
+      handle(DEPENDENCY_CHANNELS.list, async (event, owner: unknown) => {
+        trustedWindow(event)
+        return (await import('./dependencies')).listDependencies(owner)
+      })
+      handle(DEPENDENCY_CHANNELS.check, async (event, target: unknown) => {
+        trustedWindow(event)
+        const dependencies = await import('./dependencies')
+        return dependencies.checkDependency(
+          dependencies.dependencyTarget(target),
+        )
+      })
+      handle(DEPENDENCY_CHANNELS.install, async (event, target: unknown) => {
+        const window = trustedWindow(event)
+        const dependencies = await import('./dependencies')
+        return dependencies.installDependency(
+          window,
+          dependencies.dependencyTarget(target),
+        )
+      })
+      handle(
+        DEPENDENCY_CHANNELS.path,
+        async (event, key: unknown, action: unknown) => {
+          const window = trustedWindow(event)
+          return (await import('./dependencies')).configureDependency(
+            window,
+            key,
+            action,
+          )
+        },
+      )
+      handle(DEPENDENCY_CHANNELS.guide, async (event, key: unknown) => {
+        trustedWindow(event)
+        return (await import('./dependencies')).openDependencyGuide(key)
       })
       handle(ASSOCIATION_CHANNELS.set, async (event, format: unknown) => {
         trustedWindow(event)

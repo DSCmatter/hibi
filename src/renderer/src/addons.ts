@@ -80,7 +80,9 @@ type Environment = Omit<
   | 'toolbar'
   | 'tooltips'
   | 'settings'
+  | 'dependencies'
 > & {
+  openDependencySettings: () => void
   workspace: Omit<AddonContext['workspace'], 'registerDecorations'>
   invoke: (id: string, method: string, input?: unknown) => Promise<unknown>
   error: (error: unknown) => void
@@ -537,6 +539,26 @@ export function useAddons(
         running.set(id, { addon, stop })
         const start = () =>
           addon.start({
+            dependencies: {
+              list: () =>
+                disposed
+                  ? Promise.reject(new Error('Enable this addon first.'))
+                  : window.hibi.getDependencies(id),
+              check: (dependency) =>
+                disposed
+                  ? Promise.reject(new Error('Enable this addon first.'))
+                  : window.hibi.checkDependency({ addon: id, id: dependency }),
+              install: (dependency) =>
+                disposed
+                  ? Promise.reject(new Error('Enable this addon first.'))
+                  : window.hibi.installDependency({
+                      addon: id,
+                      id: dependency,
+                    }),
+              openSettings: () => {
+                if (!disposed) latest.current.openDependencySettings()
+              },
+            },
             settings: {
               registerCategory(category) {
                 if (disposed) return () => {}

@@ -2,7 +2,7 @@
 
 # AddonManifest
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L100)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L105)
 
 <details>
 <summary>Declaration</summary>
@@ -40,6 +40,8 @@ type AddonManifest = {
   fileExtensions?: readonly string[]
   /** Placement and Lucide icon name for the addon's default settings page. */
   settings?: { category?: string; icon?: string }
+  /** External CLI requirements. The host checks and installs these without executing addon-supplied shell commands. */
+  dependencies?: readonly import('../shared/dependencies').AddonDependency[]
   authors?: readonly AddonAuthor[]
   /** Shipped third-party notices, shown under hibi's open source licenses. */
   licenses?: readonly {
@@ -73,6 +75,7 @@ type AddonManifest = {
 - [version](#version)
 - [fileExtensions](#fileextensions)
 - [settings](#settings)
+- [dependencies](#dependencies)
 - [authors](#authors)
 - [licenses](#licenses)
 
@@ -80,7 +83,7 @@ type AddonManifest = {
 
 ### importer
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L102)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L107)
 
 Bundled native importers appear in the core Import dialog while enabled.
 
@@ -95,7 +98,7 @@ Related: [Importer](Importer.md).
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L106)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L111)
 
 ```typescript
 id: string
@@ -103,7 +106,7 @@ id: string
 
 ### name
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L107)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L112)
 
 ```typescript
 name: string
@@ -111,7 +114,7 @@ name: string
 
 ### description
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L108)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L113)
 
 ```typescript
 description: string
@@ -119,7 +122,7 @@ description: string
 
 ### apiVersion
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L109)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L114)
 
 ```typescript
 apiVersion: typeof ADDON_API_VERSION
@@ -129,7 +132,7 @@ Related: [ADDON_API_VERSION](ADDON_API_VERSION.md).
 
 ### kind
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L111)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L116)
 
 Existing API v1 addons default to extension.
 
@@ -139,7 +142,7 @@ kind?: 'theme' | 'extension'
 
 ### defaultEnabled
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L112)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L117)
 
 ```typescript
 defaultEnabled?: boolean
@@ -147,7 +150,7 @@ defaultEnabled?: boolean
 
 ### startup
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L114)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L119)
 
 Background-only UI/services can activate after editing is ready. Omit for schema/input addons.
 
@@ -157,7 +160,7 @@ startup?: 'background'
 
 ### capabilities
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L118)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L123)
 
 Omit for the legacy all-engines SDK. An empty array loads no UI or editor SDK.
 Declaring capabilities also stages editor registrations until start() succeeds.
@@ -170,7 +173,7 @@ Related: [AddonCapability](AddonCapability.md).
 
 ### activation
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L120)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L125)
 
 Command activation needs inert command descriptors. View activation is for editor behavior, not schemas.
 
@@ -180,7 +183,7 @@ activation?: 'command' | 'source' | 'rich'
 
 ### commands
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L121)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L126)
 
 ```typescript
 commands?: readonly AddonCommandDescriptor[]
@@ -190,7 +193,7 @@ Related: [AddonCommandDescriptor](AddonCommandDescriptor.md).
 
 ### syntax
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L123)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L128)
 
 Inert ownership metadata protects source even when an installed addon has never been loaded.
 
@@ -202,7 +205,7 @@ Related: [AddonSyntaxDescriptor](AddonSyntaxDescriptor.md).
 
 ### analysis
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L125)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L130)
 
 Self-contained ES module exporting analyze(projection). Runs without app, filesystem, or network access.
 
@@ -212,7 +215,7 @@ analysis?: { entry: string }
 
 ### version
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L127)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L132)
 
 Required addon release version, separate from the host API version.
 
@@ -222,7 +225,7 @@ version: string
 
 ### fileExtensions
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L129)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L134)
 
 Additional source-file extensions, without dots. Files remain openable when disabled.
 
@@ -232,7 +235,7 @@ fileExtensions?: readonly string[]
 
 ### settings
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L131)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L136)
 
 Placement and Lucide icon name for the addon's default settings page.
 
@@ -240,9 +243,21 @@ Placement and Lucide icon name for the addon's default settings page.
 settings?: { category?: string; icon?: string }
 ```
 
+### dependencies
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L138)
+
+External CLI requirements. The host checks and installs these without executing addon-supplied shell commands.
+
+```typescript
+dependencies?: readonly import('../shared/dependencies').AddonDependency[]
+```
+
+Related: [AddonDependency](AddonDependency.md).
+
 ### authors
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L132)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L139)
 
 ```typescript
 authors?: readonly AddonAuthor[]
@@ -252,7 +267,7 @@ Related: [AddonAuthor](AddonAuthor.md).
 
 ### licenses
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L134)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L141)
 
 Shipped third-party notices, shown under hibi's open source licenses.
 
@@ -267,4 +282,4 @@ licenses?: readonly {
 
 ## Related types
 
-[Importer](Importer.md), [ADDON_API_VERSION](ADDON_API_VERSION.md), [AddonCapability](AddonCapability.md), [AddonCommandDescriptor](AddonCommandDescriptor.md), [AddonSyntaxDescriptor](AddonSyntaxDescriptor.md), [authors](authors.md), [AddonAuthor](AddonAuthor.md).
+[Importer](Importer.md), [ADDON_API_VERSION](ADDON_API_VERSION.md), [AddonCapability](AddonCapability.md), [AddonCommandDescriptor](AddonCommandDescriptor.md), [AddonSyntaxDescriptor](AddonSyntaxDescriptor.md), [AddonDependency](AddonDependency.md), [authors](authors.md), [AddonAuthor](AddonAuthor.md).

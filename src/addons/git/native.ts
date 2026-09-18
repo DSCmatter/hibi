@@ -13,6 +13,11 @@ const redact = (text: string) =>
 async function repository(context: NativeAddonContext) {
   const cwd = context.workspace.directory()
   if (!cwd) throw new Error('Open a Git repository folder first.')
+  const git = await context.dependencies.resolve('git')
+  if (!git)
+    throw new Error(
+      'Install Git or choose its executable in Settings → Dependencies.',
+    )
   const hooks = join(app.getPath('userData'), 'disabled-git-hooks')
   await mkdir(hooks, { recursive: true, mode: 0o700 })
   const config = [
@@ -36,7 +41,7 @@ async function repository(context: NativeAddonContext) {
   ].flatMap((setting) => ['-c', setting])
   const run = async (args: string[], optional = false): Promise<string> => {
     try {
-      const result = await execute('git', [...config, ...args], {
+      const result = await execute(git, [...config, ...args], {
         cwd,
         timeout: 90_000,
         maxBuffer: 4 * 1024 * 1024,

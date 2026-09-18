@@ -17,6 +17,7 @@ Start with [editing](guides/editing.md), or choose a topic below.
 ## Make Hibi yours
 
 - [Settings and addons](guides/settings.md)
+- [Addon dependencies and toolchains](features/dependencies.md)
 - [Performance diagnostics](features/diagnostics.md)
 - [Colorschemes](guides/colorschemes.md)
 - [Document formats](editing/formats.md)

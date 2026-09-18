@@ -1,11 +1,13 @@
 import { fileAssociations } from '../../shared/file-associations'
+import { tectonicDependency } from '../_shared/tool-dependencies'
 import type { AddonManifest } from '../api'
 import { authors } from '../authors'
 export default {
   id: 'math',
   name: 'LaTeX',
   kind: 'extension',
-  version: '1.1.1',
+  version: '1.1.2',
+  dependencies: [tectonicDependency],
   settings: { category: 'editing', icon: 'sigma' },
   apiVersion: 2,
   description:

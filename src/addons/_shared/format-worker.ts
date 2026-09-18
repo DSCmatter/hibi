@@ -1,6 +1,5 @@
 import { spawn } from 'node:child_process'
-import { constants } from 'node:fs'
-import { access, readFile, stat, writeFile } from 'node:fs/promises'
+import { readFile, stat, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { basename, delimiter, dirname, isAbsolute, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -30,6 +29,7 @@ export type FormatJob = {
   entry: string
   run: boolean
   tools?: boolean
+  toolPaths: Record<string, string | null>
   latexCache?: string
   packages?: LatexPackageTask
 }
@@ -44,21 +44,13 @@ const searchPath = [
   ]),
 ].filter(isAbsolute)
 
+let toolPaths: Record<string, string | null> = {}
 async function tool(name: string) {
-  for (const directory of searchPath) {
-    for (const filename of process.platform === 'win32'
-      ? [`${name}.exe`, ...(name === 'quarto' ? ['quarto.cmd'] : [])]
-      : [name]) {
-      const path = join(directory, filename)
-      try {
-        await access(path, constants.X_OK)
-        return path
-      } catch {
-        /* Try the next installation. */
-      }
-    }
-  }
-  throw new Error(`Install ${name} and add it to PATH, then restart Hibi.`)
+  const path = toolPaths[name]
+  if (path) return path
+  throw new Error(
+    `Install ${name} or choose its executable in Settings → Dependencies.`,
+  )
 }
 
 async function command(
@@ -373,6 +365,12 @@ process.parentPort.once(
   'message',
   async ({ data: job }: { data: FormatJob }) => {
     try {
+      toolPaths = job.toolPaths
+      searchPath.unshift(
+        ...Object.values(toolPaths)
+          .filter((path): path is string => !!path)
+          .map(dirname),
+      )
       if (job.packages) {
         const environment = latexEnvironment(job)
         const packages = await latexPackages(
@@ -384,22 +382,7 @@ process.parentPort.once(
         )
         process.parentPort.postMessage({ result: { packages } })
       } else if (job.tools) {
-        const names = [
-          ...new Set([
-            ...(['html', 'mdx', 'mdsvex', 'markdoc', 'latex'].includes(
-              job.spec.reader,
-            )
-              ? []
-              : ['pandoc']),
-            ...(job.spec.engine === 'latex'
-              ? ['tectonic']
-              : job.spec.engine === 'rmarkdown'
-                ? ['Rscript']
-                : job.spec.engine === 'quarto'
-                  ? ['quarto']
-                  : []),
-          ]),
-        ]
+        const names = Object.keys(toolPaths)
         const status = await Promise.all(
           names.map(async (name) => {
             try {

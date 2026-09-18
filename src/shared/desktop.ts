@@ -62,6 +62,20 @@ export type AppInfo = {
 }
 
 export type DesktopApi = {
+  getDependencies: (
+    owner?: string,
+  ) => Promise<import('./dependencies').DependencyState[]>
+  checkDependency: (
+    target: string | { addon: string; id: string },
+  ) => Promise<import('./dependencies').DependencyState>
+  installDependency: (
+    target: string | { addon: string; id: string },
+  ) => Promise<import('./dependencies').DependencyState>
+  configureDependency: (
+    key: string,
+    action: 'choose' | 'reset',
+  ) => Promise<import('./dependencies').DependencyState>
+  openDependencyGuide: (key: string) => Promise<void>
   analyzeDocument: (
     owner: string,
     projection: import('./document-projection').TextProjection,

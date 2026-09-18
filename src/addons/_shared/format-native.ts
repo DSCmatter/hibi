@@ -63,6 +63,14 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
   ) {
     const owner = generation
     const note = packages ? null : await context.document.path(data.documentId)
+    const toolPaths = Object.fromEntries(
+      await Promise.all(
+        (manifest.dependencies ?? []).map(async (dependency) => [
+          dependency.command,
+          await context.dependencies.resolve(dependency.id),
+        ]),
+      ),
+    )
     if (spec.engine === 'latex') await mkdir(latexCache, { recursive: true })
     const scratch = await mkdtemp(join(tmpdir(), 'hibi-format-'))
     // Explicit runs use a temporary sibling source so relative project imports keep working.
@@ -173,6 +181,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
           entry,
           run,
           tools,
+          toolPaths,
           ...(spec.engine === 'latex' ? { latexCache } : {}),
           ...(packages ? { packages } : {}),
         } satisfies FormatJob)

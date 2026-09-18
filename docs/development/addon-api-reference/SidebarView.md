@@ -2,7 +2,7 @@
 
 # SidebarView
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L373)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L380)
 
 <details>
 <summary>Declaration</summary>
@@ -33,7 +33,7 @@ type SidebarView = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L375)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L382)
 
 Local id; the host prefixes it with the addon id.
 
@@ -43,7 +43,7 @@ id: string
 
 ### label
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L376)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L383)
 
 ```typescript
 label: string
@@ -51,7 +51,7 @@ label: string
 
 ### icon
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L377)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L384)
 
 ```typescript
 icon?: import('../ui/toolbar').ToolbarItem['icon']
@@ -61,7 +61,7 @@ Related: [ToolbarItem](ToolbarItem.md).
 
 ### Content
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L379)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L386)
 
 Mounted only while this view is visible. Keep durable drafts in addon state.
 

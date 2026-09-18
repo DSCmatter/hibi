@@ -103,6 +103,12 @@ For installed packages, use the [SideloadFactory](SideloadFactory.md) and the [s
 - [ImportResult](ImportResult.md)
 - [ImportSource](ImportSource.md)
 
+## Dependencies
+
+- [AddonDependency](AddonDependency.md)
+- [DependencyApi](DependencyApi.md)
+- [DependencyState](DependencyState.md)
+
 ## Color schemes
 
 - [COLOR_TOKENS](COLOR_TOKENS.md)

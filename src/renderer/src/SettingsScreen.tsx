@@ -33,6 +33,7 @@ import { AutosaveSettings } from './AutosaveSettings'
 import { addons } from './addons'
 import { CodeSyntaxSettings } from './CodeSyntaxSettings'
 import { colorschemes } from './colorschemes'
+import { DependencySettings } from './DependencySettings'
 import type { CursorSettings } from './EditorCursor'
 import { ToolbarSettings } from './EditorToolbar'
 import { FormatsSettings } from './FormatsSettings'
@@ -645,6 +646,26 @@ export function SettingsScreen({
               setEnabled={onAddonEnabled}
               install={onInstallAddon}
               remove={onRemoveAddon}
+            />
+          </section>
+          <section
+            id="settings-dependencies"
+            role="tabpanel"
+            aria-labelledby="category-dependencies"
+            aria-label="Dependencies"
+            hidden={category !== 'dependencies'}
+          >
+            <DependencySettings
+              active={open && category === 'dependencies'}
+              addons={addons}
+              states={addonStates}
+              openAddon={(id) =>
+                onCategory(
+                  items.some((item) => item.id === `plugin-${id}`)
+                    ? `plugin-${id}`
+                    : 'addons',
+                )
+              }
             />
           </section>
           <section

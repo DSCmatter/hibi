@@ -2,7 +2,7 @@
 
 # ViewRegistration
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L418)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L425)
 
 <details>
 <summary>Declaration</summary>
@@ -33,7 +33,7 @@ type ViewRegistration = {
 
 ### open
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L420)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L427)
 
 Reuse a local instance ID, or omit it for the default instance. At most eight instances per addon.
 
@@ -58,7 +58,7 @@ Related: [ViewInstance](ViewInstance.md).
 
 ### dispose
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L426)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L433)
 
 ```typescript
 dispose: () => void
