@@ -1,4 +1,4 @@
-import { FileText } from 'lucide-react'
+import { FileText, Search } from 'lucide-react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { Addon, AddonManifest, AddonState } from '../../addons/api'
 import { addonPackageUrl } from '../../shared/addon-package'
@@ -243,7 +243,14 @@ export function AddonSettings({
           </SettingRow>
         ))}
       </div>
-      {!matching.length && <p>No matching addons.</p>}
+      {!matching.length && (
+        <Panel>
+          <PanelMessage
+            icon={<Search size={32} strokeWidth={1.5} />}
+            title="No matching addons"
+          />
+        </Panel>
+      )}
     </>
   )
 }

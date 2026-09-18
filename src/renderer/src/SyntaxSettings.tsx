@@ -1,6 +1,7 @@
+import { Search } from 'lucide-react'
 import { useState, useSyncExternalStore } from 'react'
 import { sentenceCase } from '../../shared/ui-case'
-import { SettingRow, Toggle } from '../../ui/Controls'
+import { Panel, PanelMessage, SettingRow, Toggle } from '../../ui/Controls'
 import { SettingsFilter } from '../../ui/SettingsFilter'
 import { markdownSyntax } from './markdown-syntax'
 
@@ -59,7 +60,14 @@ export function SyntaxSettings() {
           </div>
         </div>
       ))}
-      {!matching.length && <p>No matching syntax.</p>}
+      {!matching.length && (
+        <Panel>
+          <PanelMessage
+            icon={<Search size={32} strokeWidth={1.5} />}
+            title="No matching syntax"
+          />
+        </Panel>
+      )}
     </>
   )
 }

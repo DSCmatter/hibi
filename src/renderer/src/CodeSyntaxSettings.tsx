@@ -1,5 +1,6 @@
+import { Search } from 'lucide-react'
 import { useState, useSyncExternalStore } from 'react'
-import { SettingRow, Toggle } from '../../ui/Controls'
+import { Panel, PanelMessage, SettingRow, Toggle } from '../../ui/Controls'
 import { SettingsFilter } from '../../ui/SettingsFilter'
 import { addons } from './addons'
 import { codeLanguages } from './code-languages'
@@ -71,7 +72,14 @@ export function CodeSyntaxSettings() {
           </div>
         ),
       )}
-      {!matching.length && <p>No matching languages.</p>}
+      {!matching.length && (
+        <Panel>
+          <PanelMessage
+            icon={<Search size={32} strokeWidth={1.5} />}
+            title="No matching languages"
+          />
+        </Panel>
+      )}
     </>
   )
 }

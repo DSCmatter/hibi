@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Addon, AddonState } from '../../addons/api'
 import { errorMessage } from '../../shared/errors'
@@ -5,7 +6,13 @@ import {
   type FileAssociationState,
   fileAssociations,
 } from '../../shared/file-associations'
-import { Button, SettingRow, Toggle } from '../../ui/Controls'
+import {
+  Button,
+  Panel,
+  PanelMessage,
+  SettingRow,
+  Toggle,
+} from '../../ui/Controls'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { SettingsFilter } from '../../ui/SettingsFilter'
 import { useToasts } from '../../ui/Sonner'
@@ -141,7 +148,7 @@ export function FormatsSettings({
         onChange={setQuery}
       />
       <h2>Document formats</h2>
-      <div className="settings-group">
+      <div className="settings-group" hidden={!matching.length && !plainText}>
         <SettingRow
           id="format-text"
           label="Plain text"
@@ -198,7 +205,14 @@ export function FormatsSettings({
           </SettingRow>
         ))}
       </div>
-      {!matching.length && !plainText && <p>No matching formats.</p>}
+      {!matching.length && !plainText && (
+        <Panel>
+          <PanelMessage
+            icon={<Search size={32} strokeWidth={1.5} />}
+            title="No matching formats"
+          />
+        </Panel>
+      )}
     </>
   )
 }

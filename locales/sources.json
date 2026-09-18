@@ -1678,13 +1678,13 @@
   "56db8832782f": [
     "src/addons/graph/Panel.tsx"
   ],
-  "e981998fbf5a": [
+  "14e1a5e07d2c": [
     "src/renderer/src/AddonSettings.tsx"
   ],
-  "02bd3c44fec8": [
+  "4ef7eef8a0c6": [
     "src/renderer/src/FormatsSettings.tsx"
   ],
-  "dd3d84ae688f": [
+  "ee43d3205df1": [
     "src/renderer/src/CodeSyntaxSettings.tsx"
   ],
   "5a859d101f66": [
@@ -1696,7 +1696,7 @@
   "ae3505eff8f5": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
-  "697639d0eab5": [
+  "b0a4bc0ccda7": [
     "src/renderer/src/SyntaxSettings.tsx"
   ],
   "7cfcab74d09c": [
