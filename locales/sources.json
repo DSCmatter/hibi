@@ -1,0 +1,2837 @@
+{
+  "9a88e600bded": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "290f0b582d25": [
+    "src/addons/math/engine.ts"
+  ],
+  "e218b4dfe0cf": [
+    "src/addons/math/engine.ts"
+  ],
+  "39fdfa8c72e8": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "33443aba490a": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "d628cf044c3b": [
+    "src/addons/github-markdown/index.ts"
+  ],
+  "50b7ba42fd77": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "dbd79d2cf624": [
+    "src/addons/text-extras/index.ts"
+  ],
+  "3657b3cbad64": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "3762f797a72c": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "8b13cd5c78ad": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "4e6867fe4fb3": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "d9ee2b8b5fe8": [
+    "src/main/workspace-actions.ts"
+  ],
+  "44848690beba": [
+    "src/main/workspace-actions.ts"
+  ],
+  "f59bf0fe3a63": [
+    "src/main/document.ts"
+  ],
+  "bc28dd38370f": [
+    "src/main/document.ts"
+  ],
+  "2b7728db5625": [
+    "src/main/workspace-actions.ts"
+  ],
+  "e008e52e004d": [
+    "src/addons/_shared/document-project.ts"
+  ],
+  "dbd4fb5faedf": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "90b2bf6c90bc": [
+    "src/renderer/src/WorkspaceSidebar.tsx",
+    "src/ui/Sidebar.tsx"
+  ],
+  "f115ff5e0175": [
+    "src/addons/github-markdown/manifest.ts"
+  ],
+  "d3629db00997": [
+    "src/addons/frontmatter/index.ts"
+  ],
+  "642d37f2b3db": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "096faa6640a0": [
+    "src/addons/frontmatter/index.ts"
+  ],
+  "49ddf7c4d218": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "2b813bc62d17": [
+    "src/addons/text-extras/manifest.ts"
+  ],
+  "8b7d06a0cfea": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "6a2133724e54": [
+    "src/main/addon-download.ts"
+  ],
+  "9939894c9461": [
+    "src/main/sideload.ts"
+  ],
+  "c48fd48c43a3": [
+    "src/main/sideload.ts"
+  ],
+  "af3185c7197e": [
+    "src/renderer/src/AddonSettings.tsx",
+    "src/renderer/src/FormatsSettings.tsx",
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/settings-categories.ts"
+  ],
+  "011227e1b06f": [
+    "src/addons/keybeats/Settings.tsx"
+  ],
+  "f62e9267d196": [
+    "src/addons/github-markdown/index.ts"
+  ],
+  "0a8ddfae4889": [
+    "src/addons/github-markdown/flavor-info.ts"
+  ],
+  "b1295e49f642": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "f94cb81af39b": [
+    "src/renderer/src/CodeSyntaxSettings.tsx"
+  ],
+  "c91da2e0203b": [
+    "src/shared/hotkeys.ts"
+  ],
+  "0fda37724cde": [
+    "src/renderer/src/AddonSettings.tsx",
+    "src/renderer/src/FormatsSettings.tsx",
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "b7209017b20b": [
+    "src/main/sideload.ts"
+  ],
+  "480347cad7e2": [
+    "src/main/sideload.ts"
+  ],
+  "a4d759d9e47f": [
+    "src/renderer/src/main.tsx"
+  ],
+  "46e7dbbc93e5": [
+    "src/main/index.ts"
+  ],
+  "3907fa7f8072": [
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/settings-categories.ts",
+    "src/site/main.tsx",
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "31e392d1c037": [
+    "src/addons/math/engine.ts",
+    "src/addons/typst/Block.tsx"
+  ],
+  "a1e57e3c2176": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "345116e83679": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "42f0fec8e4fc": [
+    "src/addons/asciidoc/manifest.ts"
+  ],
+  "180415cbfdeb": [
+    "src/main/media.ts"
+  ],
+  "d461a493a375": [
+    "src/renderer/src/FlavorPicker.tsx"
+  ],
+  "0bc43fd02704": [
+    "src/renderer/src/FlavorPicker.tsx"
+  ],
+  "94a1674d162c": [
+    "src/renderer/src/main.tsx"
+  ],
+  "97d14ff6a64e": [
+    "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "76900f1bfd16": [
+    "src/main/index.ts"
+  ],
+  "a6989680b352": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "01e8fc461b6a": [
+    "src/renderer/src/main.tsx"
+  ],
+  "dc9c6093b76f": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "b4276963bf99": [
+    "src/addons/block-drag/index.ts"
+  ],
+  "a936b1f4cf9c": [
+    "src/addons/block-drag/manifest.ts"
+  ],
+  "83d0a88afd6d": [
+    "src/addons/math/engine.ts"
+  ],
+  "94fee62e68e2": [
+    "src/renderer/src/FormattingToolbar.tsx",
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "a066ff921096": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "52656e8104ee": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "73667278486b": [
+    "src/site/main.tsx"
+  ],
+  "bacfd35540a3": [
+    "src/addons/tags/index.tsx"
+  ],
+  "e9347ce3c607": [
+    "src/addons/tags/index.tsx"
+  ],
+  "a2b5baef0f36": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "42575392ebf8": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "19766ed6ccb2": [
+    "src/addons/frontmatter/Properties.tsx",
+    "src/addons/typst/Block.tsx",
+    "src/main/document.ts",
+    "src/main/sideload.ts",
+    "src/renderer/src/FormattingToolbar.tsx",
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "8fa63eb3c5e1": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "cb141fb6cd63": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "139549ca9bd9": [
+    "src/renderer/src/main.tsx"
+  ],
+  "5d4041aa7af3": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "c40fbdd563d3": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "5c6372f7f1e5": [
+    "src/addons/typing-speed/index.ts"
+  ],
+  "7164b51d91dc": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "bcbfc943b9b1": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "ba7ce84cc893": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "7346030400bf": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "1a9f084bf2db": [
+    "src/main/document.ts"
+  ],
+  "7dd81854ac3a": [
+    "src/addons/git/native.ts"
+  ],
+  "9c47b4fb088f": [
+    "src/main/addons.ts"
+  ],
+  "4f06af701050": [
+    "src/main/workspace-actions.ts"
+  ],
+  "5f7d0390ae07": [
+    "src/main/workspace-actions.ts"
+  ],
+  "1d7031f78966": [
+    "src/main/workspace-actions.ts"
+  ],
+  "3b24e1f87361": [
+    "src/main/workspace-actions.ts"
+  ],
+  "6ac54b5f1dce": [
+    "src/main/licenses.ts"
+  ],
+  "d4dc94ba2837": [
+    "src/main/media.ts"
+  ],
+  "2874c2767f58": [
+    "src/main/workspace.ts"
+  ],
+  "5a3cfacf2245": [
+    "src/main/workspace-actions.ts"
+  ],
+  "e3aa3bb043d1": [
+    "src/main/document.ts"
+  ],
+  "42e3ecb68937": [
+    "src/main/media.ts"
+  ],
+  "f84eb17965b6": [
+    "src/shared/hotkeys.ts"
+  ],
+  "4498a0e9706f": [
+    "src/main/files.ts"
+  ],
+  "63f351843bb7": [
+    "src/main/links.ts"
+  ],
+  "3aa9d06341aa": [
+    "src/main/sideload.ts"
+  ],
+  "766db4dda5c6": [
+    "src/addons/git/native.ts"
+  ],
+  "8afb17585fb2": [
+    "src/main/media.ts"
+  ],
+  "126adc7247bf": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "fab6f4954081": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "79bce0799896": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "902fe58b95bc": [
+    "src/addons/keybeats/Settings.tsx"
+  ],
+  "26a5aa15d2b1": [
+    "src/main/media.ts"
+  ],
+  "8a0eb59d08f6": [
+    "src/renderer/src/main.tsx"
+  ],
+  "63c62e141b68": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "b22b0b3873a1": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "954d1afa8200": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "7d9eb7acb13e": [
+    "src/renderer/src/CommandPalette.tsx",
+    "src/renderer/src/HibiSettings.tsx",
+    "src/ui/DialogProvider.tsx"
+  ],
+  "8be57fbed5f6": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "5d3b18dbef3a": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "c8df66c5fe3f": [
+    "src/ui/DialogProvider.tsx"
+  ],
+  "302e940b1a0b": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "eb903c9fde77": [
+    "src/renderer/src/FindBar.tsx"
+  ],
+  "bb8bcb5bf4f9": [
+    "src/renderer/src/FindBar.tsx"
+  ],
+  "99904db30de4": [
+    "src/site/main.tsx"
+  ],
+  "50a3f9523122": [
+    "src/main/index.ts",
+    "src/renderer/src/DocumentTabs.tsx",
+    "src/shared/hotkeys.ts"
+  ],
+  "31a8910a7cf4": [
+    "src/renderer/src/DocumentTabs.tsx"
+  ],
+  "7545380a2996": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "ea9255d5c74d": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "f30ee5b04e89": [
+    "src/renderer/src/CodeSyntaxSettings.tsx",
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/settings-categories.ts"
+  ],
+  "890912754789": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "662b650e135e": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "10ee94005bb9": [
+    "src/site/main.tsx"
+  ],
+  "88c45d9e526c": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "d9b3e4b5d671": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "e37d6e9cf889": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "0347f794d69c": [
+    "src/main/index.ts",
+    "src/renderer/src/CommandPalette.tsx",
+    "src/shared/hotkeys.ts"
+  ],
+  "b269dc4e81a5": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "82a9c46ffa47": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "c137a4849999": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "26306d203c4a": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "5c9f7a4e454f": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "c3f93413b825": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "2bc9ce53684d": [
+    "src/addons/typst/Preview.tsx"
+  ],
+  "48000b12fa76": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "16accd487c4e": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "466db060f033": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "88f4e736d27c": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "2fe2682998aa": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "4d18892d5f18": [
+    "src/addons/typst/Preview.tsx"
+  ],
+  "dc273117482b": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "d835039d17f2": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "8d525e5f158b": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "ec7ee2826c84": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "d6fac84c4dc9": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "e9cddf67a523": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "fa5bf6b3b3a8": [
+    "src/addons/typst/compiler.ts"
+  ],
+  "7c822b51dee0": [
+    "src/main/file-associations.ts"
+  ],
+  "438c5594cd03": [
+    "src/main/file-associations.ts"
+  ],
+  "2062f7592858": [
+    "src/main/addons.ts"
+  ],
+  "cbf582aa15a3": [
+    "src/ui/DialogProvider.tsx"
+  ],
+  "9cbb87fafd15": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "8ee887cb7d7b": [
+    "src/renderer/src/main.tsx"
+  ],
+  "4f995b757108": [
+    "src/renderer/src/main.tsx"
+  ],
+  "0b0ebcc18cb7": [
+    "src/main/addon-download.ts"
+  ],
+  "33554c208410": [
+    "src/main/addon-download.ts"
+  ],
+  "a3ef55d8c922": [
+    "src/main/links.ts"
+  ],
+  "88ad63a0a663": [
+    "src/addons/typst/Block.tsx"
+  ],
+  "320f2511259a": [
+    "src/renderer/src/main.tsx"
+  ],
+  "349ceed84d07": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "fc8b8ebd6f13": [
+    "src/ui/DialogProvider.tsx"
+  ],
+  "a1b6ea912527": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "893ffc1eb568": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "f929e30decff": [
+    "src/renderer/src/AddonSidebar.tsx"
+  ],
+  "ab4f0719fbd3": [
+    "src/renderer/src/main.tsx"
+  ],
+  "5bb069eb3188": [
+    "src/renderer/src/main.tsx"
+  ],
+  "92f776f168d2": [
+    "src/renderer/src/main.tsx"
+  ],
+  "4ed9d9eca342": [
+    "src/renderer/src/main.tsx"
+  ],
+  "243d7d0be442": [
+    "src/renderer/src/main.tsx"
+  ],
+  "25061480993f": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "7f43531f5a30": [
+    "src/addons/documentation/native.ts"
+  ],
+  "278a4d546369": [
+    "src/main/index.ts"
+  ],
+  "7e8e6cea103b": [
+    "src/main/addons.ts"
+  ],
+  "b8d4be09ba5c": [
+    "src/main/appearance.ts"
+  ],
+  "6d9e44100821": [
+    "src/shared/hotkeys.ts"
+  ],
+  "f9a0864221b5": [
+    "src/main/addon-repository.ts"
+  ],
+  "219b1388e763": [
+    "src/addons/typst/compiler.ts"
+  ],
+  "640191209dda": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "2fe18391f790": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "77db28621bac": [
+    "src/main/index.ts"
+  ],
+  "76934949f22e": [
+    "src/renderer/src/main.tsx"
+  ],
+  "9c78aa9fb78e": [
+    "src/renderer/src/main.tsx"
+  ],
+  "6704c0f053f8": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "655907890730": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "b1b7cfefcf75": [
+    "src/main/document.ts"
+  ],
+  "cae2d6782eb3": [
+    "src/addons/creole/manifest.ts"
+  ],
+  "2c014f8f8986": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "60acc53f13a5": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "e736541c1769": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "99f5151884f2": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "837dbb2c66b1": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "5260f6b2fa9f": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "c34051351939": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "8c00a5a547f0": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "b7c2fd280c22": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "7ebe6d8acd59": [
+    "src/renderer/src/FlavorPicker.tsx"
+  ],
+  "4a914d39f145": [
+    "src/renderer/src/FlavorPicker.tsx"
+  ],
+  "268f14bbfe11": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "187581a4c6c3": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "75081b593d15": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "f5b084a14162": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "2db046678b9c": [
+    "src/ui/Sonner.tsx"
+  ],
+  "a17991767970": [
+    "src/ui/Sonner.tsx"
+  ],
+  "cc29053ff492": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "5f4b5459628f": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "a6da1e2efc63": [
+    "src/addons/djot/manifest.ts"
+  ],
+  "5491373ad374": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "c386a82b9445": [
+    "src/addons/_shared/document-project.ts"
+  ],
+  "b104fab773bf": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "f5dd68e8bde8": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "4ba14479a49a": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "7259e702cd4d": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "c205924de0fe": [
+    "src/addons/documentation/manifest.ts",
+    "src/site/main.tsx"
+  ],
+  "a6a233872858": [
+    "src/site/main.tsx"
+  ],
+  "b4e929d8bcfe": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "2a7ec6c1c43f": [
+    "src/main/document.ts"
+  ],
+  "d6eafe823591": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "ad23f434e670": [
+    "src/main/media.ts"
+  ],
+  "5cf9d4d3034b": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "f5d8a4fcbe0e": [
+    "src/addons/block-drag/manifest.ts"
+  ],
+  "b300aa88984f": [
+    "src/ui/Sidebar.tsx"
+  ],
+  "f61205d72b10": [
+    "src/main/media.ts"
+  ],
+  "3ec6ee9e87d8": [
+    "src/renderer/src/main.tsx"
+  ],
+  "02cdaabfca80": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "63956d2fc93e": [
+    "src/main/addon-download.ts"
+  ],
+  "cf38d1cfb9e9": [
+    "src/main/sideload.ts"
+  ],
+  "78f982d5235c": [
+    "src/addons/typst/Block.tsx"
+  ],
+  "7588c9d702b3": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "79afa479a588": [
+    "src/addons/mdx/manifest.ts"
+  ],
+  "b37add271ae2": [
+    "src/addons/mdsvex/manifest.ts"
+  ],
+  "2427b8df5e86": [
+    "src/addons/quarto/manifest.ts"
+  ],
+  "020bd15463d3": [
+    "src/addons/rmarkdown/manifest.ts"
+  ],
+  "7bc860ccf5e3": [
+    "src/addons/frontmatter/manifest.ts"
+  ],
+  "c7bf14938074": [
+    "src/addons/asciidoc/manifest.ts"
+  ],
+  "a5e6633b7976": [
+    "src/addons/creole/manifest.ts"
+  ],
+  "99f10d2562f2": [
+    "src/addons/djot/manifest.ts"
+  ],
+  "a6e84e178701": [
+    "src/addons/html/manifest.ts"
+  ],
+  "ed576e8db69a": [
+    "src/addons/markdoc/manifest.ts"
+  ],
+  "2863e66d02a3": [
+    "src/addons/mediawiki/manifest.ts"
+  ],
+  "4b168fa00231": [
+    "src/addons/org/manifest.ts"
+  ],
+  "412769bd37ae": [
+    "src/addons/textile/manifest.ts"
+  ],
+  "1c0c39f95ac6": [
+    "src/addons/rst/manifest.ts"
+  ],
+  "936a161c3931": [
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/settings-categories.ts"
+  ],
+  "78c769f21aa4": [
+    "src/renderer/src/SourceEditor.tsx"
+  ],
+  "9da3210f6338": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "616abb7d0a15": [
+    "src/renderer/src/StatusBar.tsx"
+  ],
+  "ba3040158f24": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "1d183389ad2b": [
+    "src/renderer/src/Titlebar.tsx"
+  ],
+  "61a62a841f54": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "870165648482": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "15af5019bc20": [
+    "src/main/media.ts"
+  ],
+  "0ab4b2c43447": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "c6c094bc0054": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "5342e09f2729": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "3809a20d54e6": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "27a0ae578c51": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "683832965413": [
+    "src/renderer/src/FlavorPicker.tsx"
+  ],
+  "6a3107f1f0fc": [
+    "src/renderer/src/addons.ts"
+  ],
+  "ea91f021982f": [
+    "src/main/addons.ts",
+    "src/renderer/src/addons.ts"
+  ],
+  "24c9ca0efd8d": [
+    "src/main/file-associations.ts"
+  ],
+  "a4f6e36d4826": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "92c1cdfdf4cb": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "a68ae936a898": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "1eb30d44ddfa": [
+    "src/addons/git/native.ts"
+  ],
+  "563872f4980a": [
+    "src/main/document.ts"
+  ],
+  "c660726ed628": [
+    "src/main/document.ts"
+  ],
+  "194e4e8f6e1f": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "1a23abfde3ec": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "085061880926": [
+    "src/main/links.ts"
+  ],
+  "f1e56f2e1d3d": [
+    "src/shared/addon-package.ts"
+  ],
+  "5b546022750c": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "77334ae54ee0": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "f743268df178": [
+    "src/addons/typing-speed/index.ts"
+  ],
+  "5eb978a64b67": [
+    "src/addons/graph/Canvas.tsx"
+  ],
+  "6b0ceb1d091c": [
+    "src/addons/frontmatter/Settings.tsx"
+  ],
+  "3664895579f0": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "7aad9d490352": [
+    "src/addons/typst/Preview.tsx"
+  ],
+  "603a0b61f0e3": [
+    "src/addons/typst/index.tsx"
+  ],
+  "94b16a7c8bcf": [
+    "src/addons/typst/Block.tsx"
+  ],
+  "6d06cfc6af15": [
+    "src/addons/documentation/manifest.ts"
+  ],
+  "a5c1b2b5e1d5": [
+    "src/main/addons.ts"
+  ],
+  "20b26a43bdbe": [
+    "src/addons/documentation/index.ts",
+    "src/main/addons.ts"
+  ],
+  "423a85dca9b6": [
+    "src/main/workspace.ts"
+  ],
+  "23b5bc4d7a20": [
+    "src/main/workspace.ts"
+  ],
+  "1be2e5ce4ccb": [
+    "src/addons/typst/Preview.tsx"
+  ],
+  "616f48c1db19": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "50009ce1da4d": [
+    "src/main/index.ts"
+  ],
+  "300a34b6026d": [
+    "src/main/file-associations.ts"
+  ],
+  "3efed3de9d4b": [
+    "src/renderer/src/main.tsx"
+  ],
+  "379c501e44a3": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "3a3d172da3a6": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "9353a6f13073": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "eaeb6f126cd3": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "1a8e44f124cc": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "d7ad27671ef4": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "43f992db9c49": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "6264f7329255": [
+    "src/renderer/src/CodeSyntaxSettings.tsx"
+  ],
+  "c04cc3109ae9": [
+    "src/renderer/src/CodeSyntaxSettings.tsx"
+  ],
+  "8715f85e1785": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "de6e14f7bc28": [
+    "src/renderer/src/SyntaxSettings.tsx"
+  ],
+  "cbf0a2827882": [
+    "src/renderer/src/SyntaxSettings.tsx"
+  ],
+  "20045daa578e": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "2ab0e4e9e884": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "5ed5f8ce994e": [
+    "src/main/index.ts",
+    "src/renderer/src/FindBar.tsx",
+    "src/shared/hotkeys.ts"
+  ],
+  "0657af78ec64": [
+    "src/renderer/src/FindBar.tsx"
+  ],
+  "358fbe3b898f": [
+    "src/addons/graph/Canvas.tsx"
+  ],
+  "9d3cab2b5efe": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "384706288140": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "2f343666aaa8": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "9f01769a4278": [
+    "src/renderer/src/FormatsSettings.tsx",
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/settings-categories.ts"
+  ],
+  "ba55f0808d87": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "f1c65e14817e": [
+    "src/main/index.ts"
+  ],
+  "323d638f6497": [
+    "src/addons/frontmatter/index.ts",
+    "src/addons/frontmatter/manifest.ts"
+  ],
+  "ed16c742ef42": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "c7a8f9cd36ee": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "b949c922b6ef": [
+    "src/addons/git/index.tsx",
+    "src/addons/git/manifest.ts"
+  ],
+  "903136bdf7e4": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "4fa813e0dbac": [
+    "src/addons/git/native.ts"
+  ],
+  "8dfaf97785f0": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "85001dc93ea3": [
+    "src/addons/git/decorations.ts"
+  ],
+  "17a14031afc5": [
+    "src/addons/git/index.tsx"
+  ],
+  "ef3884fd7700": [
+    "src/addons/git/index.tsx"
+  ],
+  "6a1e23d76499": [
+    "src/addons/git/index.tsx"
+  ],
+  "803a679b5fa2": [
+    "src/addons/git/decorations.ts"
+  ],
+  "f7b6719861d1": [
+    "src/addons/github-markdown/manifest.ts"
+  ],
+  "6aadac2f2b7a": [
+    "src/shared/hotkeys.ts"
+  ],
+  "8121136d7ccf": [
+    "src/shared/hotkeys.ts"
+  ],
+  "32ab018fd38a": [
+    "src/addons/graph/manifest.ts"
+  ],
+  "ef2233a0710d": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "07239dbd2a1a": [
+    "src/addons/_shared/format-renderer.tsx",
+    "src/addons/html/manifest.ts"
+  ],
+  "e9069e56a977": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "a6cd26010456": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "3407149a6920": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "a3e7821cf681": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "aac18034b7c6": [
+    "src/main/index.ts",
+    "src/renderer/src/HibiSettings.tsx",
+    "src/renderer/src/RecoveryScreen.tsx",
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/Titlebar.tsx",
+    "src/renderer/src/settings-categories.ts"
+  ],
+  "cc05d3346ee5": [
+    "src/main/workspace.ts"
+  ],
+  "87c719d7d306": [
+    "src/main/history.ts"
+  ],
+  "c2dd1f633965": [
+    "src/main/workspace-actions.ts"
+  ],
+  "9ba584a1febb": [
+    "src/main/workspace-actions.ts"
+  ],
+  "e61eb301dc7f": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "f41e0a42109f": [
+    "src/renderer/src/main.tsx"
+  ],
+  "afea9e504cf0": [
+    "src/main/index.ts"
+  ],
+  "460e661f4720": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "435b510709a1": [
+    "src/renderer/src/main.tsx"
+  ],
+  "8ca8ee1036e4": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "a71a84873c4e": [
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "3e7e6d92f47d": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "c15f1530d219": [
+    "src/renderer/src/HotkeySettings.tsx",
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/settings-categories.ts"
+  ],
+  "423a991abe4b": [
+    "src/addons/text-extras/index.ts"
+  ],
+  "eae96e02bbc4": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "4810765ffe37": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "1aa4cb0bcca7": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "be7e2f201293": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "47fa752d5df7": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "c2e256156e71": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "3053eb6a9aaa": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "03fd87186af7": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "7cfcf0528fc4": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "996d077b651b": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "9ee1102f2828": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "e767deee633e": [
+    "src/renderer/src/FormattingToolbar.tsx",
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "3aad457d39fd": [
+    "src/addons/math/engine.ts"
+  ],
+  "8aa318eb7eaa": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "aa6ed582e3ab": [
+    "src/addons/typst/index.tsx"
+  ],
+  "7a0893d333ff": [
+    "src/addons/typst/index.tsx"
+  ],
+  "421eaa9e095d": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "4509e2c9a631": [
+    "src/addons/math/engine.ts"
+  ],
+  "569ca49f4aaf": [
+    "src/main/sideload.ts"
+  ],
+  "525a3ba31ff2": [
+    "src/main/addon-repository.ts"
+  ],
+  "4667f22232c5": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "66146583cc60": [
+    "src/main/file-associations.ts"
+  ],
+  "100436457fde": [
+    "src/shared/hotkeys.ts"
+  ],
+  "c7d5009dc83d": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "905a8ebbe695": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "22007a1dd5c7": [
+    "src/main/sideload.ts"
+  ],
+  "146382ffc03d": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "440c06b497b1": [
+    "src/main/file-associations.ts"
+  ],
+  "c461546e018b": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "e3957d71c9bf": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "ea7cb8d5da6c": [
+    "src/main/ui-case.ts"
+  ],
+  "d09eb4ceda72": [
+    "src/main/document.ts"
+  ],
+  "9bf37cb58a69": [
+    "src/renderer/src/FormattingToolbar.tsx",
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "b3b8fd86f36e": [
+    "src/addons/keybeats/manifest.ts"
+  ],
+  "566c3a93a25f": [
+    "src/renderer/src/main.tsx"
+  ],
+  "2316810a5de3": [
+    "src/addons/keybeats/Settings.tsx"
+  ],
+  "8f27fdcc77ab": [
+    "src/addons/math/engine.ts",
+    "src/addons/math/manifest.ts"
+  ],
+  "eed0e6220f2f": [
+    "src/addons/math/syntax.ts"
+  ],
+  "318655cea4bd": [
+    "src/renderer/src/CodeSyntaxSettings.tsx"
+  ],
+  "e139c41b9472": [
+    "src/addons/vim/engine.ts"
+  ],
+  "23b3497d8afb": [
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "a511909161e1": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "dbcd5e7bb7a0": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "2650470b8a8a": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "bd14a964a2ab": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "a6a32dbc5618": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "0be7db8d7ab7": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "9024c197d849": [
+    "src/addons/_shared/format-renderer.tsx",
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "6f202f54a7b2": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "744bd1526d4c": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "556dc1b4d78c": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "7e11e029a961": [
+    "src/addons/_shared/FormatPdf.tsx",
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "2de539a660eb": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "c1788f811fbc": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "830b524da49f": [
+    "src/renderer/src/StartupPlaceholder.tsx"
+  ],
+  "e71a13459ccd": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "9780e2c99c1b": [
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "a1f7f8733bfc": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "9f4024faec10": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "6187e018f81b": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "d434e4eb5746": [
+    "src/addons/mdx/manifest.ts"
+  ],
+  "976dffd73c2a": [
+    "src/addons/mdsvex/manifest.ts"
+  ],
+  "5701c0350a11": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "85a5ac392dfd": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "42c6b818dcbc": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "f43b94251094": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "6595f39b9d4b": [
+    "src/addons/markdoc/manifest.ts"
+  ],
+  "0e52f6b9d025": [
+    "src/addons/markdown/manifest.ts"
+  ],
+  "77be4df12d6b": [
+    "src/renderer/src/main.tsx"
+  ],
+  "31f0de79fdb5": [
+    "src/renderer/src/FlavorPicker.tsx"
+  ],
+  "da0ea6601992": [
+    "src/renderer/src/SourceEditor.tsx"
+  ],
+  "ba0410b22547": [
+    "src/renderer/src/main.tsx"
+  ],
+  "7f31c42b51e4": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "07fea37695a6": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "d48500aea832": [
+    "src/addons/math/engine.ts"
+  ],
+  "3a56756a0930": [
+    "src/addons/mediawiki/manifest.ts"
+  ],
+  "aa7492130a83": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "df6c593c35d7": [
+    "src/addons/block-drag/index.ts"
+  ],
+  "cc6fc79ab665": [
+    "src/addons/block-drag/index.ts"
+  ],
+  "b250a454877d": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "816580969665": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "189599ffaee2": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "d45fef636bf6": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "8dd6857baf02": [
+    "src/addons/keybeats/Settings.tsx"
+  ],
+  "0effeab1abad": [
+    "src/addons/keybeats/engine.ts"
+  ],
+  "cd452315c10b": [
+    "src/main/addons.ts"
+  ],
+  "5ea5fbe811db": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "6300ef800bb8": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "18fdd549b2ed": [
+    "src/main/index.ts"
+  ],
+  "d1c0f3a50006": [
+    "src/addons/typst/index.tsx"
+  ],
+  "1b2684405463": [
+    "src/shared/hotkeys.ts"
+  ],
+  "44dedd0f97fe": [
+    "src/renderer/src/WorkspaceSidebar.tsx",
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "cf28f49ec597": [
+    "src/renderer/src/WorkspaceSidebar.tsx",
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "564ed5ea31a6": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "4643fac966e8": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "a25d48f8077d": [
+    "src/renderer/src/WorkspaceSidebar.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "04ccc94ea769": [
+    "src/renderer/src/WorkspaceSidebar.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "40e3c3432d78": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "1ff57a29d7c9": [
+    "src/site/main.tsx"
+  ],
+  "825e5abd0762": [
+    "src/renderer/src/FindBar.tsx"
+  ],
+  "115967f77ac6": [
+    "src/renderer/src/FindBar.tsx"
+  ],
+  "283701594ce8": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "56db8832782f": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "e981998fbf5a": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "02bd3c44fec8": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "dd3d84ae688f": [
+    "src/renderer/src/CodeSyntaxSettings.tsx"
+  ],
+  "5a859d101f66": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "176723c84fa2": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "697639d0eab5": [
+    "src/renderer/src/SyntaxSettings.tsx"
+  ],
+  "7cfcab74d09c": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "a092ad6b8be0": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "92a350272aa9": [
+    "src/renderer/src/StartupPlaceholder.tsx"
+  ],
+  "4465977c0af8": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "b57d852b14d2": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "50d5797e87c0": [
+    "src/addons/graph/Panel.tsx",
+    "src/addons/tags/Panel.tsx"
+  ],
+  "a7248eeb45eb": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "b17ed415b25f": [
+    "src/shared/hotkeys.ts"
+  ],
+  "a17bdb06729a": [
+    "src/main/file-associations.ts"
+  ],
+  "c45165c4120e": [
+    "src/addons/github-markdown/index.ts"
+  ],
+  "8ec5e108fc99": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "6887944c3369": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "788011833a5a": [
+    "src/renderer/src/NotificationSettings.tsx",
+    "src/ui/Sonner.tsx"
+  ],
+  "d8709900e98a": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "bd82cf16699b": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "5bb6ba885a19": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "cc62f6c7b2a8": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "ccece659dfb1": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "62a6da8735c1": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "b5658fc8edda": [
+    "src/renderer/src/AddonSidebar.tsx",
+    "src/renderer/src/OutlineSidebar.tsx",
+    "src/site/main.tsx"
+  ],
+  "458320f53ff5": [
+    "src/main/addons.ts",
+    "src/main/sideload.ts"
+  ],
+  "ed077f3d8125": [
+    "src/renderer/src/main.tsx"
+  ],
+  "48b28302e75c": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "8bb4fe84e692": [
+    "src/addons/typst/index.tsx"
+  ],
+  "5862e6d7b21b": [
+    "src/addons/git/native.ts"
+  ],
+  "8e2f19847da3": [
+    "src/addons/typst/index.tsx"
+  ],
+  "d7459cc0930d": [
+    "src/addons/typst/index.tsx"
+  ],
+  "fd94cbb45d14": [
+    "src/renderer/src/WorkspaceSidebar.tsx"
+  ],
+  "7693e6fba57c": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "ad5aa51d2d83": [
+    "src/main/workspace-actions.ts",
+    "src/main/workspace.ts"
+  ],
+  "2cbc82c80178": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "b177c63e4070": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "eadd61bac0d2": [
+    "src/renderer/src/DocumentTabs.tsx"
+  ],
+  "75cdea45c494": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "29d05e904395": [
+    "src/shared/hotkeys.ts"
+  ],
+  "7edc730d7772": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "6a9084025c4b": [
+    "src/renderer/src/WorkspaceSidebar.tsx"
+  ],
+  "af7b03500f9e": [
+    "src/renderer/src/main.tsx"
+  ],
+  "8c098262d32a": [
+    "src/main/index.ts"
+  ],
+  "06a27d2da849": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "ca381c1e76e6": [
+    "src/shared/hotkeys.ts"
+  ],
+  "1a1b83db3be8": [
+    "src/renderer/src/HibiSettings.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "80cb8a06e27d": [
+    "src/addons/git/native.ts"
+  ],
+  "b3e34b185d06": [
+    "src/main/workspace.ts",
+    "src/renderer/src/WorkspaceSidebar.tsx"
+  ],
+  "cdd891bd45cd": [
+    "src/addons/graph/index.tsx"
+  ],
+  "5ff9f7742d6d": [
+    "src/shared/hotkeys.ts"
+  ],
+  "656d97eb82c8": [
+    "src/renderer/src/main.tsx"
+  ],
+  "f5cc17a5ad18": [
+    "src/addons/graph/Canvas.tsx"
+  ],
+  "1f1d592bdd1a": [
+    "src/main/index.ts"
+  ],
+  "2c61e6ee7007": [
+    "src/addons/org/manifest.ts"
+  ],
+  "bf670b7ba450": [
+    "src/addons/tags/manifest.ts"
+  ],
+  "13c27b3eaf3b": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "2a7579309c0b": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "1d393b0081b6": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "52278a0943b3": [
+    "src/addons/_shared/FormatPdf.tsx"
+  ],
+  "b269a68f045a": [
+    "src/addons/_shared/FormatPdf.tsx"
+  ],
+  "af86c616ae9c": [
+    "src/addons/_shared/FormatPdf.tsx"
+  ],
+  "024148d6099b": [
+    "src/site/main.tsx"
+  ],
+  "a469ab4ca4e5": [
+    "src/site/main.tsx"
+  ],
+  "c3b03dd28595": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "da06be9ad96a": [
+    "src/renderer/src/main.tsx"
+  ],
+  "d75069b8046d": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "a4f17dfc576b": [
+    "src/addons/vim/engine.ts"
+  ],
+  "fdb600f6535a": [
+    "src/renderer/src/FlavorPicker.tsx"
+  ],
+  "ec88d0c7e206": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "cf4166250b80": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "36be30dddfe1": [
+    "src/addons/keybeats/manifest.ts"
+  ],
+  "ab559feaec18": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "6d031af10da7": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "95d3d7e8feed": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "324b134f57c7": [
+    "src/renderer/src/NotificationSettings.tsx",
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "ad23c13b98d5": [
+    "src/addons/typst/index.tsx"
+  ],
+  "cb6414662e23": [
+    "src/addons/typst/syntax.ts"
+  ],
+  "a25e1bc00de9": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "97694af2695d": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "54689c5d0e3e": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "c01330497b29": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "b974a69f7af8": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "b99fa6c06150": [
+    "src/addons/_shared/format-renderer.tsx",
+    "src/addons/typst/Preview.tsx"
+  ],
+  "a57b08a480b8": [
+    "src/site/main.tsx"
+  ],
+  "daa2f8c3fc89": [
+    "src/renderer/src/FindBar.tsx"
+  ],
+  "a1ac3c3a93fa": [
+    "src/renderer/src/FindBar.tsx"
+  ],
+  "762017f1d9dc": [
+    "src/addons/_shared/document-project.ts"
+  ],
+  "c64577c53a58": [
+    "src/addons/_shared/document-project.ts"
+  ],
+  "ae43692b2a31": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "e622891fae96": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "b66d044181a0": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "f7764f5c987e": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "731ce7ed8089": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "a053e8c05627": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "f2a78d052de9": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "df900d657cbf": [
+    "src/addons/quarto/manifest.ts"
+  ],
+  "e0cbecb3f0cb": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "b3eb37acb66b": [
+    "src/main/index.ts"
+  ],
+  "eb4cdebd82bf": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "8dc37869d63b": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "e1dda8fa3404": [
+    "src/addons/rmarkdown/manifest.ts"
+  ],
+  "156aba86640e": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "c4a81914e2d9": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "191a43a3e539": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "e88bb0e03de7": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "a28622bdb72b": [
+    "src/renderer/src/StartupPlaceholder.tsx"
+  ],
+  "1d0c2df3ffa4": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "c90369a62d3f": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "aaefaf4f5953": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "74273989b096": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "903ae9ad0d9f": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "e2b488cb6e0d": [
+    "src/renderer/src/WorkspaceSidebar.tsx"
+  ],
+  "306960dcad4c": [
+    "src/renderer/src/WorkspaceSidebar.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "bdc090ec61e3": [
+    "src/main/index.ts"
+  ],
+  "451a05dca9cc": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "0347aa8b9523": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "c3812fc4acb8": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "4953f8970948": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "20b118351e19": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "0ab4d0cee3a1": [
+    "src/renderer/src/main.tsx"
+  ],
+  "3064d79a295c": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "e69e7cdd4d17": [
+    "src/renderer/src/main.tsx"
+  ],
+  "2a134aab8b4d": [
+    "src/renderer/src/main.tsx"
+  ],
+  "14374df2ce3a": [
+    "src/ui/Sidebar.tsx"
+  ],
+  "9f456b49be06": [
+    "src/addons/typst/index.tsx"
+  ],
+  "2591fcfd6dcd": [
+    "src/addons/_shared/format-worker.ts"
+  ],
+  "e9c21ef93e71": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "62c003429465": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "95e154398a4b": [
+    "src/main/document.ts"
+  ],
+  "97b7a53b9210": [
+    "src/main/sideload.ts"
+  ],
+  "6beb76e49302": [
+    "src/main/document.ts"
+  ],
+  "09841d79f59e": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "645982c52b7c": [
+    "src/ui/SettingsFilter.tsx"
+  ],
+  "78643863b6f8": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "e4af9a2eda8c": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "aca879baa006": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "46f6013774d6": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "243854b4d0c7": [
+    "src/ui/Sidebar.tsx"
+  ],
+  "9e0c50a4c600": [
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "942087cc2d41": [
+    "src/renderer/src/AddonSidebar.tsx",
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "5f3ceab57e9e": [
+    "src/addons/git/manifest.ts"
+  ],
+  "a6334b558b9f": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "d377bb942551": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "00d60e31a4e6": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "79bb614213b2": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "aa297b69634e": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "1509f561f241": [
+    "src/main/document.ts",
+    "src/main/index.ts"
+  ],
+  "2c2a765c72f1": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "b5c169365b0b": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "12c052789323": [
+    "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "06359c03b085": [
+    "src/main/index.ts",
+    "src/shared/hotkeys.ts"
+  ],
+  "d9b50cc1d6df": [
+    "src/main/document.ts"
+  ],
+  "b568cdeff403": [
+    "src/shared/hotkeys.ts"
+  ],
+  "dbd42583a3be": [
+    "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "73c583fedbc0": [
+    "src/main/addons.ts"
+  ],
+  "34d21cb11ffc": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "1a0ec19679a9": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "4b77ec6e263f": [
+    "src/main/workspace-actions.ts"
+  ],
+  "f3d260a0efb6": [
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "3e928751ba36": [
+    "src/addons/git/native.ts"
+  ],
+  "8ba4442aa817": [
+    "src/addons/git/native.ts"
+  ],
+  "bddb9129d59e": [
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "096b73624b09": [
+    "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "23e39291d613": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "00ff7398c308": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "baad3d0583e1": [
+    "src/renderer/src/CommandPalette.tsx"
+  ],
+  "ea582e69cce7": [
+    "src/site/main.tsx"
+  ],
+  "255b076dd828": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "57054c5a04be": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "574edbca6a4f": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "d605d205a5bf": [
+    "src/addons/graph/manifest.ts"
+  ],
+  "456dc12dbf91": [
+    "src/addons/word-count/manifest.ts"
+  ],
+  "e6c08bcacceb": [
+    "src/addons/typing-speed/manifest.ts"
+  ],
+  "fdce13fe6d64": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "d67c7a8d7229": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "74a883a037bc": [
+    "src/main/index.ts",
+    "src/renderer/src/FormatsSettings.tsx",
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/Titlebar.tsx"
+  ],
+  "b9ed95822f83": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "6ac03c9b1336": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "ba1edae91173": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "7d583b20c446": [
+    "src/renderer/src/main.tsx"
+  ],
+  "8544535ee5a4": [
+    "src/main/hotkeys.ts"
+  ],
+  "bbecee8c5040": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "4eae602ecbdd": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "d03262ba19b0": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "0e53b6d8c928": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "56a388f678f0": [
+    "src/addons/frontmatter/Settings.tsx"
+  ],
+  "1da402fd1aeb": [
+    "src/renderer/src/EditorToolbar.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "7c6b4ea4e479": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "a0f7f003f38e": [
+    "src/renderer/src/main.tsx"
+  ],
+  "efca80330d7b": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "ac7ac5341a5c": [
+    "src/shared/hotkeys.ts"
+  ],
+  "fe91f2d003c3": [
+    "src/renderer/src/Titlebar.tsx"
+  ],
+  "fb87b8dba88b": [
+    "src/addons/slash-commands/manifest.ts"
+  ],
+  "d4b1fc3b83ed": [
+    "src/addons/text-extras/index.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "a3ded54563a3": [
+    "src/renderer/src/main.tsx"
+  ],
+  "564484f13e2f": [
+    "src/addons/keybeats/engine.ts"
+  ],
+  "2bbe3abc3131": [
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/main.tsx",
+    "src/shared/hotkeys.ts"
+  ],
+  "393151fae61e": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "c75049813154": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "2d69944804aa": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "de838855e4a6": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "afdf8989956d": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "dda8aeaeb198": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "fed45a11a5f5": [
+    "src/renderer/src/StartupPlaceholder.tsx",
+    "src/renderer/src/markdown.ts"
+  ],
+  "b94c5ac62b87": [
+    "src/renderer/src/StartupPlaceholder.tsx"
+  ],
+  "e0d74642efdd": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "9aabbcb2c18d": [
+    "src/addons/github-markdown/index.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "cd512a33cc6f": [
+    "src/addons/text-extras/index.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "50e2ba3ae66f": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "1e5a65cf9548": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "270d8cb4f014": [
+    "src/main/workspace-actions.ts"
+  ],
+  "5d04fcd66b47": [
+    "src/main/workspace.ts"
+  ],
+  "dc93879e3107": [
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/SyntaxSettings.tsx",
+    "src/renderer/src/settings-categories.ts"
+  ],
+  "6725e7bbcd28": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "16d1c9050a0b": [
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "e3fe2a3fe52c": [
+    "src/addons/github-markdown/index.ts"
+  ],
+  "45cb20fc920a": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "1331275bc537": [
+    "src/addons/tags/index.tsx",
+    "src/addons/tags/manifest.ts"
+  ],
+  "1b4de2674796": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "6e7e4b8b6873": [
+    "src/addons/tags/index.tsx"
+  ],
+  "b9eba08fc005": [
+    "src/addons/github-markdown/index.ts"
+  ],
+  "b846ef5125c2": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "f7220445a78c": [
+    "src/addons/keybeats/Settings.tsx"
+  ],
+  "71988c4d8e08": [
+    "src/addons/frontmatter/Properties.tsx",
+    "src/addons/slash-commands/commands.ts",
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "298c5c533fc9": [
+    "src/addons/text-extras/manifest.ts"
+  ],
+  "90115ae3fa70": [
+    "src/addons/textile/manifest.ts"
+  ],
+  "ce268f14cee4": [
+    "src/addons/_shared/FormatPdf.tsx"
+  ],
+  "efb97ec08cba": [
+    "src/main/addon-download.ts"
+  ],
+  "0e3f939f4a03": [
+    "src/main/addon-download.ts"
+  ],
+  "a4f6f8a722fa": [
+    "src/main/addon-download.ts"
+  ],
+  "1342f7aedc1e": [
+    "src/main/addon-download.ts"
+  ],
+  "c89de18bbda0": [
+    "src/main/addon-download.ts"
+  ],
+  "f71617647792": [
+    "src/main/sideload.ts"
+  ],
+  "08de2c73e925": [
+    "src/main/addon-download.ts"
+  ],
+  "03bd9e6997be": [
+    "src/main/addon-download.ts"
+  ],
+  "8dbb293968f6": [
+    "src/main/sideload.ts"
+  ],
+  "54c5b809f0a2": [
+    "src/main/addon-download.ts"
+  ],
+  "58bb3944d226": [
+    "src/main/sideload.ts"
+  ],
+  "217fd53d2b6e": [
+    "src/main/sideload.ts"
+  ],
+  "46a7d61e52d1": [
+    "src/main/sideload.ts"
+  ],
+  "2440b28c8988": [
+    "src/main/sideload.ts"
+  ],
+  "9d855d273e81": [
+    "src/main/sideload.ts"
+  ],
+  "4659069874da": [
+    "src/main/sideload.ts"
+  ],
+  "7da468d62980": [
+    "src/main/addons.ts"
+  ],
+  "da528ad51e33": [
+    "src/main/media.ts"
+  ],
+  "f54320f2a651": [
+    "src/main/media.ts"
+  ],
+  "96c5ae0b5065": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "6ad5e9ddb386": [
+    "src/main/links.ts"
+  ],
+  "600ca5556eb4": [
+    "src/main/document.ts"
+  ],
+  "602cad822b0c": [
+    "src/main/document.ts"
+  ],
+  "e9876edd08d2": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "364e042318da": [
+    "src/main/media.ts"
+  ],
+  "a5aedb8a518f": [
+    "src/renderer/src/main.tsx"
+  ],
+  "8c6ee6bc52e4": [
+    "src/addons/documentation/native.ts"
+  ],
+  "6d78247b2a33": [
+    "src/main/links.ts"
+  ],
+  "c9e161d3f3c3": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "ac1dd1f24840": [
+    "src/main/sideload.ts"
+  ],
+  "60dbdf909175": [
+    "src/main/files.ts"
+  ],
+  "c7085d2772ec": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "823c933da249": [
+    "src/renderer/src/main.tsx"
+  ],
+  "590fb9c8974a": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "f6be6c1fe3f5": [
+    "src/addons/_shared/format-native.ts"
+  ],
+  "70ccfc9c9dd2": [
+    "src/main/index.ts"
+  ],
+  "671a56401be1": [
+    "src/addons/documentation/native.ts"
+  ],
+  "fc77ba3291d5": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "edf869f4dabf": [
+    "src/renderer/src/addons.ts"
+  ],
+  "e7b664bd8730": [
+    "src/renderer/src/addon-registry.ts"
+  ],
+  "ae8d2458110c": [
+    "src/main/sideload.ts"
+  ],
+  "31430920dff7": [
+    "src/addons/_shared/FormatPdf.tsx"
+  ],
+  "829dec5a5772": [
+    "src/addons/_shared/FormatPdf.tsx"
+  ],
+  "b29376d8e035": [
+    "src/main/links.ts"
+  ],
+  "36568e2b608a": [
+    "src/main/addons.ts"
+  ],
+  "b287a1312556": [
+    "src/main/addons.ts"
+  ],
+  "5eebb144c45a": [
+    "src/main/sideload.ts"
+  ],
+  "2d715c5a75aa": [
+    "src/main/addons.ts"
+  ],
+  "d834f457b6f0": [
+    "src/shared/colorschemes.ts"
+  ],
+  "f074c7937234": [
+    "src/shared/colorschemes.ts"
+  ],
+  "7ecbba2926b1": [
+    "src/shared/colorschemes.ts"
+  ],
+  "b3e591b2b962": [
+    "src/main/files.ts"
+  ],
+  "a027792cd75b": [
+    "src/main/addons.ts"
+  ],
+  "598c7699a784": [
+    "src/addons/_shared/document-project.ts"
+  ],
+  "28d14c9029bb": [
+    "src/renderer/src/main.tsx"
+  ],
+  "4646993d0c2f": [
+    "src/main/document.ts"
+  ],
+  "926ea461092b": [
+    "src/addons/git/native.ts"
+  ],
+  "783dfd9ea6ae": [
+    "src/main/document.ts"
+  ],
+  "a357fc90fad7": [
+    "src/main/workspace.ts"
+  ],
+  "d854979ab2cc": [
+    "src/addons/git/native.ts"
+  ],
+  "2fad5aad9df6": [
+    "src/main/sideload.ts"
+  ],
+  "f21c0d01153d": [
+    "src/main/workspace.ts"
+  ],
+  "2ff13ca6ab5c": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "4955b8400e8f": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "39b86302dd8e": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "ecce9bbe9bbe": [
+    "src/main/addon-download.ts"
+  ],
+  "fad38e891406": [
+    "src/main/licenses.ts"
+  ],
+  "62a6fbf88b17": [
+    "src/main/links.ts"
+  ],
+  "a8509d324773": [
+    "src/main/workspace-actions.ts"
+  ],
+  "6d5d6cc17308": [
+    "src/renderer/src/addon-registry.ts"
+  ],
+  "8061a2e71e13": [
+    "src/renderer/src/addon-registry.ts"
+  ],
+  "a80c357fd3e8": [
+    "src/renderer/src/addon-registry.ts"
+  ],
+  "5408b602fd13": [
+    "src/renderer/src/addons.ts"
+  ],
+  "ca0351fb8b4a": [
+    "src/renderer/src/addons.ts"
+  ],
+  "19dc472ec4b9": [
+    "src/renderer/src/addons.ts"
+  ],
+  "efa320a3364d": [
+    "src/renderer/src/addons.ts"
+  ],
+  "27b640a56729": [
+    "src/renderer/src/addons.ts"
+  ],
+  "59af8df20d60": [
+    "src/renderer/src/addons.ts"
+  ],
+  "37e97cc501e5": [
+    "src/renderer/src/addons.ts"
+  ],
+  "0c91d00011d1": [
+    "src/renderer/src/addons.ts"
+  ],
+  "7ba2680fe80c": [
+    "src/renderer/src/addon-registry.ts"
+  ],
+  "73003d179a64": [
+    "src/main/addon-repository.ts"
+  ],
+  "3736ab092410": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "c13ad6f975f2": [
+    "src/main/history.ts"
+  ],
+  "20f489b1e5d4": [
+    "src/shared/hotkeys.ts"
+  ],
+  "a6da99875af4": [
+    "src/main/document.ts"
+  ],
+  "609876d22bea": [
+    "src/main/sideload.ts"
+  ],
+  "d3a986ab8faa": [
+    "src/main/appearance.ts"
+  ],
+  "b1e0077db7ab": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "78c4a3ab448e": [
+    "src/main/workspace.ts"
+  ],
+  "d2714d88ce4e": [
+    "src/main/workspace.ts"
+  ],
+  "dfc1e6d16ba5": [
+    "src/site/main.tsx"
+  ],
+  "041aefc44394": [
+    "src/renderer/src/Titlebar.tsx",
+    "src/shared/hotkeys.ts"
+  ],
+  "a2ad47862057": [
+    "src/shared/hotkeys.ts"
+  ],
+  "d51d6fa0615a": [
+    "src/renderer/src/Titlebar.tsx"
+  ],
+  "451aa51a0fb5": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "1a508df78152": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "e2386f6156ae": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "e8d35f5c31ff": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "c9379e975e66": [
+    "src/addons/graph/Panel.tsx",
+    "src/addons/tags/Panel.tsx"
+  ],
+  "9a928ba210da": [
+    "src/addons/slash-commands/commands.ts"
+  ],
+  "47561c884131": [
+    "src/addons/slash-commands/manifest.ts"
+  ],
+  "9d1ff237078a": [
+    "src/addons/typing-speed/manifest.ts"
+  ],
+  "38c14037e93b": [
+    "src/addons/typst/Block.tsx",
+    "src/addons/typst/index.tsx",
+    "src/addons/typst/manifest.ts"
+  ],
+  "73c9f3bc2e5d": [
+    "src/addons/typst/Preview.tsx"
+  ],
+  "a50cf40798b0": [
+    "src/addons/typst/index.tsx"
+  ],
+  "5b3a15a26936": [
+    "src/addons/typst/manifest.ts"
+  ],
+  "6ee65ea3f066": [
+    "src/addons/typst/compiler.ts"
+  ],
+  "5923dcf849cb": [
+    "src/addons/typst/Preview.tsx",
+    "src/addons/typst/compiler-worker.ts"
+  ],
+  "b2a12ed05860": [
+    "src/addons/typst/compiler.ts"
+  ],
+  "aa462ad89611": [
+    "src/addons/typst/Preview.tsx"
+  ],
+  "ebc8ff48bea7": [
+    "src/addons/typst/compiler.ts"
+  ],
+  "dd03422977dc": [
+    "src/addons/typst/compiler-worker.ts"
+  ],
+  "ce0e7476dad4": [
+    "src/addons/typst/compiler-worker.ts"
+  ],
+  "7ba8dc6d48a0": [
+    "src/addons/typst/Block.tsx"
+  ],
+  "433fa57cd74a": [
+    "src/addons/typst/compiler.ts"
+  ],
+  "14d33bd014e6": [
+    "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "9588db5b112b": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "a8283ade3185": [
+    "src/renderer/src/FormattingToolbar.tsx"
+  ],
+  "b0291a853226": [
+    "src/main/file-associations.ts"
+  ],
+  "8ec60d63a791": [
+    "src/addons/keybeats/engine.ts"
+  ],
+  "a710c2b90913": [
+    "src/renderer/src/DocumentTabs.tsx",
+    "src/renderer/src/Titlebar.tsx"
+  ],
+  "e64920301b72": [
+    "src/renderer/src/DocumentTabs.tsx"
+  ],
+  "59d881eadded": [
+    "src/renderer/src/RecoveryScreen.tsx"
+  ],
+  "033f86f90810": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "0932bea39138": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "d6533641b536": [
+    "src/main/index.ts"
+  ],
+  "b9fea9d6320c": [
+    "src/addons/vim/manifest.ts"
+  ],
+  "4e3017d9661a": [
+    "src/main/files.ts"
+  ],
+  "815013862844": [
+    "src/main/workspace-actions.ts"
+  ],
+  "68fd17ffa10f": [
+    "src/main/links.ts"
+  ],
+  "328fe89a4f4d": [
+    "src/shared/addon-package.ts"
+  ],
+  "07680653db5c": [
+    "src/renderer/src/CodeSyntaxSettings.tsx"
+  ],
+  "211f1f4cdab0": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "d3615efc3700": [
+    "src/main/addon-download.ts"
+  ],
+  "6934ab3f898b": [
+    "src/renderer/src/main.tsx"
+  ],
+  "0e9ce8352f73": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "651c6a2c21c5": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "ca4f485a9985": [
+    "src/renderer/src/main.tsx"
+  ],
+  "dd167905de0d": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "a6df11e706c5": [
+    "src/renderer/src/main.tsx",
+    "src/shared/hotkeys.ts"
+  ],
+  "3945c0a1fc3c": [
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "dcc839a4015c": [
+    "src/main/index.ts"
+  ],
+  "c71ba099f440": [
+    "src/addons/vim/manifest.ts"
+  ],
+  "9c66eb04c102": [
+    "src/addons/vim/engine.ts"
+  ],
+  "bca5c3b5ec21": [
+    "src/addons/vim/index.ts"
+  ],
+  "515210ec3d61": [
+    "src/addons/vim/engine.ts"
+  ],
+  "f8a01d118858": [
+    "src/addons/vim/index.ts"
+  ],
+  "eb2260106901": [
+    "src/addons/vim/engine.ts"
+  ],
+  "b10fb966d720": [
+    "src/addons/keybeats/Settings.tsx"
+  ],
+  "74008706df52": [
+    "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "903980d24e57": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "19734a1b58ca": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "653913ac0e67": [
+    "src/addons/word-count/manifest.ts"
+  ],
+  "95a0dabb7bc7": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "5474eef8d0f1": [
+    "src/addons/git/Panel.tsx"
+  ],
+  "87bb59ba2f92": [
+    "src/renderer/src/AddonSidebar.tsx"
+  ],
+  "bb2e2d0fd34f": [
+    "src/renderer/src/WorkspaceSidebar.tsx"
+  ],
+  "1ece63d3ba1b": [
+    "src/addons/graph/Canvas.tsx",
+    "src/addons/graph/Panel.tsx",
+    "src/addons/graph/index.tsx"
+  ],
+  "f0124ad44109": [
+    "src/addons/graph/Canvas.tsx"
+  ],
+  "589c9fc3226c": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "5b86626506d7": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "8433f373982c": [
+    "src/addons/tags/Panel.tsx"
+  ],
+  "c2f041ad9727": [
+    "src/addons/math/manifest.ts"
+  ],
+  "a03fccdc8fea": [
+    "src/addons/markdown/manifest.ts"
+  ],
+  "2cfece6a285e": [
+    "src/addons/typst/manifest.ts"
+  ],
+  "64ab69baef8f": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "a8bfae3eee94": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "9b6e8abe425e": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "0ec4c65bb923": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "b3afd9209200": [
+    "src/main/document.ts"
+  ],
+  "0e47f09a748f": [
+    "src/addons/graph/Canvas.tsx"
+  ],
+  "bc7b631a689b": [
+    "src/addons/graph/Canvas.tsx"
+  ],
+  "89b0f77ce276": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "241630b9f37f": [
+    "src/renderer/src/document-formats.ts"
+  ],
+  "4d48fba6cf5f": [
+    "src/shared/hotkeys.ts"
+  ],
+  "dcf0f93ff715": [
+    "src/renderer/src/HibiSettings.tsx"
+  ],
+  "277089d91c0b": [
+    "src/renderer/src/VersionHistory.tsx"
+  ],
+  "0d38e23a44a2": [
+    "src/ui/colorschemes.ts"
+  ],
+  "b38d9d168c3a": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "1e5fac867454": [
+    "src/addons/graph/Canvas.tsx",
+    "src/addons/graph/Panel.tsx"
+  ],
+  "bb812e0ca964": [
+    "src/renderer/src/document-formats.ts"
+  ],
+  "f1f44e1b7d9a": [
+    "src/ui/DialogProvider.tsx"
+  ],
+  "a0f9c6ef2938": [
+    "src/ui/colorschemes.ts"
+  ],
+  "57ce2e1816bd": [
+    "src/renderer/src/explorer-decorations.ts"
+  ],
+  "7970ec4b3d50": [
+    "src/renderer/src/addon-overrides.ts"
+  ],
+  "706787f67ccf": [
+    "src/renderer/src/toolbar.ts"
+  ],
+  "8d0efe4395b4": [
+    "src/main/sideload.ts"
+  ],
+  "06e6689b4b7a": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "7b17af676930": [
+    "src/renderer/src/main.tsx"
+  ],
+  "d8a4351e1a76": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "57a1579f83d3": [
+    "src/renderer/src/code-languages.ts"
+  ],
+  "fb2d17b5aa0f": [
+    "src/renderer/src/flavors.ts"
+  ],
+  "b0d13165bbc2": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "1e0534e54772": [
+    "src/addons/keybeats/manifest.ts"
+  ],
+  "7d982ed61dc3": [
+    "src/ui/colorschemes.ts"
+  ],
+  "cd76a6f31d3f": [
+    "src/renderer/src/main.tsx"
+  ],
+  "33cf6149f72e": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "28391d3bc64e": [
+    "src/addons/graph/Panel.tsx",
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "4abf37d06b2f": [
+    "src/renderer/src/addon-overrides.ts"
+  ],
+  "6f63d967dc36": [
+    "src/renderer/src/addon-overrides.ts"
+  ],
+  "6ee2cc105a67": [
+    "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "b2d69362d754": [
+    "src/addons/rst/manifest.ts"
+  ],
+  "16367aacb67a": [
+    "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "59f006d63bd0": [
+    "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "0620e3b71e5a": [
+    "src/ui/Sonner.tsx"
+  ],
+  "7a30651bca5a": [
+    "src/main/index.ts"
+  ],
+  "4c94485e0c21": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "dafe8af01f1c": [
+    "src/renderer/src/workspace-menu.ts"
+  ],
+  "bb174a00dfce": [
+    "src/renderer/src/SourceEditor.tsx"
+  ],
+  "106b5be948be": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "8c94b2f779ec": [
+    "src/renderer/src/main.tsx"
+  ],
+  "12823d9e7b10": [
+    "src/main/sideload.ts"
+  ],
+  "229213386c16": [
+    "src/renderer/src/main.tsx"
+  ],
+  "d44b2d82471e": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "3ed901651931": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "3853dee11967": [
+    "src/renderer/src/markdown-syntax.ts"
+  ],
+  "7f659c8c45d8": [
+    "src/addons/frontmatter/Properties.tsx"
+  ],
+  "d25d00eae8e4": [
+    "src/addons/_shared/format-renderer.tsx"
+  ],
+  "6fd89f885213": [
+    "src/renderer/src/NotificationSettings.tsx"
+  ],
+  "78d5525c7d41": [
+    "src/renderer/src/FormatsSettings.tsx",
+    "src/renderer/src/main.tsx"
+  ],
+  "1954f44f1495": [
+    "src/renderer/src/Titlebar.tsx"
+  ],
+  "ad069ba938a7": [
+    "src/addons/word-count/index.ts"
+  ],
+  "da55d16fc16f": [
+    "src/addons/text-extras/flavor-info.ts"
+  ],
+  "09389e488f6a": [
+    "src/addons/github-markdown/index.ts"
+  ],
+  "abfda98c8bbd": [
+    "src/addons/graph/Panel.tsx"
+  ],
+  "57aea1c5dbe7": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
+  "39b5a0ba6363": [
+    "src/addons/typing-speed/index.ts"
+  ],
+  "55692c4bc353": [
+    "src/addons/typing-speed/index.ts"
+  ],
+  "8472a11aab38": [
+    "src/addons/typing-speed/index.ts"
+  ],
+  "f6f10501e72b": [
+    "src/addons/typing-speed/index.ts"
+  ]
+}

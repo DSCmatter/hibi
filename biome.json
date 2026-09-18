@@ -7,7 +7,9 @@
       "!!out",
       "!!release",
       "!!test-results",
-      "!!package-lock.json"
+      "!!package-lock.json",
+      "!!locales/en.json",
+      "!!locales/sources.json"
     ]
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2 },

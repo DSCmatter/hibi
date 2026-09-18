@@ -200,6 +200,7 @@ function runCI() {
   const npm = (...args) => run([process.env.npm_execpath, ...args])
   npm('run', 'lint')
   npm('run', 'docs:check')
+  npm('run', 'copy:check')
   if (plan.build) {
     for (const target of ['node', 'web'])
       npm(
