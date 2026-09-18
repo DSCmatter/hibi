@@ -142,12 +142,18 @@ test('status visibility, zen mode, settings groups, search clear and import noti
   )
   await editor.focus()
   await choose('Show workspace sidebar')
+  await page.waitForFunction(
+    () => document.querySelector('.app').dataset.sidebar === 'true',
+  )
   const preferences = await page.evaluate(() => ({
     sidebar: document.querySelector('.app').dataset.sidebar,
     toolbar: localStorage.getItem('hibi:toolbar'),
     status: localStorage.getItem('status-bar'),
   }))
   await choose('Enter zen mode')
+  await page.waitForFunction(
+    () => document.querySelector('.app').dataset.zen === 'true',
+  )
   assert.equal(await page.locator('.app').getAttribute('data-zen'), 'true')
   assert.equal(await page.locator('.titlebar').isVisible(), false)
   assert.equal(await page.locator('.toolbar-slot').isVisible(), false)
@@ -170,7 +176,11 @@ test('status visibility, zen mode, settings groups, search clear and import noti
     preferences.toolbar,
   )
   await choose('Source view')
+  await page.getByRole('textbox', { name: /markdown editor/i }).waitFor()
   await choose('Enter zen mode')
+  await page.waitForFunction(
+    () => document.querySelector('.app').dataset.zen === 'true',
+  )
   await page.waitForFunction(() =>
     document.activeElement?.classList.contains('cm-content'),
   )
@@ -183,6 +193,7 @@ test('status visibility, zen mode, settings groups, search clear and import noti
     /A quiet place to write/,
   )
   await choose('Normal view')
+  await editor.waitFor()
   await page.reload()
   await editor.waitFor()
   assert.equal(
