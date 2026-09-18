@@ -25,6 +25,7 @@ import {
 } from '../../shared/document-types'
 import { startupSpan } from '../../shared/startup'
 import { useDialogService } from '../../ui/DialogProvider'
+import { performanceDiagnostics } from '../../ui/diagnostics'
 import { menus } from '../../ui/menu-store'
 import { useToastService } from '../../ui/Sonner'
 import { createTooltipScope } from '../../ui/tooltip-store'
@@ -232,7 +233,7 @@ export function useAddons(environment: Environment, documentName?: string) {
         if (disposed) return () => {}
         const remove = subscribe(() => {
           try {
-            listener()
+            performanceDiagnostics.measure(id, 'subscription', listener)
           } catch (error) {
             latest.current.error(error)
           }
@@ -446,7 +447,11 @@ export function useAddons(environment: Environment, documentName?: string) {
                 if (disposed) return () => {}
                 const remove = editorDocument.subscribe((document) => {
                   try {
-                    listener(document)
+                    performanceDiagnostics.measure(
+                      id,
+                      'document observer',
+                      () => listener(document),
+                    )
                   } catch (error) {
                     latest.current.error(error)
                   }
@@ -514,7 +519,9 @@ export function useAddons(environment: Environment, documentName?: string) {
                 const remove = onEditorInput((event) => {
                   if (disposed) return
                   try {
-                    listener(event)
+                    performanceDiagnostics.measure(id, 'input handler', () =>
+                      listener(event),
+                    )
                   } catch (error) {
                     latest.current.error(error)
                   }
@@ -531,7 +538,9 @@ export function useAddons(environment: Environment, documentName?: string) {
                 const remove = onEditorKeyEvent((event) => {
                   if (disposed) return
                   try {
-                    listener(event)
+                    performanceDiagnostics.measure(id, 'key handler', () =>
+                      listener(event),
+                    )
                   } catch (error) {
                     latest.current.error(error)
                   }
@@ -556,10 +565,18 @@ export function useAddons(environment: Environment, documentName?: string) {
                   attach(editor) {
                     if (disposed) return () => {}
                     try {
-                      const detach = extension.attach(editor)
+                      const detach = performanceDiagnostics.measure(
+                        id,
+                        `rich attachment:${extension.id}`,
+                        () => extension.attach(editor),
+                      )
                       return () => {
                         try {
-                          detach()
+                          performanceDiagnostics.measure(
+                            id,
+                            `rich cleanup:${extension.id}`,
+                            detach,
+                          )
                         } catch (error) {
                           latest.current.error(error)
                         }
@@ -596,7 +613,11 @@ export function useAddons(environment: Environment, documentName?: string) {
                   async create() {
                     if (disposed) return []
                     try {
-                      const result = await extension.create()
+                      const result = await performanceDiagnostics.measure(
+                        id,
+                        `source attachment:${extension.id}`,
+                        () => extension.create(),
+                      )
                       return disposed ? [] : result
                     } catch (error) {
                       throw new Error(
@@ -703,7 +724,11 @@ export function useAddons(environment: Environment, documentName?: string) {
                   run: async () => {
                     if (!active || disposed) return
                     try {
-                      await command.run()
+                      await performanceDiagnostics.measure(
+                        id,
+                        `command:${command.id}`,
+                        () => command.run(),
+                      )
                     } catch (error) {
                       latest.current.error(error)
                     }
@@ -771,7 +796,11 @@ export function useAddons(environment: Environment, documentName?: string) {
                         'Enable this addon in Settings → Addons first.',
                       ),
                     )
-                  : (window.hibi.queryAddon(id, method, input) as Promise<T>),
+                  : (performanceDiagnostics.measure(
+                      id,
+                      `native query:${method}`,
+                      () => window.hibi.queryAddon(id, method, input),
+                    ) as Promise<T>),
               invoke: <T>(method: string, input?: unknown) =>
                 disposed
                   ? Promise.reject(
@@ -779,16 +808,26 @@ export function useAddons(environment: Environment, documentName?: string) {
                         'Enable this addon in Settings → Addons first.',
                       ),
                     )
-                  : (latest.current.invoke(id, method, input) as Promise<T>),
+                  : (performanceDiagnostics.measure(
+                      id,
+                      `native action:${method}`,
+                      () => latest.current.invoke(id, method, input),
+                    ) as Promise<T>),
             },
             notify: (message) => {
               if (!disposed) toastScope.api.show({ message })
             },
           })
+        const startDetail = { addonName: addon.manifest.name, status: 'ready' }
         const measuredStart = () =>
-          startupSpan(`addon:${id}`, async () => {
-            await start()
-          })
+          startupSpan(
+            `addon:${id}`,
+            async () => {
+              await start()
+              if (disposed) startDetail.status = 'cancelled'
+            },
+            startDetail,
+          )
         const starting = required.has(id)
           ? measuredStart()
           : new Promise<void>((resolve) =>

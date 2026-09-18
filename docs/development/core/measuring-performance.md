@@ -2,6 +2,8 @@
 
 Measure a repeatable flow before changing it. Keep the document, profile, build, and machine the same when comparing results.
 
+The optional [Diagnostics plugin](../../features/diagnostics.md) shows per-addon loading and startup times, host-invoked callback timings, renderer stalls, and native process metrics. It defaults on in `npm run dev` and off in production. Disable it when collecting baseline benchmarks: recording itself adds overhead. Saved addon preferences override either default.
+
 ## Core benchmarks
 
 ```sh

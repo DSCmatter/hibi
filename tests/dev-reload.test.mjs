@@ -119,6 +119,15 @@ test('development watches renderer, preload, addons, and generators', {
   const page = browser.contexts()[0].pages()[0]
   page.setDefaultTimeout(15000)
   await page.locator('[data-status-id="typing-speed.wpm"]').waitFor()
+  assert.equal(
+    await page.evaluate(
+      async () =>
+        (await window.hibi.getAddonStates()).find(
+          (entry) => entry.id === 'diagnostics',
+        ).enabled,
+    ),
+    true,
+  )
   await page
     .getByRole('textbox', { name: 'Document editor', exact: true })
     .fill('unsaved watch draft')
@@ -202,6 +211,17 @@ test('development watches renderer, preload, addons, and generators', {
     'documentation generator reloads',
   )
   t.diagnostic('documentation generator updated')
+  await page.evaluate(() => window.hibi.setAddonEnabled('diagnostics', false))
+  await page.reload()
+  assert.equal(
+    await page.evaluate(
+      async () =>
+        (await window.hibi.getAddonStates()).find(
+          (entry) => entry.id === 'diagnostics',
+        ).enabled,
+    ),
+    false,
+  )
   await replace(
     'scripts/build-site.mjs',
     '<title>hibi documentation</title>',

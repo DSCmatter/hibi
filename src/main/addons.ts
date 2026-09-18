@@ -8,6 +8,7 @@ import {
   compatibleAddonManifest,
   type NativeAddon,
 } from '../addons/api'
+import { addonDefaultEnabled } from '../shared/addon-defaults'
 import { validDocumentExtensions } from '../shared/document-types'
 import { exportedAppearance } from './appearance'
 import {
@@ -149,7 +150,14 @@ export function getAddonStates(): AddonState[] {
   )
   return manifests().map(({ id, defaultEnabled }) => ({
     id,
-    enabled: id === 'markdown' || (enabled[id] ?? defaultEnabled ?? false),
+    enabled:
+      id === 'markdown' ||
+      (enabled[id] ??
+        addonDefaultEnabled(
+          id,
+          defaultEnabled,
+          !app.isPackaged && !!process.env.ELECTRON_RENDERER_URL,
+        )),
   }))
 }
 export function getImporters(): import('../shared/imports').Importer[] {

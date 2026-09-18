@@ -1,6 +1,7 @@
 import { FileText, Search } from 'lucide-react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { Addon, AddonManifest, AddonState } from '../../addons/api'
+import { addonDefaultEnabled } from '../../shared/addon-defaults'
 import { addonPackageUrl } from '../../shared/addon-package'
 import { sentenceCase } from '../../shared/ui-case'
 import {
@@ -115,8 +116,14 @@ export function AddonSettings({
   const toasts = useToasts()
   const enabled = (id: string) =>
     states.some((state) => state.id === id && state.enabled)
+  const defaultEnabled = (manifest: AddonManifest) =>
+    addonDefaultEnabled(
+      manifest.id,
+      manifest.defaultEnabled,
+      import.meta.env.DEV,
+    )
   const changed = addons.some(
-    ({ manifest }) => enabled(manifest.id) !== !!manifest.defaultEnabled,
+    ({ manifest }) => enabled(manifest.id) !== defaultEnabled(manifest),
   )
   const ordered = addons.toSorted(
     (a, b) =>
@@ -189,8 +196,8 @@ export function AddonSettings({
         onReset={() =>
           void run(async () => {
             for (const { manifest } of addons)
-              if (enabled(manifest.id) !== !!manifest.defaultEnabled)
-                await setEnabled(manifest.id, !!manifest.defaultEnabled)
+              if (enabled(manifest.id) !== defaultEnabled(manifest))
+                await setEnabled(manifest.id, defaultEnabled(manifest))
           })
         }
       />

@@ -28,6 +28,7 @@ import type { DocumentState } from '../../shared/desktop'
 import type { DocumentView } from '../../shared/document-types'
 import { isMediaFile } from '../../shared/media'
 import { DocumentNotice } from '../../ui/DocumentNotice'
+import { performanceDiagnostics } from '../../ui/diagnostics'
 import { documentImage } from './DocumentImage'
 import { type CursorSettings, EditorCursor } from './EditorCursor'
 import { emitEditorKeyEvent } from './editor-events'
@@ -241,7 +242,14 @@ export function MarkdownEditor({
         },
       },
       onUpdate: ({ editor }) => {
-        onChange(projection.serialize(editor.getMarkdown()))
+        const source = performanceDiagnostics.measure(
+          'core',
+          'Markdown serialization',
+          () => projection.serialize(editor.getMarkdown()),
+        )
+        performanceDiagnostics.measure('core', 'document update', () =>
+          onChange(source),
+        )
         setRichRevision((revision) => revision + 1)
       },
     },

@@ -2,6 +2,7 @@ import { type ComponentType, lazy } from 'react'
 import type { Addon, AddonManifest, MarkdownFlavor } from '../../addons/api'
 import type { SideloadFactory } from '../../addons/sdk'
 import type { InstalledAddon } from '../../shared/sideload'
+import { startupSpan } from '../../shared/startup'
 
 const manifests = import.meta.glob<AddonManifest>(
   ['../../addons/*/manifest.ts', '../../useraddons/*/manifest.ts'],
@@ -59,7 +60,9 @@ const bundled = Object.entries(manifests).map(([path, manifest]): Addon => {
       : {}),
     async start(context) {
       const token = ++generation
-      const addon = await load()
+      const addon = await startupSpan(`addon-load:${manifest.id}`, load, {
+        addonName: manifest.name,
+      })
       if (token !== generation) return
       if (addon.manifest.id !== manifest.id)
         throw new Error(
@@ -76,7 +79,11 @@ const bundled = Object.entries(manifests).map(([path, manifest]): Addon => {
         changed = true
       }
       if (changed) publish()
-      await addon.start(context)
+      await startupSpan(
+        `addon-start:${manifest.id}`,
+        async () => addon.start(context),
+        { addonName: manifest.name },
+      )
     },
     stop() {
       generation++
@@ -112,12 +119,18 @@ function installedAddon(item: InstalledAddon): Addon {
         throw new Error(
           'This plugin is missing its startup file. Reinstall it.',
         )
-      const [module, { sdk }] = await Promise.all([
-        import(/* @vite-ignore */ item.url) as Promise<{
-          default?: SideloadFactory
-        }>,
-        import('../../addons/sdk'),
-      ])
+      const url = item.url
+      const [module, { sdk }] = await startupSpan(
+        `addon-load:${item.manifest.id}`,
+        () =>
+          Promise.all([
+            import(/* @vite-ignore */ url) as Promise<{
+              default?: SideloadFactory
+            }>,
+            import('../../addons/sdk'),
+          ]),
+        { addonName: item.manifest.name },
+      )
       if (token !== generation) return
       if (typeof module.default !== 'function')
         throw new Error(
@@ -139,7 +152,11 @@ function installedAddon(item: InstalledAddon): Addon {
       if (definition.Settings) addon.Settings = definition.Settings
       if (definition.flavors) addon.flavors = definition.flavors
       publish()
-      await definition.start(context)
+      await startupSpan(
+        `addon-start:${item.manifest.id}`,
+        async () => definition.start(context),
+        { addonName: item.manifest.name },
+      )
     },
     stop() {
       generation++

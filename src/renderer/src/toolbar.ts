@@ -1,3 +1,4 @@
+import { performanceDiagnostics } from '../../ui/diagnostics'
 import type {
   ToolbarApi,
   ToolbarItem,
@@ -128,7 +129,11 @@ export const toolbar = {
             async onClick() {
               if (!active || disposed || item.disabled) return
               try {
-                await item.onClick()
+                await performanceDiagnostics.measure(
+                  owner,
+                  `toolbar:${item.id}`,
+                  () => item.onClick(),
+                )
               } catch (error) {
                 onError(error)
               }
