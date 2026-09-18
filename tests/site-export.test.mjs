@@ -256,7 +256,7 @@ test('published sites support direct routes, crawlable HTML, branding, locked th
   files.set(
     'hibi-assets/custom.css',
     files.get('hibi-assets/custom.css') +
-      '\narticle h1 { color: rgb(65, 43, 21); }',
+      '\n.site-content article h1 { color: rgb(65, 43, 21); }',
   )
   await page.reload()
   await page.waitForFunction(
