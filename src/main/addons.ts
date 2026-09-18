@@ -87,6 +87,22 @@ export function getAddonLicenses() {
   )
 }
 
+export async function readAddonDocumentation(id: unknown, path: unknown) {
+  if (
+    typeof id !== 'string' ||
+    !manifests().some((manifest) => manifest.id === id)
+  )
+    throw new Error('This addon is unavailable.')
+  const source = Object.entries(manifestModules).find(
+    ([, manifest]) => manifest.id === id,
+  )?.[0]
+  return (await import('./addon-documentation')).readDocumentation(
+    id,
+    source?.slice(0, source.lastIndexOf('/')),
+    path,
+  )
+}
+
 export async function loadAddons(): Promise<void> {
   const [, stored] = await Promise.all([
     loadInstalledAddons(bundledManifests.map((manifest) => manifest.id)),

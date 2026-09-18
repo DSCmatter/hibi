@@ -9,10 +9,17 @@ export type InstalledAddon = {
   /** Installation provenance supplied by the host, never the addon manifest. */
   source?: 'local' | 'third-party'
 }
+export type AddonDocument = {
+  path: string
+  kind: 'markdown' | 'image'
+  content: string
+}
 export const SIDELOAD_CHANNELS = {
   list: 'addons:installed',
   install: 'addons:install',
   folder: 'addons:folder',
   garden: 'addons:garden',
   remove: 'addons:remove',
+  documentation: 'addons:documentation',
+  link: 'addons:documentation-link',
 } as const

@@ -163,7 +163,8 @@
     "src/renderer/src/AutosaveSettings.tsx"
   ],
   "76900f1bfd16": [
-    "src/main/index.ts"
+    "src/main/index.ts",
+    "src/renderer/src/AddonReadme.tsx"
   ],
   "a6989680b352": [
     "src/renderer/src/SettingsScreen.tsx"
@@ -254,6 +255,9 @@
   "4f06af701050": [
     "src/main/workspace-actions.ts"
   ],
+  "dd2dda50df8c": [
+    "src/main/addon-documentation.ts"
+  ],
   "5f7d0390ae07": [
     "src/main/workspace-actions.ts"
   ],
@@ -286,6 +290,9 @@
   ],
   "4498a0e9706f": [
     "src/main/files.ts"
+  ],
+  "d1eb8cb18d78": [
+    "src/main/links.ts"
   ],
   "63f351843bb7": [
     "src/main/links.ts"
@@ -1274,6 +1281,10 @@
   "2981eae03a7a": [
     "src/addons/math/PackageSettings.tsx"
   ],
+  "fafb1d3907fe": [
+    "src/renderer/src/AddonReadme.tsx",
+    "src/renderer/src/AddonSettings.tsx"
+  ],
   "830b524da49f": [
     "src/renderer/src/StartupPlaceholder.tsx"
   ],
@@ -1504,6 +1515,9 @@
     "src/renderer/src/AddonSidebar.tsx",
     "src/renderer/src/OutlineSidebar.tsx",
     "src/site/main.tsx"
+  ],
+  "2fae0ec5804c": [
+    "src/main/addon-documentation.ts"
   ],
   "458320f53ff5": [
     "src/main/addons.ts",
@@ -1745,6 +1759,12 @@
   ],
   "191a43a3e539": [
     "src/addons/graph/Panel.tsx"
+  ],
+  "44ff26388205": [
+    "src/renderer/src/AddonSettings.tsx"
+  ],
+  "0ed6653bd55e": [
+    "src/renderer/src/AddonReadme.tsx"
   ],
   "e88bb0e03de7": [
     "src/renderer/src/HotkeySettings.tsx"
@@ -2220,6 +2240,9 @@
   "a5aedb8a518f": [
     "src/renderer/src/main.tsx"
   ],
+  "53a9d03e9663": [
+    "src/main/addon-documentation.ts"
+  ],
   "8c6ee6bc52e4": [
     "src/addons/documentation/native.ts"
   ],
@@ -2283,6 +2306,9 @@
   "b287a1312556": [
     "src/main/addons.ts"
   ],
+  "c58889003b80": [
+    "src/main/addons.ts"
+  ],
   "5eebb144c45a": [
     "src/main/sideload.ts"
   ],
@@ -2310,6 +2336,12 @@
   "598c7699a784": [
     "src/addons/_shared/document-project.ts"
   ],
+  "0ac0af8cf48f": [
+    "src/main/addon-documentation.ts"
+  ],
+  "f3baf23e2a31": [
+    "src/main/addon-documentation.ts"
+  ],
   "28d14c9029bb": [
     "src/renderer/src/main.tsx"
   ],
@@ -2336,6 +2368,9 @@
   ],
   "f21c0d01153d": [
     "src/main/workspace.ts"
+  ],
+  "9a8066d604c9": [
+    "src/main/addon-documentation.ts"
   ],
   "2ff13ca6ab5c": [
     "src/renderer/src/workspace-menu.ts"
@@ -2577,6 +2612,9 @@
   ],
   "dcc839a4015c": [
     "src/main/index.ts"
+  ],
+  "a0c4152d1416": [
+    "src/renderer/src/AddonSettings.tsx"
   ],
   "c71ba099f440": [
     "src/addons/vim/manifest.ts"

@@ -34,6 +34,8 @@ Use **Syntax** to enable or disable formatting features, and **Code highlighting
 
 Enable or disable plugins and themes under **Addons**. Enabling a plugin makes its settings and formats available. **Reset all** restores the default enabled addons without removing installed packages.
 
+Choose **View readme** in the addon list or a plugin’s settings to read its documentation.
+
 ### Install an addon
 
 1. Choose **Hibi garden** to browse [available addons](https://hibi.garden/addons).

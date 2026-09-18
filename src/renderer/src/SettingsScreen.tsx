@@ -28,7 +28,11 @@ import { DocumentNotice } from '../../ui/DocumentNotice'
 import { Sidebar, type SidebarItem, type SidebarProps } from '../../ui/Sidebar'
 import { SettingsDiscovery, settingsIndex } from '../../ui/settings-index'
 import { uiCase } from '../../ui/ui-case'
-import { AddonMetadata, AddonSettings } from './AddonSettings'
+import {
+  AddonMetadata,
+  AddonReadmeButton,
+  AddonSettings,
+} from './AddonSettings'
 import { AutosaveSettings } from './AutosaveSettings'
 import { addons } from './addons'
 import { CodeSyntaxSettings } from './CodeSyntaxSettings'
@@ -577,10 +581,13 @@ export function SettingsScreen({
               hidden={category !== `plugin-${manifest.id}`}
             >
               <h1>{manifest.name}</h1>
-              <p className="plugin-description">
-                {manifest.description}
+              <div className="plugin-summary">
+                <p className="plugin-description">{manifest.description}</p>
                 <AddonMetadata manifest={manifest} />
-              </p>
+                <div>
+                  <AddonReadmeButton manifest={manifest} />
+                </div>
+              </div>
               {!!manifest.fileExtensions?.length && (
                 <>
                   <h2>Format</h2>

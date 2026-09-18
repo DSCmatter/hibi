@@ -23,6 +23,14 @@ function webUrl(value: unknown) {
   return url
 }
 
+export async function openExternalDocumentLink(href: unknown) {
+  if (typeof href !== 'string' || href.length > 8192)
+    throw new Error('Choose a web link or email address.')
+  await shell.openExternal(
+    /^mailto:/i.test(href) ? new URL(href).href : webUrl(href).href,
+  )
+}
+
 export async function openDocumentLink(
   window: BrowserWindow,
   href: unknown,
@@ -34,12 +42,8 @@ export async function openDocumentLink(
     revision !== getDocument().revision
   )
     return null
-  if (/^https?:/i.test(href)) {
-    await shell.openExternal(webUrl(href).href)
-    return null
-  }
-  if (/^mailto:/i.test(href)) {
-    await shell.openExternal(new URL(href).href)
+  if (/^(?:https?:|mailto:)/i.test(href)) {
+    await openExternalDocumentLink(href)
     return null
   }
   const path = documentMediaPath(href.split('#')[0]!, getDocumentPath())

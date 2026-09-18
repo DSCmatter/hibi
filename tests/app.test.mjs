@@ -60,6 +60,8 @@ test('desktop launch, isolation, offline reload, and recovery', {
       node: 'undefined',
       process: 'undefined',
       api: [
+        'getAddonDocumentation',
+        'openAddonDocumentationLink',
         'getFileAssociations',
         'setFileAssociation',
         'navigateDocument',
@@ -184,7 +186,11 @@ test('desktop launch, isolation, offline reload, and recovery', {
       try {
         await rogue.loadURL('app://hibi/')
         return await rogue.webContents.executeJavaScript(
-          'window.hibi.getAppInfo().then(() => false, () => true)',
+          `Promise.all([
+            window.hibi.getAppInfo(),
+            window.hibi.getAddonDocumentation('keybeats', 'README.md'),
+            window.hibi.openAddonDocumentationLink('https://example.com'),
+          ].map(request => request.then(() => false, () => true))).then(results => results.every(Boolean))`,
         )
       } finally {
         rogue.destroy()

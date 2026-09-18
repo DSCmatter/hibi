@@ -17,6 +17,10 @@ import { WORKSPACE_CHANNELS, type WorkspaceState } from '../shared/workspace'
 
 if (process.isMainFrame) {
   contextBridge.exposeInMainWorld('hibi', {
+    getAddonDocumentation: (id, path) =>
+      ipcRenderer.invoke(SIDELOAD_CHANNELS.documentation, id, path),
+    openAddonDocumentationLink: (href) =>
+      ipcRenderer.invoke(SIDELOAD_CHANNELS.link, href),
     getFileAssociations: () => ipcRenderer.invoke(ASSOCIATION_CHANNELS.get),
     setFileAssociation: (format) =>
       ipcRenderer.invoke(ASSOCIATION_CHANNELS.set, format),

@@ -1,12 +1,55 @@
-import { useEffect, useRef, useState } from 'react'
+import { FileText } from 'lucide-react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { Addon, AddonManifest, AddonState } from '../../addons/api'
 import { addonPackageUrl } from '../../shared/addon-package'
 import { sentenceCase } from '../../shared/ui-case'
-import { Button, ControlRow, SettingRow, Toggle } from '../../ui/Controls'
+import {
+  Button,
+  ControlRow,
+  Panel,
+  PanelMessage,
+  SettingRow,
+  Toggle,
+} from '../../ui/Controls'
 import { useDialogs } from '../../ui/DialogProvider'
 import { SettingsFilter } from '../../ui/SettingsFilter'
 import { useToasts } from '../../ui/Sonner'
 import { addonRegistry } from './addon-registry'
+
+const AddonReadme = lazy(() => import('./AddonReadme'))
+
+export function AddonReadmeButton({ manifest }: { manifest: AddonManifest }) {
+  const dialogs = useDialogs()
+  return (
+    <Button
+      aria-haspopup="dialog"
+      onClick={() =>
+        dialogs.open({
+          title: manifest.name,
+          description: 'Readme',
+          size: 'wide',
+          content: () => (
+            <Suspense
+              fallback={
+                <Panel>
+                  <PanelMessage
+                    icon={<FileText size={28} />}
+                    title="Loading readme…"
+                    loading
+                  />
+                </Panel>
+              }
+            >
+              <AddonReadme id={manifest.id} />
+            </Suspense>
+          ),
+        })
+      }
+    >
+      View readme
+    </Button>
+  )
+}
 
 export function AddonMetadata({ manifest }: { manifest: AddonManifest }) {
   return (
@@ -174,6 +217,7 @@ export function AddonSettings({
                   }
                 >
                   <div className="addon-actions">
+                    <AddonReadmeButton manifest={manifest} />
                     {addonRegistry.isInstalled(manifest.id) && (
                       <Button
                         disabled={busy}

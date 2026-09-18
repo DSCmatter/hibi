@@ -53,6 +53,11 @@ export type AppInfo = {
 }
 
 export type DesktopApi = {
+  getAddonDocumentation: (
+    id: string,
+    path: string,
+  ) => Promise<import('./sideload').AddonDocument>
+  openAddonDocumentationLink: (href: string) => Promise<void>
   getFileAssociations: () => Promise<
     import('./file-associations').FileAssociationState
   >

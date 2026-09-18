@@ -181,6 +181,13 @@ export function installedAddons(): InstalledAddon[] {
     source: source ?? 'local',
   }))
 }
+export function installedDocumentationPath(id: string, path: string) {
+  const entry = installed.find((item) => item.manifest.id === id)
+  if (!entry || !validPath(path)) return Promise.resolve(null)
+  return installedAsset(
+    `app://hibi/installed-addons/${id}/${entry.hash}/${path}`,
+  )
+}
 export async function loadInstalledAddons(builtinIds: readonly string[]) {
   const entries = await readdir(root(), { withFileTypes: true }).catch(
     (error: NodeJS.ErrnoException) => {

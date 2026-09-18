@@ -43,6 +43,7 @@ import {
   installAddon,
   invokeAddon,
   loadAddons,
+  readAddonDocumentation,
   removeAddon,
 } from './addons'
 import { appearanceColors, loadAppearance, saveAppearance } from './appearance'
@@ -74,7 +75,11 @@ import { listVersions, previewVersion } from './history'
 import { hotkeys, loadHotkeys, saveHotkeys } from './hotkeys'
 import { readDocumentImage } from './images'
 import { listLicenses, readLicense } from './licenses'
-import { openDocumentLink, openRemoteDocument } from './links'
+import {
+  openDocumentLink,
+  openExternalDocumentLink,
+  openRemoteDocument,
+} from './links'
 import {
   attachMedia,
   openDroppedFile,
@@ -592,6 +597,17 @@ if (!app.requestSingleInstanceLock()) {
           electron: process.versions.electron,
           platform: process.platform,
         }
+      })
+      handle(
+        SIDELOAD_CHANNELS.documentation,
+        (event, id: unknown, path: unknown) => {
+          trustedWindow(event)
+          return readAddonDocumentation(id, path)
+        },
+      )
+      handle(SIDELOAD_CHANNELS.link, async (event, href: unknown) => {
+        trustedWindow(event)
+        await openExternalDocumentLink(href)
       })
       handle(ASSOCIATION_CHANNELS.get, async (event) => {
         trustedWindow(event)
