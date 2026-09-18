@@ -41,13 +41,11 @@ The complete repository check passed all 163 tests, including build, type checks
 
 A final lifecycle follow-up revokes source-edit access before invoking an addon's `stop()` hook. The rebuilt app passed three focused tests covering that hook, failed attachments, and independent cleanup; type checks, documentation checks, and lint also passed after the follow-up.
 
-## Final measurements
+## First-pass measurements
 
 The latest ten-run fresh-profile startup result is 493.3 ms median to editable and 500.9 ms to editor plus workspace-list readiness, with readiness p95 at 515.3 ms. Warm readiness median is 470.5 ms. Initial renderer JavaScript is 1,179,022 bytes. The earlier 471.3 ms fresh-profile result shows why one run should not establish a sub-500 ms guarantee.
 
 Five repeated hidden-window input runs measured transaction p95 at 1.3 ms for blank notes, 2.8 ms for large notes, and 0.9 ms for code-heavy notes. Three foreground runs with verified document focus measured 1.0, 4.2, and 0.9 ms respectively. There is no foreground baseline for comparison. These CPU timings exclude deferred layout, painting, and compositor presentation. The driver endpoint still measures roughly 42–65 ms for the first key, so the first-response target remains unmet.
-
-## Remaining work
 
 ## Continuation stages
 
@@ -61,7 +59,7 @@ The continuation starts at `30984ba`. Complete these stages with progressive com
 - [x] Add preservation contracts and validate syntax transitions.
 - [x] Add scoped document views and shared command invocation where the review workflow needs them.
 - [x] Run the review analyzer in a bounded isolated service with cancellation and revocation tests.
-- [ ] Complete correctness, performance, documentation, and repository checks; record measured results.
+- [x] Complete correctness, performance, documentation, and repository checks; record measured results.
 
 Bootstrap now overlaps renderer evaluation with independent document, addon, and recent-workspace reads. The main-process document read waits only for document and shortcut preferences; recent-workspace and app-info reads do not wait for addon discovery. Preload retains early external-file notifications, and a blank launch skips the empty drain. The built app passed startup, module-loading, external-file, workspace-settings, and actual development-reload tests (seven tests).
 
@@ -79,4 +77,14 @@ Scoped views now share a host for the existing sidebar API and a panel below the
 
 Review now runs through the shared analysis service. Each addon receives a worker in a separate sandboxed renderer, a private in-memory session, and an allowlisted module origin. The worker has no DOM, preload bridge, Node, WebRTC, or network access. Native grants validate exact source spans and document identity; completions bind to the sender and request, not claimed payload identities. Limits cover queue depth, process count, result size, request deadline, idle lifetime, and sampled working-set memory. Real Electron tests passed denied-capability probes, forged messages alongside another addon, queue replacement, oversized output, stale tabs, infinite-loop termination while typing, cancellation, process-crash recovery, disable/re-enable, and reload. Existing Review and scoped-view tests passed against the service. The input benchmark now has an opt-in two-second analysis-load profile; the default core benchmark remains unchanged.
 
-The unchecked continuation stage above is the remaining work. Context-dependent serializers still use a full rebuild, and rich fixes intentionally reject unproven ranges. No Rust ports or runtime snapshot experiments are included.
+The complete repository check passed all 195 tests with no failures or skips, plus type checking, lint, generated references, documentation links, and the UI copy catalog. The full run caught an esbuild packaging regression and sidebar disposal closing the workspace fallback; both were fixed and the complete check rerun. The pinned Review panel was inspected in light and dark themes and at 560px width, with no horizontal overflow. Existing save/crash/close tests also passed after adding a preload journal-readiness handshake. Stopped analyzer handles cannot cancel a newly enabled instance.
+
+## Continuation measurements
+
+Measurements use revision `4053198`, Node 22.23.2, and macOS arm64. Tests and benchmark groups ran sequentially. Ten fresh-profile launches measured 494.4 ms median to editable and 500.4 ms to editor plus workspace-list readiness, with p95 at 515.7 and 521.7 ms. Nine warm-profile launches measured 475.3 ms median readiness and 510.2 ms p95. Reopening a window in the running app measured 243.2 ms median to editable and 259.1 ms p95. Initial renderer JavaScript is 1,211,613 bytes.
+
+Five hidden-window input runs per fixture measured synchronous transaction p95 at 0.8 ms for blank notes, 1.2 ms for large notes, and 0.9 ms for code-heavy notes. Three runs under a two-second isolated analysis CPU load measured 0.7, 1.2, and 1.1 ms respectively. Three foreground runs with verified document focus measured 0.9, 1.2, and 1.2 ms. Full `getMarkdown()` calls and synchronous formatting capability checks remained zero per transaction; changed blocks still serialize. The default core benchmark suite also completed through the CodSpeed integration.
+
+These results improve the recorded first-pass large-note transaction p95 of 2.8 ms hidden and 4.2 ms foreground. Startup remains around 500 ms; this pass does not establish a sub-500 ms readiness tail. First-key driver p95 remains 31.7–58.0 ms hidden and 42.3–102.9 ms foreground across fixtures. CPU and driver measurements do not establish physical presentation latency or cold-cache packaged startup.
+
+All continuation stages are complete. Context-dependent serializers still use a full rebuild, exact rich fixes reject unproven ranges, and undo source preservation uses bounded caches. Native recovery covers renderer crashes, not whole-app failure. No Rust ports or runtime snapshot experiments are included.
