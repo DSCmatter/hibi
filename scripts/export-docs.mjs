@@ -11,6 +11,7 @@ const output = resolve(process.argv[3] ?? 'out/docs/index.html')
 const files = (await readdir(root, { recursive: true, withFileTypes: true }))
   .filter((entry) => entry.isFile() && /\.md$/i.test(entry.name))
   .map((entry) => join(entry.parentPath, entry.name))
+  .filter((file) => relative(root, file).split(sep)[0] !== 'ai-agents')
   .sort()
 if (!files.length) throw new Error('No Markdown documents to export.')
 

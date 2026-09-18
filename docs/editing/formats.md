@@ -1,51 +1,68 @@
 # Document formats
 
-Enable format plugins in **Settings → Addons**. Enabled formats appear in **Formats**, **Syntax**, **Code highlighting**, and their plugin settings pages. Click a format's Settings button to configure it. Markdown and plain text are always available.
+Enable format plugins under **Settings → Addons**. Enabled formats appear in **Formats**, **Syntax**, **Code highlighting**, and their plugin settings pages. Choose a format's Settings button to configure it. Markdown and plain text are always available.
 
-| Format | Extensions | Preview and export |
+## Supported formats
+
+| Format | File extensions | Editing, preview, and export |
 | --- | --- | --- |
-| Markdown | `.md`, `.markdown` | Rich editing, source, split view, HTML |
-| Plain text | `.txt` | Core source editor; no Markdown parsing |
-| MDX | `.mdx` | Inert preview; explicit React server render; HTML |
-| LaTeX | `.tex` | Math-aware HTML preview; explicit Tectonic PDF compilation |
-| reStructuredText | `.rst` | Native Pandoc preview and HTML |
-| AsciiDoc | `.adoc`, `.asciidoc` | Native Pandoc preview and HTML |
-| Org mode | `.org` | Native Pandoc preview and HTML |
-| Typst | `.typ` | Bundled compiler, live typeset preview, PDF |
-| HTML | `.html`, `.htm` | Sanitized static preview and HTML |
-| MediaWiki | `.wiki`, `.mediawiki` | Native Pandoc preview and HTML |
-| R Markdown | `.rmd` | Inert preview; explicit R/rmarkdown render; HTML |
-| Quarto Markdown | `.qmd` | Inert preview; explicit Quarto render; HTML |
-| MDsveX | `.svx` | Inert preview; explicit Svelte server render; HTML |
-| Markdoc | `.mdoc` | Bundled Markdoc parser and HTML |
-| Djot | `.dj` | Native Pandoc preview and HTML |
-| Textile | `.textile` | Native Pandoc preview and HTML |
-| Creole | `.creole` | Native Pandoc preview and HTML |
+| Markdown | `.md`, `.markdown` | Formatted editing, source, side-by-side view, HTML |
+| Plain text | `.txt` | Source editing |
+| MDX | `.mdx` | Preview without running code; Run document renders React; HTML export |
+| LaTeX | `.tex` | Math-aware HTML preview; compile to PDF with Tectonic |
+| reStructuredText | `.rst` | Preview and HTML export with Pandoc |
+| AsciiDoc | `.adoc`, `.asciidoc` | Preview and HTML export with Pandoc |
+| Org mode | `.org` | Preview and HTML export with Pandoc |
+| Typst | `.typ` | Live typeset preview and PDF export |
+| HTML | `.html`, `.htm` | Preview and HTML export with scripts removed |
+| MediaWiki | `.wiki`, `.mediawiki` | Preview and HTML export with Pandoc |
+| R Markdown | `.rmd` | Preview without running code; Run document uses R; HTML export |
+| Quarto Markdown | `.qmd` | Preview without running code; Run document uses Quarto; HTML export |
+| MDsveX | `.svx` | Preview without running code; Run document renders Svelte; HTML export |
+| Markdoc | `.mdoc` | Preview and HTML export |
+| Djot | `.dj` | Preview and HTML export with Pandoc |
+| Textile | `.textile` | Preview and HTML export with Pandoc |
+| Creole | `.creole` | Preview and HTML export with Pandoc |
 
-## Views and tools
+## Views and formatting tools
 
-Plain text has source view only. Formats without a rich editor offer source and split view; their normal-view button is disabled. Switching files selects an available view automatically. Disabling a format leaves its source editable.
+Plain text uses Source view. Formats without a formatted editor offer source and side-by-side preview; their Normal view button is disabled. Hibi chooses an available view when you switch files. Disabling a format plugin leaves its source editable.
 
-Toolbar buttons write the selected format's syntax. Markdown variants reuse Markdown tools; other formats map headings, emphasis, lists, links, images, code, and tables to their native notation. Unsupported tools are hidden. Source selection and undo work through the same editor path. LaTeX link, image, and strikethrough actions add missing `hyperref`, `graphicx`, or `ulem` packages after a conventional `\documentclass` declaration. Included snippets without a preamble rely on their parent document's packages.
+Toolbar tools insert the current format's notation for headings, emphasis, lists, links, images, code, and tables where supported. Unavailable actions are hidden. Changes support undo.
 
-Compile, run, and export actions stay pinned at the top of the preview panel. Editing keeps the current preview visible while its replacement renders, preserving the scroll position. Source code and HTML previews use the app's shared highlighting settings. Previews preserve document text and never convert the saved file to Markdown.
+LaTeX link, image, and strikethrough tools add missing `hyperref`, `graphicx`, or `ulem` packages after a standard `\documentclass` declaration. A fragment without a preamble relies on its parent document to load those packages.
 
-## Native tools
+Run, compile, and export buttons stay at the top of the preview panel. Your current preview remains visible while an updated one renders. Previewing does not convert the saved source to Markdown.
 
-Pandoc **3.11 or newer** supplies the native text readers, including AsciiDoc. LaTeX PDF compilation needs **Tectonic**. R Markdown execution needs **R**, the **rmarkdown** package, and its rendering dependencies. Quarto execution needs **Quarto** and the document's selected R/Jupyter runtime. Install these separately and put them on PATH; plugin settings include **Check tools**. Common macOS package-manager locations are also recognized.
+## Install required tools
 
-Typst, Markdoc, MDX, MDsveX, HTML parsing, PDF viewing, and inline KaTeX rendering are bundled. MDX and Svelte runs can import local components and installed project packages. These are server renders: browser-only APIs and client interactivity are unavailable in the editor preview.
+Some formats need tools installed separately. Use **Check tools** in the plugin's settings to check whether Hibi can find them.
 
-## Explicit execution
+| Format | Required tools |
+| --- | --- |
+| Pandoc-based formats | Pandoc 3.11 or later |
+| LaTeX PDF export | Tectonic |
+| R Markdown execution | R, the `rmarkdown` package, and its rendering dependencies |
+| Quarto execution | Quarto and the document's R or Jupyter runtime |
 
-Typing previews keep embedded JavaScript, R, and Python inert. **Run document** explicitly runs the selected document and its project code after confirmation. Execution has the user's file and network access. Results correspond to that source snapshot; editing requires another run. Run results can be exported as sanitized HTML.
+Put these tools on your system's `PATH`. Hibi also checks common macOS package-manager locations. Typst, Markdoc, MDX, MDsveX, HTML previews, and inline LaTeX math work with tools included in Hibi.
 
-**Compile document** runs LaTeX through Tectonic with shell escape disabled. Saved documents resolve local includes and assets from their folder. Tectonic may download required packages. The resulting PDF is shown locally and exported unchanged. Inline math inside Markdown still uses offline KaTeX.
+## Run or compile a document
 
-Regular Pandoc previews use its restricted `--sandbox` reader. Includes that require file access and executable/custom project features are not followed automatically. HTML previews remove scripts, forms, and document styles and use Hibi's typography. Markdown-site export uses this safe preview path; it never silently executes a project.
+Regular previews leave embedded JavaScript, R, and Python code inactive. **Run document** asks for confirmation before running the current document and its project code. That code can access files and the network with your user permissions, so run only projects you trust.
 
-## Limits
+Run results belong to the version you ran. Run again after editing to update them. You can export the result as HTML with scripts removed.
 
-Parser jobs accept up to 2 MiB of source, run for up to 15 seconds, and return up to 20 MiB of HTML. Explicit runs have a 90-second limit. PDF files are capped at 64 MiB, previews at 200 pages, and individual rendered pages at 16 million pixels. Local images are limited to 8 MiB each and 20 MiB when embedded together. Errors keep source editing available and use the shared preview notice.
+MDX and MDsveX runs can load local components and installed project packages. They render on the server side; browser-only APIs and interactive client behavior are unavailable in the preview.
 
-Typst resolves dependencies on demand, so unrelated workspace files do not exhaust its input limit. Its compiler-specific limits remain documented in the [Typst guide](typst.md).
+**Compile document** uses Tectonic to build LaTeX PDFs. Shell escape is disabled. Saved files can use local includes and assets from their folder, and Tectonic may download required packages. Hibi displays the PDF locally and exports it unchanged. Inline math in Markdown uses the included offline KaTeX renderer.
+
+Regular Pandoc previews restrict file access and do not follow project features that need to execute code. HTML previews remove scripts, forms, and document styles, then use Hibi's typography. Documentation exports use these restricted previews and never run project code automatically.
+
+## Limits and errors
+
+Most format previews accept up to 2 MiB of source, run for up to 15 seconds, and produce up to 20 MiB of HTML. Explicit runs have a 90-second limit. PDFs are limited to 64 MiB; previews show up to 200 pages, with up to 16 million pixels per rendered page.
+
+Local images may be up to 8 MiB each, or 20 MiB total when embedded. If a preview fails, its error appears beside the source and you can continue editing.
+
+Typst has its own [compiler limits](typst.md#local-files-and-limits).

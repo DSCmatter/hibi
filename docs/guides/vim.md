@@ -1,23 +1,32 @@
-# vim editing
+# Vim editing
 
-enable **vim** under settings → addons. it adds vim editing to markdown-only mode and the source pane of split view. normal view keeps its visual editor controls.
+Enable **Vim** under **Settings → Addons**. It works in source view and the source pane of side-by-side view. The formatted editor keeps its usual controls.
 
-the plugin uses the [CodeMirror vim engine](https://github.com/replit/codemirror-vim), loaded only when enabled. normal, insert, replace, visual, linewise visual, and blockwise visual modes include motions, counts, text objects, operators, registers, marks, macros, dot-repeat, undo/redo, search, and ex substitutions. standard examples include `ciw`, `d3w`, `"ayy`, `qa…q`, `@a`, `/word`, and `:%s/old/new/g`.
+Hibi uses the [CodeMirror Vim engine](https://github.com/replit/codemirror-vim). It supports normal, insert, replace, and visual modes, including linewise and blockwise selection. Motions, counts, text objects, operators, registers, marks, macros, undo/redo, search, and substitutions are available.
 
-on macOS, hibi uses key repeat instead of the press-and-hold accent picker so held vim motions keep moving. this setting is scoped to hibi and does not change other apps; enter accented characters with the standard option-key combinations.
+Examples include `ciw`, `d3w`, `"ayy`, `qa…q`, `@a`, `/word`, and `:%s/old/new/g`.
 
-## file commands
+## File commands
 
-- `:w` saves through hibi's normal save flow and returns focus to the source editor; an untitled note opens the save dialog.
-- `:e` opens the file picker; `:e relative/path.md` opens a file in the current workspace.
-- `:enew` creates a new note, checking unsaved edits first.
-- `:q` closes the window using hibi's unsaved-edit checks.
-- `:wq` and `:x` save, then close only if saving succeeds.
+| Command | Action |
+| --- | --- |
+| `:w` | Save. An untitled note opens the save dialog. |
+| `:e` | Open the file picker. |
+| `:e relative/path.md` | Open a file in the current workspace. |
+| `:enew` | Start a new note. |
+| `:q` | Close the window. |
+| `:wq` or `:x` | Save, then close if saving succeeds. |
 
-this is an embedded vim editing engine. it does not run vimscript, terminal commands, external vim plugins, or shell escapes. force-quit flags do not bypass hibi's unsaved-edit checks. `:w filename` is not supported; use save as to choose a new path. app shortcuts such as cmd+k keep their normal behavior.
+These commands keep Hibi's save/discard/cancel prompts. Force-quit flags do not bypass them. `:w filename` is unsupported; use **Save as** to choose a different path.
 
-## preferences
+Hibi does not run Vimscript, terminal commands, external Vim plugins, or shell escapes. App shortcuts such as `Cmd/Ctrl+K` still open their usual actions.
 
-settings → plugins → vim controls starting in insert mode and showing Vim availability or the current mode in a bottom-left status pill. normal view shows **Vim · off** because its visual editor keeps the standard controls; switch to markdown-only or side-by-side view to use Vim. command prompts stay inside the source pane and remain available when status is hidden. preferences persist; the starting mode applies to new source editor sessions. disabling the plugin removes its key handling and status pill while preserving the document and source undo history.
+## Preferences and status
 
-the status bar sits below the editor page, beside the sidebar. in source views, its second Vim pill builds the pending command as you type (`2` → `22` → `22k`) and keeps the completed sequence visible until the next one begins. `22k` runs when you press `k`; pressing enter afterward leaves the pill showing `22k`. escape cancels a pending command and restores the previous display. search (`/`, `?`) and `:` prompts are included. text typed in insert mode is not shown. **show vim status** hides or shows the availability, mode, and command pills.
+Under **Settings → Plugins → Vim**, choose whether source sessions start in insert mode and whether to show Vim status. Changes to the starting mode apply to new source sessions.
+
+The status bar shows the current mode and pending command, such as `2` → `22` → `22k`. A completed command stays visible until you begin another. Escape cancels a pending command. Search and `:` prompts appear there too; text typed in insert mode does not. Hiding status leaves command prompts available inside the source pane.
+
+Normal view shows **Vim · off**. Switch to source or side-by-side view to use Vim. Disabling the plugin preserves the document and source undo history.
+
+On macOS, holding a key repeats it inside Hibi instead of opening the accent picker. Other apps keep their usual behavior. Use Option-key combinations to enter accented characters.

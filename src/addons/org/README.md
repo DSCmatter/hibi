@@ -1,11 +1,7 @@
 # Org mode
 
-Enable **Org mode** in **Settings → Addons** to open `.org` documents with source highlighting, preview, and HTML export. Source files stay editable when disabled. Once enabled, its row in **Formats** opens this plugin's settings and native-tool check.
+Turn on **Org mode** in **Settings → Addons** to edit `.org` files with syntax highlighting and formatting tools. Use source view to write or side-by-side view to see the preview.
 
-Syntax controls and source highlighting share the app's **Syntax** and **Code highlighting** settings. Rendering never rewrites the original source.
+Install Pandoc 3.11 or newer and make it available on your system's `PATH` to preview documents and export HTML. Open **Settings → Formats → Org mode** to check the installation.
 
-Native preview uses Pandoc 3.11 or newer on PATH.
-
-See [document formats](../../../docs/development/document-formats.md) for shared runtime behavior and limits.
-
-Source and split views are available. The unsupported rich-editor view is disabled. Shared formatting tools write this format's syntax; preview actions remain pinned while the document scrolls.
+See [Document formats](../../../docs/editing/formats.md) for available views, export options, and syntax settings.

@@ -1,17 +1,33 @@
-# frontmatter
+# Page properties with frontmatter
 
-frontmatter is a bundled addon, enabled by default under settings → addons. it recognizes a YAML key/value mapping at the beginning of a document, opened with `---` and closed with `---` or `...`. typing `---` alone, unfinished blocks, and ordinary divider pairs do not activate it. empty metadata uses an explicit `{}` mapping.
+Frontmatter stores note properties as YAML at the start of a Markdown file. Hibi's Frontmatter plugin is enabled by default.
 
-normal and split views show a collapsible properties editor above the body. text, multiline text, numbers, and booleans have fields; lists and objects open in the yaml editor. add a property by name and type, or remove one from its row. **add frontmatter** in the command palette or `/frontmatter` in the slash menu creates a metadata block on a note without one. `/properties`, `/metadata`, and `/yaml` also find it. this slash action appears only while frontmatter is enabled and the note has no existing metadata.
+For example:
 
-the editor uses compact page metadata rows with type icons, inline values, and tags for simple lists. property actions appear on hover or keyboard focus. **add property** opens the name and type inputs.
+```yaml
+---
+title: Garden notes
+published: false
+tags:
+  - plants
+  - spring
+---
+```
 
-field edits apply immediately. raw yaml edits require **apply yaml**, which validates syntax before changing the document. **cancel** discards the yaml draft. if metadata changes in markdown view while a yaml draft is open, reopen the yaml editor to use the latest values.
+## Add and edit properties
 
-body edits preserve metadata verbatim. metadata edits retain the body, delimiters, line endings, and surrounding spacing. field edits retain comments, anchors, and value types, but may normalize YAML formatting. markdown view always contains the whole file.
+Run **Add frontmatter** from the command palette. With Slash commands enabled, you can also use `/frontmatter`, `/properties`, `/metadata`, or `/yaml`. These actions appear when the note has no existing properties.
 
-disabling the addon preserves the file and restores source-only editing for recognized metadata-bearing documents. unsupported body syntax remains protected from lossy visual edits. there is no compatibility banner.
+Normal and side-by-side views show a collapsible properties panel above the document. Edit text, numbers, and booleans directly. Use **Add property** to choose a name and type, or remove a property from its row.
 
-settings → plugins → frontmatter controls whether properties start expanded when a note opens.
+For lists, objects, or other YAML, open the YAML editor and choose **Apply YAML** when ready. Hibi checks the syntax before applying it. **Cancel** discards the YAML draft. If you change the source while that draft is open, reopen the YAML editor to load the latest values.
 
-static documentation exports retain the original markdown; metadata values are not used as search or navigation configuration. the properties editor runs only inside the desktop addon.
+Choose whether properties start expanded under **Settings → Plugins → Frontmatter**.
+
+## How your file is preserved
+
+Editing the note's body leaves its frontmatter unchanged. Editing properties leaves the body unchanged. Property fields preserve comments, anchors, and value types, though they may reformat the YAML. Source view always shows the whole file.
+
+Hibi recognizes a YAML mapping between an opening `---` and a closing `---` or `...`. An unfinished block or ordinary Markdown divider does not activate the plugin. Use `{}` for empty properties.
+
+Disabling Frontmatter keeps the file intact. Notes with recognized frontmatter then use source editing to avoid losing metadata. Documentation exports retain the source metadata, but do not use its values to control search or navigation.

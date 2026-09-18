@@ -1,11 +1,13 @@
-# typing speed
+# Typing speed
 
-optional extension by may. enable in settings → addons.
+Turn on **Typing speed** in **Settings → Addons** to see estimated words and characters per minute in the status bar. The `≈` sign marks each estimate.
 
-two status pills show estimated words/minute and characters/minute for the current typing session, marked with `≈`. divide typed characters by elapsed time from the first to latest input, then extrapolate to one minute. the first second uses a one-second minimum to avoid a single keystroke producing an extreme rate. one word means five characters, including spaces and line breaks.
+The rate uses the time from your first to your latest keystroke. It holds while you pause and resets after five seconds without typing. One word means five characters, including spaces and line breaks. The first second counts as a full second to keep the estimate from jumping too high.
 
-the rate holds between keystrokes and resets after five seconds without typing. the next input begins a fresh session. these are speed estimates, not character or word totals.
+Only typing in the editor counts, including text entered with an input method. Paste, deletions, Vim commands, shortcuts, search, and settings are excluded. These are speed estimates; use **Word count** for document totals.
 
-counts committed editor typing, including ime input. paste, deletions, vim commands, shortcuts, search, and settings do not count. disabling the extension removes listeners, timer, and pills.
+The plugin does not keep note text.
 
-uses `context.editor.onInput` and `context.statusBar.register`. no note content is retained by the counter.
+## Credits
+
+Hibi integration: may.

@@ -1,29 +1,33 @@
-# hibi documentation
+# Hibi user guide
 
-hibi is a local markdown editor with folder workspaces and code-defined addons.
+Hibi edits notes and documents stored on your computer. Start with [editing](guides/editing.md), or choose a topic below.
 
-- [editing](guides/editing.md)
-- [settings, sponsorship, and licenses](guides/settings.md)
-- [open with hibi and default applications](features/file-associations.md)
-- [colorschemes and credits](guides/colorschemes.md)
-- [frontmatter addon](guides/frontmatter.md)
-- [vim addon](guides/vim.md)
-- [keybeats keyboard sounds](guides/keybeats.md)
-- [slash commands addon](guides/slash-commands.md)
-- [workspaces and nested folders](guides/workspaces.md)
-- [exporting documentation](guides/exporting.md)
-- [creating addons](development/addons.md)
-- [dialogs and modals](development/dialogs.md)
-- [toolbar and tooltips](development/toolbar-and-tooltips.md)
-- [architecture and security](development/architecture.md)
-- [shared ui and theme tokens](development/design-system.md)
-- [development and validation](development/validation.md)
-- [addon api](reference/addon-api.md)
-- [colorscheme api](reference/colorscheme-api.md)
-- [dialog api](reference/dialog-api.md)
-- [shared modal component](reference/modal-api.md)
-- [workspace types](reference/workspace-api.md)
-- [shared sidebar api](reference/sidebar-api.md)
-- [shared controls](reference/controls-api.md)
-- [plugin authors](reference/authors.md)
-- [product principles](PRODUCT.md)
+## Write and organize
+
+- [Editing, tabs, and saving](guides/editing.md)
+- [Keyboard shortcuts](editing/typing-and-shortcuts.md)
+- [Workspaces and folders](guides/workspaces.md)
+- [Create, rename, move, and delete files](editing/explorer.md)
+- [Images, videos, links, and navigation](editing/media-and-navigation.md)
+- [Version history](editing/version-history.md)
+- [Graphs and tags](editing/graph-and-tags.md)
+
+## Make Hibi yours
+
+- [Settings and addons](guides/settings.md)
+- [Colorschemes](guides/colorschemes.md)
+- [Document formats](editing/formats.md)
+- [Open files with Hibi by default](features/file-associations.md)
+- [Page properties with frontmatter](guides/frontmatter.md)
+- [Slash commands](guides/slash-commands.md)
+- [Vim editing](guides/vim.md)
+- [Keyboard sounds](guides/keybeats.md)
+
+## Share your work
+
+- [Export documentation as HTML](guides/exporting.md)
+- [Typst documents and PDF export](editing/typst.md)
+
+## Build or extend Hibi
+
+[Developer and agent notes](https://github.com/schmayterling/hibi/blob/main/docs/ai-agents/README.md) cover the source code, builds, tests, addon APIs, and contribution rules.

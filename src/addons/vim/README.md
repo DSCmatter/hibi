@@ -1,21 +1,17 @@
-# vim
+# Vim
 
-editor CSS is registered through `context.styles` and removed when this addon stops.
+Turn on **Vim** in **Settings → Addons** for Vim editing in source panes. It supports modes, motions, operators, registers, macros, search, and ex commands. Normal view keeps its usual controls.
 
-the pending/last-command status pill uses `verbatim: true`, preserving meaningful uppercase keystrokes even when the interface is set to lowercase.
+## Files and settings
 
-version 0.2.0 · may (`1262793452236570667`). disabled by default.
+Use `:w`, `:e`, `:enew`, `:q`, `:wq`, and `:x` with Hibi's file dialogs and save checks. Quit commands, including force-quit variants, still check for unsaved edits. Shell commands, Vimscript, external Vim plugins, and `:w filename` are not supported.
 
-## credits
+In **Settings → Vim**, choose whether to start in insert mode and whether to show Vim status. The status bar shows the current mode and your pending or last command. For example, typing `22k` shows `2` → `22` → `22k`, then keeps the completed command visible. Escape cancels a pending command and restores the last one; Enter alone leaves it visible.
 
-hibi integration: may and [angelo](https://github.com/angelofallars). vim engine: the [codemirror-vim contributors](https://github.com/replit/codemirror-vim). engine license notices remain available in hibi's open source licenses.
+Search and `:` prompts show their input and keep it visible after Enter. Text typed in insert mode is not collected for the status display. Uppercase keys keep their case even when Hibi's lowercase interface option is on.
 
-## behavior
+See the [Vim guide](../../../docs/guides/vim.md) for more examples.
 
-adds the CodeMirror vim engine to source panes through `context.editor.registerSource`. the engine is imported on demand and includes mode-aware cursors, visual selections, motions, operators, registers, macros, search, and ex commands. the normal wysiwyg view keeps its existing input behavior.
+## Credits
 
-native file commands use `context.editor.runCommand` and `context.workspace.openFile`, preserving dialogs, unsaved edits, external-change checks, and source focus after saves. `:w`, `:e`, `:enew`, `:q`, `:wq`, and `:x` integrate with hibi. force-quit flags still check unsaved edits. shell execution, vimscript, external vim plugins, and `:w filename` are outside this embedded engine.
-
-the optional settings page controls the initial insert mode and status visibility. `context.statusBar.register` supplies an off indicator in normal view and a mode pill in source views at the editor page's bottom-left, beside the full-height sidebar; command prompts remain in the source pane. view-scoped command contexts, status handles, and preference listeners are cleaned up when the editor or plugin stops. see [the editing guide](../../../docs/guides/vim.md) and [upstream engine](https://github.com/replit/codemirror-vim).
-
-a second source-view pill shows pending normal/visual command keys, then keeps the last completed sequence: `2` → `22` → `22k`. motions execute on their final key; a standalone enter leaves that displayed sequence intact. escape cancels a pending sequence and restores the last one. search and `:` prompts show their current input and retain it on enter. insert-mode document text is not collected. **show vim status** controls all Vim status pills; listeners and command state are local to the active source editor and are removed on teardown.
+Hibi integration: may (Discord `1262793452236570667`) and [angelo](https://github.com/angelofallars). Vim engine: the [CodeMirror Vim contributors](https://github.com/replit/codemirror-vim). License notices are in Hibi's **Open source licenses**.

@@ -1,6 +1,6 @@
-# catppuccin theme license
+# Catppuccin theme license
 
-source: [catppuccin/palette](https://github.com/catppuccin/palette/blob/07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd/LICENSE). palette mapping is adapted for hibi.
+Hibi's Catppuccin palettes use colors adapted from [Catppuccin Palette](https://github.com/catppuccin/palette/blob/07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd/LICENSE). The original license follows unchanged.
 
 ```text
 MIT License

@@ -1,5 +1,7 @@
 # Markdown
 
-Always available. Opens `.md` and `.markdown` with Hibi's rich Markdown editor, source view, syntax controls, and HTML export. Its format settings cannot disable Markdown support. Markdown code highlighting is available in **Code highlighting**.
+Open `.md` and `.markdown` files to write in normal view, edit Markdown source, or see both side by side. You can export your document as HTML.
 
-Plain `.txt` files use the core plain-text editor and do not depend on this plugin.
+Markdown is always available. Choose its features in **Settings → Syntax** and its source colors in **Settings → Code highlighting**.
+
+Plain `.txt` files use Hibi's built-in text editor and do not need a plugin.

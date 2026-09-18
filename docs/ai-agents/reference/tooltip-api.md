@@ -1,0 +1,18 @@
+# Tooltip API
+
+Show hints for controls without changing their accessible names.
+
+[Source: `src/ui/tooltips.ts`](../../../src/ui/tooltips.ts)
+
+```typescript
+export type TooltipOptions = {
+  anchor: HTMLElement
+  text: string
+  placement?: 'top' | 'bottom'
+}
+export type TooltipApi = {
+  /** Show plain text next to an element; the returned function hides only this tooltip. */
+  show: (options: TooltipOptions) => () => void
+  hide: () => void
+}
+```

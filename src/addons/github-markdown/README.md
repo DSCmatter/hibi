@@ -1,22 +1,24 @@
-# github markdown
+# GitHub Markdown
 
-enabled by default. adds alerts, tables, task lists, strikethrough, and automatic links through the flavor api. ordinary markdown remains compatible.
+Add tables, task lists, strikethrough, automatic links, and alerts to Markdown. This plugin is on by default.
 
-## alerts
+## Alerts
 
-[github alerts](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts) support `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION`:
+[GitHub alerts](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts) support `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION`:
 
 ```markdown
 > [!WARNING]
 > hello
 ```
 
-normal and split view show an editable callout; source mode keeps the original markdown. in the rich editor, type `> `, then `[!WARNING]` and enter to create one. formatted paragraphs, lists, and code blocks work inside alerts. exported documentation uses the same styles and theme colors. unrecognized markers remain ordinary quotes.
+In normal view, type `> `, then `[!WARNING]`, and press Enter. You can put paragraphs, lists, and code blocks inside an alert. Source view keeps the original Markdown; exported documents keep the alert's colors and styling. Unknown alert names appear as ordinary quotes.
 
-## flavors
+## Choose features
 
-settings → syntax offers separate switches for tables, tasks, strikethrough, and alerts. disabled features remain literal markdown in rich editing and exported documentation; re-enabling restores formatting.
+**Settings → Syntax** has separate switches for tables, tasks, strikethrough, and alerts. Turn a feature off to show its Markdown characters as text. Turn it back on to restore the formatting.
 
-automatic mode accepts enabled dialect features and identifies github syntax when present. choose an explicit dialect from the flavor status pill or command palette. choosing plain markdown or disabling this extension keeps unsupported source intact; use source view to edit those constructs until their flavor is enabled again.
+Automatic syntax mode detects GitHub Markdown. To choose a different style for a file, use the syntax button in the status bar or the command palette. Features outside that style keep their source text; edit them in source view.
 
-author: may. uses mit-licensed tiptap and marked, credited in hibi's open source licenses.
+## Credits
+
+Hibi integration: may. Uses MIT-licensed Tiptap and Marked, listed in Hibi's **Open source licenses**.

@@ -1,22 +1,50 @@
-# typing and shortcuts
+# Keyboard shortcuts
 
-`cmd+/` toggles the workspace sidebar (`ctrl+/` on windows/linux). rebind it in settings → hotkeys.
+Use `Cmd` on macOS and `Ctrl` on Windows and Linux where a shortcut says `Cmd/Ctrl`. Change app shortcuts under **Settings → Hotkeys**.
 
-markdown and split source panes share toolbar formatting actions and undo history:
+## App shortcuts
 
-| shortcut (cmd on mac, ctrl elsewhere) | action |
+| Shortcut | Action |
 | --- | --- |
-| mod+b / mod+i / mod+e | bold / italic / inline code |
-| mod+shift+x | strikethrough |
-| mod+alt+0 / mod+alt+1–6 | paragraph / heading |
-| mod+shift+7 / 8 / 9 | numbered list / bullet list / task list |
-| mod+shift+b | quote |
-| mod+alt+c | code block |
+| `Cmd/Ctrl+K` | Search commands and settings |
+| `Cmd/Ctrl+F` | Find text in the current note |
+| `Cmd/Ctrl+/` | Show or hide the sidebar |
+| `Cmd/Ctrl+N` | New note |
+| `Cmd/Ctrl+O` | Open a file |
+| `Cmd/Ctrl+S` | Save |
+| `Cmd/Ctrl+Shift+S` | Save as |
+| `Cmd/Ctrl+W` | Close the current tab |
+| `Cmd/Ctrl+[` / `]` | Go back / forward |
+| `Cmd/Ctrl+Shift+[` / `]` | Normal / Source view |
+| `Cmd/Ctrl+Shift+\` | Side-by-side view |
 
-`cmd+k` remains the command palette. explicit app hotkey bindings take precedence; vim handles its own keymap first.
+## Markdown formatting
 
-the optional typing speed extension shows estimated wpm/cpm for the current typing session. rates reset after five seconds without typing; the first second uses a one-second floor. extension authors can observe committed typing using `context.editor.onInput(listener)`. events contain a character count and editor view only, excluding pasted text, deletion, shortcuts, and programmatic changes. listeners are removed when the extension stops.
+These shortcuts work in source panes as well as the formatted editor. The toolbar shows the actions available for the current format.
 
-split view shows a faint secondary caret in the inactive pane. it follows corresponding visible markdown text without moving focus, altering either selection, or adding undo steps. nonempty selections, metadata, and offscreen positions hide the marker. markup and custom atoms map to their nearest visible text boundary.
+| Shortcut | Action |
+| --- | --- |
+| `Cmd/Ctrl+B` | Bold |
+| `Cmd/Ctrl+I` | Italic |
+| `Cmd/Ctrl+E` | Inline code |
+| `Cmd/Ctrl+Shift+X` | Strikethrough |
+| `Cmd/Ctrl+Alt+0` | Paragraph |
+| `Cmd/Ctrl+Alt+1`–`6` | Heading level |
+| `Cmd/Ctrl+Shift+7` | Numbered list |
+| `Cmd/Ctrl+Shift+8` | Bullet list |
+| `Cmd/Ctrl+Shift+9` | Task list |
+| `Cmd/Ctrl+Shift+B` | Quote |
+| `Cmd/Ctrl+Alt+C` | Code block |
+| `Cmd/Ctrl+Enter` | Continue after a final formatted block |
 
-linked markdown scrolling uses that same text mapping: the active caret aligns vertically with its counterpart, even when headings, wrapping, and formatting change the panes' heights. when scrolling away from the caret, the visible passage becomes the anchor. the other pane keeps its selection and focus unchanged. non-markdown previews without a text map retain proportional scrolling.
+Custom app bindings take precedence over formatting shortcuts. [Vim](../guides/vim.md) handles its own keys first in source mode.
+
+## Typing speed
+
+The optional Typing speed plugin shows estimated words or characters per minute for your current typing session. It counts typed text, not pasted text or deletions. The rate resets after five seconds without typing, and uses at least one second when calculating a new session's rate.
+
+For document totals, enable Word count under **Settings → Addons**.
+
+## Side-by-side editing
+
+The faint caret in the inactive pane shows the matching text position. It hides when text is selected or the corresponding position is offscreen. Scrolling keeps matching passages aligned; other format previews use relative scroll positions when text matching is unavailable.

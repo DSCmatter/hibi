@@ -1,11 +1,7 @@
 # Markdoc
 
-Enable **Markdoc** in **Settings → Addons** to open `.mdoc` documents with source highlighting, preview, and HTML export. Source files stay editable when disabled. Once enabled, its row in **Formats** opens this plugin's settings and native-tool check.
+Turn on **Markdoc** in **Settings → Addons** to edit `.mdoc` files with syntax highlighting and formatting tools. Hibi includes the parser; no extra installation is needed.
 
-Syntax controls and source highlighting share the app's **Syntax** and **Code highlighting** settings. Rendering never rewrites the original source.
+Use source view to write or side-by-side view to see the preview. Normal view is unavailable for this format. Export HTML with the controls above the preview.
 
-The parser is bundled with Hibi.
-
-See [document formats](../../../docs/development/document-formats.md) for shared runtime behavior and limits.
-
-Source and split views are available. The unsupported rich-editor view is disabled. Shared formatting tools write this format's syntax; preview actions remain pinned while the document scrolls.
+See [Document formats](../../../docs/editing/formats.md) for settings and export options. Previewing and exporting leave your source unchanged.

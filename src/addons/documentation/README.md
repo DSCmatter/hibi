@@ -1,19 +1,25 @@
-# documentation addon
+# Documentation
 
-exports use the active flavor pipeline, including optional math. the site sanitizes generated html; required styles and fonts are embedded. per-file overrides are respected. if content changes while rendering, run export again.
+Turn a Markdown workspace into a searchable website saved as one HTML file. The file works offline and can be shared or published on a web host.
 
-exports include top-bar breadcrumbs, previous/next links below a divider, and an **in this page** heading outline. the outline moves into a compact disclosure on narrower screens. phone navigation opens as a drawer with an outside-click backdrop and escape dismissal; selecting a page closes it. all navigation reuses the shared sidebar and tokens.
+1. Turn on **Documentation** in **Settings → Addons** and open a workspace.
+2. Choose **Export documentation** from the command palette.
+3. Choose where to save the HTML file.
 
-the first hibi addon turns a folder of markdown into one deployable HTML document.
+The export includes unsaved edits to your current workspace note without saving them back to the source file. If you edit while an export is rendering, export again to include the latest changes.
 
-enable **documentation** under settings → addons. open a workspace, then choose **export documentation** from the command palette. a native save dialog selects the destination. the exported site provides nested navigation, normal read-only rendering, and local fuzzy/keyword search on `cmd/ctrl+k`.
+## What readers get
 
-labelled code fences use hibi's shared syntax highlighter, including languages registered by enabled extensions. highlighted html and themed token styles are embedded; the exported site does not need parser code or a network connection.
+The site includes folder navigation, breadcrumbs, previous and next pages, a heading outline, and search with Cmd/Ctrl+K. On small screens, navigation opens as a drawer and the heading outline folds away.
 
-`index.ts` registers the export command through the renderer SDK. `native.ts` snapshots the selected workspace, embeds escaped data into the generated site template, and uses the host’s native save operation. `manifest.ts` declares API compatibility and defaults.
+Your enabled Markdown features, including math and plugin-provided code highlighting, appear in the export. Per-file syntax choices are preserved. Styles, fonts, highlighted code, and required licenses are included, so readers do not need Hibi or a network connection.
 
-the viewer uses the shared sidebar and command palette, DOMPurify, MiniSearch, and locally bundled Geist. local Markdown images are embedded from each note's folder, including absolute paths and local `file:` URLs. supported formats are PNG, JPEG, GIF, WebP, AVIF, and SVG, up to 8 mib each and 20 mib total with Markdown. remote images and other attachments are not copied. exports include in-memory edits to the current workspace document and do not save them back to disk.
+Local PNG, JPEG, GIF, WebP, AVIF, and SVG images are embedded. Each image can be up to 8 MiB; Markdown and images together can total 20 MiB. Remote images and other attachments are not copied.
 
-exports include nine bundled colorschemes, their full third-party license notices, and appearance preferences supplied by the host's workspace snapshot. readers can override appearance with the top-bar palette button. addon palettes fall back to hibi; addon code and CSS overrides are not exported.
+The site includes nine bundled color schemes and your appearance preferences. Readers can change appearance with the palette button. Custom plugin palettes fall back to Hibi's colors; plugin code and custom CSS are not exported.
 
-see [exporting](../../../docs/guides/exporting.md) and [addon development](../../../docs/development/addons.md).
+See [Exporting](../../../docs/guides/exporting.md) for more options.
+
+## Credits
+
+Uses Hibi's shared navigation and search interface, DOMPurify, MiniSearch, and locally bundled Geist. Third-party theme licenses are included in the export.

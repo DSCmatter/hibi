@@ -1,7 +1,20 @@
-# version history
+# Version history
 
-open **version history** from the command palette. every successful save keeps a local snapshot, independent of git. select a timestamp to preview its markdown, then choose **restore to editor**. unsaved work uses the normal save/discard/cancel prompt. restoring changes the buffer only; save when ready to replace the file. external-change checks still apply.
+Hibi keeps a local snapshot after each successful save. This works without Git.
 
-history lives in hibi's private application data, never in the workspace or exported documentation. consecutive identical versions are deduplicated. each file keeps up to 100 snapshots and 20 mib, retaining at least its latest snapshot. the original disk content is also recorded when first saving changes to an existing file, including an external version explicitly replaced by the user.
+## Restore an earlier version
 
-history is indexed by canonical file path. save-as starts the destination's history. an unsaved document has no saved versions. previews cannot execute markdown or html. if saving succeeds but history storage fails, hibi reports that distinction.
+1. Run **Version history** from the command palette.
+2. Select a timestamp to preview that version's source.
+3. Choose **Restore to editor**. Hibi asks what to do with any unsaved changes.
+4. Review the restored note, then save when you are ready to replace the file.
+
+Restoring changes the open document first; it does not immediately replace the file on disk. Normal external-change checks still apply when you save.
+
+## What is kept
+
+Each file keeps up to 100 snapshots and 20 MiB of history, with at least its latest snapshot retained. Identical consecutive saves do not add copies. The first save of an edited file also records its previous disk contents, including an outside version you explicitly choose to replace.
+
+History stays in Hibi's private app data. It is not written into your workspace or included in documentation exports. If a file saves successfully but its history cannot be stored, Hibi tells you.
+
+History belongs to the file's path. **Save as** uses the destination's history. A new note has no saved versions until you save it. Previewing a version does not run its code or HTML.

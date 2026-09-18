@@ -1,7 +1,11 @@
-# keyboard sounds
+# Keyboard sounds
 
-enable **keybeats** in settings → addons. then select its plugin settings page to choose one of 13 keyboard profiles and adjust volume (15% by default). use **mute** there or the keyboard-sound toolbar button to silence it. sounds work in normal, markdown, and split source panes. the first profile loads when enabled; typing continues while sounds load.
+Enable **keyBeats** under **Settings → Addons**. Open its plugin settings to choose one of 13 keyboard sound profiles and adjust the volume. The starting volume is 15%.
 
-appearance → toolbar controls visibility and icons/text display. hiding that row does not mute keybeats. disable the addon to unload its audio engine completely. sounds and preferences stay local, with no system keyboard monitoring.
+Use **Mute** in settings or the keyboard-sound toolbar button to silence it. Sounds work in formatted text and source views. Hiding the toolbar does not mute them; disabling the plugin stops them.
 
-original application: **Yug Bhanushali**. recordings: **Thomas Lai**. hibi port: **may**. full MIT notices are available in settings → hibi → open source licenses. [addon readme and source provenance](../../src/addons/keybeats/README.md).
+Audio and preferences stay on your computer. keyBeats listens to typing inside Hibi, not other apps.
+
+## Credits
+
+The original application is by **Yug Bhanushali**, with recordings by **Thomas Lai**. **may** made the Hibi port. Full MIT notices are under **Settings → Hibi → Open source licenses**. The [addon README](../../src/addons/keybeats/README.md) includes source credits.

@@ -1,26 +1,44 @@
-# git
+# Git
 
-optional extension by may. enable in settings → addons, then open the repository root as your workspace. choose Git in the sidebar view picker or use the git commands in the palette. git does not add a static status-bar shortcut.
+Review changes and commit your notes without leaving Hibi. Install Git, turn on **Git** in **Settings → Addons**, and open your repository's root folder as a workspace. Choose **Git** from the sidebar view menu or find its commands in the command palette.
 
-Git opens in the shared, resizable sidebar. Its view appears in the titlebar picker and supports pinning. A Branch section holds the selector and repository actions. The commit icon opens a message dialog; drafts survive dismissal or switching views while the addon remains enabled. A clean repository shows a centered confirmation instead of an empty changes list. Folders outside a repository show a friendly explanation. Refresh reads repository status without locking editing.
+## Review and commit
 
-## explorer integration
+The sidebar shows your branch, changed files, differences, and commits ahead of or behind the remote. Save your editor changes before staging: Git uses the files on disk.
 
-the explorer shows `M` for modified files, `A` for additions, `U` for untracked files, `R` for renames, and `!` for merge conflicts. changed files and their parent folders use theme status colors; folder dots and the workspace heading include change counts in their descriptions/tooltips. tooltips distinguish staged and unstaged changes. the existing unsaved-edit dot stays independent: git compares files on disk with the index and commit.
+1. Select a file to review its staged and unstaged changes.
+2. Stage the files you want to commit.
+3. Click the commit icon, enter a message, and commit.
 
-collapsed folders stay collapsed when status refreshes. renames mark both old and new parent folders. deleted files disappear from the normal explorer but still mark their remaining parent folders; the git sidebar lists them as `D`. folder counts also include changed files that the markdown explorer does not display.
+Your message draft stays available if you close the dialog or switch views while the plugin remains on. A clean repository shows a confirmation instead of an empty changes list.
 
-status refreshes after workspace filesystem events, explicit refresh, and window focus. reads are debounced and run through a read-only native query without locking editor/save actions. git optional index writes are disabled to prevent refresh loops. when a linked worktree's git metadata lives outside the opened folder, focus or refresh updates changes made there by another git client. switching workspaces or disabling the extension clears its markers and ignores stale requests. ordinary folders show no git markers.
+## Branches and remotes
 
-decorations use the shared [explorer decoration api](../../../docs/extensions/explorer-decorations.md). themes can override `status-success`, `status-warning`, `status-danger`, and `status-info`; older themes receive defaults.
+Use the **Branch** section to switch local branches or create a local branch that tracks an existing remote branch. **Pull** only accepts fast-forward updates; Hibi does not merge diverging branches. **Push** sends commits to the configured upstream.
 
-- view branch, changed files, staged/unstaged diffs, and ahead/behind counts.
-- stage or unstage individual paths, and commit staged changes with a message.
-- switch local branches or create a tracking branch from a known remote branch.
-- pull with fast-forward only, or push to the configured upstream. no forced pushes, resets, automatic merges, or automatic stashes.
+Pulling and switching branches require a clean working tree and saved editor changes. Hibi reloads the active file and updates the explorer afterward. Remote operations only run when you choose them.
 
-pull and branch switching require a clean working tree and no unsaved editor changes. successful operations reload the active file and refresh the explorer. diffs and commits use disk/index content; save editor edits before staging them. remote operations run only after choosing their button or palette command. authentication is noninteractive: ssh uses your agent/configuration, and macos https uses git's keychain helper. other platforms can use ssh. credentials never appear in command arguments or plugin logs; error messages redact passwords in http urls.
+Authentication uses your SSH agent and configuration, or Git's Keychain helper for HTTPS on macOS. Use SSH on other platforms. Operations stop after 90 seconds; command output is limited to 4 MiB.
 
-git must be installed. operations time out after 90 seconds and cap output at 4 mib. hibi disables repository hooks, fsmonitor commands, custom credential helpers, external diff/textconv, automatic maintenance, and submodule recursion. external filters are not executed; files requiring a filter must be staged in a git client that supports that filter, preserving their encoding. commit signing is disabled for these noninteractive commits. repositories using special hooks, filters, signing, or divergent-history merges should use their normal git client for those operations.
+## Explorer markers
 
-git lives in trusted native addon code and uses argument arrays, never an interpolated shell command. branch and file operations must target names returned by fresh repository state. see [git hooks](https://git-scm.com/docs/githooks), [configuration](https://git-scm.com/docs/git-config), and [attributes](https://git-scm.com/docs/gitattributes).
+| Marker | Meaning |
+| --- | --- |
+| `M` | Modified |
+| `A` | Added |
+| `U` | Untracked |
+| `R` | Renamed |
+| `!` | Merge conflict |
+| `D` | Deleted; shown in the Git sidebar |
+
+Changed folders show a dot. Hover over a file or folder for details and change counts, including files the explorer does not display. These markers describe saved files; the editor's unsaved-change dot is separate.
+
+Status updates when files change or the window regains focus. You can also refresh it. For changes made by another Git client in a linked worktree, focus Hibi or refresh the sidebar.
+
+## When to use another Git client
+
+Use your usual Git client for force pushes, resets, stashes, merges, signed commits, repository hooks, or files that need custom filters. Hibi also disables custom credential helpers, external diff commands, filesystem monitors, automatic maintenance, and submodule recursion.
+
+## Credits
+
+Hibi integration: may. See Git's documentation for [hooks](https://git-scm.com/docs/githooks), [configuration](https://git-scm.com/docs/git-config), and [attributes](https://git-scm.com/docs/gitattributes).

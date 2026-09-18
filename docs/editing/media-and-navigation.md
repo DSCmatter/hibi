@@ -1,33 +1,46 @@
-# media and navigation
+# Media and navigation
 
-## files and folders
+## Files and folders
 
-drop a markdown (`.md`, `.markdown`, or `.txt`) file onto hibi to open it. drop a folder to open it as a workspace. opening another document uses the same save/discard/cancel check as the file menu.
+Drop a supported document file onto Hibi to open it, or drop a folder to open a workspace. The same unsaved-change checks apply as when opening from the File menu.
 
-drag sidebar files or folders onto a folder to move them into it. drop onto blank sidebar space to move to the workspace root; dropping on a file targets its parent folder. existing destinations are never overwritten. the move action in each item's menu remains available from the keyboard. moving the active note preserves unsaved edits.
+Drag sidebar items onto a folder to move them there. Drop onto blank sidebar space to move to the workspace root; dropping onto a file targets its parent folder. Existing destinations are never overwritten. Use **Move to** in an item's menu to choose a destination with the keyboard.
 
-## attachments
+## Attachments
 
-the image toolbar action opens the native file picker. it accepts images, animated gifs, and videos. dropping those files onto either editor pane inserts them at the drop position. an untitled note first asks where to save; canceling leaves its content unchanged.
+Use the image toolbar button to choose an image or video, or drop one into an editor pane. Hibi inserts it at the drop position. An untitled note asks you to save first; canceling leaves the note unchanged.
 
-attachments are copied into an `assets` folder beside the note. original files remain untouched. duplicate names receive a numeric suffix. markdown stores relative `![description](assets/file)` references, so moving the note together with its assets keeps them portable. edit the description in source mode to improve its accessible label.
+Attachments are copied to an `assets` folder beside the note. Originals stay where they are, and duplicate filenames receive a number. Markdown stores a relative reference such as `![description](assets/image.png)`. Move the note and its assets together to keep the attachment working. Edit the description in source view to provide useful text for screen readers and missing images.
 
-website-style paths such as `![screenshot](/uploads/screenshot.png)` also work: hibi first checks for a real absolute file, then the open workspace's `uploads` and `public/uploads` folders (or those folders beside the note if no workspace is open). this applies to editor previews and documentation export. opening a workspace refreshes missing media automatically. the markdown path stays unchanged. `file://` URLs remain explicit filesystem paths.
+### Supported media
 
-supported images: png, jpeg, gif, webp, avif, and svg, up to 8 mib each. supported video containers: mp4, mov, webm, and ogg/theora, up to 512 mib each; playback depends on the codecs supported by electron. normal and split views show video controls and support seeking through a local stream. unknown or missing media shows its description. no remote media downloads happen automatically.
+- Images: PNG, JPEG, GIF, WebP, AVIF, and SVG, up to 8 MiB each.
+- Videos: MP4, MOV, WebM, and OGG/Theora, up to 512 MiB each. Playback depends on the video codec. Formatted views provide playback controls and seeking.
 
-documentation export embeds media for offline use within its existing 20 mib total limit. large videos should be linked or hosted separately. the `tests/fixtures/clip.webm` sample is a generated one-second blue frame, with no third-party content.
+Missing or unsupported media shows its description. Hibi does not automatically download remote media. SVGs display as images, not executable pages.
 
-## links and history
+[Documentation exports](../guides/exporting.md) embed local media within a 20 MiB total export limit. Share large videos separately.
 
-shift-click a link in normal view, either split pane, or markdown mode to follow it. web and email links open in the default app; markdown links open in hibi. regular clicks keep editing. local heading anchors scroll the rich document.
+### Local paths
 
-`cmd/ctrl+[` goes back and `cmd/ctrl+]` goes forward between opened notes, or between settings pages while settings is open. navigation asks about unsaved edits before replacing a note. saved files are read from disk when revisited. history lasts for this app session. `escape` closes settings; when a dialog is open, escape dismisses that dialog first. shifted bracket shortcuts still select the editor view.
+Relative paths resolve from the saved note's folder. Absolute paths and local `file:` URLs also work. For spaces in Markdown paths, use percent encoding or angle brackets.
 
-## remote markdown
+Website-style paths such as `![Screenshot](/uploads/screenshot.png)` first look for an absolute file. If none exists, Hibi checks `uploads` and `public/uploads` inside the workspace, or beside the note when no workspace is open. The path in your source stays unchanged.
 
-choose **file → open from remote…** in the menu bar and enter a raw http/https markdown url. hibi downloads utf-8 text, opens an editable draft, and suggests a filename for a local save. it never writes back to the server. webpage html, embedded url credentials, non-web protocols, files over 2 mib, and more than five redirects are rejected. requests time out after 20 seconds. relative attachment paths need local assets after saving.
+## Links and history
 
-## empty blocks
+Shift-click a link to follow it. Web and email links open in your default app; local note links open in Hibi. Regular clicks keep editing. Heading links jump to the matching section in the formatted document.
 
-table-cell line breaks remain editable. to continue after a final table, code block, list, or other formatted block, use `cmd/ctrl+enter`, press down at its final cursor position, or click the blank editor area below it. these actions add a normal paragraph only when requested; merely opening a note does not rewrite it.
+Use `Cmd/Ctrl+[` to go back and `Cmd/Ctrl+]` to go forward through opened notes. While Settings is open, these shortcuts navigate settings pages instead. History lasts for the current app session. Hibi checks unsaved edits before replacing a note and reloads clean saved files from disk when you return to them.
+
+Escape closes Settings. If a dialog is open, it closes that dialog first.
+
+## Open remote Markdown
+
+Choose **File → Open from remote…** and enter a raw HTTP or HTTPS Markdown URL. Hibi opens the downloaded text as an editable draft. Save it locally to keep it; Hibi never writes back to the server.
+
+The download must be UTF-8 text under 2 MiB. Webpage HTML, embedded credentials, and non-web addresses are rejected. Requests stop after 20 seconds or more than five redirects. Relative attachment paths need matching local assets after you save.
+
+## Continue after a formatted block
+
+To type after a final table, code block, list, or other formatted block, press `Cmd/Ctrl+Enter`, press Down Arrow at its final cursor position, or click the blank editor area below it. Hibi adds a paragraph when you request one; opening the note alone leaves its source unchanged.

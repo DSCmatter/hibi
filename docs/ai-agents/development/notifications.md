@@ -1,0 +1,25 @@
+# Notifications
+
+Use `context.toasts` in addons and `useToasts()` from `src/ui/Sonner.tsx` in built-in UI. One shared `Sonner` renders both. The older `context.notify(message)` uses this service too.
+
+Notifications appear at the bottom right and close after five seconds by default. Their progress line shows the time remaining. Hovering or keyboard focus pauses the timer; it resumes when both leave. Reduced motion disables the entrance and exit animations.
+
+Settings → Appearance → Notifications controls position and timeout, including **Never**. Position changes move the current stack; timeout changes apply to future notifications. Top positions sit below window controls. Preferences are saved locally and appear in command-palette search.
+
+```typescript
+const notice = context.toasts.show({
+  message: 'exporting documentation…',
+  description: 'preparing local pages',
+  duration: 0,
+})
+notice.update({ message: 'documentation exported', description: '', variant: 'success', duration: 5000 })
+// notice.dismiss() closes this notification; context.toasts.dismissAll() closes this addon's notices.
+```
+
+`show` accepts `message` and optional `description`, `variant` (`info`, `success`, or `error`), and `duration` in milliseconds. A duration of zero disables automatic dismissal and hides the progress line. `update` preserves the remaining time unless given a new duration. Every notification has a close button. Errors use an assertive live region; other notices use polite announcements.
+
+`getPreferences()` returns a copy. `setPreferences({ position, duration })` updates window defaults. Position names use `center`, such as `top-center`; durations range from 0 to 600,000 ms.
+
+Stopping or removing an addon removes its notices and cancels their timers. Old handles cannot bring them back. Notifications appear above an active modal and remain dismissible. They need no desktop notification permission.
+
+See the [toast API](../reference/toast-api.md) and [dialog API](../reference/dialog-api.md).

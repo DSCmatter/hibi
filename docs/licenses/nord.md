@@ -1,6 +1,6 @@
-# nord theme license
+# Nord theme license
 
-source: [nordtheme/nord](https://github.com/nordtheme/nord/blob/1cef71605416a222e57225b544540ce0fcec18d4/license). palette mapping is adapted for hibi.
+Hibi's Nord palette uses colors adapted from [Nord](https://github.com/nordtheme/nord/blob/1cef71605416a222e57225b544540ce0fcec18d4/license). The original license follows unchanged.
 
 ```text
 MIT License (MIT)

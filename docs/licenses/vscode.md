@@ -1,6 +1,6 @@
-# vscode theme license
+# VS Code theme license
 
-source: [microsoft/vscode](https://github.com/microsoft/vscode/blob/6a932e0f957fb194b0ffa81b8bb51080aa274147/LICENSE.txt). palette mapping is adapted for hibi.
+Hibi's VS Code palettes use colors adapted from [Visual Studio Code](https://github.com/microsoft/vscode/blob/6a932e0f957fb194b0ffa81b8bb51080aa274147/LICENSE.txt). The original license follows unchanged.
 
 ```text
 MIT License

@@ -1,13 +1,19 @@
-# tags
+# Tags
 
-optional extension by may (`1262793452236570667`), version 1.0.0. enable in settings → addons.
+Organize notes with `#tags`. Turn on **Tags** in **Settings → Addons**, then write tags in Markdown text. Names can contain letters from any language, numbers, underscores, hyphens, and nested paths such as `#work/project`. Matching ignores letter case; purely numeric tags are ignored.
 
-The tag browser uses the shared sidebar, with a pinnable view shortcut and the standard resize handle. Tag clicks select the tag in that view; opening a note keeps the browser visible. Tag counts update from the active draft in memory. Workspace reads are debounced and subscriptions stop while the view is hidden.
+Tags are highlighted in normal and source views. The plugin skips headings, escaped hashes, code, HTML, URLs, link labels, and frontmatter.
 
-Unchanged notes reuse their parsed tags; typing reindexes only the changed note.
+## Find notes by tag
 
-write `#tag` in markdown prose. unicode letters, numbers, underscores, hyphens, and nested names such as `#work/project` are supported; purely numeric tags are ignored. matching is case-insensitive. headings, escaped hashes, code, html, urls/link labels, and frontmatter are not indexed as tags.
+Shift-click a tag, choose **Tags** from the sidebar view menu, or run **Browse tags** in the command palette. Filter the list, select a tag, then open a matching note. The browser stays beside the editor.
 
-Tags are highlighted in normal and source panes. Shift-click one, use the sidebar view picker, or run **browse tags** to open the tag browser. The status pill appears only when the current note has tags: it shows their count and lists them on hover. Clicking that count opens the browser. Filter tags, select one, then open a matching workspace note. Workspace changes, active drafts, and window focus refresh the browser automatically. Empty results use a centered explanation; the notes section appears after selecting a tag with matches. Opening another note keeps the app's unsaved-change checks.
+When the current note has tags, the status bar shows their count. Hover to see their names or click to open the browser. Tags update as you edit, when workspace files change, and when Hibi regains focus.
 
-tags remain ordinary markdown when disabled or exported. the plugin stores no index on disk, sends nothing to a server, and uses the shared workspace snapshot limits. drafts without a workspace path are shown in the status pill but are not included in workspace results.
+New drafts without a workspace path appear in the status count but not in workspace search results. The browser reads up to 2,000 documents totaling 20 MiB.
+
+Tags stay as ordinary Markdown if you turn the plugin off or export a note. The plugin does not save an index or send note contents to a server.
+
+## Credits
+
+Hibi integration: may (Discord `1262793452236570667`).

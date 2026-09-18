@@ -1,59 +1,72 @@
-# settings
+# Settings
 
-## search
+Open Settings from the command palette. Use the sidebar to choose a page, or search below **Back to app** by a setting's name or description. Results include enabled plugins. Select a result to open its page and focus the setting. Escape or the clear button clears the search; Down Arrow moves into the results.
 
-search below **back to app** to find settings by name or description. results group matching controls under their categories, including enabled plugins. choose a result to open its page and focus the control. the clear button or escape restores the category list; down arrow enters results for keyboard navigation. plugin settings load for discovery only when search or the command palette is open.
+Preferences stay on this device. **Back to app** returns to your document.
 
-returning to settings preserves the search and focuses its input.
+## Editor and appearance
 
-## sidebar views
+**Editor** contains [tabs, default view, and spell check](editing.md), along with autosave and line numbers. **Show line numbers** applies to source and side-by-side views. **Content padding** sets the space around your document from 0–96 pixels; the default is 48.
 
-view shortcuts sit beside the window controls while the sidebar is expanded. the sidebar toggle always keeps its sidebar icon and sits at the right edge of the expanded sidebar, separated from the views dropdown by a 4 px gap. shortcuts that fit appear before it; the views dropdown keeps every view available at narrower widths. collapsing the sidebar hides the shortcuts and dropdown, leaving only the toggle.
+**Appearance** includes [colorschemes](colorschemes.md), toolbar layout, and top-bar visibility. Cursor settings offer a line, outline block, filled block, or underline, with blink speed and motion choices. Your system's reduced-motion setting disables sliding and blinking animations.
 
-the first dropdown item pins or unpins the current view. up to three pins are remembered and appear first in the shortcuts and dropdown. **In this page** nests headings by level and highlights the section containing the cursor in every editor mode.
+Turn on **Non-input focus outlines** under **Appearance → Focus** for borders around focused buttons, links, and navigation. It is off by default. Text fields keep focus indicators in either mode.
 
-## keyboard focus
+**Lowercase interface** displays app labels, menus, plugin panels, and notifications in lowercase. It leaves documents, typed values, code, and case-sensitive commands unchanged.
 
-**appearance → focus → non-input focus outlines** restores focus outlines on buttons, links, and navigation. It is off by default and persists on this device. Keyboard focus still has a background cue; inputs, selects, and editable text keep their existing focus indicators. The preference also covers addon UI, menus, and dialogs.
+## Autosave
 
-## interface text
+Autosave is off by default. Enable it under **Editor** and choose a delay of 1–30 seconds after typing stops. New notes and remote drafts need one manual save to choose a local destination.
 
-the interface uses sentence case by default. enable **Lowercase interface** under **Appearance** to display built-in screens, extension panels, tooltips, notifications, and app menus in lowercase. the preference persists across launches. document content, typed field values, code, and case-sensitive Vim commands keep their original spelling.
+The autosave status at the bottom of the window opens these settings. If another app changes the file, autosave pauses. Save manually to review the conflict. Autosave also records [local version history](../editing/version-history.md).
 
-## autosave
+## Keyboard shortcuts
 
-editor settings include an autosave switch (off by default) and a delay from one to thirty seconds after typing stops. its status-bar pill opens those settings and shows off, save first, waiting, saving, saved, or paused. new and remote drafts need one manual save to choose a local destination. external file changes pause autosave; use manual save to review the conflict. autosave uses the same local-history snapshots as manual saves and never opens a file dialog or silently replaces external edits.
+Under **Hotkeys**, select a binding and press a new shortcut. Enter saves it; Escape cancels. You can clear individual shortcuts or reset them. Hibi rejects conflicts and reserved editing or window shortcuts. Menus, tooltips, and the command palette show your current bindings.
 
-**hibi** is the first settings page and the initial selection. it shows the page icon, app name, version, and creator credit using hibi's shared panels and controls. app and Electron versions also remain in the sidebar footer.
+## Sidebar views
 
-**back to app** sits above the settings categories in its own unlabeled sidebar section. it returns to the current document and restores editor focus, like the top-bar back button.
+The dropdown beside the sidebar button lists available views. Use its first item to pin or unpin the current view. Up to three pinned views appear first. Shortcuts appear beside the window controls while there is room; the dropdown keeps all views available in narrow windows.
 
-**sponsor on github** opens [may's GitHub Sponsors page](https://github.com/sponsors/schmayterling) in your default browser. this action uses a fixed destination; workspace content and addons cannot supply arbitrary external URLs through it.
+**In this page** groups headings by level and highlights the section containing your cursor. Select a heading to jump to it. See [workspaces](workspaces.md) for sidebar resizing and file navigation.
 
-## syntax and code highlighting
+## Formats, syntax, and code highlighting
 
-**syntax** toggles markdown features individually, including each heading level and extension-provided formats. **code highlighting** toggles highlighting per language. both retain the original source. the compact filter/reset row is shared with hotkeys and addons. filtered-out settings remain discoverable in the command palette; navigating to one clears that page’s filter. see [markdown syntax](../extensions/markdown-syntax.md) and [code languages](../extensions/code-languages.md).
+**Formats** lists Markdown, plain text, and enabled format plugins. Choose a format's settings button to configure it, or set Hibi as its [default application](../features/file-associations.md).
 
-## addons
+**Syntax** controls supported formatting features, including heading levels and plugin syntax. **Code highlighting** controls colors for individual programming languages. These settings preserve the original source. Use the filter to find an option; the command palette can also find settings hidden by a page's filter.
 
-addons are grouped into **enabled** and **disabled**. their metadata identifies **built-in** addons shipped with hibi, **local** developer/folder packages, and **third-party** packages installed from a url. search by name, description, kind, author, or source. **reset all** restores addon enablement defaults without removing packages.
+## Addons
 
-**hibi garden** opens [hibi.garden/addons](https://hibi.garden/addons). **install from url** accepts public https git repositories and addon zip packages. **open plugins folder** reveals the installed package directory. local-folder installation remains available through **install theme or extension…** in the command palette. see [sideloading](../extensions/sideloading.md).
+**Addons** groups plugins and themes into Enabled and Disabled. Search by name, description, type, author, or source. **Reset all** restores the default enabled addons without removing installed packages.
 
-## recovery screen
+Built-in addons ship with Hibi. Local addons come from folders on your computer, and third-party addons come from a URL. Enable a plugin to show its settings, formats, and syntax options.
 
-hibi → diagnostics → **preview explode screen** opens a dismissible preview of the recovery screen. escape or **back to settings** returns without unmounting the editor or changing the document.
+### Install an addon
 
-when a renderer component fails, the real screen offers **reload hibi**, **save a copy** of the draft still held by the main process, and an **error details** modal with the full stack and a copy button. Escape or the close button returns to recovery, including when previewing it from settings. hibi does not claim unsent edits survived, and it never sends diagnostics automatically. native process crashes retain the operating system’s reload prompt.
+1. Choose **Hibi garden** to browse [available addons](https://hibi.garden/addons).
+2. Choose **Install from URL** and enter a public HTTPS Git repository or addon ZIP URL. For a local package, run **Install addon…** in the command palette.
+3. Review the package details and trust notice, then install it.
+4. Enable the addon when you are ready to use it.
 
-## notifications
+Only install plugins you trust. Enabled plugins can access your documents and workspace through Hibi's APIs. Opening a workspace does not install or run addons found inside it.
 
-appearance → notifications controls notification placement (top/bottom, left/middle/right) and automatic dismissal (3, 5, 8, or 10 seconds, or never). **show preview** tries the current settings. notifications slide upward and fade in, with a bottom progress line. hover or keyboard focus pauses the countdown; leaving resumes it. the dismiss button always closes immediately with a short exit fade.
+Git installation requires Git on your computer. Private repositories, SSH URLs, and packages that need a build are unsupported. Downloaded ZIP files must be under 25 MiB. Installed packages must contain at most 1,000 entries and 25 MiB total, with a 5 MiB limit per file.
 
-## open source licenses
+**Open plugins folder** shows installed packages. Replacing a package starts the new version disabled; removing one moves it to the system trash.
 
-the bottom section lists application dependencies, bundled colorscheme notices, and addon-provided third-party notices. each row shows the package version when available and license identifier. select a row to read its complete license/notice text in a shared dialog. escape, the close button, or clicking outside dismisses it and returns focus to the row. long text wraps inside the dialog.
+## Notifications
 
-the catalog is generated from installed runtime dependency manifests during desktop builds. build tools and Electron's binary installer dependencies are excluded; transitive application packages are included. different installed versions retain separate entries. notices are shipped locally in `out/licenses.json`, so viewing them works offline and no package text is fetched from the network. Electron's additional runtime notices are preserved separately in packaged resources at `licenses/electron-third-party.html`.
+Under **Appearance → Notifications**, choose where notices appear and when they disappear: after 3, 5, 8, or 10 seconds, or never. **Show preview** tries the current settings. Hovering over a notice or focusing it pauses the timer. Its close button dismisses it immediately.
 
-maintainers: `scripts/licenses.ts` owns collection and the build-tool exclusion list. missing package notice files fail the build. `src/shared/theme-licenses.ts` supplies the pinned colorscheme notices. package upgrades regenerate the catalog automatically.
+## If the editor fails
+
+The recovery screen offers **Reload Hibi**, **Save a copy**, and **Error details**. Save a copy exports the draft Hibi still has in memory; it may not include the latest changes. Error details opens a dialog with technical information and a copy button. Hibi does not send this information automatically.
+
+The diagnostics section on the Hibi settings page lets you preview this screen without changing your document.
+
+## App details and licenses
+
+The **Hibi** page shows the app version and creator. **Sponsor on GitHub** opens [may's sponsor page](https://github.com/sponsors/schmayterling).
+
+**Open source licenses** lists included software, colorschemes, and addon notices. Select an entry to read its full text. Notices are included with Hibi and work offline.

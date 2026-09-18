@@ -1,17 +1,29 @@
-# graph and tags
+# Graphs and tags
 
-enable **graph** and/or **tags** in settings → addons. both are optional, local extensions with palette commands, toolbar buttons, and status pills.
+Enable **Graph** or **Tags** under **Settings → Addons**, then choose the view from the sidebar dropdown. Both work locally and update when workspace files or the current note change.
 
-## graph
+## Graph
 
-**open workspace graph** shows notes connected by existing markdown links such as `[next](notes/next.md)`. click a note to open it; drag nodes or the background; scroll to zoom. buttons zoom and fit the view. **current note** shows only the open note and its direct connections. filter by filename/path or refresh after changes.
+Run **Open workspace graph** to see notes connected by local Markdown links, such as `[Next](notes/next.md)`.
 
-keyboard: tab to a node and press enter/space to open it; arrows pan when the graph background has focus. opening notes keeps normal unsaved-change checks. no files or layouts are changed by moving nodes. the graph displays up to 500 matching nodes; narrow the filter for larger folders. wikilinks are not supported by this version.
+Click a node to open and center its note. Drag a node to move it, drag the background to pan, and scroll or use the buttons to zoom. **Fit graph** brings the visible nodes into view. **Expand** opens a larger graph in a dialog; selecting a note keeps the dialog open.
 
-## tags
+Filter by filename or path. **Connections** lists links to and from the current note, even if those notes are outside the filter. Click a connection to open it.
 
-write `#work`, `#project/topic`, or another tag in prose. names match without case sensitivity. code, escaped hashes, headings' `#` markers, links, html, and frontmatter are excluded. `#123` is not a tag.
+Keyboard users can Tab to a node and press Enter or Space. Arrow keys pan when the graph background has focus. Opening a note keeps the usual unsaved-change checks.
 
-shift-click a highlighted tag or run **browse tags**. select a tag to see matching notes, then click a filename to open it. the status pill counts tags in the current note, including unsaved changes. workspace results include the active saved note's unsaved edits; unsaved drafts without a path do not appear in the workspace index. source text is unchanged, so tags remain plain markdown when disabled or exported.
+The graph shows up to 500 matching nodes at once. Narrow the filter for larger workspaces. It includes existing local note links, including reference links, but excludes web links, images, missing destinations, and `[[wikilinks]]`. Moving nodes changes only the current layout, not your files.
 
-both panels refresh on workspace file changes and use the existing bounded workspace snapshot. see the [graph](../../src/addons/graph/README.md) and [tags](../../src/addons/tags/README.md) extension readmes for limits and credits.
+## Tags
+
+Write tags in Markdown prose, such as `#work` or `#project/topic`. Tags support letters, numbers, underscores, and hyphens. Matching ignores case; a number alone, such as `#123`, is not a tag.
+
+Shift-click a highlighted tag or run **Browse tags**. Filter the tag list, choose a tag, then select a matching note. The status bar shows a tag count when the current note has tags; click it to open the browser.
+
+Code, escaped hashes, heading markers, links, HTML, and frontmatter do not count as tags. Tags stay plain Markdown when the plugin is disabled or the document is exported.
+
+## Workspace limits
+
+Both plugins read up to 2,000 documents and 20 MiB of workspace text. They include unsaved edits to the active note when it has a workspace path. New drafts without a path do not appear in workspace results, though their tags can still appear in the status count.
+
+Neither plugin saves an index to disk or sends note contents to a server. Their [Graph](../../src/addons/graph/README.md) and [Tags](../../src/addons/tags/README.md) pages include credits.

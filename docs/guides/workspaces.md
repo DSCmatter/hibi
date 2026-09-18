@@ -1,27 +1,33 @@
-# workspaces
+# Workspaces
 
-use **open a folder…** in the left sidebar, the folder button, or **open workspace…** in the command palette. a workspace is an ordinary local folder. hibi creates no project format and does not move your files.
+A workspace is an ordinary folder on your computer. Hibi keeps your files where they are and does not create a separate project format.
 
-the sidebar starts hidden on every launch. the chevron beside its top-bar toggle switches between **workspace** and **in this page**. selecting a view opens it, and typing leaves it open. cmd/ctrl+/ toggles the selected view. **in this page** lists the note's rendered headings; selecting one moves the caret to that heading in the active rich or source editor. headings inside code blocks are excluded.
+## Open a folder
 
-before a folder is open, the workspace view centers a folder icon above **open a folder**. opening a workspace selects that view and replaces this entry with the file tree and folder controls.
+Choose **Open a folder…** in the sidebar, use **Open workspace…** in the command palette, or drop a folder onto Hibi. Opening a folder leaves your current note intact.
 
-on startup, the untouched empty draft shows **start typing**, up to five recent workspace paths, and **dismiss this**. select a path to reopen that folder. the list is local to this app profile, newest first, and updates when a folder opens from the picker or a drop. typing or dismissing removes the welcome content for the rest of the window session. new notes and opened empty files show only the regular **start typing** placeholder. welcome content never becomes part of the document or its saved markdown.
+The welcome screen lists up to five recent workspaces, newest first. Choose one to reopen it. This list stays in your local app profile. Typing, switching views, or choosing **Dismiss** hides the welcome screen for the rest of the window session.
 
-the tree shows `.md` and `.markdown` files, including nested folders. folder rows expand and collapse. arrow keys move focus; right/left expand or collapse folders; enter opens a file. the highlight slides to the current document and stays visible under the pointer.
+## Browse notes
 
-opening a folder leaves the current note intact. opening a file selects or creates its tab and preserves other drafts. with **Use tabs** disabled, it replaces the current note after the save/discard/cancel check. saving a new note starts the save dialog in the selected workspace. the tree marks unsaved files across all open tabs, including pending files that have not been saved yet. create nested folders using the native save dialog or your file manager; the tree watches filesystem changes and also has a refresh button.
+Use the sidebar dropdown to choose **Workspace**. Expand folders to find notes, then select a file to open it. Supported [document formats](../editing/formats.md) appear in the tree. Arrow keys move focus, Left/Right collapse or expand a folder, and Enter opens a file.
 
-dotfiles, dotfolders, `node_modules`, and symlinks are excluded. hibi checks canonical paths before reading workspace files. very large folder scans stop at 20,000 entries; choose a smaller documentation folder when that limit is reached.
+Opening a file selects its existing tab or creates a new one. Other drafts remain open. In single-file mode, Hibi asks whether to save unsaved changes before replacing the current note. Unsaved files have a dot beside their name.
 
-the sidebar button hides or shows navigation with a short slide from the left. labels retain their width during motion; reduced-motion preferences disable transitions. settings, workspaces, and exported sites use the same sidebar component and keyboard behavior.
+Use the file and folder menus to [create, rename, duplicate, move, or delete items](../editing/explorer.md). The tree updates when files change; the refresh button lets you request an update.
 
-with navigation visible, window controls sit over the sidebar and document controls begin beside it. hiding navigation brings the top bar together. settings keeps its category sidebar and hides document-only actions.
+Hidden files and folders, `node_modules`, and symbolic links are excluded. Folder scans stop at 20,000 entries. If you reach that limit, open a smaller folder.
 
-the sidebar paints one continuous surface behind the window controls, so its top and body move together when opening and closing.
+## Use the page outline
 
-document content moves with the sidebar in the editor and exported site. it resizes once per toggle, then animates horizontally without rewrapping each frame. narrow exported pages keep the sidebar above the document.
+Choose **In this page** from the sidebar dropdown to browse the current note's headings. Headings are nested by level, and the section containing your cursor is highlighted. Select one to move to it. Code-block contents are excluded.
 
-drag the sidebar's right edge to resize it. the desktop app shares the chosen width between workspace and settings; exported sites remember their own width in browser storage. widths range from 152 to 480 pixels, limited by available window space. resizing still works when browser storage is unavailable.
+## Show and resize the sidebar
 
-focus the resize edge and use left/right arrows (8 pixels, or 24 with shift), home/end for the limits, and enter to reset. double-click also restores the default width; escape cancels an active drag.
+Press `Cmd/Ctrl+/` or use the sidebar button to show or hide the selected view. The sidebar starts hidden when Hibi launches. Opening a workspace shows it, and typing keeps an open workspace visible.
+
+Drag the sidebar's right edge to resize it. The default width is 256 pixels; the usual range is 152–480 pixels, limited by your window. Drag farther past the minimum to collapse it. Double-click the edge to restore the default.
+
+With the resize edge focused, use Left/Right to change width by 8 pixels, or hold Shift for 24-pixel steps. Home/End choose the limits, Enter resets the width, and Escape cancels a drag.
+
+Workspace and settings sidebars share the chosen width. [Exported documentation](exporting.md) remembers a separate width in the reader's browser.

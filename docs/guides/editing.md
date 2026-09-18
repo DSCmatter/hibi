@@ -1,100 +1,63 @@
-# editing
+# Editing
 
-## optional writing tools
+Start typing in a blank note, or use **File → Open** to choose a document. The welcome screen also lists recent workspaces. Typing, changing views, or choosing **Dismiss** hides it.
 
-enable **word count** in settings → addons for live document word/character totals. markdown counts exclude formatting markers and frontmatter; other formats count source text. unicode characters, including joined emoji, count as single characters. counting runs locally in a worker.
+## Choose a view
 
-enable **block dragging** for a grip beside rich-text blocks. drag paragraphs, headings, lists, and nested list items to reorder them. click the grip for **move block up/down**, also available through the command palette. moves keep formatting and support undo/redo. both plugins are disabled by default and use the existing addon APIs.
+- **Normal** lets you write and format text without seeing Markdown markers.
+- **Side-by-side** shows source on the left and the formatted document on the right. Markdown supports editing in either pane; other formats may offer a preview instead.
+- **Source view** shows the original text and syntax highlighting.
 
-Settings → Editor → Writing → **Spell check** controls native spelling underlines in rich text, including the rendered pane in side-by-side view. It is on by default and persists on this device. Source/code editing keeps spell checking off. Changing the setting does not alter document text.
+Only views supported by the current [format](../editing/formats.md) are available. Plain text uses source view. **Settings → Editor → Layout → Default view** sets the view for new launches. Switching views from the toolbar leaves that default unchanged.
 
-## default view
+Default view shortcuts are `Cmd/Ctrl+Shift+[` for Normal, `Cmd/Ctrl+Shift+]` for Source view, and `Cmd/Ctrl+Shift+\` for Side-by-side. Change them in **Settings → Hotkeys**.
 
-Settings → Editor → Layout → **Default view** chooses Normal, Side-by-side, or Source only for startup. Changing it also updates the current view without changing the document. Source only focuses the editor when it is ready, so you can type immediately after launch. Toolbar switches are temporary and do not overwrite the default; the current view carries across files until you switch again or restart Hibi.
+Switching views preserves the source. Editing formatted text may change Markdown spacing or notation. When Hibi cannot preserve a construct through visual editing, the formatted pane becomes read-only; use source view to edit it. This includes raw HTML, reference definitions, and frontmatter when its plugin is disabled.
 
-Formats keep their supported-view restrictions. If the selected view is unavailable, Hibi uses side-by-side when supported, otherwise source only. For example, plain text always uses source only. Opening a format that supports your selected view restores it. Normal remains the default for a new installation.
+## Work with tabs
 
-## file tabs
+Opening or creating a note adds a tab. Select a tab to return to its document. A dot marks unsaved changes; `Cmd/Ctrl+W` closes the active tab. Hibi asks before discarding unsaved work, including when you close the window.
 
-Opening a file smoothly reveals its entire tab, including the close button; new tabs at the end scroll the strip to the right edge. Closing tabs collapse their width and spacing smoothly, including when the strip overflows. Drag tabs to reorder them, or focus a tab and use Alt+Shift+Left/Right. Reordering keeps documents, drafts, and the active selection intact and survives renderer reloads during the current app session. Reduced motion makes scrolling and position changes immediate.
+Drag tabs to reorder them. With a tab focused, use arrow keys or Home/End to move between tabs, and `Alt+Shift+Left/Right` to reorder. Tabs scroll horizontally when they no longer fit.
 
-Tabs fade in while sliding right and fade out while sliding left. Reduced motion disables these transitions. Settings → Editor → Documents → **Use tabs** turns the tab bar on or off. Turning it off keeps the active note and asks to save, discard, or cancel for other unsaved tabs. Single-file mode shows the same filename and unsaved indicator as the tab title, without a pill or close button. It replaces the current note when opening or creating another, with the same safeguards; canceling leaves it intact. The preference survives restarting Hibi. Re-enabling tabs restores normal multi-file behavior; closed tabs and their tab-based navigation history are not restored.
+To keep one file open at a time, turn off **Settings → Editor → Documents → Use tabs**. Hibi keeps the active note and asks what to do with other unsaved tabs. Single-file mode still shows the filename and unsaved indicator. Turning tabs back on does not reopen notes you closed.
 
-the top bar shows open notes as compact pill tabs. tabs share the formatting toolbar's 12 px inset from the expanded sidebar, including in narrow windows. new notes, file opens, local links, and remote imports retain other tabs and their unsaved drafts. clicking a filename selects its tab; it no longer starts renaming. use **rename document…** in the command palette or **rename** in the workspace menu.
+Open tabs survive an editor reload during the current app session. They are not restored after quitting Hibi.
 
-each tab shows its own unsaved indicator and close button. cmd/ctrl+w closes the active tab; the command palette and hotkey settings expose the same action. arrow keys and home/end navigate focused tabs; overflowing tabs scroll horizontally. closing a dirty tab offers save, discard, or cancel, including for inactive tabs. closing the window checks every unsaved tab. switching back to clean files refreshes them from disk; dirty tabs retain their saved baseline for external-change checks. workspace moves update open paths, and deleting a folder checks and closes all affected tabs. tabs survive renderer reloads within the running app; restoring tabs after quitting is not yet supported.
+## Format text
 
-## formatting toolbar
+Select text, then choose a toolbar action. In side-by-side view, actions apply to the pane you last used. Tools change to match the document format; unavailable tools are hidden or disabled. The **More** menu holds buttons that do not fit.
 
-the row below the top bar contains undo/redo, bold, italic, strikethrough, inline code, paragraph, headings 1–6, bullet/numbered/task lists, indent/outdent, quote, code block, divider, line break, links, images, and tables. the toolbar has one shared border and background, inset 12 px horizontally and 4 px vertically. individual buttons are flat, with hover and active backgrounds. actions that do not fit move into an ellipsis menu; arrow keys navigate it, escape closes it, and clicking outside dismisses it. formatting follows the last focused pane in split view and restores editor focus after an action. source actions edit selected markdown in a single undo step; rich actions use the editor's own commands. rich-only constructs that cannot be edited safely remain disabled.
+Markdown tools include headings, emphasis, lists, quotes, code, links, images, and tables. Within a formatted table, extra buttons add or remove rows and columns. In source view, insert a table and edit its text directly.
 
-link and image buttons open shared dialogs. links preserve selected text; an empty selection inserts the address. images accept absolute paths or paths relative to the saved note, with a description for screen readers. insertion is canceled if the document changes while the dialog is open. in a rich-text table, extra actions add/remove rows and columns or delete the table. in source view, use the table button to insert a markdown table and edit its cells directly.
+Link and image dialogs let you enter an address and label. Images can use local paths relative to a saved note. See [images and attachments](../editing/media-and-navigation.md#attachments) for supported types and limits.
 
-appearance → toolbar controls icons/text, visibility, and **hide toolbar while typing** (on by default). it uses the top bar’s typing/idle timer: the toolbar fades and collapses while typing, moving the editor up, then smoothly restores its space after 1.2 seconds idle. move the pointer to the top to reveal both immediately. toolbar auto-hide can be disabled independently; reduced motion removes the movement. expand **arrange toolbar actions** to drag rows, use keyboard-accessible up/down buttons, or reset order. dragging toolbar buttons also changes their order. built-in and addon actions share this saved arrangement.
+Under **Settings → Appearance → Toolbar**, choose icons, text, or both; hide the toolbar; or arrange its buttons. Drag buttons directly, or use the up/down controls in **Arrange toolbar actions**. **Hide toolbar while typing** reveals it again when you pause or move the pointer to the top of the window.
 
-select all stays within the active editor. switching views focuses the visible editor, and clicking a line number selects that source line without selecting gutter text. both cmd+a and ctrl+a select editor content; vim may own ctrl+a in its source modes. line numbers never enter the selected/copied text.
+In side-by-side view, scrolling keeps the corresponding passages together. A faint caret in the other pane shows your current position without moving keyboard focus.
 
-switching files keeps the chosen view and its pane positions, including while the new source editor loads. pane sliding/fading runs only when changing views, so moving between files in split view does not replay a normal-to-split transition.
+## Find text and commands
 
-split panes link vertical scrolling in both directions using their relative scroll positions, accounting for different rendered heights. scroll either pane to move the other; leaving split view removes the link. toolbar drag targets use a straight vertical insertion line between buttons.
+Press `Cmd/Ctrl+F` to find text in the note. Search ignores case and treats your query as plain text. Enter moves to the next match; Shift+Enter moves back; Escape closes search. Side-by-side view searches the pane you last used, including text outside the visible area.
 
-when the top bar hides, the first 24 px of the editor fade to transparent, softening partially scrolled lines. the fade uses the same timing as the chrome and leaves the split divider independent; it disappears when the top bar returns.
+Press `Cmd/Ctrl+K` to search commands and settings. Use arrow keys and Enter to choose a result. Press Escape or click outside to close the palette.
 
-typing closes the workspace sidebar when no folder is open. an open workspace keeps its navigation visible. use the sidebar toggle to reopen the empty sidebar whenever needed.
+## Save and rename
 
-## images
+Use **File → Save** (`Cmd/Ctrl+S`) or **Save as** (`Cmd/Ctrl+Shift+S`). New notes need a location before [autosave](settings.md#autosave) can work. If another app changes a file, Hibi asks before replacing it.
 
-normal and split views resolve relative image paths from the saved note's folder. absolute paths and local `file:` URLs also work. spaces can be percent encoded or enclosed in Markdown angle brackets. the stored Markdown keeps the original path.
+To rename a note, run **Rename document…** from the command palette or choose **Rename** in its workspace menu. Enter applies the name; Escape cancels. Renaming keeps unsaved edits and does not replace another file. For an unsaved note, it sets the suggested name for the first save.
 
-local PNG, JPEG, GIF, WebP, AVIF, and SVG images are supported up to 8 mib each. save a new note before using relative paths. unavailable images retain their alt text and a path hint. remote images are not fetched. SVGs display as images, never as executable document markup.
+Files must use UTF-8 and be no larger than 2 MiB. Unsaved drafts live in memory: an editor reload can recover them, but a full app or machine crash can lose them. [Version history](../editing/version-history.md) stores previous saves.
 
-documentation exports embed local Markdown images into the HTML, so they remain visible offline. the export limit is 20 mib including embedded image data.
+## Optional writing tools
 
-## frontmatter properties
+Enable plugins under **Settings → Addons**:
 
-the frontmatter addon adds collapsible metadata fields to normal and split views. edit text, numbers, and booleans directly; add or remove properties from the same panel. use **yaml** for lists, objects, and other YAML structures, then **apply yaml**. invalid YAML cannot overwrite the note. the body stays unchanged when properties change.
+- **Word count** shows word and character totals. Markdown counts exclude formatting markers and frontmatter; other formats count source text. Joined emoji count as single characters.
+- **Block dragging** adds a grip beside formatted text blocks. Drag it to move paragraphs, headings, lists, or nested list items. Click it for **Move block up/down**, also available in the command palette. Moves support undo and redo.
+- **Frontmatter** adds editable [page properties](frontmatter.md) above a Markdown note.
 
-use **add frontmatter** in the command palette for a note without metadata. disable the addon under settings → addons to return to editing metadata in markdown only. see the [addon guide](frontmatter.md) for preservation details.
+Word count and Block dragging are off by default. **Settings → Editor → Writing → Spell check** controls spelling underlines in formatted text. Source editing keeps spell check off.
 
-success and error notifications appear at the bottom right without moving your document. use the close button to dismiss them.
-
-start typing in a blank document. normal view is the rich-text editor; side-by-side puts markdown on the left and rich text on the right; markdown-only edits the original source. click the filename to rename it. the separate command-palette control shows its current shortcut, with draggable space between controls.
-
-view switches use a quick text fade: content fades out, reflows once while hidden, then fades back in as the panes slide. the divider fades independently as split view opens or closes. the markdown engine prepares during idle time and waits for its font and layout before appearing. reduced-motion preferences disable animations.
-
-default view shortcuts are `cmd/ctrl+shift+[` for normal, `cmd/ctrl+shift+]` for markdown, and `cmd/ctrl+|` (`cmd/ctrl+shift+\`) for side-by-side. these can be rebound in settings. existing unshifted bracket defaults migrate once when the new shortcuts are free; custom bindings remain intact.
-
-## finding text
-
-`cmd/ctrl+f` opens find in note directly below the top bar, aligned with the editor page's right edge. enter advances; shift+enter goes back; escape closes. search is literal and case-insensitive. in side-by-side it searches the last focused pane, including offscreen markdown. the input width animates as the match count changes.
-
-## commands and settings
-
-`cmd/ctrl+k` opens the command palette. search, use arrow keys, and press enter. drag its non-interactive chrome to move the window; inputs and command rows remain interactive.
-
-click outside the palette or press escape to dismiss it. shortcut hints use the same keycaps throughout the app and exported documentation.
-
-settings starts with hibi, followed by editor, appearance, hotkeys, and addons. the hibi page contains app details, sponsorship, and open source license dialogs. padding defaults to 48 px and can be changed from 0–96 px. the top bar can fade while typing. hotkeys can be rebound, cleared, or reset; conflicts and standard editing/window shortcuts are rejected. all command hints use the active bindings.
-
-settings → editor → **show line numbers** toggles the markdown gutter in markdown-only and side-by-side views. it is hidden by default, saves on this device, and changes without resetting the document or undo history.
-
-appearance also controls the text cursor in both editors: line, outline block, filled block, or underline; fast, normal, or slow blinking; and smooth or blink animation. smooth slides between insertion positions and fades softly. blink moves immediately and switches on/off. cursor preferences persist locally. reduced motion disables sliding and blinking; native caret behavior is retained during composition or when custom geometry is unavailable.
-
-## saving
-
-the optional [typst extension](../editing/typst.md) adds `.typ` documents with live preview and pdf export, plus rendered typst blocks in markdown.
-
-Other [document formats](../editing/formats.md) add native previews, format-aware toolbar tools, and explicit compiler actions. Enable their plugins from Addons; enabled formats appear in Formats settings. Markdown and plain text stay available, and unsupported views are disabled.
-
-see [media and navigation](../editing/media-and-navigation.md) for drag/drop, attachments, shift-click links, back/forward shortcuts, remote opening, and leaving empty formatted blocks.
-
-click the filename, enter a new name, and press enter. escape or clicking away cancels. names without an extension receive `.md`. renaming an unsaved document sets its suggested save name; existing files are renamed in the same folder without replacing another file. unsaved edits remain pending after a rename.
-
-new, open, save, and save as use native dialogs. hibi checks for unsaved edits before replacing a document, and checks disk changes before overwriting the same file. saves write and sync a temporary file before renaming it over the destination.
-
-source switching preserves original markdown. rich edits may normalize markdown syntax. the [frontmatter addon](frontmatter.md) preserves metadata while allowing visual body edits. raw html, reference definitions, and frontmatter without its enabled addon stay editable in source mode; their rich preview is read-only, without a banner. local images display without rewriting their Markdown references.
-
-documents are UTF-8 and limited to 2 mib. drafts are held in memory; renderer reloads recover them from the main process, but a full process or machine crash can lose unsaved edits.
-# Start screen
-
-Switching editor views dismisses the first-start welcome screen, just like typing or choosing Dismiss. Empty documents retain the regular typing placeholder.
+See [settings](settings.md) for line numbers, cursor appearance, page padding, and other preferences.
