@@ -55,7 +55,7 @@ The continuation starts at `30984ba`. Complete these stages with progressive com
 
 - [x] Start independent bootstrap reads in preload and skip empty startup drains.
 - [x] Add an ordered source-change journal and explicit persistence barriers.
-- [ ] Cache compatible Markdown serialization and avoid closed-outline scans, with differential tests.
+- [x] Cache compatible Markdown serialization and avoid closed-outline scans, with differential tests.
 - [ ] Add exact rich-text projections, shared review decorations, and a shipped local review addon.
 - [ ] Add capability-specific SDK loading, deterministic staged activation, and preservation contracts.
 - [ ] Add scoped document views and shared command invocation where the review workflow needs them.
@@ -65,6 +65,8 @@ The continuation starts at `30984ba`. Complete these stages with progressive com
 Bootstrap now overlaps renderer evaluation with independent document, addon, and recent-workspace reads. The main-process document read waits only for document and shortcut preferences; recent-workspace and app-info reads do not wait for addon discovery. Preload retains early external-file notifications, and a blank launch skips the empty drain. The built app passed startup, module-loading, external-file, workspace-settings, and actual development-reload tests (seven tests).
 
 The persistence stage sends ordered source replacements and acknowledges content versions. Accepted changes immediately update the main-process recovery snapshot. Preload retries unacknowledged edits before document operations, and native close requests the same barrier. Four protocol tests, nine existing file/autosave/tab/edit/reload checks, and a real renderer-crash/native-close integration passed. The integration deliberately delays delivery and loses an acknowledgment. Recovery is process-local, not durable against a whole-app crash.
+
+Compatible serializers now cache immutable top-level blocks with their index, previous block, and parent attributes. Existing undeclared serializers use the full path. The cache is primed before editing; source-preservation checks reuse the same blocks, and a closed outline has no transaction subscription. Differential tests match the full manager across 160 edits, marks, nested lists, tables, code, Unicode, blank paragraphs, and custom document serialization. Seventeen app checks passed. Three input runs per fixture measured transaction p95 at 0.9, 1.6, and 0.8 ms for blank, large, and code-heavy notes. Full `getMarkdown()` calls on that path fell to zero. These are local hidden-window samples, not a presentation-time guarantee.
 
 Full-document Markdown serialization, outline scanning, and source IPC remain on the editing path. Incremental serialization needs round-trip differential coverage before replacing them. An ordered edit journal and explicit flush barriers need save, crash-recovery, close, and tab-replacement tests; this pass preserves the immediate full-source persistence path.
 

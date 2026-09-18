@@ -11,6 +11,7 @@ import manifest from './manifest'
 
 const flavor: MarkdownFlavor = {
   ...flavorInfo,
+  serialization: 'block-local',
   markedOptions: { gfm: true },
   richExtensions: [
     GithubAlert,

@@ -37,3 +37,9 @@ Formats that execute document code need an explicit run action. Do not execute i
 Use [MarkdownFlavor](../addon-api-reference/MarkdownFlavor.md) for a Markdown dialect or syntax extension, and [MarkdownSyntaxFeature](../addon-api-reference/MarkdownSyntaxFeature.md) for its settings toggle. Keep disabled syntax editable as source. Use a [MarkdownExtension](../addon-api-reference/MarkdownExtension.md) for a reversible source-to-body projection, such as frontmatter above the visual editor.
 
 The Markdown, frontmatter, and Typst addons in `src/addons/` provide working examples. Disabling a format must never delete or rewrite its documents.
+
+### Serialization caching
+
+Set `serialization: 'block-local'` only when each top-level block can serialize independently and the document joins those blocks with two newlines. Hibi caches by immutable block, its index, the previous block, and document attributes. A serializer must not depend on other blocks, mutable external state, or a custom document-level join. Leave this property out to use full-document serialization.
+
+Hibi primes the cache before editing and reuses unchanged blocks during typing. Structural edits may invalidate more blocks. Test cached output against the full Markdown manager across edits, mark boundaries, empty paragraphs, and custom nodes before opting in.

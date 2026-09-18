@@ -255,6 +255,11 @@ export type MarkdownFlavor = {
   readOnlyWhenDisabled?: boolean
   markedOptions?: { gfm?: boolean; breaks?: boolean }
   richExtensions?: readonly AnyExtension[]
+  /** Opt in only when top-level blocks serialize independently with standard blank-line joining.
+   * Cache context includes index, the previous block, and document attributes.
+   * Omission preserves full-document serialization for existing addons.
+   */
+  serialization?: 'block-local'
   /** Static exports run the same syntax parsers; their HTML is sanitized by the site. */
   export?: {
     extensions?: readonly MarkedExtension[]

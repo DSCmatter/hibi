@@ -1,3 +1,4 @@
+import type { Editor } from '@tiptap/core'
 import { AllSelection, TextSelection } from '@tiptap/pm/state'
 import { EditorContent, useEditor } from '@tiptap/react'
 import {
@@ -43,6 +44,7 @@ import {
   projectMarkdown,
 } from './markdown'
 import { markdownPositions } from './markdown-positions'
+import { markdownSerializer } from './markdown-serialization'
 import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
 import { revealSourcePosition, sourceView } from './source-view'
@@ -77,6 +79,7 @@ export function MarkdownEditor({
   onOutline,
   onActiveOutline,
   outlineTarget,
+  outlineActive,
 }: {
   document: DocumentState
   format: DocumentFormat | undefined
@@ -103,8 +106,20 @@ export function MarkdownEditor({
   onOutline: (headings: OutlineHeading[]) => void
   onActiveOutline: (id: string | null) => void
   outlineTarget: OutlineRequest | null
+  outlineActive: boolean
 }) {
   const markdownDocument = format?.editing === 'markdown'
+  const serializers = useRef(
+    new WeakMap<Editor, ReturnType<typeof markdownSerializer>>(),
+  )
+  const generated = useRef<{
+    source: string
+    body: string
+    sourceOnly: boolean
+    flavors: readonly MarkdownFlavor[]
+    syntaxVersion: number
+    adapters: readonly MarkdownExtension[]
+  } | null>(null)
   const syntaxVersion = useSyncExternalStore(
     markdownSyntax.subscribe,
     markdownSyntax.version,
@@ -120,8 +135,21 @@ export function MarkdownEditor({
     () =>
       unsupportedFlavor ||
       Boolean(projection.readOnly) ||
-      needsSourceEditing(projection.content),
-    [projection, unsupportedFlavor],
+      (generated.current?.source === value &&
+      generated.current.body === projection.content &&
+      generated.current.flavors === flavors &&
+      generated.current.syntaxVersion === syntaxVersion &&
+      generated.current.adapters === markdownExtensions
+        ? generated.current.sourceOnly
+        : needsSourceEditing(projection.content)),
+    [
+      projection,
+      unsupportedFlavor,
+      value,
+      flavors,
+      syntaxVersion,
+      markdownExtensions,
+    ],
   )
   const [richRevision, setRichRevision] = useState(0)
   const [richExtensionError, setRichExtensionError] = useState('')
@@ -242,11 +270,28 @@ export function MarkdownEditor({
         },
       },
       onUpdate: ({ editor }) => {
-        const source = performanceDiagnostics.measure(
+        let serialize = serializers.current.get(editor)
+        if (!serialize) {
+          serialize = markdownSerializer(
+            editor.markdown!,
+            flavors.every((flavor) => flavor.serialization === 'block-local'),
+          )
+          serializers.current.set(editor, serialize)
+        }
+        const serialized = performanceDiagnostics.measure(
           'core',
           'Markdown serialization',
-          () => projection.serialize(editor.getMarkdown()),
+          () => serialize(editor.state.doc),
         )
+        const source = projection.serialize(serialized.source)
+        generated.current = {
+          source,
+          body: serialized.source,
+          sourceOnly: serialized.sourceOnly,
+          flavors,
+          syntaxVersion,
+          adapters: markdownExtensions,
+        }
         performanceDiagnostics.measure('core', 'document update', () =>
           onChange(source),
         )
@@ -255,6 +300,19 @@ export function MarkdownEditor({
     },
     [markdownExtensions, flavors, syntaxVersion],
   )
+  useLayoutEffect(() => {
+    if (!editor?.markdown || !markdownDocument) return
+    const serialize = markdownSerializer(
+      editor.markdown,
+      flavors.every((flavor) => flavor.serialization === 'block-local'),
+    )
+    serializers.current.set(editor, serialize)
+    performanceDiagnostics.measure(
+      'core',
+      'Markdown cache initialization',
+      () => serialize(editor.state.doc),
+    )
+  }, [editor, markdownDocument, flavors])
   // biome-ignore lint/correctness/useExhaustiveDependencies: initial focus belongs to this editor instance, never subsequent mode or document updates.
   useLayoutEffect(() => {
     if (!editor || !markdownDocument || paneMode === 'markdown') return
@@ -282,6 +340,7 @@ export function MarkdownEditor({
       onActiveOutline(null)
       return
     }
+    if (!outlineActive) return
     const root = content.current
     let frame = 0
     let document: typeof editor.state.doc | null = null
@@ -357,6 +416,7 @@ export function MarkdownEditor({
   }, [
     editor,
     markdownDocument,
+    outlineActive,
     findTarget,
     sourceReady,
     onOutline,

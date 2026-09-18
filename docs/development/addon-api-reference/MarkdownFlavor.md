@@ -21,6 +21,11 @@ type MarkdownFlavor = {
   readOnlyWhenDisabled?: boolean
   markedOptions?: { gfm?: boolean; breaks?: boolean }
   richExtensions?: readonly AnyExtension[]
+  /** Opt in only when top-level blocks serialize independently with standard blank-line joining.
+   * Cache context includes index, the previous block, and document attributes.
+   * Omission preserves full-document serialization for existing addons.
+   */
+  serialization?: 'block-local'
   /** Static exports run the same syntax parsers; their HTML is sanitized by the site. */
   export?: {
     extensions?: readonly MarkedExtension[]
@@ -48,6 +53,7 @@ type MarkdownFlavor = {
 - [readOnlyWhenDisabled](#readonlywhendisabled)
 - [markedOptions](#markedoptions)
 - [richExtensions](#richextensions)
+- [serialization](#serialization)
 - [export](#export)
 
 **Methods**
@@ -114,9 +120,21 @@ Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/
 richExtensions?: readonly AnyExtension[]
 ```
 
+### serialization
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L262)
+
+Opt in only when top-level blocks serialize independently with standard blank-line joining.
+Cache context includes index, the previous block, and document attributes.
+Omission preserves full-document serialization for existing addons.
+
+```typescript
+serialization?: 'block-local'
+```
+
 ### export
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L259)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L264)
 
 Static exports run the same syntax parsers; their HTML is sanitized by the site.
 

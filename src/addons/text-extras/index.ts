@@ -7,6 +7,7 @@ import { textExtrasMarkdown } from './syntax'
 
 const flavor: MarkdownFlavor = {
   ...flavorInfo,
+  serialization: 'block-local',
   richExtensions: [Subscript, Subtext],
   export: { extensions: [textExtrasMarkdown], css },
 }

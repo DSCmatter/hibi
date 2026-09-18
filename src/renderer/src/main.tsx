@@ -1677,6 +1677,9 @@ function App() {
           {document && editorStarted.current && (
             <MarkdownEditor
               onOutline={setOutline}
+              outlineActive={
+                sidebarOpen && sidebarView === 'outline' && !settingsOpen
+              }
               onActiveOutline={setActiveOutline}
               outlineTarget={outlineTarget}
               document={document}

@@ -2,19 +2,20 @@ import { Extension } from '@tiptap/core'
 import { Placeholder } from '@tiptap/extension-placeholder'
 import { Markdown, type MarkdownExtensionOptions } from '@tiptap/markdown'
 import { StarterKit } from '@tiptap/starter-kit'
-import { Marked, marked } from 'marked'
+import { Marked } from 'marked'
 import { search } from 'prosemirror-search'
 import type {
   MarkdownExtension,
   MarkdownFlavor,
   MarkdownProjection,
 } from '../../addons/api'
-import { readFrontmatter } from '../../shared/frontmatter'
 import { BlockExit } from './BlockExit'
 import { CodeHighlight } from './CodeHighlight'
 import { literalMarkdown } from './LiteralMarkdown'
 import { markdownSyntax } from './markdown-syntax'
 import { installSyntaxPreferences } from './syntax-parser'
+
+export { needsSourceEditing } from './markdown-preservation'
 
 export function projectMarkdown(
   source: string,
@@ -85,19 +86,4 @@ export function editorExtensions(flavors: readonly MarkdownFlavor[]) {
       .filter((extension) => markdownSyntax.extensionEnabled(extension.name)),
     Placeholder.configure({ placeholder: 'Start typing' }),
   ]
-}
-
-// Preserve source constructs the rich editor cannot round-trip without loss.
-export function needsSourceEditing(source: string): boolean {
-  if (readFrontmatter(source) || /^\s{0,3}\[[^\]]+\]:/m.test(source))
-    return true
-  let unsupported = false
-  marked.walkTokens(marked.lexer(source), (token) => {
-    if (
-      token.type === 'def' ||
-      (token.type === 'html' && !/^<br\s*\/?>$/i.test(token.raw.trim()))
-    )
-      unsupported = true
-  })
-  return unsupported
 }
