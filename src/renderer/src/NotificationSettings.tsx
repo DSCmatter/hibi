@@ -13,11 +13,7 @@ export function NotificationSettings() {
     <>
       <h2>Notifications</h2>
       <div className="settings-group">
-        <SettingRow
-          id="notification-position"
-          label="Position"
-          description="Where notifications appear in the window."
-        >
+        <SettingRow id="notification-position" label="Position">
           <Select
             id="notification-position"
             value={preferences.position}
@@ -34,11 +30,7 @@ export function NotificationSettings() {
             ))}
           </Select>
         </SettingRow>
-        <SettingRow
-          id="notification-duration"
-          label="Dismiss after"
-          description="Notifications stay open while you point to them or focus them with the keyboard."
-        >
+        <SettingRow id="notification-duration" label="Dismiss after">
           <Select
             id="notification-duration"
             value={preferences.duration}
@@ -57,20 +49,13 @@ export function NotificationSettings() {
             ))}
           </Select>
         </SettingRow>
-        <SettingRow
-          id="notification-preview"
-          label="Preview"
-          description="See how notifications will appear."
-        >
+        <SettingRow id="notification-preview" label="Preview">
           <Button
             id="notification-preview"
             aria-label="Show preview"
             onClick={() =>
               service.api.show({
                 message: 'Notification preview',
-                description: preferences.duration
-                  ? 'Point here to keep this notification open.'
-                  : 'Stays until you dismiss it.',
                 variant: 'success',
               })
             }

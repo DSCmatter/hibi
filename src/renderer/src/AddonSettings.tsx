@@ -98,7 +98,7 @@ export function AddonSettings({
       label: 'Addon URL',
       placeholder: 'https://example.com/addon.zip',
       description:
-        'Paste an HTTPS link to a public Git repository or addon ZIP file. Only install addons you trust. The addon stays disabled until you enable it.',
+        'Paste an HTTPS link to a public Git repository or addon ZIP file. Only install addons you trust.',
       confirmLabel: 'Download',
       validate: (value) => {
         try {

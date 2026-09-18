@@ -114,13 +114,11 @@ export function FormatsSettings({
         Enable more document formats in{' '}
         <Button onClick={() => open('addons')}>Addons</Button>.
       </p>
-      <p className="plugin-description">
-        Open files with Hibi from your file manager, or choose it as the default
-        app for a format below.
-        {associations &&
-          !associations.available &&
-          ' Install Hibi to change your default apps. This option is unavailable in development and preview builds.'}
-      </p>
+      {associations && !associations.available && (
+        <p className="plugin-description">
+          Install Hibi to choose it as your default app.
+        </p>
+      )}
       <SettingsFilter
         id="formats-filter"
         label="Filter formats"

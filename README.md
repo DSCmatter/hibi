@@ -10,20 +10,13 @@ Download a build from [Releases](https://github.com/schmayterling/hibi/releases)
 
 Start typing, open a file, or open a folder as a workspace. Use `Cmd+K` on macOS or `Ctrl+K` on Windows and Linux to find commands and settings.
 
-- Open several notes in tabs, or use single-file mode.
-- Add images and videos, follow local links, and browse headings in the sidebar.
-- Enable plugins for other [document formats](docs/editing/formats.md), tags, graphs, Vim, word counts, and block dragging.
-- Export a folder of notes as one HTML file with navigation and search. It works offline.
-
 Read the [user guide](docs/README.md) for editing, settings, workspaces, and exports.
 
 ## Your files
 
-Hibi works with UTF-8 text files up to 2 MiB. Saving checks for outside changes before replacing a file. Local [version history](docs/editing/version-history.md) keeps previous saves.
+Save your work before quitting. Unsaved drafts can be lost in an app or machine crash; [version history](docs/editing/version-history.md) keeps previous saves.
 
-Unsaved drafts live in memory. Hibi can recover them after an editor reload, but quitting or a full app or machine crash can lose unsaved work. Accounts and cloud sync are not included.
-
-Opening a document does not run its embedded code. Formats that need to execute code have a separate **Run document** action and ask for confirmation. See [document formats](docs/editing/formats.md#run-or-compile-a-document).
+Opening a document does not run its embedded code. Formats that need to execute code have a separate **Run document** action and ask for confirmation.
 
 ## Build from source
 
@@ -34,7 +27,7 @@ npm ci
 npm run dev
 ```
 
-For build commands, tests, addon development, and architecture, see [developer and agent notes](docs/ai-agents/README.md).
+For build commands, tests, and addon development, see [developer and agent notes](docs/ai-agents/README.md).
 
 ## License
 

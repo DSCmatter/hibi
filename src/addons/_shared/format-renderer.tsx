@@ -116,7 +116,6 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
     label: `${spec.name} preview`,
     group: spec.name,
     level: 'block',
-    description: 'Show a preview beside the source text.',
   })
   if (spec.engine !== 'latex')
     for (const feature of features)
@@ -125,7 +124,7 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
         label: feature.label,
         group: spec.name,
         level: 'block',
-        description: `Show ${feature.label.toLowerCase()} in ${spec.name} previews and HTML exports.`,
+        description: `Show ${feature.label.toLowerCase()} in previews and HTML exports.`,
       })
   async function render(source: string, documentId?: string) {
     if (!context.editor.isSyntaxEnabled('preview'))
@@ -362,15 +361,7 @@ export function FormatSettings({ spec }: { spec: FormatSpec }) {
     <>
       <h2>Preview tools</h2>
       <div className="settings-group">
-        <SettingRow
-          id={`tools-${spec.id}`}
-          label="Required tools"
-          description={
-            spec.engine
-              ? 'Check whether the tools needed to preview and run this format are installed.'
-              : 'Check whether the tools needed to preview this format are installed.'
-          }
-        >
+        <SettingRow id={`tools-${spec.id}`} label="Required tools">
           <Button
             disabled={busy}
             onClick={async () => {

@@ -96,9 +96,6 @@
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/settings-categories.ts"
   ],
-  "011227e1b06f": [
-    "src/addons/keybeats/Settings.tsx"
-  ],
   "f62e9267d196": [
     "src/addons/github-markdown/index.ts"
   ],
@@ -235,16 +232,10 @@
   "c40fbdd563d3": [
     "src/addons/git/Panel.tsx"
   ],
-  "5c6372f7f1e5": [
-    "src/addons/typing-speed/index.ts"
+  "a03ab618feb8": [
+    "src/renderer/src/SettingsScreen.tsx"
   ],
   "7164b51d91dc": [
-    "src/addons/_shared/format-renderer.tsx"
-  ],
-  "bcbfc943b9b1": [
-    "src/addons/_shared/format-renderer.tsx"
-  ],
-  "ba7ce84cc893": [
     "src/addons/_shared/format-renderer.tsx"
   ],
   "7346030400bf": [
@@ -316,9 +307,6 @@
   ],
   "79bce0799896": [
     "src/renderer/src/SettingsScreen.tsx"
-  ],
-  "902fe58b95bc": [
-    "src/addons/keybeats/Settings.tsx"
   ],
   "26a5aa15d2b1": [
     "src/main/media.ts"
@@ -843,9 +831,6 @@
   "77334ae54ee0": [
     "src/renderer/src/markdown-syntax.ts"
   ],
-  "f743268df178": [
-    "src/addons/typing-speed/index.ts"
-  ],
   "5eb978a64b67": [
     "src/addons/graph/Canvas.tsx"
   ],
@@ -1061,6 +1046,9 @@
   "e61eb301dc7f": [
     "src/renderer/src/AddonSettings.tsx"
   ],
+  "7318721213b3": [
+    "src/ui/ColorschemeSettings.tsx"
+  ],
   "f41e0a42109f": [
     "src/renderer/src/main.tsx"
   ],
@@ -1153,6 +1141,9 @@
     "src/main/addon-repository.ts"
   ],
   "4667f22232c5": [
+    "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "ab9c93f6af19": [
     "src/renderer/src/FormatsSettings.tsx"
   ],
   "66146583cc60": [
@@ -1468,14 +1459,8 @@
     "src/renderer/src/NotificationSettings.tsx",
     "src/ui/Sonner.tsx"
   ],
-  "d8709900e98a": [
-    "src/renderer/src/NotificationSettings.tsx"
-  ],
   "bd82cf16699b": [
     "src/addons/frontmatter/Properties.tsx"
-  ],
-  "5bb6ba885a19": [
-    "src/renderer/src/SettingsScreen.tsx"
   ],
   "cc62f6c7b2a8": [
     "src/addons/slash-commands/commands.ts",
@@ -1533,14 +1518,8 @@
   "eadd61bac0d2": [
     "src/renderer/src/DocumentTabs.tsx"
   ],
-  "75cdea45c494": [
-    "src/renderer/src/SettingsScreen.tsx"
-  ],
   "29d05e904395": [
     "src/shared/hotkeys.ts"
-  ],
-  "7edc730d7772": [
-    "src/renderer/src/FormatsSettings.tsx"
   ],
   "6a9084025c4b": [
     "src/renderer/src/WorkspaceSidebar.tsx"
@@ -1592,9 +1571,6 @@
   "13c27b3eaf3b": [
     "src/renderer/src/FormattingToolbar.tsx"
   ],
-  "2a7579309c0b": [
-    "src/renderer/src/SettingsScreen.tsx"
-  ],
   "1d393b0081b6": [
     "src/addons/_shared/format-renderer.tsx"
   ],
@@ -1619,7 +1595,7 @@
   "da06be9ad96a": [
     "src/renderer/src/main.tsx"
   ],
-  "d75069b8046d": [
+  "591ae64cac49": [
     "src/renderer/src/AddonSettings.tsx"
   ],
   "a4f17dfc576b": [
@@ -1636,9 +1612,6 @@
   ],
   "36be30dddfe1": [
     "src/addons/keybeats/manifest.ts"
-  ],
-  "ab559feaec18": [
-    "src/renderer/src/NotificationSettings.tsx"
   ],
   "6d031af10da7": [
     "src/renderer/src/NotificationSettings.tsx"
@@ -1875,7 +1848,7 @@
   "2c2a765c72f1": [
     "src/renderer/src/RecoveryScreen.tsx"
   ],
-  "b5c169365b0b": [
+  "83782b2611e4": [
     "src/renderer/src/RecoveryScreen.tsx"
   ],
   "12c052789323": [
@@ -1891,7 +1864,7 @@
   "b568cdeff403": [
     "src/shared/hotkeys.ts"
   ],
-  "dbd42583a3be": [
+  "ac752922d909": [
     "src/renderer/src/AutosaveSettings.tsx"
   ],
   "73c583fedbc0": [
@@ -1939,9 +1912,6 @@
   "57054c5a04be": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
-  "574edbca6a4f": [
-    "src/renderer/src/NotificationSettings.tsx"
-  ],
   "d605d205a5bf": [
     "src/addons/graph/manifest.ts"
   ],
@@ -1978,8 +1948,8 @@
   "8544535ee5a4": [
     "src/main/hotkeys.ts"
   ],
-  "bbecee8c5040": [
-    "src/addons/_shared/format-renderer.tsx"
+  "b5fff62bc50a": [
+    "src/renderer/src/SettingsScreen.tsx"
   ],
   "4eae602ecbdd": [
     "src/renderer/src/EditorToolbar.tsx"
@@ -1990,14 +1960,11 @@
   "0e53b6d8c928": [
     "src/renderer/src/NotificationSettings.tsx"
   ],
-  "56a388f678f0": [
-    "src/addons/frontmatter/Settings.tsx"
-  ],
   "1da402fd1aeb": [
     "src/renderer/src/EditorToolbar.tsx",
     "src/renderer/src/main.tsx"
   ],
-  "7c6b4ea4e479": [
+  "208052ce5a29": [
     "src/addons/_shared/format-renderer.tsx"
   ],
   "a0f7f003f38e": [
@@ -2030,9 +1997,6 @@
     "src/renderer/src/main.tsx",
     "src/shared/hotkeys.ts"
   ],
-  "393151fae61e": [
-    "src/renderer/src/SettingsScreen.tsx"
-  ],
   "c75049813154": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
@@ -2055,9 +2019,6 @@
   "b94c5ac62b87": [
     "src/renderer/src/StartupPlaceholder.tsx"
   ],
-  "e0d74642efdd": [
-    "src/renderer/src/NotificationSettings.tsx"
-  ],
   "9aabbcb2c18d": [
     "src/addons/github-markdown/index.ts",
     "src/renderer/src/FormattingToolbar.tsx"
@@ -2071,6 +2032,9 @@
   ],
   "1e5a65cf9548": [
     "src/renderer/src/HibiSettings.tsx"
+  ],
+  "361acbbafb8f": [
+    "src/addons/vim/index.ts"
   ],
   "270d8cb4f014": [
     "src/main/workspace-actions.ts"
@@ -2111,9 +2075,6 @@
   ],
   "b846ef5125c2": [
     "src/addons/slash-commands/commands.ts"
-  ],
-  "f7220445a78c": [
-    "src/addons/keybeats/Settings.tsx"
   ],
   "71988c4d8e08": [
     "src/addons/frontmatter/Properties.tsx",
@@ -2282,6 +2243,9 @@
   "7ecbba2926b1": [
     "src/shared/colorschemes.ts"
   ],
+  "53d696e8d077": [
+    "src/addons/typing-speed/index.ts"
+  ],
   "b3e591b2b962": [
     "src/main/files.ts"
   ],
@@ -2293,6 +2257,9 @@
   ],
   "28d14c9029bb": [
     "src/renderer/src/main.tsx"
+  ],
+  "6a25699e5870": [
+    "src/addons/typing-speed/index.ts"
   ],
   "4646993d0c2f": [
     "src/main/document.ts"
@@ -2393,9 +2360,6 @@
   "d3a986ab8faa": [
     "src/main/appearance.ts"
   ],
-  "b1e0077db7ab": [
-    "src/ui/ColorschemeSettings.tsx"
-  ],
   "78c4a3ab448e": [
     "src/main/workspace.ts"
   ],
@@ -2430,6 +2394,9 @@
   "c9379e975e66": [
     "src/addons/graph/Panel.tsx",
     "src/addons/tags/Panel.tsx"
+  ],
+  "3d678d549c61": [
+    "src/renderer/src/SettingsScreen.tsx"
   ],
   "9a928ba210da": [
     "src/addons/slash-commands/commands.ts"
@@ -2485,9 +2452,6 @@
   "14d33bd014e6": [
     "src/renderer/src/HotkeySettings.tsx"
   ],
-  "9588db5b112b": [
-    "src/renderer/src/SettingsScreen.tsx"
-  ],
   "a8283ade3185": [
     "src/renderer/src/FormattingToolbar.tsx"
   ],
@@ -2534,9 +2498,6 @@
   "07680653db5c": [
     "src/renderer/src/CodeSyntaxSettings.tsx"
   ],
-  "211f1f4cdab0": [
-    "src/renderer/src/SettingsScreen.tsx"
-  ],
   "d3615efc3700": [
     "src/main/addon-download.ts"
   ],
@@ -2544,9 +2505,6 @@
     "src/renderer/src/main.tsx"
   ],
   "0e9ce8352f73": [
-    "src/renderer/src/SettingsScreen.tsx"
-  ],
-  "651c6a2c21c5": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
   "ca4f485a9985": [
@@ -2571,9 +2529,6 @@
   "9c66eb04c102": [
     "src/addons/vim/engine.ts"
   ],
-  "bca5c3b5ec21": [
-    "src/addons/vim/index.ts"
-  ],
   "515210ec3d61": [
     "src/addons/vim/engine.ts"
   ],
@@ -2585,12 +2540,6 @@
   ],
   "b10fb966d720": [
     "src/addons/keybeats/Settings.tsx"
-  ],
-  "74008706df52": [
-    "src/renderer/src/AutosaveSettings.tsx"
-  ],
-  "903980d24e57": [
-    "src/renderer/src/NotificationSettings.tsx"
   ],
   "19734a1b58ca": [
     "src/renderer/src/SettingsScreen.tsx"
@@ -2807,7 +2756,7 @@
   "1954f44f1495": [
     "src/renderer/src/Titlebar.tsx"
   ],
-  "ad069ba938a7": [
+  "9bf22c3ffed2": [
     "src/addons/word-count/index.ts"
   ],
   "da55d16fc16f": [

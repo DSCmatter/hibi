@@ -11,7 +11,7 @@ export function AutosaveSettings() {
         <SettingRow
           id="autosave-enabled"
           label="Autosave"
-          description="Save files after you stop typing. Save new drafts once to choose a location. Autosave pauses if another app changes the file."
+          description="Save new drafts once before using autosave."
         >
           <Toggle
             id="autosave-enabled"
@@ -21,11 +21,7 @@ export function AutosaveSettings() {
             }
           />
         </SettingRow>
-        <SettingRow
-          id="autosave-delay"
-          label="Save after"
-          description="Wait this long after your last edit."
-        >
+        <SettingRow id="autosave-delay" label="Save after">
           <Select
             id="autosave-delay"
             value={settings.delay}

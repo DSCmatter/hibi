@@ -19,8 +19,7 @@ export default defineAddon({
     const status = context.statusBar.register({
       id: 'unavailable',
       label: '',
-      tooltip:
-        'Vim works in the source editor. Switch to source or side-by-side view to use it.',
+      tooltip: 'Switch to source or side-by-side view to use Vim.',
       when: 'normal',
     })
     const applyPreferences = () => {

@@ -192,7 +192,7 @@ export function SettingRow({
 }: {
   id: string
   label: string
-  description: ReactNode
+  description?: ReactNode
   children: ReactNode
   hidden?: boolean
 }) {
@@ -213,11 +213,13 @@ export function SettingRow({
     >
       <div className="setting-copy">
         <label htmlFor={id}>{displayLabel}</label>
-        <p id={`${id}-description`}>
-          {typeof description === 'string'
-            ? sentenceCase(description)
-            : description}
-        </p>
+        {description != null && (
+          <p id={`${id}-description`}>
+            {typeof description === 'string'
+              ? sentenceCase(description)
+              : description}
+          </p>
+        )}
       </div>
       {children}
     </div>

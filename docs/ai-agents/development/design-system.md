@@ -30,7 +30,7 @@ Use `TextInput` and `TextArea` from `src/addons/ui.ts`, or `sdk.ui` in installed
 
 Use sentence case for labels and descriptions. Preserve names such as GitHub, Vim, Markdown, and Typst. Controls inherit the optional lowercase style through `--ui-text-transform`; document content and editable values must never inherit it. Use `verbatim: true` for case-sensitive status data, such as Vim commands. Shared labels, menus, dialogs, notifications, and ordinary status text normalize case when rendered.
 
-Group related rows on one surface with inset separators. Put the label and description on the left, with the control on the right. Controls, shortcut badges, and reset buttons must wrap within narrow panels. Give distinct groups a heading and use shared heading margins so adjacent cards remain separate.
+Group related rows on one surface with inset separators. Put the label on the left and the control on the right. Add a description only when the label needs explanation; `SettingRow` accepts one as an optional prop. Controls, shortcut badges, and reset buttons must wrap within narrow panels. Give distinct groups a heading and use shared heading margins so adjacent cards remain separate.
 
 Use `SettingsFilter` for search and reset. Keep filtered `SettingRow` components mounted with `hidden` so the command palette can find them. Palette navigation clears the filter to reveal its target. Reset applies to the whole page, including hidden results. See the [component reference](../reference/settings-filter-api.md).
 

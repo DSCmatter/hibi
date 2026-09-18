@@ -46,7 +46,7 @@ export default defineAddon({
           ? rich.getText({ blockSeparator: '\n' })
           : document.markdown
         status.update({
-          tooltip: `${rich ? 'Counts text without Markdown syntax or properties' : 'Counts source text, including formatting syntax'}. Includes spaces and line breaks. Each emoji counts as one character.`,
+          tooltip: `${rich ? 'The count excludes Markdown syntax and properties' : 'The count includes formatting syntax'}. Spaces and line breaks count as characters; each emoji counts as one.`,
         })
         if (!pending && latest !== sent) send()
       })

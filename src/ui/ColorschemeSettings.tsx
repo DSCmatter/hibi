@@ -47,7 +47,7 @@ export function ColorschemeSettings({
               description={
                 selected
                   ? `${selected.author} · ${selected.license.name}`
-                  : 'This theme is unavailable. Using Hibi’s default colors.'
+                  : 'Hibi is using its default colors because this theme is unavailable.'
               }
             >
               <div className="colorscheme-choice">

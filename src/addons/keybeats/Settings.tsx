@@ -12,11 +12,7 @@ export function Settings() {
   }, [])
   return (
     <div className="settings-group">
-      <SettingRow
-        id="keybeats-profile"
-        label="Keyboard"
-        description="Choose the keyboard sound you hear while typing."
-      >
+      <SettingRow id="keybeats-profile" label="Keyboard">
         <Select
           id="keybeats-profile"
           value={preferences.profile}
@@ -29,11 +25,7 @@ export function Settings() {
           ))}
         </Select>
       </SettingRow>
-      <SettingRow
-        id="keybeats-volume"
-        label="Volume"
-        description="Adjust typing volume in every editor view."
-      >
+      <SettingRow id="keybeats-volume" label="Volume">
         <div className="setting-controls">
           <div className="padding-control">
             <Slider
@@ -51,11 +43,7 @@ export function Settings() {
           </div>
         </div>
       </SettingRow>
-      <SettingRow
-        id="keybeats-muted"
-        label="Mute"
-        description="Temporarily silence keyboard sounds."
-      >
+      <SettingRow id="keybeats-muted" label="Mute">
         <Toggle
           id="keybeats-muted"
           checked={preferences.muted}

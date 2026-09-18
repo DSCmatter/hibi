@@ -1,6 +1,6 @@
 # Hibi user guide
 
-Hibi edits notes and documents stored on your computer. Start with [editing](guides/editing.md), or choose a topic below.
+Start with [editing](guides/editing.md), or choose a topic below.
 
 ## Write and organize
 

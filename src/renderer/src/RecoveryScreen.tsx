@@ -111,7 +111,7 @@ export function RecoveryScreen({
           )}
           {!onBack && draft?.dirty && (
             <p className="recovery-hint">
-              Save a copy of the latest draft Hibi received before reloading.
+              Save a copy of your recovered draft before reloading.
             </p>
           )}
           <div className="recovery-actions">

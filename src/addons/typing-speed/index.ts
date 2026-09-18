@@ -11,13 +11,13 @@ export default defineAddon({
       id: 'wpm',
       label: '≈0 WPM',
       tooltip:
-        'Estimated words per minute, using five characters per word. Resets after a 5-second pause.',
+        'This estimates how many words you type per minute. It resets after a five-second pause.',
     })
     const characters = context.statusBar.register({
       id: 'cpm',
       label: '≈0 CPM',
       tooltip:
-        'Characters typed per minute, excluding pasted text. Resets after a 5-second pause.',
+        'This counts characters typed per minute, excluding pasted text. It resets after a five-second pause.',
     })
     const refresh = () => {
       const value = speed.read(performance.now())

@@ -41,10 +41,4 @@ Custom app bindings take precedence over formatting shortcuts. [Vim](../guides/v
 
 ## Typing speed
 
-The optional Typing speed plugin shows estimated words or characters per minute for your current typing session. It counts typed text, not pasted text or deletions. The rate resets after five seconds without typing, and uses at least one second when calculating a new session's rate.
-
-For document totals, enable Word count under **Settings → Addons**.
-
-## Side-by-side editing
-
-The faint caret in the inactive pane shows the matching text position. It hides when text is selected or the corresponding position is offscreen. Scrolling keeps matching passages aligned; other format previews use relative scroll positions when text matching is unavailable.
+Enable **Typing speed** under **Settings → Addons** to see estimated words or characters per minute while typing. For document totals instead, enable **Word count**.

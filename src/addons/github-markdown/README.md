@@ -11,14 +11,12 @@ Add tables, task lists, strikethrough, automatic links, and alerts to Markdown. 
 > hello
 ```
 
-In normal view, type `> `, then `[!WARNING]`, and press Enter. You can put paragraphs, lists, and code blocks inside an alert. Source view keeps the original Markdown; exported documents keep the alert's colors and styling. Unknown alert names appear as ordinary quotes.
+In normal view, type `> `, then `[!WARNING]`, and press Enter to create an alert.
 
 ## Choose features
 
-**Settings → Syntax** has separate switches for tables, tasks, strikethrough, and alerts. Turn a feature off to show its Markdown characters as text. Turn it back on to restore the formatting.
-
-Automatic syntax mode detects GitHub Markdown. To choose a different style for a file, use the syntax button in the status bar or the command palette. Features outside that style keep their source text; edit them in source view.
+Choose which features to use in **Settings → Syntax**.
 
 ## Credits
 
-Hibi integration: may. Uses MIT-licensed Tiptap and Marked, listed in Hibi's **Open source licenses**.
+The Hibi integration is by may. It uses MIT-licensed Tiptap and Marked, listed in Hibi's **Open source licenses**.

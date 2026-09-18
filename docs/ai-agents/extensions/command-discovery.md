@@ -8,4 +8,4 @@ Declare `manifest.kind` as `extension` or `theme`; omitting it retains the API v
 
 Use a shared `SettingRow` with a unique control `id` to make each setting searchable. Settings pages can be mounted for discovery before a user visits them and can remain mounted while hidden. Mount effects must not assume visibility. Stopping an addon removes its entries. Custom layouts still get a page command, but need `SettingRow` for individual controls.
 
-Commands accept optional search `keywords`. Enabled toolbar actions appear when applicable; disabled actions are omitted. Disposal removes their toolbar and palette entries together.
+Commands accept optional search `keywords`. Search ranks exact action names first, followed by name prefixes, other name matches, and matches in help text. Enabled toolbar actions appear when applicable; disabled actions are omitted. Disposal removes their toolbar and palette entries together.

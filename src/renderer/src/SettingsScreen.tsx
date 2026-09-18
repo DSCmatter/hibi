@@ -304,7 +304,7 @@ export function SettingsScreen({
               <SettingRow
                 id="document-tabs"
                 label="Use tabs"
-                description="Open documents in separate tabs. Turn off to work with one file at a time."
+                description="Turn off to open one file at a time."
               >
                 <Toggle
                   id="document-tabs"
@@ -322,7 +322,7 @@ export function SettingsScreen({
               <SettingRow
                 id="spell-check"
                 label="Spell check"
-                description="Underline possible spelling mistakes in rich text."
+                description="Check spelling in formatted text."
               >
                 <Toggle
                   id="spell-check"
@@ -335,14 +335,9 @@ export function SettingsScreen({
             <AutosaveSettings />
             <h2>Layout</h2>
             <div className="settings-group">
-              <SettingRow
-                id="default-view"
-                label="Default view"
-                description="Use this view when Hibi opens. If a format does not support it, Hibi uses an available view."
-              >
+              <SettingRow id="default-view" label="Default view">
                 <Select
                   id="default-view"
-                  aria-describedby="default-view-description"
                   value={defaultView}
                   onChange={(event) => {
                     const view = event.target.value
@@ -354,16 +349,11 @@ export function SettingsScreen({
                   <option value="markdown">Source view</option>
                 </Select>
               </SettingRow>
-              <SettingRow
-                id="editor-padding"
-                label="Content padding"
-                description="Space around your document in every view."
-              >
+              <SettingRow id="editor-padding" label="Content padding">
                 <div className="setting-controls">
                   <div className="padding-control">
                     <Slider
                       id="editor-padding"
-                      aria-describedby="editor-padding-description"
                       min="0"
                       max="96"
                       step="4"
@@ -379,14 +369,9 @@ export function SettingsScreen({
                   </Button>
                 </div>
               </SettingRow>
-              <SettingRow
-                id="line-numbers"
-                label="Show line numbers"
-                description="Number each line in source and side-by-side views."
-              >
+              <SettingRow id="line-numbers" label="Show line numbers">
                 <Toggle
                   id="line-numbers"
-                  aria-describedby="line-numbers-description"
                   checked={showLineNumbers}
                   onChange={(event) => onShowLineNumbers(event.target.checked)}
                 />
@@ -421,11 +406,7 @@ export function SettingsScreen({
             <h1>Appearance</h1>
             <h2>Interface text</h2>
             <div className="settings-group">
-              <SettingRow
-                id="lowercase-interface"
-                label="Lowercase interface"
-                description="Use lowercase for app labels and messages. Your documents and anything you type stay unchanged."
-              >
+              <SettingRow id="lowercase-interface" label="Lowercase interface">
                 <Toggle
                   id="lowercase-interface"
                   checked={casing === 'lowercase'}
@@ -440,7 +421,7 @@ export function SettingsScreen({
               <SettingRow
                 id="focus-outlines"
                 label="Focus outlines"
-                description="Outline buttons, links, and navigation when focused. Text fields always show focus."
+                description="Show a border around focused buttons, links, and navigation."
               >
                 <Toggle
                   id="focus-outlines"

@@ -10,7 +10,6 @@ export function Settings() {
       <SettingRow
         id="frontmatter-expanded"
         label="Expand properties by default"
-        description="Show the property rows when a note opens."
       >
         <Toggle
           id="frontmatter-expanded"

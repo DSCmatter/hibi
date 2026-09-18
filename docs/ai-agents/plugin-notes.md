@@ -24,6 +24,8 @@ Load the CodeMirror Vim engine on demand through `registerSource`. File commands
 
 Keep command state local to the source editor. Collect normal/visual command keys and search/ex prompts, never insert-mode document text. Status items use `verbatim: true` so lowercase interface settings cannot change meaningful uppercase keys. Dispose of command contexts, status handles, preference listeners, and scoped styles when their editor or plugin stops.
 
+The status display retains the last completed command. For example, `22k` progresses through `2`, `22`, and `22k`. Escape cancels a pending command and restores the last one; Enter alone leaves it visible. Search and ex prompts retain their input after Enter.
+
 ### Block dragging
 
 Use the existing `registerRich`, shared menu, and scoped style APIs. Moves must preserve formatting, use the editor's Undo history, and obey the document schema. Disable moves for read-only editors. Removing the plugin must remove its handle, menu, listeners, and editor plugin without rebuilding document history.
@@ -32,7 +34,11 @@ Use the existing `registerRich`, shared menu, and scoped style APIs. Moves must 
 
 Word count uses the rich editor's document text for Markdown and source text for other formats. Count in a local worker and retain only the latest pending edit. Stop the worker and remove status items and listeners when disabled. Do not persist or upload document text.
 
+Use language-aware word segmentation and Unicode grapheme segmentation. Combining accents and joined emoji count as one character. Character totals include spaces and line breaks; Markdown totals exclude frontmatter and formatting markers.
+
 Typing speed uses `context.editor.onInput` and `context.statusBar.register`. Count committed input, including IME text, but not paste, deletions, Vim commands, or input outside the editor. Remove the idle timer and listeners when disabled; retain counts, not note text.
+
+The estimate divides typed characters by elapsed time from the first to the latest input and extrapolates to one minute. Apply a one-second minimum, count five characters as a word, hold the rate between inputs, and reset after five idle seconds. Spaces and line breaks count.
 
 ## Workspace plugins
 
@@ -41,6 +47,10 @@ Typing speed uses `context.editor.onInput` and `context.statusBar.register`. Cou
 Both use the shared sidebar and workspace snapshots. Debounce filesystem reads, reuse parsed results for unchanged notes, and update the active draft in memory. Stop subscriptions while the view is hidden. Graph also stops its simulation; opening the expanded graph pauses the sidebar simulation until the dialog closes.
 
 Graph must retain its layout when text changes without changing links. Center a selected node while the layout settles, until the user pans, drags, zooms, or fits the graph. Connection lists stay independent of the graph filter. Keep workspace snapshots within 2,000 documents and 20 MiB, and graph rendering within 500 visible nodes. Do not write indexes or layouts to disk.
+
+Resolve relative paths, workspace-root paths, encoded filenames, and reference links to existing local notes. Exclude external links, images, code examples, missing files, self-links, and wikilinks. Keep drafts without workspace paths out of graph nodes and workspace tag results. Such drafts can still contribute to the tag status count. Respect reduced motion when opening the graph.
+
+Tag names accept Unicode letters, numbers, underscores, hyphens, and nested paths. Ignore case when matching and reject purely numeric tags. Do not index headings, escaped hashes, code, HTML, URLs, link labels, or frontmatter.
 
 ### Git
 
@@ -76,11 +86,13 @@ The pinned compiler honors the local denying proxy that blocks automatic package
 
 `index.ts` registers the renderer command. `native.ts` snapshots the workspace, embeds escaped data in the site template, and uses the native save operation. Use the active syntax pipeline and per-file overrides, sanitize generated HTML with DOMPurify, and embed required styles and fonts.
 
-Resolve local Markdown images from each note's folder, including absolute paths and `file:` URLs. Embed supported images within the documented size limits; do not copy remote images or other attachments. Include the active document's in-memory edits without saving them to disk. Detect changes during rendering and ask the user to export again.
+Resolve local Markdown images from each note's folder, including absolute paths and `file:` URLs. Embed PNG, JPEG, GIF, WebP, AVIF, and SVG images up to 8 MiB each, within a 20 MiB combined Markdown-and-image limit. Do not copy remote images or other attachments. Include the active document's in-memory edits without saving them to disk. Detect changes during rendering and ask the user to export again.
 
 Reuse the shared sidebar and command palette, MiniSearch, and bundled Geist. Export the nine bundled color schemes and their full notices. Host snapshot preferences set the initial appearance; readers can override it. Plugin palettes fall back to Hibi, and plugin code or CSS overrides must not enter exported sites.
 
 ## keyBeats
+
+The port uses keyBeats revision `570f9c84866be4aad100d3acac29990fba5c657a` and kbsim revision `ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4`. Preserve the upstream profile mappings for the 13 profiles and 150 shipped recordings. Unused recordings are omitted; missing MX Blue special-key samples use the original generic fallback.
 
 Use `context.editor.onKeyEvent` for editor-only press/release events and `context.toolbar` for mute. Ignore command modifiers, composition events, and automatic repeats. Never monitor the system keyboard, store keystrokes, or transmit them.
 

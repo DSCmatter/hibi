@@ -308,7 +308,7 @@ test('plugin pages, metadata, shared controls, and full source vim editing', {
   assert.equal(await unavailable.innerText(), 'Vim · off')
   assert.match(
     await unavailable.getAttribute('data-tooltip'),
-    /Vim works in the source editor\. Switch to source or side-by-side view to use it\./,
+    /Switch to source or side-by-side view to use Vim\./,
   )
   await page
     .getByRole('button', { name: /^side-by-side$/i, exact: true })

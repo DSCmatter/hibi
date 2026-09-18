@@ -1,7 +1,5 @@
 # Markdoc
 
-Turn on **Markdoc** in **Settings → Addons** to edit `.mdoc` files with syntax highlighting and formatting tools. Hibi includes the parser; no extra installation is needed.
+Turn on **Markdoc** in **Settings → Addons** to edit `.mdoc` files. Write in source view or use side-by-side view for a preview.
 
-Use source view to write or side-by-side view to see the preview. Normal view is unavailable for this format. Export HTML with the controls above the preview.
-
-See [Document formats](../../../docs/editing/formats.md) for settings and export options. Previewing and exporting leave your source unchanged.
+Use the controls above the preview to export HTML. See [Document formats](../../../docs/editing/formats.md) for view and syntax settings.
