@@ -128,6 +128,10 @@ test('extension and core fields share themes, focus states, and narrow layouts',
         window.setSize(360, 640)
       })
       await page.waitForFunction(() => innerWidth === 360)
+      await page
+        .getByRole('button', { name: /toggle workspace sidebar/i })
+        .click()
+      await dialog.waitFor()
       await page.evaluate(() =>
         Promise.all(
           document

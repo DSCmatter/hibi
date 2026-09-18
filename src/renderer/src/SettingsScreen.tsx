@@ -248,7 +248,7 @@ export function SettingsScreen({
       >
         <Sidebar
           resize={{ ...resize, onCollapse: onSidebarClose }}
-          open={open && sidebarOpen}
+          open={sidebarOpen}
           overlay={overlay}
           onDismiss={onSidebarClose}
           className={`settings-sidebar${searching ? ' settings-searching' : ''}`}
