@@ -115,6 +115,15 @@ test('Mermaid and BBCode edit, preview, and export without executing content', {
   )
   assert.equal(await page.locator('.bbcode-content img').count(), 0)
   assert.equal(await page.evaluate(() => window.compromised), undefined)
+  await writeFile(
+    join(temp, 'image.png'),
+    Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aA3sAAAAASUVORK5CYII=',
+      'base64',
+    ),
+  )
+  await open('images.bbcode', '[img]image.png[/img]', 'BBCode')
+  await page.locator('.bbcode-content img[src^="data:image/png"]').waitFor()
   await page.getByRole('button', { name: /^bold$/i, exact: true }).waitFor()
   await open('notes.md', '```mermaid\nflowchart LR\n  A --> B\n```', 'Markdown')
   await page.getByRole('button', { name: /^normal$/i }).click()

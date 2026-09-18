@@ -80,7 +80,11 @@ export function renderBBCode(source: string) {
       element.style.fontSize = size
   }
   for (const image of document.querySelectorAll('img')) {
-    if (!/^https:\/\//i.test(image.getAttribute('src') ?? ''))
+    const source = image.getAttribute('src') ?? ''
+    if (
+      /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(source) &&
+      !/^https:\/\//i.test(source)
+    )
       image.removeAttribute('src')
   }
   return `<div class="bbcode-content">${document.body.innerHTML}</div>`

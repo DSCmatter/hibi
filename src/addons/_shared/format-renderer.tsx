@@ -14,6 +14,7 @@ import {
   defineAddon,
   type RenderedMarkdown,
 } from '../api'
+import { embedFormatImages } from './format-images'
 import { formatLanguage } from './format-language'
 import { type FormatResult, type FormatSpec, formatSpec } from './format-specs'
 import css from './format-style.css?inline'
@@ -68,22 +69,7 @@ async function htmlResult(
         language,
       )
   }
-  let embedded = html.length
-  if (id)
-    for (const image of parsed.querySelectorAll<HTMLImageElement>('img[src]')) {
-      const source = image.getAttribute('src') ?? ''
-      if (!/^(?:data:|[a-z][a-z\d+.-]*:|\/\/)/i.test(source)) {
-        const url = await context.native
-          .query<string | null>('image', { source, documentId: id })
-          .catch(() => null)
-        if (url) {
-          embedded += url.length
-          if (embedded > 20 * 1024 * 1024)
-            throw new Error('Embedded images exceed the 20 MiB preview limit.')
-          image.src = url
-        } else image.removeAttribute('src')
-      }
-    }
+  await embedFormatImages(context, parsed, id)
   return { html: parsed.body.innerHTML, css }
 }
 

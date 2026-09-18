@@ -23,6 +23,8 @@ Enable format plugins under **Settings → Addons**, then open **Formats** to co
 | Djot | `.dj` | Pandoc preview and HTML |
 | Textile | `.textile` | Pandoc preview and HTML |
 | Creole | `.creole` | Pandoc preview and HTML |
+| Mermaid | `.mmd`, `.mermaid` | Diagram preview and HTML |
+| BBCode | `.bbcode`, `.bbc` | Preview and HTML |
 
 ## Views and formatting tools
 

@@ -3,11 +3,11 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { dirname, extname, join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { app, utilityProcess } from 'electron'
 import type { AddonManifest, NativeAddon, NativeAddonContext } from '../api'
 import { type LatexPackageTask, packageName } from '../math/packages'
-import { documentProject } from './document-project'
+import { formatImage } from './format-image-native'
 import { type FormatResult, formatSpec } from './format-specs'
 import type { FormatJob } from './format-worker'
 
@@ -238,37 +238,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
               }),
           }
         : {}),
-      async image(value, context) {
-        const data = value as { source?: string; documentId?: string }
-        if (
-          typeof data?.source !== 'string' ||
-          data.source.length > 4096 ||
-          typeof data.documentId !== 'string'
-        )
-          throw new Error('Invalid image path.')
-        const allowed = /\.(png|jpe?g|gif|webp|svg|avif)$/i
-        const location = await documentProject(context, {
-          id: data.documentId,
-          entry: '',
-          allowed,
-          paths: [],
-        })
-        if (!location.root) return null
-        const name = join(
-          dirname(location.entry),
-          decodeURIComponent(data.source.split(/[?#]/)[0]!),
-        )
-        const project = await documentProject(context, {
-          id: data.documentId,
-          entry: '',
-          allowed,
-          paths: [name],
-        })
-        const file = project.files?.[0]
-        if (!file || file[1].byteLength > 8 * 1024 * 1024) return null
-        const extension = extname(file[0]).slice(1).toLowerCase()
-        return `data:image/${extension === 'svg' ? 'svg+xml' : extension === 'jpg' ? 'jpeg' : extension};base64,${Buffer.from(file[1]).toString('base64')}`
-      },
+      image: formatImage,
     },
     methods: {
       create: (_value, context) =>

@@ -1,5 +1,5 @@
 import css from '../_shared/format-style.css?inline'
-import { localPreview } from '../_shared/local-preview'
+import { localPreview, localRender } from '../_shared/local-preview'
 import { defineAddon } from '../api'
 import { mermaidNode } from './Block'
 import { mermaidLanguage } from './language'
@@ -24,10 +24,7 @@ export default defineAddon({
       group: 'Mermaid',
       level: 'block',
     })
-    const render = async (source: string) => ({
-      html: await renderDiagram(source),
-      css,
-    })
+    const render = localRender(context, renderDiagram, css)
     context.editor.registerDocumentFormat({
       id: 'mermaid',
       name: 'Mermaid',
@@ -58,6 +55,7 @@ export default defineAddon({
       richExtensions: [mermaidNode(context)],
       export: {
         async transform(rendered) {
+          if (!context.editor.isSyntaxEnabled('blocks')) return rendered
           const document = new DOMParser().parseFromString(
             rendered.html,
             'text/html',

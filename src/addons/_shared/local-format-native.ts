@@ -1,4 +1,5 @@
 import type { NativeAddon } from '../api'
+import { formatImage } from './format-image-native'
 
 export function localFormatNative(
   id: string,
@@ -7,6 +8,7 @@ export function localFormatNative(
 ): NativeAddon {
   return {
     id,
+    queries: { image: formatImage },
     methods: {
       create: (_input, context) => context.document.create(name, source),
       async export(input, context) {

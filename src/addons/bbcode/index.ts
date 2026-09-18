@@ -1,6 +1,7 @@
+import { embedFormatImages } from '../_shared/format-images'
 import css from '../_shared/format-style.css?inline'
 import { formatToolbar } from '../_shared/format-toolbar'
-import { localPreview } from '../_shared/local-preview'
+import { localPreview, localRender } from '../_shared/local-preview'
 import { defineAddon } from '../api'
 import { bbcodeLanguage } from './language'
 import manifest from './manifest'
@@ -22,10 +23,18 @@ export default defineAddon({
       group: 'BBCode',
       level: 'block',
     })
-    const render = async (source: string) => ({
-      html: renderBBCode(source),
-      css: styles,
-    })
+    const render = localRender(
+      context,
+      async (source, id) => {
+        const document = new DOMParser().parseFromString(
+          renderBBCode(source),
+          'text/html',
+        )
+        await embedFormatImages(context, document, id)
+        return document.body.innerHTML
+      },
+      styles,
+    )
     const formatting = formatToolbar('bbcode')
     if (formatting !== 'markdown')
       formatting.actions = formatting.actions.filter(

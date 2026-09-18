@@ -10,10 +10,26 @@ import type {
   RenderedMarkdown,
 } from '../api'
 
+export function localRender(
+  context: AddonContext,
+  render: (source: string, documentId?: string) => string | Promise<string>,
+  css: string,
+) {
+  return async (
+    source: string,
+    documentId?: string,
+  ): Promise<RenderedMarkdown> => ({
+    html: context.editor.isSyntaxEnabled('preview')
+      ? await render(source, documentId)
+      : `<pre>${source.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</pre>`,
+    css,
+  })
+}
+
 /** The renderer must return sanitized HTML. Stale renders never replace newer input. */
 export function localPreview(
   context: AddonContext,
-  render: (source: string) => Promise<RenderedMarkdown>,
+  render: (source: string, documentId?: string) => Promise<RenderedMarkdown>,
 ) {
   return function Preview({ value, document, toolbar }: DocumentPreviewProps) {
     const [result, setResult] = useState<RenderedMarkdown | null>(null)
@@ -29,7 +45,7 @@ export function localPreview(
       setError('')
       const timer = setTimeout(() => {
         if (enabled)
-          void render(value)
+          void render(value, document.id)
             .then((next) => {
               if (active) setResult(next)
             })
@@ -41,7 +57,7 @@ export function localPreview(
         active = false
         clearTimeout(timer)
       }
-    }, [value, enabled])
+    }, [value, enabled, document.id])
     useEffect(() => {
       if (host.current) host.current.innerHTML = result?.html ?? ''
     }, [result])
