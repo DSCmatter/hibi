@@ -1,6 +1,6 @@
 # GitHub Markdown
 
-Add tables, task lists, strikethrough, automatic links, and alerts to Markdown. This plugin is on by default.
+Add tables, task lists, strikethrough, automatic links, and alerts to Markdown. This addon is on by default.
 
 ## Alerts
 

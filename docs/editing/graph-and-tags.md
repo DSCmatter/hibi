@@ -14,10 +14,10 @@ The graph shows up to 500 matching nodes, so filter larger workspaces. It uses l
 
 Write tags such as `#work` or `#project/topic` in Markdown prose. Shift-click a tag or run **Browse tags**, then choose a tag to see matching notes. The current note's tag count also opens the browser.
 
-Matching ignores case. Code, links, frontmatter, and heading markers do not count as tags. Disabling the plugin leaves tags as ordinary text.
+Matching ignores case. Code, links, frontmatter, and heading markers do not count as tags. Disabling the addon leaves tags as ordinary text.
 
 ## Workspace limits
 
-Save a new note inside the workspace before expecting it in graph or tag results. Both plugins include unsaved edits to the active workspace note. Large workspaces may need a smaller folder to stay within indexing limits.
+Save a new note inside the workspace before expecting it in graph or tag results. Both addons include unsaved edits to the active workspace note. Large workspaces may need a smaller folder to stay within indexing limits.
 
 The [Graph](../../src/addons/graph/README.md) and [Tags](../../src/addons/tags/README.md) pages include credits.

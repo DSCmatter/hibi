@@ -19,7 +19,7 @@ These commands keep Hibi's unsaved-change prompts, including with force-quit fla
 
 ## Preferences and status
 
-Under **Settings → Plugins → Vim**, choose whether new source sessions start in insert mode and whether to show the current mode and pending command in the status bar. Escape cancels a pending command.
+Under **Settings → Editing → Vim**, choose whether new source sessions start in insert mode and whether to show the current mode and pending command in the status bar. Escape cancels a pending command.
 
 On macOS, holding a key repeats it inside Hibi instead of opening the accent picker. Use Option-key combinations to enter accented characters.
 

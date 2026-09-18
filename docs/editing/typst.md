@@ -18,7 +18,7 @@ $ integral_0^1 x dif x = 1/2 $
 ```
 ````
 
-Use the block's pencil button to edit its source or its PDF button to export it. For inline `$…$` math, enable the separate LaTeX plugin.
+Use the block's pencil button to edit its source or its PDF button to export it. For inline `$…$` math, enable the separate LaTeX addon.
 
 ## Local files and limits
 

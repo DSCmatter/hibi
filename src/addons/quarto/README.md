@@ -4,4 +4,4 @@ Turn on **Quarto Markdown** in **Settings → Addons** to edit `.qmd` files. Wri
 
 Choose **Run document** to execute the document and its project code, then export the result as HTML if needed. That code has your file and network access, so only run documents you trust. Embedded code does not run while you type.
 
-Open **Settings → Formats → Quarto Markdown** for the plugin's settings and tool checks. See [Document formats](../../../docs/editing/formats.md) for more help.
+Open **Settings → Formats → Quarto Markdown** for the addon's settings and tool checks. See [Document formats](../../../docs/editing/formats.md) for more help.

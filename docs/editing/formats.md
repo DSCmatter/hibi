@@ -1,6 +1,6 @@
 # Document formats
 
-Enable format plugins under **Settings → Addons**, then open **Formats** to configure them. Markdown and plain text are always available.
+Enable format addons under **Settings → Addons**, then open **Formats** to configure them. Markdown and plain text are always available.
 
 ## Supported formats
 
@@ -32,7 +32,7 @@ Plain text uses Source view. Formats without a visual editor offer source and si
 
 ## Install required tools
 
-Some formats need tools installed separately. Use **Check tools** in the plugin's settings to check whether Hibi can find them.
+Some formats need tools installed separately. Use **Check tools** in the addon's settings to check whether Hibi can find them.
 
 | Format | Required tools |
 | --- | --- |

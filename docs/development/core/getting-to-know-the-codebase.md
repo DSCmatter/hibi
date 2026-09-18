@@ -9,7 +9,7 @@ Hibi is an Electron app. The main process owns native operations, while the rend
 | `src/renderer` | Editors, tabs, settings, and the command palette. |
 | `src/shared` | Types and logic shared across processes. |
 | `src/ui` | Controls, dialogs, colors, spacing, and the sidebar. |
-| `src/addons` | The addon API and bundled plugins. |
+| `src/addons` | The addon API and bundled addons. |
 | `src/useraddons` | Git-ignored addons for local development. |
 | `src/site` | The standalone HTML workspace viewer. |
 | `scripts` | Development, build, documentation, and release tools. |
@@ -20,7 +20,7 @@ Hibi is an Electron app. The main process owns native operations, while the rend
 
 Start with the visible control or command in the renderer. Follow its call through `src/shared/desktop.ts` and `src/preload/index.ts` if it needs native work, then inspect its handler under `src/main`. Check other callers before changing shared behavior.
 
-For a plugin feature, start with its folder in `src/addons`. Its manifest describes the addon, its renderer entry registers features, and an optional `native.ts` implements native operations. Prefer the addon API over importing app internals.
+For a addon feature, start with its folder in `src/addons`. Its manifest describes the addon, its renderer entry registers features, and an optional `native.ts` implements native operations. Prefer the addon API over importing app internals.
 
 ## Keep the boundaries intact
 

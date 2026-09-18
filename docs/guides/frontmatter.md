@@ -1,6 +1,6 @@
 # Page properties with frontmatter
 
-Frontmatter stores note properties as YAML at the start of a Markdown file. Hibi's Frontmatter plugin is enabled by default. A note can begin with properties like these:
+Frontmatter stores note properties as YAML at the start of a Markdown file. Hibi's Frontmatter addon is enabled by default. A note can begin with properties like these:
 
 ```yaml
 ---
@@ -18,7 +18,7 @@ Run **Add frontmatter** from the command palette, or use `/frontmatter` with Sla
 
 For lists, objects, or other YAML, open the YAML editor and choose **Apply YAML** when ready. Hibi checks the syntax before applying it. If you change the source while that editor is open, reopen it to load the latest values.
 
-Choose whether properties start expanded under **Settings → Plugins → Frontmatter**.
+Choose whether properties start expanded under **Settings → Addons → Frontmatter**.
 
 ## How your file is preserved
 

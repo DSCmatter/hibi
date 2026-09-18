@@ -1,6 +1,6 @@
 # Slash commands
 
-Slash commands insert common blocks without leaving the keyboard. The plugin is enabled by default; turn it on or off under **Settings → Addons**.
+Slash commands insert common blocks without leaving the keyboard. The addon is enabled by default; turn it on or off under **Settings → Addons**.
 
 ## Insert a block
 
@@ -10,9 +10,9 @@ Slash commands insert common blocks without leaving the keyboard. The plugin is 
 
 Escape or an outside click closes the menu and leaves your text unchanged. Commands can insert headings, lists, quotes, code blocks, dividers, and tables. Undo restores the previous block.
 
-## Plugin actions
+## Addon actions
 
-Enabled plugins can add commands. For example, Frontmatter adds `/frontmatter` when the note has no page properties. Actions that change a whole note can reset undo history in the formatted editor; source-view undo remains available.
+Enabled addons can add commands. For example, Frontmatter adds `/frontmatter` when the note has no page properties. Actions that change a whole note can reset undo history in the formatted editor; source-view undo remains available.
 
 ## Where it works
 
