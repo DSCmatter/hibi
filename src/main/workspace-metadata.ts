@@ -1,12 +1,37 @@
 import { createHash } from 'node:crypto'
-import { lstat, readFile, rename, writeFile } from 'node:fs/promises'
-import { isAbsolute, join } from 'node:path'
+import { lstat, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { basename, dirname, isAbsolute, join } from 'node:path'
 import ignore from 'ignore'
 import type { WorkspaceManifest } from '../shared/workspace-settings'
 
-export const WORKSPACE_MANIFEST = '.hibi.json'
-export const WORKSPACE_IGNORE = '.hibiignore'
-export async function readWorkspaceText(root: string, name: string) {
+export const WORKSPACE_MANIFEST = '.hibi/workspace.json'
+export const WORKSPACE_IGNORE = '.hibi/ignore'
+const legacyNames = {
+  [WORKSPACE_MANIFEST]: '.hibi.json',
+  [WORKSPACE_IGNORE]: '.hibiignore',
+}
+type MetadataFile = keyof typeof legacyNames
+
+async function metadataDirectory(root: string, create = false) {
+  const directory = join(root, '.hibi')
+  if (create)
+    await mkdir(directory, { mode: 0o700 }).catch(
+      (error: NodeJS.ErrnoException) => {
+        if (error.code !== 'EEXIST') throw error
+      },
+    )
+  try {
+    const stat = await lstat(directory)
+    if (!stat.isDirectory() || stat.isSymbolicLink())
+      throw new Error('Use a regular folder for .hibi, not a symbolic link.')
+    return true
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
+    throw error
+  }
+}
+
+async function readText(root: string, name: string) {
   const path = join(root, name)
   try {
     const stat = await lstat(path)
@@ -16,9 +41,15 @@ export async function readWorkspaceText(root: string, name: string) {
       )
     return await readFile(path, 'utf8')
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return ''
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
     throw error
   }
+}
+export async function readWorkspaceText(root: string, name: MetadataFile) {
+  const current = (await metadataDirectory(root))
+    ? await readText(root, name)
+    : null
+  return current ?? (await readText(root, legacyNames[name])) ?? ''
 }
 export function validateManifest(input: unknown): WorkspaceManifest {
   const value = input as WorkspaceManifest | null
@@ -75,14 +106,24 @@ export async function workspaceIgnore(root: string) {
 }
 export async function writeWorkspaceText(
   root: string,
-  name: string,
+  name: MetadataFile,
   content: string,
+  exclusive = false,
 ) {
+  await metadataDirectory(root, true)
+  const path = join(root, name)
+  if (exclusive) {
+    await writeFile(path, content, { flag: 'wx', mode: 0o600 })
+    return
+  }
   // Metadata is never written through symlinks, including abandoned temporary files.
-  const temporary = join(root, `.${name}.${crypto.randomUUID()}.tmp`)
+  const temporary = join(
+    dirname(path),
+    `.${basename(name)}.${crypto.randomUUID()}.tmp`,
+  )
   await writeFile(temporary, content, { flag: 'wx', mode: 0o600 })
   try {
-    await rename(temporary, join(root, name))
+    await rename(temporary, path)
   } catch (error) {
     await import('node:fs/promises').then((fs) =>
       fs.rm(temporary, { force: true }),

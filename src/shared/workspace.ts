@@ -26,7 +26,7 @@ export type WorkspaceEntry = {
 }
 
 export type WorkspaceState = {
-  /** Present when this folder contains .hibi.json. */
+  /** Present when this folder contains a workspace manifest in .hibi/workspace.json (or legacy .hibi.json). */
   manifest?: import('./workspace-settings').WorkspaceManifest | null
   /** Opaque identity; changes when a different folder is opened. */
   id?: string

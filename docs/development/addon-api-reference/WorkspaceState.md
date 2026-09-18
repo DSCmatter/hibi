@@ -9,7 +9,7 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/share
 
 ```typescript
 type WorkspaceState = {
-  /** Present when this folder contains .hibi.json. */
+  /** Present when this folder contains a workspace manifest in .hibi/workspace.json (or legacy .hibi.json). */
   manifest?: import('./workspace-settings').WorkspaceManifest | null
   /** Opaque identity; changes when a different folder is opened. */
   id?: string
@@ -37,7 +37,7 @@ type WorkspaceState = {
 
 Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/workspace.ts#L30)
 
-Present when this folder contains .hibi.json.
+Present when this folder contains a workspace manifest in .hibi/workspace.json (or legacy .hibi.json).
 
 ```typescript
 manifest?: import('./workspace-settings').WorkspaceManifest | null

@@ -30,6 +30,7 @@ import {
 } from './workspace'
 import {
   validateManifest,
+  WORKSPACE_IGNORE,
   WORKSPACE_MANIFEST,
   workspaceMetadata,
   writeWorkspaceText,
@@ -85,8 +86,9 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettings> {
 async function ensureManifest(path: string) {
   const metadata = await workspaceMetadata(path)
   if (metadata.manifest) return
-  await writeFile(
-    join(path, WORKSPACE_MANIFEST),
+  await writeWorkspaceText(
+    path,
+    WORKSPACE_MANIFEST,
     JSON.stringify(
       {
         version: 1,
@@ -98,7 +100,7 @@ async function ensureManifest(path: string) {
       null,
       2,
     ) + '\n',
-    { flag: 'wx' },
+    true,
   )
 }
 async function chooseFolder(window: BrowserWindow, title: string) {
@@ -168,7 +170,7 @@ export async function updateWorkspaceSettings(
       throw new Error('Ignore rules must be smaller than 64 KiB.')
     if (manifest.defaultFile)
       await resolveWorkspaceFile(root, manifest.defaultFile)
-    await writeWorkspaceText(root, '.hibiignore', value.ignore)
+    await writeWorkspaceText(root, WORKSPACE_IGNORE, value.ignore)
     await writeWorkspaceText(
       root,
       WORKSPACE_MANIFEST,

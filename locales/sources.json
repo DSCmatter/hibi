@@ -3527,6 +3527,9 @@
   "00f9202d602e": [
     "src/addons/documentation/ExportDialog.tsx"
   ],
+  "7674c6f9fdd5": [
+    "src/main/workspace-metadata.ts"
+  ],
   "815013862844": [
     "src/main/workspace-actions.ts"
   ],

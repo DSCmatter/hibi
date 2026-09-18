@@ -1131,6 +1131,7 @@
   "f925f3416d29": "Use a language code such as en or en-US.",
   "c71af82d80c1": "Use a password between 8 and 1,024 characters.",
   "00f9202d602e": "Use a password of at least 8 characters.",
+  "7674c6f9fdd5": "Use a regular folder for .hibi, not a symbolic link.",
   "815013862844": "Use a supported file extension.",
   "68fd17ffa10f": "Use an HTTP or HTTPS URL without a username or password.",
   "328fe89a4f4d": "Use an HTTPS URL without a username or password.",

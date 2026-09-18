@@ -24,9 +24,11 @@ Choose what opens **At startup**: the empty state, your Hibi workspace, or anoth
 
 ## Name and configure a workspace
 
-Open any folder and choose **Create manifest** in Settings → Workspace. Hibi adds `.hibi.json`. Set a name, description, icon identifier, and optional default document. Renaming here changes the display name, leaving the folder path intact. The default document opens when Hibi starts in this workspace.
+Open any folder and choose **Create manifest** in Settings → Workspace. Hibi stores workspace information in `.hibi/workspace.json`. Set a name, description, icon identifier, and optional default document. Renaming here changes the display name, leaving the folder path intact. The default document opens when Hibi starts in this workspace.
 
-The **Ignore rules** field writes `.hibiignore`. It uses gitignore syntax: `drafts/` hides a folder, `*.tmp` hides matching files, and `!keep.tmp` includes an otherwise ignored file. To include a file within an ignored folder, include its parent folder too. Ignored documents stay on disk and are omitted from workspace browsing and export.
+The **Ignore rules** field writes `.hibi/ignore`. It uses gitignore syntax: `drafts/` hides a folder, `*.tmp` hides matching files, and `!keep.tmp` includes an otherwise ignored file. To include a file within an ignored folder, include its parent folder too. Ignored documents stay on disk and are omitted from workspace browsing and export.
+
+Older `.hibi.json` and `.hibiignore` files still work. Saving workspace settings writes the new files inside `.hibi/` and keeps the originals. The new files take precedence.
 
 ## Use the page outline
 

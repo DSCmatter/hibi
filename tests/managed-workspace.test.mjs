@@ -73,6 +73,15 @@ test('managed workspaces stay opt-in, preserve files, import safely, and reopen 
   state = await page.evaluate(() =>
     window.hibi.updateWorkspaceSettings({ action: 'create-manifest' }),
   )
+  assert.deepEqual(
+    JSON.parse(
+      await readFile(join(workspace, '.hibi', 'workspace.json'), 'utf8'),
+    ),
+    state.manifest,
+  )
+  await assert.rejects(readFile(join(workspace, '.hibi.json')), {
+    code: 'ENOENT',
+  })
   const manifest = {
     ...state.manifest,
     name: 'My library',
@@ -91,6 +100,11 @@ test('managed workspaces stay opt-in, preserve files, import safely, and reopen 
     { manifest, revision: state.manifestRevision },
   )
   const snapshot = await page.evaluate(() => window.hibi.getWorkspace())
+  assert.equal(
+    await readFile(join(workspace, '.hibi', 'ignore'), 'utf8'),
+    'hidden.md\n',
+  )
+  assert.ok(!snapshot.entries.some((entry) => entry.path.startsWith('.hibi')))
   assert.equal(snapshot.name, 'My library')
   assert.ok(!snapshot.entries.some((entry) => entry.path === 'hidden.md'))
   await assert.rejects(
