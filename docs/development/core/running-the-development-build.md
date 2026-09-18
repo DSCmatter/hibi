@@ -11,6 +11,8 @@ The development app uses a separate data profile. React and CSS changes update w
 
 The development command also watches the HTML exporter and generated API documentation. Restart it after adding a new addon folder.
 
+Dependency installation applies `scripts/patch-vim.mjs` to CodeMirror Vim. The patch lets imported leader mappings take priority over built-in keys. Review it when updating the Vim engine, and run `tests/vim-config.test.mjs` against the rebuilt app.
+
 ## Preview a production build
 
 ```sh

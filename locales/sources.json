@@ -344,6 +344,9 @@
   "1a9f084bf2db": [
     "src/main/document.ts"
   ],
+  "8bb83f8c1719": [
+    "src/addons/vim/native.ts"
+  ],
   "5f390ce52a22": [
     "src/renderer/src/ImportDialog.tsx"
   ],
@@ -352,6 +355,9 @@
   ],
   "b02e490743df": [
     "src/addons/import-notion/convert.ts"
+  ],
+  "ddfe19879e4e": [
+    "src/addons/vim/native.ts"
   ],
   "7dd81854ac3a": [
     "src/addons/git/native.ts"
@@ -430,6 +436,12 @@
   ],
   "8afb17585fb2": [
     "src/main/media.ts"
+  ],
+  "3426e2f6e182": [
+    "src/addons/vim/Settings.tsx"
+  ],
+  "ab8945524cf3": [
+    "src/addons/vim/Settings.tsx"
   ],
   "126adc7247bf": [
     "src/renderer/src/FormatsSettings.tsx"
@@ -592,6 +604,9 @@
   "22a970d2e5b1": [
     "src/addons/diagnostics/Settings.tsx"
   ],
+  "6b2fe25d348e": [
+    "src/addons/vim/Settings.tsx"
+  ],
   "8c3440194015": [
     "src/shared/document-journal.ts"
   ],
@@ -702,6 +717,9 @@
   ],
   "7f43531f5a30": [
     "src/addons/documentation/native.ts"
+  ],
+  "2ea302167076": [
+    "src/addons/vim/Settings.tsx"
   ],
   "278a4d546369": [
     "src/main/index.ts"
@@ -1107,6 +1125,9 @@
   "6b0ceb1d091c": [
     "src/addons/frontmatter/Settings.tsx"
   ],
+  "3dc9f569422d": [
+    "src/addons/vim/Settings.tsx"
+  ],
   "3664895579f0": [
     "src/addons/_shared/format-renderer.tsx",
     "src/addons/documentation/manifest.ts"
@@ -1455,6 +1476,9 @@
     "src/main/index.ts",
     "src/shared/hotkeys.ts"
   ],
+  "980f3f274dd0": [
+    "src/addons/vim/Settings.tsx"
+  ],
   "321f179c80ba": [
     "src/renderer/src/ImportDialog.tsx"
   ],
@@ -1622,6 +1646,9 @@
   ],
   "dbcd5e7bb7a0": [
     "src/ui/ColorschemeSettings.tsx"
+  ],
+  "d7852cd0d245": [
+    "src/addons/vim/Settings.tsx"
   ],
   "2650470b8a8a": [
     "src/renderer/src/FormattingToolbar.tsx"
@@ -2006,6 +2033,9 @@
     "src/main/addons.ts",
     "src/main/sideload.ts"
   ],
+  "f5d528d723d2": [
+    "src/addons/vim/Settings.tsx"
+  ],
   "ed077f3d8125": [
     "src/renderer/src/main.tsx"
   ],
@@ -2347,6 +2377,7 @@
     "src/renderer/src/main.tsx"
   ],
   "bdc090ec61e3": [
+    "src/addons/vim/Settings.tsx",
     "src/main/index.ts"
   ],
   "451a05dca9cc": [
@@ -2633,6 +2664,9 @@
   ],
   "fe91f2d003c3": [
     "src/renderer/src/Titlebar.tsx"
+  ],
+  "db35b31b541c": [
+    "src/addons/vim/Settings.tsx"
   ],
   "fb87b8dba88b": [
     "src/addons/slash-commands/manifest.ts"
@@ -3357,6 +3391,9 @@
   "b9fea9d6320c": [
     "src/addons/vim/manifest.ts"
   ],
+  "e6048a69201f": [
+    "src/addons/vim/Settings.tsx"
+  ],
   "4e3017d9661a": [
     "src/main/files.ts"
   ],
@@ -3592,6 +3629,12 @@
   "55ea09e5715d": [
     "src/preload/analysis.ts"
   ],
+  "a6375ee99716": [
+    "src/addons/vim/Settings.tsx"
+  ],
+  "4f166fdeeb59": [
+    "src/addons/vim/Settings.tsx"
+  ],
   "7d982ed61dc3": [
     "src/ui/colorschemes.ts"
   ],
@@ -3631,6 +3674,9 @@
   ],
   "59f006d63bd0": [
     "src/renderer/src/AutosaveSettings.tsx"
+  ],
+  "389595a44dc9": [
+    "src/addons/vim/Settings.tsx"
   ],
   "0620e3b71e5a": [
     "src/ui/Sonner.tsx"
