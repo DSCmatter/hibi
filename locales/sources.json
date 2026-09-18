@@ -75,6 +75,12 @@
     "src/renderer/src/WorkspaceSidebar.tsx",
     "src/ui/Sidebar.tsx"
   ],
+  "38da1505ca83": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "a81ace5bbd8a": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
   "f115ff5e0175": [
     "src/addons/github-markdown/manifest.ts"
   ],
@@ -190,6 +196,9 @@
     "src/renderer/src/settings-categories.ts",
     "src/site/main.tsx",
     "src/ui/ColorschemeSettings.tsx"
+  ],
+  "77e90b89c040": [
+    "src/addons/discord-presence/Settings.tsx"
   ],
   "31e392d1c037": [
     "src/addons/math/engine.ts",
@@ -685,6 +694,12 @@
   "8c3440194015": [
     "src/shared/document-journal.ts"
   ],
+  "42cf764db7da": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "d7238e9b3926": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
   "dc273117482b": [
     "src/addons/graph/Panel.tsx"
   ],
@@ -940,6 +955,42 @@
   ],
   "187581a4c6c3": [
     "src/addons/git/Panel.tsx"
+  ],
+  "855e169eae01": [
+    "src/addons/discord-presence/manifest.ts"
+  ],
+  "8fb56f68512f": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "4dc1e6813eba": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "9cc8604bd025": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
+  "7bf1f84f487e": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "77bf8075f4b5": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
+  "b473d74a9855": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
+  "2f59dd29c0f6": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "aec89e632c94": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
+  "4c2c8d13800a": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
+  "2f1dc3f1be1f": [
+    "src/addons/discord-presence/rpc.ts"
+  ],
+  "0feca0d6afb4": [
+    "src/addons/discord-presence/rpc.ts"
   ],
   "f5b084a14162": [
     "src/renderer/src/NotificationSettings.tsx"
@@ -1203,8 +1254,14 @@
   "c660726ed628": [
     "src/main/document.ts"
   ],
+  "f6fb011371a9": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
   "194e4e8f6e1f": [
     "src/renderer/src/workspace-menu.ts"
+  ],
+  "245811b9dc75": [
+    "src/addons/discord-presence/types.ts"
   ],
   "9529c2ba6831": [
     "src/addons/math/packages.ts"
@@ -2317,6 +2374,9 @@
   "29c10407db3a": [
     "src/renderer/src/AddonSettings.tsx"
   ],
+  "3dd042fdb3dd": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
   "eadd61bac0d2": [
     "src/renderer/src/DocumentTabs.tsx"
   ],
@@ -2344,6 +2404,9 @@
   ],
   "2b249c749333": [
     "src/renderer/src/SourceEditor.tsx"
+  ],
+  "7bcc1921ca42": [
+    "src/addons/discord-presence/rpc.ts"
   ],
   "80cb8a06e27d": [
     "src/addons/git/native.ts"
@@ -2896,6 +2959,9 @@
   "7013af4c42fe": [
     "src/renderer/src/DependencySettings.tsx"
   ],
+  "62fdc7379808": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
   "7d583b20c446": [
     "src/renderer/src/main.tsx"
   ],
@@ -2914,6 +2980,12 @@
   "b5fff62bc50a": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
+  "41472ba92a00": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "899bba302530": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
   "093f1f6591f6": [
     "src/renderer/src/WorkspaceSettings.tsx"
   ],
@@ -2922,6 +2994,9 @@
   ],
   "ef9e0ecfed5f": [
     "src/renderer/src/SettingsScreen.tsx"
+  ],
+  "e47e29a3dcf7": [
+    "src/addons/discord-presence/Settings.tsx"
   ],
   "d939dc73e46c": [
     "src/renderer/src/EditorToolbar.tsx"
@@ -2938,6 +3013,9 @@
   "1da402fd1aeb": [
     "src/renderer/src/EditorToolbar.tsx",
     "src/renderer/src/main.tsx"
+  ],
+  "86e811695eda": [
+    "src/addons/discord-presence/manifest.ts"
   ],
   "208052ce5a29": [
     "src/addons/_shared/format-renderer.tsx"
@@ -3793,6 +3871,12 @@
   "681bf81aba87": [
     "src/renderer/src/DependencySettings.tsx"
   ],
+  "bdb464803da1": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
+  "106476af38f2": [
+    "src/addons/discord-presence/Settings.tsx"
+  ],
   "7fc90e2bb6a9": [
     "src/renderer/src/flavors.ts"
   ],
@@ -3915,6 +3999,9 @@
   ],
   "0ec4c65bb923": [
     "src/renderer/src/workspace-menu.ts"
+  ],
+  "8a0497a74dfc": [
+    "src/addons/discord-presence/rpc.ts"
   ],
   "b3afd9209200": [
     "src/main/document.ts"
