@@ -23,3 +23,5 @@ Choose **On this page** to browse the current note's headings. Select a heading 
 Press `Cmd/Ctrl+/` or use the sidebar button to show or hide it. Drag its right edge to resize it, drag farther past the minimum to collapse it, or double-click the edge to restore its default width.
 
 With the resize edge focused, use Left/Right to adjust it, hold Shift for larger steps, and press Enter to reset it. Escape cancels a drag. Workspace and settings sidebars share your chosen width.
+
+In a narrow window, the sidebar opens over the editor. Selecting a file or heading closes it so you can read the full-width note. Press Escape or click outside to dismiss it. Widening the window restores your previous sidebar layout.

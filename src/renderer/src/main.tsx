@@ -41,7 +41,10 @@ import type {
   WorkspaceState,
 } from '../../shared/workspace'
 import { settingsIndex } from '../../ui/settings-index'
-import { useSidebarResize } from '../../ui/useSidebarResize'
+import {
+  SIDEBAR_OVERLAY_WIDTH,
+  useSidebarResize,
+} from '../../ui/useSidebarResize'
 import { AddonSidebar, builtInViews, viewShortcut } from './AddonSidebar'
 import { addonRegistry } from './addon-registry'
 import { addons, useAddons } from './addons'
@@ -255,6 +258,9 @@ function App() {
   const editorStarted = useRef(false)
   const [typing, setTyping] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsSidebarOpen, setSettingsSidebarOpen] = useState(
+    () => innerWidth > SIDEBAR_OVERLAY_WIDTH,
+  )
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const settingsNavigation = useRef({
     current: { open: false, category: 'hibi' },
@@ -319,12 +325,47 @@ function App() {
     showTitlebar()
   }
   const sidebarResize = useSidebarResize(256)
+  const previousOverlay = useRef(sidebarResize.overlay)
+  const wideSidebars = useRef({
+    workspace: sidebarOpen,
+    settings: settingsSidebarOpen,
+  })
+  useLayoutEffect(() => {
+    if (previousOverlay.current === sidebarResize.overlay) return
+    previousOverlay.current = sidebarResize.overlay
+    if (sidebarResize.overlay) {
+      wideSidebars.current = {
+        workspace: sidebarOpen,
+        settings: settingsSidebarOpen,
+      }
+      setSidebarOpen(false)
+      setSettingsSidebarOpen(false)
+      if (window.document.activeElement?.closest('.sidebar-slot'))
+        window.document
+          .querySelector<HTMLElement>('.sidebar-toggle')
+          ?.focus({ preventScroll: true })
+    } else {
+      setSidebarOpen(wideSidebars.current.workspace)
+      setSettingsSidebarOpen(wideSidebars.current.settings)
+    }
+  }, [sidebarResize.overlay, sidebarOpen, settingsSidebarOpen])
+  function closeSidebar(settings = settingsOpen) {
+    if (settings) setSettingsSidebarOpen(false)
+    else setSidebarOpen(false)
+    showTitlebar()
+    window.document
+      .querySelector<HTMLElement>('.sidebar-toggle')
+      ?.focus({ preventScroll: true })
+  }
+  function toggleSidebar() {
+    if (settingsOpen ? settingsSidebarOpen : sidebarOpen) closeSidebar()
+    else if (settingsOpen) setSettingsSidebarOpen(true)
+    else setSidebarOpen(true)
+    showTitlebar()
+  }
   const documentSidebarResize = {
     ...sidebarResize,
-    onCollapse: () => {
-      setSidebarOpen(false)
-      showTitlebar()
-    },
+    onCollapse: () => closeSidebar(false),
   }
   const [cursorSettings, setCursorSettings] = useState(loadCursor)
   const [showLineNumbers, setShowLineNumbers] = useState(
@@ -503,6 +544,7 @@ function App() {
     setSettingsCategory(category)
     setSettingsOpen(true)
     setSettingTarget(id ?? null)
+    if (sidebarResize.overlay) setSettingsSidebarOpen(false)
   }
 
   function openFind() {
@@ -674,6 +716,7 @@ function App() {
         savedText.current = next.savedMarkdown
         setSettingsOpen(false)
         setWorkspace(await window.hibi.getWorkspace())
+        if (sidebarResize.overlay) setSidebarOpen(false)
       }
     } catch (error) {
       setError(
@@ -993,7 +1036,7 @@ function App() {
         showTitlebar()
         break
       case 'toggle-sidebar':
-        setSidebarOpen((open) => !open)
+        toggleSidebar()
         break
       case 'install-addon':
         void addonHost.install()
@@ -1363,6 +1406,7 @@ function App() {
       data-screen={settingsOpen ? 'settings' : 'editor'}
       data-typing={typing && hideTitlebar}
       data-sidebar={sidebarOpen}
+      data-sidebar-overlay={sidebarResize.overlay}
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes('Files')) {
           event.preventDefault()
@@ -1401,6 +1445,23 @@ function App() {
           )
         )
           return
+        if (
+          (event.target as HTMLElement).closest(
+            '.sidebar-slot[data-overlay="true"]',
+          )
+        )
+          return
+        if (
+          event.key === 'Escape' &&
+          sidebarResize.overlay &&
+          (settingsOpen ? settingsSidebarOpen : sidebarOpen) &&
+          !paletteOpen &&
+          !dialogs.isOpen()
+        ) {
+          event.preventDefault()
+          closeSidebar()
+          return
+        }
         if (
           event.key === 'Escape' &&
           findOpen &&
@@ -1452,8 +1513,10 @@ function App() {
             window.hibi.moveDocumentTab(id, beforeId),
           )
         }
-        sidebarOpen={sidebarOpen}
-        onSidebar={() => setSidebarOpen(!sidebarOpen)}
+        sidebarOpen={settingsOpen ? settingsSidebarOpen : sidebarOpen}
+        onSidebar={toggleSidebar}
+        onBack={toggleSettings}
+        sidebarOverlay={sidebarResize.overlay}
         hotkeys={hotkeys}
         platform={info?.platform ?? 'darwin'}
         document={document}
@@ -1470,6 +1533,8 @@ function App() {
         />
       )}
       <WorkspaceSidebar
+        overlay={sidebarResize.overlay}
+        onDismiss={() => closeSidebar(false)}
         editing={workspaceRename}
         onEditing={setWorkspaceRename}
         dirty={document?.dirty ?? false}
@@ -1484,18 +1549,23 @@ function App() {
         commands={addonHost.commands}
       />
       <OutlineSidebar
+        overlay={sidebarResize.overlay}
+        onDismiss={() => closeSidebar(false)}
         open={sidebarOpen && !settingsOpen && sidebarView === 'outline'}
         resize={documentSidebarResize}
         headings={outline}
         selected={activeOutline}
-        onSelect={(id) =>
+        onSelect={(id) => {
+          if (sidebarResize.overlay) setSidebarOpen(false)
           setOutlineTarget((previous) => ({
             id,
             request: (previous?.request ?? 0) + 1,
           }))
-        }
+        }}
       />
       <AddonSidebar
+        overlay={sidebarResize.overlay}
+        onDismiss={() => closeSidebar(false)}
         view={activeAddonView}
         input={sidebarInput}
         open={sidebarOpen && !settingsOpen}
@@ -1505,6 +1575,9 @@ function App() {
       {(settingsLoaded || settingsOpen || paletteOpen) && (
         <Suspense fallback={settingsOpen ? <LoadingScreen full /> : null}>
           <SettingsScreen
+            sidebarOpen={settingsSidebarOpen}
+            overlay={sidebarResize.overlay}
+            onSidebarClose={() => closeSidebar(true)}
             discover={paletteOpen}
             onBack={toggleSettings}
             onInstallAddon={addonHost.install}
@@ -1554,7 +1627,7 @@ function App() {
       <div
         className="editor-surface"
         aria-hidden={settingsOpen}
-        inert={settingsOpen}
+        inert={settingsOpen || (sidebarResize.overlay && sidebarOpen)}
       >
         <EditorToolbar mode={mode} typing={typing} />
         {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: tabpanel and region both support accessible names. */}

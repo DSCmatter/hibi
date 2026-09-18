@@ -18,12 +18,16 @@ export function OutlineSidebar({
   selected,
   onSelect,
   open,
+  overlay,
+  onDismiss,
   resize,
 }: {
   headings: readonly OutlineHeading[]
   selected: string | null
   onSelect: (id: string) => void
   open: boolean
+  overlay: boolean
+  onDismiss: () => void
   resize: NonNullable<SidebarProps['resize']>
 }) {
   const items: SidebarItem[] = []
@@ -46,6 +50,8 @@ export function OutlineSidebar({
     <Sidebar
       className="document-sidebar outline-sidebar"
       open={open}
+      overlay={overlay}
+      onDismiss={onDismiss}
       resize={resize}
       label="On this page"
       header={<span>On this page</span>}

@@ -77,6 +77,9 @@ export function SettingsScreen({
   onSetting,
   onBack,
   open,
+  sidebarOpen,
+  overlay,
+  onSidebarClose,
   padding,
   onPadding,
   hideTitlebar,
@@ -109,6 +112,9 @@ export function SettingsScreen({
   onSetting: (category: string, id: string) => void
   onBack: () => void
   open: boolean
+  sidebarOpen: boolean
+  overlay: boolean
+  onSidebarClose: () => void
   padding: number
   onPadding: (padding: number) => void
   hideTitlebar: boolean
@@ -136,6 +142,7 @@ export function SettingsScreen({
   onTabsEnabled: (enabled: boolean) => void
 }) {
   const screen = useRef<HTMLElement>(null)
+  const wasOpen = useRef(false)
   const search = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [searchSelection, setSearchSelection] = useState<string | null>(null)
@@ -155,13 +162,16 @@ export function SettingsScreen({
   const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
   const searching = terms.length > 0
   useLayoutEffect(() => {
-    if (!open) return
-    const target =
-      screen.current?.querySelector<HTMLElement>(
-        '[role="tab"][aria-selected="true"]',
-      ) ?? search.current
+    const opening = open && !wasOpen.current
+    wasOpen.current = open
+    if (!opening) return
+    const target = sidebarOpen
+      ? (screen.current?.querySelector<HTMLElement>(
+          '[role="tab"][aria-selected="true"]',
+        ) ?? search.current)
+      : screen.current?.querySelector<HTMLElement>('.settings-content')
     target?.focus({ preventScroll: true })
-  }, [open])
+  }, [open, sidebarOpen])
   const casing = useSyncExternalStore(uiCase.subscribe, uiCase.snapshot)
   const pluginPages = addons.filter(
     (addon) =>
@@ -211,22 +221,40 @@ export function SettingsScreen({
     if (setting) onSetting(setting.category, setting.id)
     else onCategory(id)
   }
+  const selectCategory = (id: string) => {
+    if (searching) selectResult(id)
+    else onCategory(id)
+    if (overlay) {
+      onSidebarClose()
+      if (!id.startsWith('setting:'))
+        requestAnimationFrame(() =>
+          screen.current
+            ?.querySelector<HTMLElement>('.settings-content')
+            ?.focus({ preventScroll: true }),
+        )
+    }
+  }
 
   return (
     <SettingsDiscovery value={true}>
       <main
         ref={screen}
         className="settings-screen"
+        data-sidebar={sidebarOpen}
+        data-sidebar-overlay={overlay}
         aria-label="Settings"
         hidden={!open}
         inert={!open}
       >
         <Sidebar
-          resize={resize}
+          resize={{ ...resize, onCollapse: onSidebarClose }}
+          open={open && sidebarOpen}
+          overlay={overlay}
+          onDismiss={onSidebarClose}
           className={`settings-sidebar${searching ? ' settings-searching' : ''}`}
           items={searching ? results : items}
           selected={searching ? (searchSelection ?? category) : category}
-          onSelect={searching ? selectResult : onCategory}
+          onSelect={selectCategory}
           label={searching ? 'Settings search results' : 'Settings categories'}
           mode={searching ? 'tree' : 'tabs'}
           collapsible={false}
@@ -292,7 +320,11 @@ export function SettingsScreen({
             )
           }
         />
-        <div className="settings-content">
+        <div
+          className="settings-content"
+          tabIndex={-1}
+          inert={overlay && sidebarOpen}
+        >
           <section
             id="settings-hibi"
             role="tabpanel"

@@ -34,6 +34,8 @@ export function WorkspaceSidebar({
   onRefresh,
   commands,
   open,
+  overlay,
+  onDismiss,
   resize,
   dirty,
   onAction,
@@ -47,6 +49,8 @@ export function WorkspaceSidebar({
   onRefresh: () => void
   commands: RegisteredCommand[]
   open: boolean
+  overlay: boolean
+  onDismiss: () => void
   resize: NonNullable<SidebarProps['resize']>
   dirty: boolean
   onAction: (action: WorkspaceAction) => Promise<WorkspaceActionResult | null>
@@ -141,6 +145,8 @@ export function WorkspaceSidebar({
     <Sidebar
       resize={resize}
       open={open}
+      overlay={overlay}
+      onDismiss={onDismiss}
       className={`document-sidebar workspace-sidebar ${workspace ? '' : 'workspace-empty'}`}
       items={items}
       selected={workspace?.activePath ?? null}

@@ -2,7 +2,7 @@
 
 # Sidebar
 
-Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L108)
+Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L111)
 
 ```typescript
 function Sidebar(props: SidebarProps)

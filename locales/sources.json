@@ -167,7 +167,8 @@
     "src/renderer/src/AddonReadme.tsx"
   ],
   "a6989680b352": [
-    "src/renderer/src/SettingsScreen.tsx"
+    "src/renderer/src/SettingsScreen.tsx",
+    "src/renderer/src/Titlebar.tsx"
   ],
   "01e8fc461b6a": [
     "src/renderer/src/main.tsx"
@@ -364,6 +365,9 @@
   ],
   "99904db30de4": [
     "src/site/main.tsx"
+  ],
+  "17e28e230217": [
+    "src/ui/Sidebar.tsx"
   ],
   "50a3f9523122": [
     "src/main/index.ts",
@@ -2452,6 +2456,9 @@
   ],
   "dfc1e6d16ba5": [
     "src/site/main.tsx"
+  ],
+  "82a908b889c8": [
+    "src/renderer/src/Titlebar.tsx"
   ],
   "041aefc44394": [
     "src/renderer/src/Titlebar.tsx",

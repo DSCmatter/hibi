@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 export const MIN_SIDEBAR_WIDTH = 152
+export const SIDEBAR_OVERLAY_WIDTH = 700
 const MAX_SIDEBAR_WIDTH = 480
 
 export function useSidebarResize(defaultWidth: number) {
@@ -33,6 +34,7 @@ export function useSidebarResize(defaultWidth: number) {
     }
   }, [preferred])
   return {
+    overlay: viewport <= SIDEBAR_OVERLAY_WIDTH,
     width: Math.min(preferred ?? defaultWidth, maxWidth),
     maxWidth,
     onChange: (width: number) =>

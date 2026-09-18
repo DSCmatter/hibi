@@ -37,11 +37,15 @@ export function AddonSidebar({
   view,
   input,
   open,
+  overlay,
+  onDismiss,
   resize,
 }: {
   view: SidebarView | undefined
   input: unknown
   open: boolean
+  overlay: boolean
+  onDismiss: () => void
   resize: NonNullable<SidebarProps['resize']>
 }) {
   return (
@@ -53,6 +57,8 @@ export function AddonSidebar({
       selected={null}
       onSelect={() => {}}
       open={open && !!view}
+      overlay={overlay}
+      onDismiss={onDismiss}
       resize={resize}
       content={
         open && view ? (

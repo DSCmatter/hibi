@@ -68,6 +68,8 @@ context.commands.register({
 
 Content mounts only while the view is visible. Keep anything that must survive closing the sidebar in addon state. Use the shared [Sidebar](../addon-api-reference/Sidebar.md) component for lists and trees.
 
+Hibi displays sidebar views as drawers in narrow windows. For a separate layout built with `Sidebar`, set `overlay` and supply `onDismiss` to use the same backdrop and Escape handling. Keep covered content inert while the drawer is open and return focus to its toggle when dismissing it.
+
 ## Open a dialog
 
 Use `context.dialogs.prompt()` for a text value or `confirm()` for a decision. For custom content, use `open()` with a React component and choose `size: 'wide'` when needed. The [dialog API](../addon-api-reference/DialogApi.md) handles dismissal and returns the result.

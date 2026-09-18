@@ -145,7 +145,7 @@ button:disabled {
   overflow: clip;
 }
 .titlebar {
-  z-index: 2;
+  z-index: 3;
   position: relative;
   height: 36px;
   flex-shrink: 0;
@@ -237,6 +237,9 @@ button:disabled {
 }
 .sidebar-toolbar[data-open="true"] {
   width: var(--sidebar-width);
+}
+.sidebar-toolbar[data-settings="true"][data-open="false"] {
+  width: calc(var(--window-controls-width) + 68px);
 }
 .sidebar-toolbar button.icon-button {
   width: var(--sidebar-action-size);
@@ -547,6 +550,10 @@ button:disabled {
   background: var(--background);
   pointer-events: none;
   z-index: 2;
+}
+.settings-screen[data-sidebar="false"]::before,
+.settings-screen[data-sidebar-overlay="true"]::before {
+  left: 0;
 }
 .editor-surface::before {
   top: -36px;
@@ -1545,8 +1552,28 @@ summary {
   }
 }
 @media (max-width: 700px) {
-  :root {
-    --sidebar-width: 152px;
+  .app[data-sidebar="true"] .editor-surface {
+    width: 100%;
+    transform: none;
+  }
+  .app .sidebar-slot[data-overlay="true"] {
+    z-index: 2;
+  }
+  .sidebar-toolbar[data-open="true"] {
+    width: calc(var(--window-controls-width) + 36px);
+  }
+  .sidebar-toolbar[data-settings="true"] {
+    width: calc(var(--window-controls-width) + 68px);
+  }
+  .sidebar-view-controls {
+    position: absolute;
+    top: 44px;
+    left: 12px;
+    width: calc(var(--sidebar-width) - 24px);
+    height: 28px;
+  }
+  .document-sidebar .sidebar {
+    padding-top: 84px;
   }
   .settings-content {
     padding: 64px 24px 28px;

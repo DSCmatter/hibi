@@ -33,6 +33,9 @@ export type SidebarProps = {
   /** False keeps every branch open and lets parent rows select content. */
   collapsible?: boolean
   open?: boolean
+  /** Show a dismissible drawer over the content, keeping desktop-sized controls. */
+  overlay?: boolean
+  onDismiss?: () => void
   className?: string
   idPrefix?: string
   panelPrefix?: string
@@ -124,7 +127,19 @@ export function Sidebar({
   onMove,
   editing,
   resize,
+  overlay = false,
+  onDismiss,
 }: SidebarProps) {
+  const container = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    if (!open || !overlay) return
+    const target =
+      container.current?.querySelector<HTMLElement>('[aria-selected="true"]') ??
+      container.current?.querySelector<HTMLElement>(
+        'input, button:not(:disabled):not(.sidebar-scrim)',
+      )
+    target?.focus({ preventScroll: true })
+  }, [open, overlay])
   const drag = useRef<{ x: number; width: number; pointer: number } | null>(
     null,
   )
@@ -198,15 +213,35 @@ export function Sidebar({
     if (!id) return
     setFocused(id)
     buttons.current.get(id)?.focus()
-    if (mode === 'tabs') onSelect(id)
+    if (mode === 'tabs' && !overlay) onSelect(id)
   }
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: the shared navigation dismisses after its child controls handle Escape.
     <div
+      ref={container}
       className={`sidebar-slot ${className}`}
       data-open={open}
+      data-overlay={overlay}
       inert={!open}
       aria-hidden={!open}
+      onKeyDown={(event) => {
+        if (!overlay || !open || event.defaultPrevented) return
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          event.stopPropagation()
+          onDismiss?.()
+        }
+      }}
     >
+      {overlay && (
+        <button
+          type="button"
+          className="sidebar-scrim"
+          aria-label="Close sidebar"
+          tabIndex={-1}
+          onClick={onDismiss}
+        />
+      )}
       <aside className="sidebar" aria-label={label}>
         {header && <div className="sidebar-header">{header}</div>}
         {content !== undefined && (

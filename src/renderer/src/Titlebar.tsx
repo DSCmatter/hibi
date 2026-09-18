@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ChevronDown,
   Code,
   Columns2,
@@ -37,6 +38,8 @@ export function Titlebar({
   platform,
   sidebarOpen,
   onSidebar,
+  onBack,
+  sidebarOverlay,
   sidebarView,
   sidebarViews,
   onSidebarView,
@@ -54,6 +57,8 @@ export function Titlebar({
   platform: string
   sidebarOpen: boolean
   onSidebar: () => void
+  onBack: () => void
+  sidebarOverlay: boolean
   sidebarView: string
   sidebarViews: ReturnType<typeof viewShortcut>[]
   onSidebarView: (view: string) => void
@@ -116,7 +121,11 @@ export function Titlebar({
   }
   return (
     <header className="titlebar" aria-busy={busy}>
-      <div className="sidebar-toolbar" data-open={sidebarOpen || settingsOpen}>
+      <div
+        className="sidebar-toolbar"
+        data-open={sidebarOpen}
+        data-settings={settingsOpen}
+      >
         {!settingsOpen && (
           <>
             {sidebarOpen && (
@@ -164,19 +173,33 @@ export function Titlebar({
                 </IconButton>
               </div>
             )}
-            <IconButton
-              className="sidebar-toggle"
-              aria-label="Toggle workspace sidebar"
-              aria-pressed={sidebarOpen}
-              title="Toggle sidebar"
-              onClick={onSidebar}
-            >
-              <PanelLeft size={16} strokeWidth={1.5} />
-            </IconButton>
           </>
         )}
+        {settingsOpen && !sidebarOpen && (
+          <IconButton
+            aria-label="Back to app"
+            title="Back to app"
+            onClick={onBack}
+          >
+            <ArrowLeft size={16} />
+          </IconButton>
+        )}
+        <IconButton
+          className="sidebar-toggle"
+          aria-label={
+            settingsOpen
+              ? 'Toggle settings sidebar'
+              : 'Toggle workspace sidebar'
+          }
+          aria-pressed={sidebarOpen}
+          aria-expanded={sidebarOpen}
+          title="Toggle sidebar"
+          onClick={onSidebar}
+        >
+          <PanelLeft size={16} strokeWidth={1.5} />
+        </IconButton>
       </div>
-      <div className="document-toolbar">
+      <div className="document-toolbar" inert={sidebarOverlay && sidebarOpen}>
         <div className="document-title">
           {settingsOpen ? (
             <span>Settings</span>

@@ -2,6 +2,8 @@
 
 Open Settings from the command palette. Choose a page in the sidebar, or search below **Back to app** for a setting or enabled plugin.
 
+Use the sidebar button or `Cmd/Ctrl+/` to collapse or expand settings navigation. In a narrow window, it opens over the page and closes when you choose a page or search result. Press Escape or click outside to dismiss it.
+
 ## Editor and appearance
 
 Use **Editor** for [tabs, default view, and spell check](editing.md). Use **Appearance** to change [colorschemes](colorschemes.md), the toolbar, and cursor style.

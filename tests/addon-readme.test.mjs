@@ -229,6 +229,9 @@ test('addon readmes render safely without activation, and settings headers have 
   })
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await page.waitForFunction(() => innerWidth === 480)
+  await page
+    .getByRole('button', { name: 'Toggle settings sidebar', exact: true })
+    .click()
   await page.getByRole('tab', { name: 'Addons', exact: true }).click()
   await filter.fill('readme fixture')
   const bounds = await row.evaluate((element) => {
