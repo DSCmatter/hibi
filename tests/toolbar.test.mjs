@@ -267,6 +267,12 @@ test('markdown toolbar formats both panes, preserves undo, and persists drag ord
   await rich.press('Control+a')
   await run('bold')
   await waitForMarkdown('**hello**')
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector('[data-toolbar-id="format.bold"]')
+        ?.getAttribute('aria-pressed') === 'true',
+  )
   assert.equal(await action('bold').getAttribute('aria-pressed'), 'true')
   await page.waitForFunction(
     () =>

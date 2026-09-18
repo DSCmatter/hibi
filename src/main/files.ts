@@ -3,13 +3,14 @@ import { constants } from 'node:fs'
 import { copyFile, link, open, rename, stat, unlink } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { MAX_DOCUMENT_BYTES } from '../shared/desktop'
+import { exceedsUtf8Limit } from '../shared/text-size'
 
 // ponytail: cap documents at 2 MiB; move parsing off-thread before raising this.
 
 export function validateMarkdown(value: unknown): asserts value is string {
   if (
     typeof value !== 'string' ||
-    Buffer.byteLength(value, 'utf8') > MAX_DOCUMENT_BYTES
+    exceedsUtf8Limit(value, MAX_DOCUMENT_BYTES)
   ) {
     throw new Error('Use a UTF-8 text document no larger than 2 MiB.')
   }

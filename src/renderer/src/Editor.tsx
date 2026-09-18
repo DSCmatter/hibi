@@ -202,14 +202,19 @@ export function MarkdownEditor({
   useEffect(() => {
     if (mode !== 'normal') setSourceMounted(true)
   }, [mode])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: syntax changes rebuild configured extensions even when the flavor identities stay unchanged.
+  const extensions = useMemo(
+    () => [
+      ...editorExtensions(flavors),
+      ...(markdownSyntax.enabled('core.images')
+        ? [documentImage(documentRevision)]
+        : []),
+    ],
+    [flavors, syntaxVersion, documentRevision],
+  )
   const editor = useEditor(
     {
-      extensions: [
-        ...editorExtensions(flavors),
-        ...(markdownSyntax.enabled('core.images')
-          ? [documentImage(documentRevision)]
-          : []),
-      ],
+      extensions,
       content: projection.content,
       contentType: 'markdown',
       autofocus: false,

@@ -25,6 +25,7 @@
     "bench": "vitest bench --run bench/core",
     "bench:desktop": "node bench/desktop/startup.bench.mjs",
     "bench:startup": "node scripts/benchmark-startup.mjs",
+    "bench:input": "node scripts/benchmark-input.mjs",
     "docs": "node scripts/docs.mjs",
     "docs:check": "node scripts/docs.mjs --check && node scripts/docs-links.mjs",
     "copy:catalog": "node scripts/ui-copy.mjs",

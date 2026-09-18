@@ -55,6 +55,11 @@ test('autosave preserves later edits, pauses on external changes, and never prom
     page,
     async () => (await window.hibi.getDocument()).canAutosave,
   )
+  // Native state can arrive before React replaces the previous tab's editor.
+  await page.waitForFunction(() => {
+    const editor = document.querySelector('.tiptap')?.editor
+    return editor?.isEditable && editor.getText() === 'original'
+  })
   await app.evaluate(({ ipcMain }) => {
     const save = ipcMain._invokeHandlers.get('document:autosave')
     ipcMain.removeHandler('document:autosave')

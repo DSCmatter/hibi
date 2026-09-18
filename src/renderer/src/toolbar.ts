@@ -36,7 +36,14 @@ try {
 const items = new Map<string, ToolbarItem>()
 let snapshot = { preferences, items: [] as ToolbarItem[] }
 const listeners = new Set<() => void>()
+let batchDepth = 0
+let pending = false
 const publish = () => {
+  if (batchDepth) {
+    pending = true
+    return
+  }
+  pending = false
   const rank = new Map(
     (preferences.order ?? []).map((id, index) => [id, index]),
   )
@@ -72,6 +79,14 @@ function setPreferences(changes: Partial<ToolbarPreferences>) {
 }
 
 export const toolbar = {
+  batch<T>(update: () => T): T {
+    batchDepth++
+    try {
+      return update()
+    } finally {
+      if (--batchDepth === 0 && pending) publish()
+    }
+  },
   snapshot: () => snapshot,
   subscribe(listener: () => void) {
     listeners.add(listener)

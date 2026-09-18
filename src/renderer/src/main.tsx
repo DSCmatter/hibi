@@ -27,6 +27,7 @@ import {
 } from '../../shared/hotkeys'
 import { isMediaFile } from '../../shared/media'
 import { startupMark } from '../../shared/startup'
+import { exceedsUtf8Limit } from '../../shared/text-size'
 import { DialogProvider, useDialogs } from '../../ui/DialogProvider'
 import { MenuHost } from '../../ui/MenuHost'
 import { ToastProvider, useToasts } from '../../ui/Sonner'
@@ -771,7 +772,7 @@ function App() {
 
   function updateMarkdown(markdown: string) {
     if (!welcomeDismissed) dismissWelcome()
-    if (new TextEncoder().encode(markdown).length > MAX_DOCUMENT_BYTES) {
+    if (exceedsUtf8Limit(markdown, MAX_DOCUMENT_BYTES)) {
       setError(
         'This edit would exceed the 2 MiB document limit, so it was not applied.',
       )
@@ -1134,273 +1135,279 @@ function App() {
     startupMark('editing-capabilities')
   }
 
-  const paletteCommands: PaletteCommand[] = actions
-    .filter(
-      ({ id, category }) =>
-        id !== 'palette' &&
-        !(category === 'file' && busy) &&
-        (!isDocumentView(id) || availableViews.includes(id)),
+  const paletteCommands: PaletteCommand[] = []
+  if (paletteOpen) {
+    paletteCommands.push(
+      ...actions
+        .filter(
+          ({ id, category }) =>
+            id !== 'palette' &&
+            !(category === 'file' && busy) &&
+            (!isDocumentView(id) || availableViews.includes(id)),
+        )
+        .map(({ id, label, category }) => ({
+          id,
+          category,
+          label:
+            id === 'settings' && settingsOpen
+              ? 'Back to editor'
+              : id === 'markdown' && !markdownDocument
+                ? 'Source view'
+                : id === 'toggle-titlebar'
+                  ? hideTitlebar
+                    ? 'Keep top bar visible'
+                    : 'Hide top bar while typing'
+                  : label,
+          shortcut: hotkeys[id],
+          run: () => addonHost.app.runAction(id),
+        })),
     )
-    .map(({ id, label, category }) => ({
-      id,
-      category,
-      label:
-        id === 'settings' && settingsOpen
-          ? 'Back to editor'
-          : id === 'markdown' && !markdownDocument
-            ? 'Source view'
-            : id === 'toggle-titlebar'
-              ? hideTitlebar
-                ? 'Keep top bar visible'
-                : 'Hide top bar while typing'
-              : label,
-      shortcut: hotkeys[id],
-      run: () => addonHost.app.runAction(id),
-    }))
-  paletteCommands.push(
-    ...sidebarViews.map((view) => ({
-      id: `sidebar.${view.id}`,
-      category: 'view' as const,
-      label: `Show ${view.label.toLowerCase()}${view.id === 'workspace' ? ' sidebar' : ''}`,
-      run: () => {
-        setSettingsOpen(false)
-        selectSidebarView(view.id)
-      },
-    })),
-    {
-      id: 'settings.licenses',
-      category: 'settings',
-      label: 'Open source licenses',
-      run: () => openSetting('hibi', 'open-source-licenses'),
-    },
-    ...actions.map(({ id, label }) => ({
-      id: `shortcut.${id}`,
-      category: 'settings' as const,
-      label: `Shortcut: ${label}`,
-      keywords: 'keyboard hotkeys rebind',
-      run: () => openSetting('hotkeys', `hotkey-${id}`),
-    })),
-    {
-      id: 'flavor.choose',
-      category: 'edit',
-      label: 'Change Markdown flavor…',
-      run: openFlavors,
-    },
-    {
-      id: 'flavor.auto',
-      category: 'edit',
-      label: 'Automatically detect Markdown flavor',
-      run: () => changeFlavor(automaticFlavor),
-    },
-    {
-      id: 'flavor.markdown',
-      category: 'edit',
-      label: 'Use plain Markdown flavor',
-      run: () => changeFlavor({ dialect: 'markdown', syntax: [] }),
-    },
-    ...availableFlavors.map((flavor) => ({
-      id: `flavor.${flavor.id}`,
-      category: 'edit' as const,
-      label: `Use ${flavor.name} flavor`,
-      keywords: flavor.description,
-      run: () =>
-        changeFlavor(
-          flavor.kind === 'dialect'
-            ? { ...flavorChoice, dialect: flavor.id }
-            : {
-                ...flavorChoice,
-                syntax: [
-                  ...new Set([
-                    ...(flavorChoice.syntax === 'auto'
-                      ? availableFlavors
-                          .filter((entry) => entry.kind === 'syntax')
-                          .map((entry) => entry.id)
-                      : flavorChoice.syntax),
-                    flavor.id,
-                  ]),
-                ],
-              },
-        ),
-    })),
-    ...settingsCategories.map(({ id, label }) => ({
-      id: `settings.${id}`,
-      category: 'settings' as const,
-      label: `Open ${label} settings`,
-      run: () => openSetting(id),
-    })),
-    ...indexedSettings
-      .filter((setting) => !setting.id.startsWith('addon-'))
-      .map((setting) => ({
-        id: `setting.${setting.id}`,
-        category: 'settings' as const,
-        label: setting.label,
-        keywords: `${setting.category} ${setting.keywords}`,
-        run: () => openSetting(setting.category, setting.id),
-      })),
-    ...addons.flatMap(({ manifest, Settings }) => {
-      const enabled = addonHost.states.some(
-        (state) => state.id === manifest.id && state.enabled,
-      )
-      return [
-        ...(manifest.id === 'markdown'
-          ? []
-          : [
-              {
-                id: `addon.toggle.${manifest.id}`,
-                category:
-                  manifest.kind === 'theme'
-                    ? ('themes' as const)
-                    : ('extensions' as const),
-                label: `${enabled ? 'Disable' : 'Enable'} ${manifest.name}`,
-                keywords: `${manifest.id} ${manifest.description}`,
-                run: () => {
-                  void addonHost.setEnabled(manifest.id, !enabled)
-                },
-              },
-            ]),
-        ...(enabled && (Settings || manifest.fileExtensions?.length)
-          ? [
-              {
-                id: `addon.settings.${manifest.id}`,
-                category: 'settings' as const,
-                label: `${manifest.name} settings`,
-                keywords: manifest.description,
-                run: () => openSetting(`plugin-${manifest.id}`),
-              },
-            ]
-          : []),
-        ...(addonRegistry.isInstalled(manifest.id)
-          ? [
-              {
-                id: `addon.remove.${manifest.id}`,
-                category: 'extensions' as const,
-                label: `Remove ${manifest.name}`,
-                run: () => {
-                  void addonHost.remove(manifest.id)
-                },
-              },
-            ]
-          : []),
-      ]
-    }),
-    ...themeSnapshot.schemes.map((scheme) => ({
-      id: `theme.${scheme.id}`,
-      category: 'themes' as const,
-      label: scheme.name,
-      keywords: `${scheme.appearance} ${scheme.author}`,
-      run: () =>
-        colorschemes.set({
-          mode: scheme.appearance,
-          [scheme.appearance]: scheme.id,
-        }),
-    })),
-    ...toolbarSnapshot.items
-      .filter(
-        (item) =>
-          !item.disabled &&
-          !item.hidden &&
-          (!item.when ||
-            (item.when === 'normal' ? mode !== 'markdown' : mode !== 'normal')),
-      )
-      .map((item) => ({
-        id: `toolbar.${item.id}`,
-        category: 'format' as const,
-        label: item.label,
+    paletteCommands.push(
+      ...sidebarViews.map((view) => ({
+        id: `sidebar.${view.id}`,
+        category: 'view' as const,
+        label: `Show ${view.label.toLowerCase()}${view.id === 'workspace' ? ' sidebar' : ''}`,
         run: () => {
-          void item.onClick()
+          setSettingsOpen(false)
+          selectSidebarView(view.id)
         },
       })),
-    {
-      id: 'toolbar.toggle',
-      category: 'view',
-      label: toolbarSnapshot.preferences.visible
-        ? 'Hide toolbar'
-        : 'Show toolbar',
-      run: () =>
-        toolbar.setPreferences({
-          visible: !toolbarSnapshot.preferences.visible,
-        }),
-    },
-    ...addonHost.commands.map((command) => ({
-      id: command.id,
-      label: command.label,
-      category: 'addons' as const,
-      keywords: command.keywords ?? '',
-      run: () => {
-        void command.run()
-      },
-    })),
-  )
-
-  if (workspace && !busy) {
-    const create = async (action: 'new-file' | 'new-folder', path = '') => {
-      await runWorkspaceAction({ action, path })
-    }
-    const run = (action: () => void | Promise<void>) => {
-      void Promise.resolve()
-        .then(action)
-        .catch((error: unknown) => setError(String(error)))
-    }
-    paletteCommands.push(
       {
-        id: 'workspace.new-file',
-        category: 'file',
-        label: 'New workspace file',
-        run: () => run(() => create('new-file')),
+        id: 'settings.licenses',
+        category: 'settings',
+        label: 'Open source licenses',
+        run: () => openSetting('hibi', 'open-source-licenses'),
+      },
+      ...actions.map(({ id, label }) => ({
+        id: `shortcut.${id}`,
+        category: 'settings' as const,
+        label: `Shortcut: ${label}`,
+        keywords: 'keyboard hotkeys rebind',
+        run: () => openSetting('hotkeys', `hotkey-${id}`),
+      })),
+      {
+        id: 'flavor.choose',
+        category: 'edit',
+        label: 'Change Markdown flavor…',
+        run: openFlavors,
       },
       {
-        id: 'workspace.new-folder',
-        category: 'file',
-        label: 'New workspace folder',
-        run: () => run(() => create('new-folder')),
+        id: 'flavor.auto',
+        category: 'edit',
+        label: 'Automatically detect Markdown flavor',
+        run: () => changeFlavor(automaticFlavor),
       },
       {
-        id: 'workspace.refresh',
-        category: 'file',
-        label: 'Refresh workspace',
-        run: () => void refreshFiles(),
+        id: 'flavor.markdown',
+        category: 'edit',
+        label: 'Use plain Markdown flavor',
+        run: () => changeFlavor({ dialect: 'markdown', syntax: [] }),
       },
-    )
-    if (workspace.activePath && document)
-      paletteCommands.push(
-        ...workspaceMenuItems(
-          { path: workspace.activePath, name: document.name, kind: 'file' },
-          {
-            dialogs,
-            onAction: runWorkspaceAction,
-            create,
-            rename(target) {
-              setWorkspaceRename(target)
-              selectSidebarView('workspace')
-              setSettingsOpen(false)
-            },
-          },
-        ).map((item) => ({
-          id: `workspace.${item.id}`,
-          category: 'file' as const,
-          label: `${document.name}: ${item.label}`,
-          run: () => run(item.onSelect),
+      ...availableFlavors.map((flavor) => ({
+        id: `flavor.${flavor.id}`,
+        category: 'edit' as const,
+        label: `Use ${flavor.name} flavor`,
+        keywords: flavor.description,
+        run: () =>
+          changeFlavor(
+            flavor.kind === 'dialect'
+              ? { ...flavorChoice, dialect: flavor.id }
+              : {
+                  ...flavorChoice,
+                  syntax: [
+                    ...new Set([
+                      ...(flavorChoice.syntax === 'auto'
+                        ? availableFlavors
+                            .filter((entry) => entry.kind === 'syntax')
+                            .map((entry) => entry.id)
+                        : flavorChoice.syntax),
+                      flavor.id,
+                    ]),
+                  ],
+                },
+          ),
+      })),
+      ...settingsCategories.map(({ id, label }) => ({
+        id: `settings.${id}`,
+        category: 'settings' as const,
+        label: `Open ${label} settings`,
+        run: () => openSetting(id),
+      })),
+      ...indexedSettings
+        .filter((setting) => !setting.id.startsWith('addon-'))
+        .map((setting) => ({
+          id: `setting.${setting.id}`,
+          category: 'settings' as const,
+          label: setting.label,
+          keywords: `${setting.category} ${setting.keywords}`,
+          run: () => openSetting(setting.category, setting.id),
         })),
-      )
-  }
-  if (document && !busy)
-    paletteCommands.push({
-      id: 'document.rename',
-      category: 'file',
-      label: 'Rename document…',
-      run: () => {
-        void dialogs
-          .prompt({
-            title: 'Rename document',
-            label: 'File name',
-            defaultValue: document.name,
-          })
-          .then((name) => {
-            if (name !== null) void renameFile(name)
-          })
+      ...addons.flatMap(({ manifest, Settings }) => {
+        const enabled = addonHost.states.some(
+          (state) => state.id === manifest.id && state.enabled,
+        )
+        return [
+          ...(manifest.id === 'markdown'
+            ? []
+            : [
+                {
+                  id: `addon.toggle.${manifest.id}`,
+                  category:
+                    manifest.kind === 'theme'
+                      ? ('themes' as const)
+                      : ('extensions' as const),
+                  label: `${enabled ? 'Disable' : 'Enable'} ${manifest.name}`,
+                  keywords: `${manifest.id} ${manifest.description}`,
+                  run: () => {
+                    void addonHost.setEnabled(manifest.id, !enabled)
+                  },
+                },
+              ]),
+          ...(enabled && (Settings || manifest.fileExtensions?.length)
+            ? [
+                {
+                  id: `addon.settings.${manifest.id}`,
+                  category: 'settings' as const,
+                  label: `${manifest.name} settings`,
+                  keywords: manifest.description,
+                  run: () => openSetting(`plugin-${manifest.id}`),
+                },
+              ]
+            : []),
+          ...(addonRegistry.isInstalled(manifest.id)
+            ? [
+                {
+                  id: `addon.remove.${manifest.id}`,
+                  category: 'extensions' as const,
+                  label: `Remove ${manifest.name}`,
+                  run: () => {
+                    void addonHost.remove(manifest.id)
+                  },
+                },
+              ]
+            : []),
+        ]
+      }),
+      ...themeSnapshot.schemes.map((scheme) => ({
+        id: `theme.${scheme.id}`,
+        category: 'themes' as const,
+        label: scheme.name,
+        keywords: `${scheme.appearance} ${scheme.author}`,
+        run: () =>
+          colorschemes.set({
+            mode: scheme.appearance,
+            [scheme.appearance]: scheme.id,
+          }),
+      })),
+      ...toolbarSnapshot.items
+        .filter(
+          (item) =>
+            !item.disabled &&
+            !item.hidden &&
+            (!item.when ||
+              (item.when === 'normal'
+                ? mode !== 'markdown'
+                : mode !== 'normal')),
+        )
+        .map((item) => ({
+          id: `toolbar.${item.id}`,
+          category: 'format' as const,
+          label: item.label,
+          run: () => {
+            void item.onClick()
+          },
+        })),
+      {
+        id: 'toolbar.toggle',
+        category: 'view',
+        label: toolbarSnapshot.preferences.visible
+          ? 'Hide toolbar'
+          : 'Show toolbar',
+        run: () =>
+          toolbar.setPreferences({
+            visible: !toolbarSnapshot.preferences.visible,
+          }),
       },
-    })
+      ...addonHost.commands.map((command) => ({
+        id: command.id,
+        label: command.label,
+        category: 'addons' as const,
+        keywords: command.keywords ?? '',
+        run: () => {
+          void command.run()
+        },
+      })),
+    )
 
+    if (workspace && !busy) {
+      const create = async (action: 'new-file' | 'new-folder', path = '') => {
+        await runWorkspaceAction({ action, path })
+      }
+      const run = (action: () => void | Promise<void>) => {
+        void Promise.resolve()
+          .then(action)
+          .catch((error: unknown) => setError(String(error)))
+      }
+      paletteCommands.push(
+        {
+          id: 'workspace.new-file',
+          category: 'file',
+          label: 'New workspace file',
+          run: () => run(() => create('new-file')),
+        },
+        {
+          id: 'workspace.new-folder',
+          category: 'file',
+          label: 'New workspace folder',
+          run: () => run(() => create('new-folder')),
+        },
+        {
+          id: 'workspace.refresh',
+          category: 'file',
+          label: 'Refresh workspace',
+          run: () => void refreshFiles(),
+        },
+      )
+      if (workspace.activePath && document)
+        paletteCommands.push(
+          ...workspaceMenuItems(
+            { path: workspace.activePath, name: document.name, kind: 'file' },
+            {
+              dialogs,
+              onAction: runWorkspaceAction,
+              create,
+              rename(target) {
+                setWorkspaceRename(target)
+                selectSidebarView('workspace')
+                setSettingsOpen(false)
+              },
+            },
+          ).map((item) => ({
+            id: `workspace.${item.id}`,
+            category: 'file' as const,
+            label: `${document.name}: ${item.label}`,
+            run: () => run(item.onSelect),
+          })),
+        )
+    }
+    if (document && !busy)
+      paletteCommands.push({
+        id: 'document.rename',
+        category: 'file',
+        label: 'Rename document…',
+        run: () => {
+          void dialogs
+            .prompt({
+              title: 'Rename document',
+              label: 'File name',
+              defaultValue: document.name,
+            })
+            .then((name) => {
+              if (name !== null) void renameFile(name)
+            })
+        },
+      })
+  }
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: OS file drops supplement the keyboard-accessible file menu.
     <div

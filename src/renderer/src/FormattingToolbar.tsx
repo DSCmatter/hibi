@@ -521,37 +521,38 @@ export function useFormattingToolbar(
         onClick: () => run(action),
       }),
     )
-    refresh.current = () => {
-      const { editor, disabled } = latest.current
-      const useSource = inSource()
-      const canFormat = (action: Action, editor: Editor) => {
-        try {
-          return action.rich(editor.can().chain(), editor).run()
-        } catch {
-          return false /* This flavor does not provide the requested node or mark. */
+    refresh.current = () =>
+      toolbar.batch(() => {
+        const { editor, disabled } = latest.current
+        const useSource = inSource()
+        const canFormat = (action: Action, editor: Editor) => {
+          try {
+            return action.rich(editor.can().chain(), editor).run()
+          } catch {
+            return false /* This flavor does not provide the requested node or mark. */
+          }
         }
-      }
-      actions.forEach((action, index) => {
-        const state = useSource
-          ? source.current?.state(action.id)
-          : editor && !editor.isDestroyed
-            ? {
-                pressed:
-                  !!action.active &&
-                  editor.isActive(action.active, action.attrs),
-                disabled: !editor.isEditable || !canFormat(action, editor),
-              }
-            : null
-        handles[index]?.update({
-          ...(action.active ? { pressed: state?.pressed ?? false } : {}),
-          disabled: disabled || !state || state.disabled,
-          hidden:
-            (!latest.current.markdownMode &&
-              !source.current?.state(action.id).supported) ||
-            (!!action.table && (useSource || !editor?.isActive('table'))),
+        actions.forEach((action, index) => {
+          const state = useSource
+            ? source.current?.state(action.id)
+            : editor && !editor.isDestroyed
+              ? {
+                  pressed:
+                    !!action.active &&
+                    editor.isActive(action.active, action.attrs),
+                  disabled: !editor.isEditable || !canFormat(action, editor),
+                }
+              : null
+          handles[index]?.update({
+            ...(action.active ? { pressed: state?.pressed ?? false } : {}),
+            disabled: disabled || !state || state.disabled,
+            hidden:
+              (!latest.current.markdownMode &&
+                !source.current?.state(action.id).supported) ||
+              (!!action.table && (useSource || !editor?.isActive('table'))),
+          })
         })
       })
-    }
     refresh.current()
     return () => {
       refresh.current = () => {}
@@ -559,10 +560,18 @@ export function useFormattingToolbar(
     }
   }, [attachFiles])
   useLayoutEffect(() => {
-    const update = () => refresh.current()
+    let frame = 0
+    const update = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        refresh.current()
+      })
+    }
     editor?.on('transaction', update)
     update()
     return () => {
+      cancelAnimationFrame(frame)
       editor?.off('transaction', update)
     }
   }, [editor])
