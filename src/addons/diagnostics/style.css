@@ -100,7 +100,6 @@
 .diagnostics details {
   margin-top: var(--space-5);
 }
-.diagnostics summary {
-  cursor: pointer;
-  padding-block: var(--space-3);
+.diagnostics .ui-disclosure > summary + * {
+  margin-top: var(--space-3);
 }

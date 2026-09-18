@@ -1,4 +1,4 @@
-import { Activity } from 'lucide-react'
+import { Activity, ChevronRight } from 'lucide-react'
 import {
   type ReactNode,
   useEffect,
@@ -284,8 +284,11 @@ export function Settings() {
           </table>
         </MetricsTable>
       )}
-      <details>
-        <summary>Startup checkpoints</summary>
+      <details className="ui-disclosure">
+        <summary>
+          <ChevronRight size={14} aria-hidden />
+          Startup checkpoints
+        </summary>
         <p className="ui-description">Offsets use each process’s own clock.</p>
         <MetricsTable label="Startup checkpoints">
           <table>
@@ -316,8 +319,11 @@ export function Settings() {
         </MetricsTable>
       </details>
       {native && (
-        <details>
-          <summary>Runtime</summary>
+        <details className="ui-disclosure">
+          <summary>
+            <ChevronRight size={14} aria-hidden />
+            Runtime
+          </summary>
           <dl className="diagnostics-summary settings-group">
             <div>
               <dt>Hibi</dt>

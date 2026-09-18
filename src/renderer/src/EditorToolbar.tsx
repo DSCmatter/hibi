@@ -348,7 +348,7 @@ export function ToolbarSettings() {
           </Select>
         </SettingRow>
       </div>
-      <details className="toolbar-order">
+      <details className="toolbar-order ui-disclosure">
         <summary>
           <ChevronRight size={14} aria-hidden />
           Arrange toolbar actions

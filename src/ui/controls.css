@@ -289,6 +289,34 @@ span.select-control > svg {
     animation: none;
   }
 }
+.ui-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+}
+.ui-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.ui-disclosure > summary:hover {
+  background: transparent;
+}
+.ui-disclosure > summary > svg {
+  flex-shrink: 0;
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+.ui-disclosure[open] > summary > svg {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-disclosure > summary > svg {
+    transition: none;
+  }
+}
 .document-notice {
   display: flex;
   align-items: flex-start;
