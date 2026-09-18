@@ -225,7 +225,6 @@ export function useAddons(environment: Environment, documentName?: string) {
       const tooltipScope = createTooltipScope()
       const cleanups = new Set<() => void>()
       const editScope = documentEdits.scope(() => latest.current.isBusy())
-      cleanups.add(() => editScope.dispose())
       const observe = (
         subscribe: (listener: () => void) => () => void,
         listener: () => void,
@@ -247,6 +246,7 @@ export function useAddons(environment: Environment, documentName?: string) {
       const stop = () => {
         if (disposed) return
         disposed = true
+        editScope.dispose()
         running.delete(id)
         if (mounted.current)
           setSettled((current) => {

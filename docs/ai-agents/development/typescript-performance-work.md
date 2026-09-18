@@ -37,7 +37,9 @@ The fourth stage adds `applySourceEdits()`: exact UTF-16 ranges, expected text, 
 
 The fifth stage maps existing code decorations and rebuilds the affected block range, with a full refresh for language changes. Differential tests compare it with full highlighting through 120 edits plus nested blocks and preference changes. The foreground benchmark now waits for its window to exist and verifies document focus before measuring.
 
-The complete repository check passed all 163 tests, including build, type checks, generated API references, local documentation links, UI copy catalogs, and lint (existing warnings remain).
+The complete repository check passed all 163 tests, including build, type checks, generated API references, local documentation links, UI copy catalogs, and lint (warnings remain).
+
+A final lifecycle follow-up revokes source-edit access before invoking an addon's `stop()` hook. The rebuilt app passed three focused tests covering that hook, failed attachments, and independent cleanup; type checks, documentation checks, and lint also passed after the follow-up.
 
 ## Final measurements
 

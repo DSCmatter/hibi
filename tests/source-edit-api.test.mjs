@@ -48,6 +48,8 @@ test('a review addon applies source edits atomically, preserves undo, and reject
           {from: typo, to: typo + 3, insert: 'the', expectedText: 'teh'},
         ] };
     }};
+  }, stop() {
+    window.reviewStopStatus = window.reviewFixture.context.editor.applySourceEdits(window.oldProposal).status;
   }});`,
   )
   await writeFile(
@@ -189,6 +191,7 @@ test('a review addon applies source edits atomically, preserves undo, and reject
   await page.waitForFunction(
     () => !document.querySelector('#addon-local-review').checked,
   )
+  assert.equal(await page.evaluate(() => window.reviewStopStatus), 'disposed')
   assert.equal(
     await page.evaluate(
       () =>

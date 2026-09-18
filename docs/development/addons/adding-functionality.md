@@ -69,6 +69,8 @@ Use `onInput()` to observe typed characters, or `onKeyEvent()` to observe editor
 
 Hibi removes registrations made through `context` when the addon stops. Clean up timers, browser listeners, and other resources you create yourself in `stop()`. Editor attachment callbacks must clean up their own resources when their editor is removed.
 
+Document-edit access is revoked before `stop()` runs.
+
 A failed cleanup does not prevent Hibi from attempting the remaining host cleanups. Your own `stop()` should follow the same rule when releasing several resources.
 
 ## Native operations
