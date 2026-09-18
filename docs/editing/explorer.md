@@ -4,7 +4,7 @@ Open a file or folder's **More** menu to manage it. Right-click and `Shift+F10` 
 
 ## Create and rename
 
-Use the workspace controls or a folder's menu to create a note or folder. Enter its name and press Enter. New notes stay in memory until you save them; new folders are created immediately.
+Use the workspace controls or a folder's menu to create a note or folder. Enter its name, including the extension, and press Enter. New notes use the current document's extension unless you change it. They stay in memory until you save them; new folders are created immediately.
 
 Choose **Rename** to change an item's name. Renaming a file or its parent folder keeps unsaved edits and does not replace another file.
 

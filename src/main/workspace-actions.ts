@@ -173,7 +173,9 @@ export async function workspaceAction(
       throw new Error('Choose a folder for the new item.')
     resultPath = await unique(
       parent,
-      action === 'new-file' ? 'untitled.md' : 'untitled folder',
+      action === 'new-file'
+        ? `untitled${extname(getDocument().name) || '.md'}`
+        : 'untitled folder',
     )
     if (action === 'new-folder') await mkdir(resultPath)
     else if (!(await newPendingDocument(window, resultPath))) return null

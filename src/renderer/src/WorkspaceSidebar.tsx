@@ -78,6 +78,7 @@ export function WorkspaceSidebar({
         setEditing({
           id: result.path,
           value: result.path.split('/').at(-1) ?? '',
+          selectExtension: kind === 'new-file',
         })
     } catch (error) {
       onError(error)

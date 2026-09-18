@@ -24,10 +24,6 @@ import type {
   DocumentState,
   DocumentTab,
 } from '../shared/desktop'
-import {
-  isMarkdownDocument,
-  markdownExtensions,
-} from '../shared/document-types'
 import { HISTORY_CHANNELS } from '../shared/history'
 import { documentExtensions, isDocumentName } from './document-types'
 import {
@@ -338,9 +334,12 @@ export async function saveDocument(
       filters: [
         {
           name: 'Documents',
-          extensions: isMarkdownDocument(destination ?? untitledName)
-            ? markdownExtensions
-            : [extname(destination ?? untitledName).slice(1) || 'md'],
+          extensions: [
+            ...new Set([
+              extname(destination ?? untitledName).slice(1) || 'md',
+              ...documentExtensions(),
+            ]),
+          ],
         },
       ],
     })

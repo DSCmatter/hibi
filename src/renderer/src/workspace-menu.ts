@@ -6,7 +6,11 @@ import type {
 import type { DialogApi } from '../../ui/dialogs'
 import type { MenuItem } from '../../ui/menus'
 
-export type WorkspaceRename = { id: string; value: string } | null
+export type WorkspaceRename = {
+  id: string
+  value: string
+  selectExtension?: boolean
+} | null
 
 export function workspaceMenuItems(
   entry: WorkspaceEntry,

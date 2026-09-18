@@ -47,6 +47,8 @@ export type SidebarProps = {
   editing?: {
     id: string
     value: string
+    /** Select the extension too when naming a newly created file. */
+    selectExtension?: boolean
     disabled: boolean
     onChange: (value: string) => void
     onCommit: () => void
@@ -69,14 +71,18 @@ function RenameInput({
 }) {
   const input = useRef<HTMLInputElement>(null)
   const id = editing.id
+  const selectExtension = editing.selectExtension
   useLayoutEffect(() => {
     const element = input.current
     if (!id || !element) return
     element.focus()
     const dot = element.value.lastIndexOf('.')
-    element.setSelectionRange(0, dot > 0 ? dot : element.value.length)
+    element.setSelectionRange(
+      0,
+      !selectExtension && dot > 0 ? dot : element.value.length,
+    )
     element.scrollIntoView({ block: 'nearest' })
-  }, [id])
+  }, [id, selectExtension])
   return (
     <TextInput
       ref={input}

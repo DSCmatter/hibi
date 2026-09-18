@@ -38,6 +38,8 @@ export type SidebarProps = {
   editing?: {
     id: string
     value: string
+    /** Select the extension too when naming a newly created file. */
+    selectExtension?: boolean
     disabled: boolean
     onChange: (value: string) => void
     onCommit: () => void
