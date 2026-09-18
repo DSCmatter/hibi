@@ -223,8 +223,8 @@ test('addon readmes render safely without activation, and settings headers have 
   await keyReadme.screenshot({ path: '.cache/addon-readme.png' })
   await page.keyboard.press('Escape')
   await keyReadme.waitFor({ state: 'hidden' })
-  await app.evaluate(({ BrowserWindow, nativeTheme }) => {
-    BrowserWindow.getAllWindows()[0].setSize(480, 720)
+  await page.setViewportSize({ width: 480, height: 720 })
+  await app.evaluate(({ nativeTheme }) => {
     nativeTheme.themeSource = 'dark'
   })
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
