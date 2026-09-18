@@ -301,7 +301,8 @@ export function startSite(workspace: SiteData, root: Root) {
           link.href = destination(target, decodeURIComponent(url.hash.slice(1)))
         else {
           link.removeAttribute('href')
-          link.title = 'This file is not included in the export.'
+          link.removeAttribute('title')
+          link.dataset.tooltip = 'This file is not included in the export.'
         }
       } catch {
         link.removeAttribute('href')

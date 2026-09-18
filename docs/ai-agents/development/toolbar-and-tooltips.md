@@ -38,7 +38,7 @@ Hidden bars are inert and excluded from keyboard navigation. Pointer movement ne
 
 ## Showing tooltips
 
-`context.tooltips.show({ anchor, text, placement? })` shows plain text by a DOM element and returns a function that hides that request. `placement` is `top` or `bottom` (default); the host keeps it within the viewport. `hide()` affects only the calling scope. Disabling an addon dismisses its tooltip without closing a newer tooltip owned by another addon.
+`context.tooltips.show({ anchor, text, placement? })` shows plain text by an HTML or SVG element and returns a function that hides that request. `placement` is `top` or `bottom` (default); the host flips sides when needed and keeps it within the viewport. `hide()` affects only the calling scope. Disabling an addon dismisses its tooltip without closing a newer tooltip owned by another addon.
 
 ```tsx
 import { Button, Tooltip, useTooltips } from '../ui'
@@ -52,8 +52,10 @@ const hide = tooltips.show({ anchor: buttonElement, text: 'ready to export' })
 
 `Tooltip` clones one child without adding a layout wrapper. Custom children must forward data attributes to their DOM element. Shared `Button` and `IconButton` convert `title` into this tooltip; `data-tooltip` also works directly.
 
-Hover waits 400 ms; keyboard focus shows help immediately. Touch does not open hover tooltips. Escape, pointer down, pointer exit, scrolling, resizing, and window blur dismiss them. The tooltip temporarily adds its ID to `aria-describedby`, preserving existing IDs. Text stays inert; markup never executes.
+Use `data-verbatim="true"` on anchors showing filenames, paths, or other user content. Their tooltip text keeps its original spelling in either interface case setting.
 
-`DialogProvider` mounts one `TooltipHost`. Standalone renderers can mount it explicitly. Native popovers place tooltips above modals without blocking clicks. Colors, corners, motion, and reduced-motion behavior use shared tokens.
+Hover waits 400 ms; focus reached through Tab or arrow-key navigation shows help immediately. Clicking or restoring focus does not reopen dismissed help. Touch and dragging do not open hover tooltips. Key presses, pointer down, pointer exit, scrolling, resizing, and window blur dismiss them. Hiding, removing, moving, or changing an anchor also dismisses its tooltip. Invisible anchors cannot open one. The tooltip temporarily adds its ID to `aria-describedby`, preserving existing IDs. Text stays inert; markup never executes.
+
+`DialogProvider` mounts one `TooltipHost`. Standalone renderers can mount it explicitly. Native popovers place tooltips above modals without blocking clicks. All app hints use compact dark surfaces, white semibold text, and a small arrow toward the control. Long text wraps within the viewport. Motion uses shared timing tokens and respects reduced motion.
 
 See the [toolbar API](../reference/toolbar-api.md) and [tooltip API](../reference/tooltip-api.md).

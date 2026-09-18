@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { build } from 'vite'
 import { electron } from './electron.mjs'
+import { checkTooltips } from './tooltips.mjs'
 
 test('shared dialogs validate input, trap focus, queue, and clean up by addon owner', {
   timeout: 45000,
@@ -60,6 +61,11 @@ test('shared dialogs validate input, trap focus, queue, and clean up by addon ow
   await page.waitForFunction(() => Boolean(window.dialogTest))
   const prompt = page.getByRole('button', { name: /open built-in prompt/i })
   const target = page.getByRole('button', { name: /tooltip target/i })
+  await t.test('tooltips stay compact and dismiss stale anchors', () =>
+    checkTooltips(page),
+  )
+  await prompt.focus()
+  await page.keyboard.press('Tab')
   await target.focus()
   const tip = page.getByRole('tooltip')
   await tip.waitFor()
@@ -259,12 +265,16 @@ test('shared dialogs validate input, trap focus, queue, and clean up by addon ow
     })
   })
   const custom = page.getByRole('dialog', { name: /keyboard custom/i })
+  await custom.evaluate((dialog) =>
+    Promise.all(dialog.getAnimations().map((animation) => animation.finished)),
+  )
+  await custom
+    .getByRole('button', { name: /keep open/i })
+    .evaluate((anchor) => {
+      anchor.dataset.tooltip = 'inside modal'
+    })
+  await page.keyboard.press('Tab')
   await custom.getByRole('button', { name: /keep open/i }).focus()
-  await page.evaluate(() => {
-    const anchor = document.querySelector('dialog[open] button:last-child')
-    anchor.dataset.tooltip = 'inside modal'
-    anchor.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
-  })
   await tip.waitFor()
   assert.equal(await tip.innerText(), 'Inside modal')
   assert.equal(await tip.evaluate((el) => el.matches(':popover-open')), true)

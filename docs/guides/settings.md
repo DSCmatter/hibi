@@ -10,6 +10,8 @@ Use **Editor** for [tabs, default view, and spell check](editing.md). Use **Appe
 
 Turn on **Focus outlines** under **Appearance → Focus** if you want borders around focused buttons and navigation. To reduce animations, enable your system's reduced-motion setting.
 
+Hover over a control briefly to see its compact help tooltip, or reach it with keyboard navigation. Moving away, clicking, typing, or hiding the control dismisses the hint.
+
 **Lowercase interface** displays app text in lowercase without changing documents, typed values, code, or case-sensitive commands.
 
 Under **Appearance → Window**, set **Status bar** to **Show**, **Auto-hide**, or **Hide**. Auto-hide reveals the bar when you move to the bottom edge of the editor or focus one of its controls.

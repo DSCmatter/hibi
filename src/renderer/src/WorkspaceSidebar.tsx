@@ -171,7 +171,7 @@ export function WorkspaceSidebar({
         workspace && (
           <>
             <span
-              title={rootDecoration?.label}
+              data-tooltip={rootDecoration?.label}
               style={{
                 color: rootDecoration?.color
                   ? `var(--${rootDecoration.color})`

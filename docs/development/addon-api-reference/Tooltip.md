@@ -2,7 +2,7 @@
 
 # Tooltip
 
-Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Tooltip.tsx#L16)
+Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Tooltip.tsx#L21)
 
 Child must forward data attributes to its DOM element. No layout wrapper.
 

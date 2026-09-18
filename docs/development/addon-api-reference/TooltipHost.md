@@ -2,7 +2,7 @@
 
 # TooltipHost
 
-Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Tooltip.tsx#L27)
+Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Tooltip.tsx#L32)
 
 Mount once per renderer, including renderers using native modal dialogs.
 

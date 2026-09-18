@@ -261,7 +261,8 @@ export function DocumentTabs({
               aria-description={dirty ? 'Unsaved changes' : undefined}
               aria-disabled={busy}
               tabIndex={selected ? 0 : -1}
-              title={name}
+              data-tooltip={name}
+              data-verbatim="true"
               onMouseDown={(event) => {
                 if (event.button === 0)
                   event.currentTarget.focus({ preventScroll: true })

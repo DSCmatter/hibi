@@ -990,7 +990,8 @@
     "src/addons/discord-presence/rpc.ts"
   ],
   "0feca0d6afb4": [
-    "src/addons/discord-presence/rpc.ts"
+    "src/addons/discord-presence/rpc.ts",
+    "src/renderer/src/AddonSettings.tsx"
   ],
   "f5b084a14162": [
     "src/renderer/src/NotificationSettings.tsx"
@@ -1514,6 +1515,9 @@
   ],
   "f7b6719861d1": [
     "src/addons/github-markdown/manifest.ts"
+  ],
+  "9dcff3687fbb": [
+    "src/renderer/src/AddonSettings.tsx"
   ],
   "f99faf8efcd6": [
     "src/renderer/src/WorkspaceSettings.tsx"
@@ -2962,6 +2966,9 @@
   "62fdc7379808": [
     "src/addons/discord-presence/Settings.tsx"
   ],
+  "886bcbd93207": [
+    "src/addons/tags/decorations.ts"
+  ],
   "7d583b20c446": [
     "src/renderer/src/main.tsx"
   ],
@@ -3955,9 +3962,6 @@
   "9619649d8dc1": [
     "src/renderer/src/WorkspaceSettings.tsx"
   ],
-  "f0124ad44109": [
-    "src/addons/graph/Canvas.tsx"
-  ],
   "5ebc59145b59": [
     "src/renderer/src/ImportDialog.tsx"
   ],
@@ -4040,7 +4044,6 @@
     "src/addons/graph/Panel.tsx"
   ],
   "1e5fac867454": [
-    "src/addons/graph/Canvas.tsx",
     "src/addons/graph/Panel.tsx"
   ],
   "bb812e0ca964": [
@@ -4210,6 +4213,9 @@
   ],
   "1954f44f1495": [
     "src/renderer/src/Titlebar.tsx"
+  ],
+  "46dbf485989a": [
+    "src/addons/graph/Canvas.tsx"
   ],
   "9bf22c3ffed2": [
     "src/addons/word-count/index.ts"

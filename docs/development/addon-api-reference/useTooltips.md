@@ -2,7 +2,7 @@
 
 # useTooltips
 
-Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/tooltip-store.ts#L37)
+Function · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/tooltip-store.ts#L62)
 
 Built-ins can use this hook; addons receive a lifecycle-owned context.tooltips.
 

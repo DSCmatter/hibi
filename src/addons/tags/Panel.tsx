@@ -116,7 +116,9 @@ export function TagsPanel({
                   }}
                 >
                   <FileText size={14} aria-hidden="true" />
-                  <span title={path}>{path}</span>
+                  <span data-tooltip={path} data-verbatim="true">
+                    {path}
+                  </span>
                 </Button>
               ))}
             </section>

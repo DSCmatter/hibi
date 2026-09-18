@@ -1,5 +1,5 @@
 export type TooltipOptions = {
-  anchor: HTMLElement
+  anchor: HTMLElement | SVGElement
   text: string
   placement?: 'top' | 'bottom'
 }

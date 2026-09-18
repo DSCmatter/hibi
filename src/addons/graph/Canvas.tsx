@@ -311,7 +311,6 @@ export function GraphCanvas({
           drag.current = null
         }}
       >
-        <title>Workspace note connections</title>
         <g
           transform={`translate(${position.x} ${position.y}) scale(${position.scale})`}
         >
@@ -328,6 +327,8 @@ export function GraphCanvas({
             <g
               key={node.id}
               data-node={node.id}
+              data-tooltip={`${node.id} · ${node.degree} connections`}
+              data-verbatim="true"
               data-active={node.id === active}
               transform={`translate(${node.x ?? 0} ${node.y ?? 0})`}
               role="button"
@@ -341,9 +342,6 @@ export function GraphCanvas({
                 }
               }}
             >
-              <title>
-                {node.id} · {node.degree} connections
-              </title>
               <circle r={Math.max(radius(node), 2.5 / position.scale)} />
               <text y={-14} textAnchor="middle">
                 {label(node)}

@@ -204,7 +204,11 @@ export function Titlebar({
           {settingsOpen ? (
             <span>Settings</span>
           ) : document?.tabsEnabled === false ? (
-            <span className="single-document-title" title={document.name}>
+            <span
+              className="single-document-title"
+              data-tooltip={document.name}
+              data-verbatim="true"
+            >
               <span>{document.name}</span>
               {document.dirty && (
                 <span

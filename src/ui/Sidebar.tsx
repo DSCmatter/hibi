@@ -408,9 +408,10 @@ export function Sidebar({
                             ? `var(--${item.decoration.color})`
                             : undefined,
                         }}
-                        title={[item.label, item.decoration?.label]
+                        data-tooltip={[item.label, item.decoration?.label]
                           .filter(Boolean)
                           .join(' · ')}
+                        data-verbatim={mode === 'tree' || undefined}
                         aria-description={
                           [
                             item.dirty ? 'unsaved changes' : '',
@@ -546,7 +547,7 @@ export function Sidebar({
             aria-valuemax={resize.maxWidth}
             aria-valuenow={resize.width}
             tabIndex={0}
-            title="Drag to resize; double-click to reset"
+            data-tooltip="Drag to resize; double-click to reset"
             onDoubleClick={resize.onReset}
             onPointerDown={(event) => {
               if (event.button !== 0 || !event.isPrimary) return

@@ -361,7 +361,7 @@ export function DependencySettings({
                   <button
                     type="button"
                     className="dependency-addon-link"
-                    title={addon.reason}
+                    data-tooltip={addon.reason}
                     onClick={() => openAddon(addon.id)}
                   >
                     {addon.name}

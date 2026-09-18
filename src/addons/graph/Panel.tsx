@@ -147,7 +147,9 @@ export function GraphPanel({
                     onClick={() => open(node.id)}
                   >
                     <FileText size={14} aria-hidden="true" />
-                    <span title={node.id}>{node.id}</span>
+                    <span data-tooltip={node.id} data-verbatim="true">
+                      {node.id}
+                    </span>
                   </Button>
                 ))
               ) : (

@@ -9,7 +9,7 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/to
 
 ```typescript
 type TooltipOptions = {
-  anchor: HTMLElement
+  anchor: HTMLElement | SVGElement
   text: string
   placement?: 'top' | 'bottom'
 }
@@ -32,7 +32,7 @@ type TooltipOptions = {
 [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/tooltips.ts#L2)
 
 ```typescript
-anchor: HTMLElement
+anchor: HTMLElement | SVGElement
 ```
 
 ### text

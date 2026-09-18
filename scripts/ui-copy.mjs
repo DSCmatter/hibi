@@ -6,6 +6,7 @@ import { parse } from '@babel/parser'
 const displayFields = new Set([
   'label',
   'title',
+  'data-tooltip',
   'description',
   'message',
   'detail',

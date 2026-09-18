@@ -43,6 +43,7 @@ export function documentImage(revision: number) {
             container.replaceChildren(media)
           }
           media.title = title ?? ''
+          delete media.dataset.tooltip
           if (media instanceof HTMLVideoElement) {
             media.controls = true
             media.preload = 'metadata'
@@ -52,7 +53,8 @@ export function documentImage(revision: number) {
             if (media.getAttribute('src') !== result.url) media.src = result.url
           } else {
             media.removeAttribute('src')
-            media.title =
+            media.removeAttribute('title')
+            media.dataset.tooltip =
               'Could not load this media. Check the file path. Save the note first if the path is relative to it.'
           }
         }
