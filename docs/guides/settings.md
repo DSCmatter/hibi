@@ -44,7 +44,7 @@ Use **Syntax** to enable or disable formatting features, and **Code highlighting
 
 Enable or disable addons and themes in the alphabetical **Addons** list. Enabling a addon makes its settings and formats available. **Reset all** restores the default enabled addons without removing installed packages.
 
-Click an addon row to read its documentation. On a addon’s settings page, click its title. The row’s enable switch and remove button work separately.
+Click anywhere on an addon row outside its controls to read its documentation. On a addon’s settings page, click its title. The row’s enable switch and remove button work separately.
 
 ### Install an addon
 

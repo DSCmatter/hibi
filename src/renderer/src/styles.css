@@ -679,7 +679,7 @@ button:disabled {
   margin-top: 36px;
 }
 .settings-group {
-  padding: 0 16px;
+  padding: 0 var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   background: var(--surface);
@@ -717,6 +717,28 @@ button:disabled {
 }
 .setting-row-openable {
   position: relative;
+}
+.settings-group:has(> .setting-row-openable) {
+  overflow: clip;
+}
+.settings-group > .setting-row-openable {
+  margin-inline: calc(-1 * var(--space-4));
+  padding-inline: var(--space-4);
+}
+.settings-group
+  > .setting-row-openable:not([hidden])
+  ~ .setting-row-openable:not([hidden]) {
+  border-top-color: transparent;
+}
+.settings-group
+  > .setting-row-openable:not([hidden])
+  ~ .setting-row-openable:not([hidden])::before {
+  content: "";
+  position: absolute;
+  inset: -1px var(--space-4) auto;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
 }
 .setting-copy.setting-row-action {
   padding: 0;
