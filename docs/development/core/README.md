@@ -9,4 +9,5 @@ These guides cover working on Hibi itself. For an independent extension or theme
 - [Document persistence](document-persistence.md)
 - [Analysis isolation](analysis-isolation.md)
 - [Building the app](building-the-app.md)
+- [Releases and nightly builds](releases.md)
 - [Writing documentation](writing-documentation.md)

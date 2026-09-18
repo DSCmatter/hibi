@@ -23,13 +23,13 @@ Keep Vite on 7 and `@vitejs/plugin-react` on 5 while stable `electron-vite` 5 an
 
 ## Continuous integration
 
-Desktop checks run once per pull request and on pushes to `main`. Feature-branch pushes do not duplicate the matrix. The shared `.github/actions/ci` action powers regular checks and nightlies.
+Desktop checks run once per pull request and on pushes to `main`. Feature-branch pushes do not duplicate the matrix. The shared `.github/actions/ci` action powers regular incremental checks. Release builds use the [full-suite release policy](../../development/core/releases.md).
 
 Caches hold npm downloads, Electron/builder downloads, compiled `out` files, TypeScript incremental state, and successful revisions/test lists. Keys separate OS, architecture, and dependencies; checkpoints also check Node and runner-image versions. Failed jobs never publish a passing checkpoint.
 
 `npm run check:ci` compares the previous push or PR base with the checkout, plus changes since the cached successful revision. It follows static local imports to select tests. App changes rerun every desktop test; filesystem and dynamic dependencies are handled conservatively. It reuses unchanged builds and skips packaging validation when the app is unchanged. Lint and generated-document checks always run. `npm run check` remains the complete local suite.
 
-Missing caches/history, configuration changes, and unknown inputs trigger full checks. Select `clean` under Actions → check/nightly → Run workflow, or run `CI_CLEAN=true npm run check:ci`, to ignore caches, remove generated build/typecheck state, and run every test. Summaries record the base revision, build decision, and test count.
+Missing caches/history, configuration changes, and unknown inputs trigger full checks. Select `clean` under Actions → check → Run workflow, or run `CI_CLEAN=true npm run check:ci`, to ignore caches, remove generated build/typecheck state, and run every test. Summaries record the base revision, build decision, and test count. Nightly and stable release jobs always compile and run the full suite; their `clean` option only changes download caching.
 
 Local incremental checks include uncommitted and untracked files. Dirty checkouts never save a successful revision checkpoint. Superseded CI runs are cancelled; platform jobs have a 20-minute limit.
 

@@ -4,26 +4,28 @@ Hibi uses AGPL-3.0-only. Packaged applications include the root `LICENSE`.
 
 ## Nightly builds
 
-The `nightly` workflow runs from `main` daily at 18:00 UTC (02:00 Manila time), subject to GitHub scheduling delays. To run it manually, choose Actions → nightly → Run workflow. Unchanged revisions are skipped.
+The `nightly and releases` workflow runs from `main` daily at 18:00 UTC (02:00 Manila time), subject to GitHub scheduling delays. To run it manually, choose Actions → nightly and releases → Run workflow. Unchanged revisions still build. See the [release policy](../../development/core/releases.md) for green, broken, and stable publication rules.
 
-Each release gets a `nightly-YYYY-MM-DD-<commit>` tag and prerelease version. Its changelog links commits since the previous reachable nightly tag. The first nightly starts at the most recent reachable release tag, or includes all history if none exists. Release notes do not create a source commit.
+Each nightly gets a `nightly-YYYY-MM-DD-<commit>-<run>-<attempt>` tag and prerelease version, with `nightly-broken-` used when required checks fail. Its changelog links commits since the previous reachable dated release tag. Rolling recommendation tags are excluded. The first nightly includes all history if no earlier release exists. Release notes do not create a source commit.
 
-Four jobs run `npm run check` before packaging:
+Four jobs compile the app, run all required lint, documentation, copy, and test checks, then package:
 
 - Linux x64: AppImage.
 - Windows x64: NSIS installer.
 - macOS Apple Silicon: DMG and ZIP.
 - macOS Intel: DMG and ZIP.
 
-Publication waits for all platforms. The prerelease contains installers and `SHA256SUMS.txt`; temporary Actions artifacts expire after one day. Failed uploads leave a draft for retry. Runs are serialized, the source commit is fixed before builds start, and tags are never force-moved.
+Publication waits for all platform packages. Nightly check failures are recorded before packaging continues. Complete packages with failing checks publish as `nightly-broken` for debugging, with warnings, platform results, and links to logs. Compilation or packaging failures prevent release publication. The prerelease contains installers, build metadata, and `SHA256SUMS.txt`; temporary Actions artifacts expire after one day. Failed uploads leave a draft for retry. Runs are serialized and the source commit is fixed before builds start.
 
-Notes start with the short source SHA, a backup warning using GitHub's `:warning:` emoji, and direct Windows, macOS Intel, and Linux AppImage links. Every download, including Apple Silicon and ZIP files, gets a linked SHA256 entry. Changes follow the downloads.
+Only an all-platform `nightly-green` result can update the rolling `nightly-green` tag and its `recommended-nightly.json` asset. Dated release tags never move. Promotion refuses to move the pointer backward to an older commit. Consumers must follow the recommendation instead of treating the newest prerelease as safe.
+
+Notes start with the short source SHA, status, platform results, a backup warning, and direct installer links. Every download, including ZIP files, gets a linked SHA256 entry. Changes follow the downloads.
 
 Packages use `com.ryanaque.hibi`, the icons in `electron-builder.yml`, and the regular app's data profile. Save and back up documents before installing. Windows packages are unsigned. macOS packages use ad-hoc signing without notarization. Trusted distribution signing requires separate credentials.
 
 The workflow uses the repository token; only publication has `contents: write`. No extra secret is required. Test changelogs with `node --test tests/nightly.test.mjs` and check workflow syntax with `actionlint`.
 
-Nightlies share regular CI's incremental checks and cache. A manual `clean` run ignores caches and runs every test, even on an unchanged revision. It leaves an existing published release and its assets intact.
+Release builds use download caches only. Both nightly and stable channels always compile and run the full suite; a manual `clean` run bypasses download caches too. Stable `v<version>` tags must match `package.json` and require every check to pass before packaging and publication. `npm run dist` also runs the complete checks before creating local distribution packages. Regular pull request and push checks may still use incremental selection.
 
 ## Website addon catalog
 

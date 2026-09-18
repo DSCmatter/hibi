@@ -35,7 +35,7 @@
     "check": "npm run lint && npm run docs:check && npm run copy:check && npm test",
     "check:ci": "node scripts/ci.mjs",
     "package": "npm run build && electron-builder --dir -c.mac.identity=-",
-    "dist": "npm run build && electron-builder --publish never"
+    "dist": "npm run check && electron-builder --publish never"
   },
   "devDependencies": {
     "@babel/parser": "7.29.8",

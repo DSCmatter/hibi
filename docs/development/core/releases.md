@@ -1,0 +1,27 @@
+# Releases and nightly builds
+
+The **nightly and releases** workflow builds Linux x64, Windows x64, macOS Apple Silicon, and macOS Intel installers from one fixed commit. Every release build compiles the app and runs the full required suite on each platform. Download caches can speed up installation; cached builds and previous test results never certify a release.
+
+| Result | Nightly | Stable release |
+| --- | --- | --- |
+| All packages succeed and all required checks pass | Publish as **nightly-green** and update the recommended nightly. | Publish the release. |
+| All packages succeed but a required check fails | Publish as **nightly-broken**, with a warning and test results. Keep the previous recommended nightly. | Do not publish. |
+| Compilation or packaging fails on any platform | Do not publish a release or change the recommendation. | Do not publish. |
+
+## Nightlies
+
+Nightlies run daily at 18:00 UTC (02:00 Manila time), including when the source commit has not changed. GitHub may delay scheduled runs. You can also select **Actions → nightly and releases → Run workflow** on `main`. The **clean** option bypasses download caches; full builds and checks run either way.
+
+Green builds use `nightly-<date>-<commit>-<run>-<attempt>` tags. Broken builds use `nightly-broken-<date>-<commit>-<run>-<attempt>`. These releases and their assets are not replaced after publication. Release notes identify failed platforms and link to the workflow logs. A broken nightly leaves the workflow marked as failed even when its debug installers are published.
+
+The rolling [nightly-green release](https://github.com/schmayterling/hibi/releases/tag/nightly-green) points to the latest recommended build after the first green nightly is published. Its `recommended-nightly.json` asset contains the build's tag, version, commit, and release URL. Consumers should follow this pointer instead of choosing the newest prerelease: that prerelease may be broken. Broken builds never move this pointer. A rerun of an older commit cannot replace a newer recommendation.
+
+Back up your notes before installing a nightly. Broken builds are for debugging and dogfooding, and may lose functionality. Installers and checksums live on the dated release; the rolling release only carries the recommendation.
+
+## Stable releases
+
+Push a `v<version>` tag that exactly matches the non-prerelease version in `package.json`, such as `v0.1.0`. The same workflow runs the full required checks on all four platforms. A failing, skipped, or cancelled check cannot be promoted to a stable release. Compilation and packaging must also succeed everywhere.
+
+For local distribution packages, use `npm run dist`. It runs `npm run check` before creating installers. `npm run package` creates an unpacked development app and does not certify a release.
+
+Publication requires no extra token: only the publish job has repository contents write permission. Nightlies remain prereleases and never replace GitHub's latest stable release. Failed uploads leave a draft for retry; temporary Actions artifacts expire after one day. If one platform fails packaging, successful platform artifacts may remain in that workflow run for inspection, but no release is published.
