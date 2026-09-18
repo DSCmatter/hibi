@@ -12,6 +12,8 @@ export default defineAddon({
   start(context) {
     context.editor.registerMarkdown({
       id: 'metadata',
+      priority: 1000,
+      preservation: { level: 'verbatim', version: '1' },
       parse: parseFrontmatter,
       Editor: Properties,
     })

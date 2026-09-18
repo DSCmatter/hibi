@@ -40,6 +40,8 @@ Handle `stale` by calculating a new proposal from the latest snapshot, and `comp
 
 A request can contain up to 256 non-overlapping changes in source view or 32 in rich view. Each change must include its exact `expectedText`; insertions use an empty string. Edits cannot split a surrogate pair or share an insertion boundary. Inserted and expected text together are limited to 4 Mi UTF-16 units, the serialized request to 8 Mi units, and the resulting document to Hibi's 2 MiB UTF-8 limit. Changes use the host's ordered persistence journal and save barriers.
 
+Source offsets include the original line endings. CodeMirror uses normalized positions internally, but Hibi translates API ranges and retains untouched CRLF and mixed line endings. New lines use the document's first line-ending style. Edits cannot split a CRLF pair; use a whole-source transform for changes that only replace line endings. Source undo retains exact line endings in a bounded cache with the same 32-snapshot and 8 Mi-unit limits as rich fixes.
+
 Rich edits keep their exact before/after source for undo in a per-editor cache of up to 32 snapshots and 8 Mi UTF-16 units. Older entries still use normal rich-editor undo, which may normalize Markdown formatting. A schema change creates a new editor and follows the syntax transition policy.
 
 ## Analyze and mark text

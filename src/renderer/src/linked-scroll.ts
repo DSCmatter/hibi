@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core'
 import { markdownPositions } from './markdown-positions'
-import { sourceView } from './source-view'
+import { editorPosition, sourcePosition, sourceView } from './source-view'
 
 /** Markdown follows text positions; other preview formats keep proportional scrolling. */
 export function linkScroll(
@@ -51,6 +51,7 @@ export function linkScroll(
           }) ?? position
         point = view.coordsAtPos(position)
       }
+      position = sourcePosition(view, position)
       if (!point || position < offset) return null
       const mapped = cached.map(position - offset, 'source')
       if (mapped === null) return null
@@ -72,7 +73,8 @@ export function linkScroll(
     }
     const mapped = cached.map(position, 'rich')
     if (mapped === null || !point) return null
-    const at = Math.min(view.state.doc.length, mapped + offset)
+    const at = editorPosition(view, mapped + offset)
+    if (at === null) return null
     const destination = view.coordsAtPos(at)
     // Distant CodeMirror lines are virtualized. Estimate once, then refine after rendering.
     const y = destination

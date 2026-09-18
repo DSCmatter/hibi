@@ -4,11 +4,7 @@ import { Markdown, type MarkdownExtensionOptions } from '@tiptap/markdown'
 import { StarterKit } from '@tiptap/starter-kit'
 import { Marked } from 'marked'
 import { search } from 'prosemirror-search'
-import type {
-  MarkdownExtension,
-  MarkdownFlavor,
-  MarkdownProjection,
-} from '../../addons/api'
+import type { MarkdownFlavor } from '../../addons/api'
 import { BlockExit } from './BlockExit'
 import { CodeHighlight } from './CodeHighlight'
 import { literalMarkdown } from './LiteralMarkdown'
@@ -16,38 +12,7 @@ import { markdownSyntax } from './markdown-syntax'
 import { installSyntaxPreferences } from './syntax-parser'
 
 export { needsSourceEditing } from './markdown-preservation'
-
-export function projectMarkdown(
-  source: string,
-  adapters: readonly MarkdownExtension[],
-): MarkdownProjection {
-  let result: MarkdownProjection = {
-    content: source,
-    sourceOffset: 0,
-    serialize: (content) => content,
-  }
-  for (const adapter of adapters) {
-    const next = adapter.parse(result.content)
-    if (!next) continue
-    const previous = result
-    result = {
-      content: next.content,
-      ...(previous.sourceOffset !== undefined &&
-      next.sourceOffset !== undefined &&
-      Number.isSafeInteger(next.sourceOffset) &&
-      next.sourceOffset >= 0 &&
-      previous.content.slice(
-        next.sourceOffset,
-        next.sourceOffset + next.content.length,
-      ) === next.content
-        ? { sourceOffset: previous.sourceOffset + next.sourceOffset }
-        : {}),
-      serialize: (content) => previous.serialize(next.serialize(content)),
-      readOnly: Boolean(previous.readOnly || next.readOnly),
-    }
-  }
-  return result
-}
+export { projectMarkdown } from './markdown-projection'
 
 export function editorExtensions(flavors: readonly MarkdownFlavor[]) {
   const options = Object.assign(

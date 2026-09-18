@@ -45,3 +45,13 @@ For an unchanged contiguous body, a `MarkdownProjection` can declare `sourceOffs
 Set `serialization: 'block-local'` only when each top-level block can serialize independently and the document joins those blocks with two newlines. Hibi caches by immutable block, its index, the previous block, and document attributes. A serializer must not depend on other blocks, mutable external state, or a custom document-level join. Leave this property out to use full-document serialization.
 
 Hibi primes the cache before editing and reuses unchanged blocks during typing. Structural edits may invalidate more blocks. Test cached output against the full Markdown manager across edits, mark boundaries, empty paragraphs, and custom nodes before opting in.
+
+### Preserve source
+
+Declare `preservation` with a `level` and a contract `version`. `semantic` allows equivalent Markdown serialization. `verbatim` keeps source bytes: a flavor with this level uses source editing, while a projection can keep an exact prefix and suffix around its editable body. Hibi validates a verbatim projection's `sourceOffset` and reconstructs those regions itself. If the projection cannot prove an unchanged body, rich view stays read-only.
+
+Projection `priority` controls composition, with higher values first and stable feature IDs breaking ties. Frontmatter uses priority 1000. Change the preservation version when the parser or storage contract changes, independently of the addon release version.
+
+Installed addons should also declare `syntax` in their manifest: each descriptor names the contribution's `id`, `kind` (`flavor` or `projection`), literal `markers`, and preservation contract. Set `fallback: 'source'` to protect recognized source while the addon is disabled, including before its code has ever loaded. `literal` is only suitable for semantic syntax that the built-in editor can preserve safely. Use distinctive markers; detection is conservative and can make matching documents read-only in rich view.
+
+Syntax owners load during startup and cannot use deferred activation. Hibi checks that their declared contributions register with the matching preservation level and version. Enabling or disabling them rebuilds the editor from its current unsaved source; it does not convert documents or save over them.

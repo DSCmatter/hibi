@@ -461,7 +461,7 @@ test('frontmatter addon, inline rename, and centered workspace entry preserve do
   await source.waitFor({ state: 'hidden' })
   await rich.fill('visual body')
   const edited = (await page.evaluate(() => window.hibi.getDocument())).markdown
-  assert.equal(edited, '---\ntitle: changed\n---\n\nvisual body')
+  assert.equal(edited, '---\r\ntitle: changed\r\n---\r\n\r\nvisual body')
   for (const enabled of [false, true]) {
     await clickMenu(app, 'Settings')
     await page.getByRole('tab', { name: /^addons$/i, exact: true }).click()

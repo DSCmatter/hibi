@@ -2,7 +2,7 @@
 
 # MethodKey
 
-Type alias · Supporting type · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L187)
+Type alias · Supporting type · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L196)
 
 ```typescript
 type MethodKey<T> = {

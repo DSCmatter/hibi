@@ -90,6 +90,13 @@ export type AddonCommandDescriptor = {
   label: string
   keywords?: string
 }
+export type AddonSyntaxDescriptor = {
+  id: string
+  kind: 'flavor' | 'projection'
+  /** Unique literal source markers, not regular expressions. Detection is conservative. */
+  markers: readonly string[]
+  preservation: SourcePreservation & { fallback: 'source' | 'literal' }
+}
 export type AddonManifest = {
   /** Bundled native importers appear in the core Import dialog while enabled. */
   importer?: Pick<
@@ -112,6 +119,8 @@ export type AddonManifest = {
   /** Command activation needs inert command descriptors. View activation is for editor behavior, not schemas. */
   activation?: 'command' | 'source' | 'rich'
   commands?: readonly AddonCommandDescriptor[]
+  /** Inert ownership metadata protects source even when an installed addon has never been loaded. */
+  syntax?: readonly AddonSyntaxDescriptor[]
   /** Required plugin release version, separate from the host API version. */
   version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
@@ -251,6 +260,11 @@ export type AddonSlashCommand = {
 export type ExportResult = { path: string; pages: number }
 export type AddonState = { id: string; enabled: boolean }
 
+export type SourcePreservation = {
+  level: 'semantic' | 'verbatim'
+  /** Change when the parser/serializer contract changes. Separate from the addon release version. */
+  version: string
+}
 export type MarkdownProjection = {
   content: string
   /** Exact start of an unchanged contiguous body in the input source. Omit for non-identity projections. */
@@ -270,6 +284,8 @@ export type MarkdownFlavor = {
   readOnlyWhenDisabled?: boolean
   markedOptions?: { gfm?: boolean; breaks?: boolean }
   richExtensions?: readonly AnyExtension[]
+  /** Verbatim flavors require source editing. Literal fallback is for semantic syntax only. */
+  preservation?: SourcePreservation & { fallback: 'source' | 'literal' }
   /** Opt in only when top-level blocks serialize independently with standard blank-line joining.
    * Cache context includes index, the previous block, and document attributes.
    * Omission preserves full-document serialization for existing addons.
@@ -334,6 +350,10 @@ export type DocumentFormat = {
 }
 export type MarkdownExtension = {
   id: string
+  /** Higher priority projects first; equal priorities use stable addon/feature IDs. */
+  priority?: number
+  /** Verbatim projections keep the exact prefix and suffix around an unchanged source body. */
+  preservation?: SourcePreservation
   /** Pure source-to-body projection; return null for unrecognized documents. */
   parse: (source: string) => MarkdownProjection | null
   /** Optional properties UI above the rich editor. Receives the complete source. */

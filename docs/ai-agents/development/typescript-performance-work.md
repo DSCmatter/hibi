@@ -58,7 +58,7 @@ The continuation starts at `30984ba`. Complete these stages with progressive com
 - [x] Cache compatible Markdown serialization and avoid closed-outline scans, with differential tests.
 - [x] Add exact rich-text projections, shared review decorations, and a shipped local review addon.
 - [x] Add capability-specific SDK loading and deterministic staged activation.
-- [ ] Add preservation contracts and validate syntax transitions.
+- [x] Add preservation contracts and validate syntax transitions.
 - [ ] Add scoped document views and shared command invocation where the review workflow needs them.
 - [ ] Run the review analyzer in a bounded isolated service with cancellation and revocation tests.
 - [ ] Complete correctness, performance, documentation, and repository checks; record measured results.
@@ -73,6 +73,6 @@ The Review addon now uses exact text projections and shared annotations in both 
 
 New packages can select SDK libraries and activate from inert command descriptors or editor views. Legacy factories retain their all-engines SDK. Declared packages stage editor configuration, commands, toolbar items, and sidebar views until startup succeeds. Configuration order is stable across delayed imports, required source attachments gate editability, and stopping an unrelated integration no longer republishes unchanged rich attachments. The Review toolbar uses the shared command dispatcher. Eleven focused checks passed, including actual loaded-module inspection, deferred commands, source-only activation, registration rollback, existing sideloading, readiness, and the Review workflow.
 
-Full-document Markdown serialization, outline scanning, and source IPC remain on the editing path. Incremental serialization needs round-trip differential coverage before replacing them. An ordered edit journal and explicit flush barriers need save, crash-recovery, close, and tab-replacement tests; this pass preserves the immediate full-source persistence path.
+Preservation contracts distinguish semantic serialization from verbatim source. Inert syntax descriptors protect disabled installed addons before their code loads, and staged registration checks their storage contract. Verbatim projections prove a contiguous body; the host retains its original prefix and suffix. A citations fixture covers dirty disable/re-enable, save, and reload. Source editing now maps normalized CodeMirror positions back to raw UTF-16, preserving CRLF and untouched mixed line endings. The source API tests cover exact CRLF edits, paired-boundary rejection, and undo/redo. Seven final frontmatter, source-edit, and find checks passed after skipping a redundant empty search transaction that could reset selection during view changes. Source preservation fixtures, Unicode mapping, type checks, generated API references, and documentation links also passed.
 
-Rich-text edit support still needs exact source projections. Shared review decorations, capability-specific SDK loading, staged schema activation, preservation levels, and isolated services remain open. The installed review addon is an integration-test fixture, not a shipped review plugin. Preload bootstrap overlap and the startup-workspace drain also remain unchanged. No Rust ports or snapshot experiments were made.
+The unchecked continuation stages above are the remaining work. Context-dependent serializers still use a full rebuild, and rich fixes intentionally reject unproven ranges. No Rust ports or runtime snapshot experiments are included.

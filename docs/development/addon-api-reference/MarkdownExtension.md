@@ -2,7 +2,7 @@
 
 # MarkdownExtension
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L335)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L351)
 
 <details>
 <summary>Declaration</summary>
@@ -10,6 +10,10 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addon
 ```typescript
 type MarkdownExtension = {
   id: string
+  /** Higher priority projects first; equal priorities use stable addon/feature IDs. */
+  priority?: number
+  /** Verbatim projections keep the exact prefix and suffix around an unchanged source body. */
+  preservation?: SourcePreservation
   /** Pure source-to-body projection; return null for unrecognized documents. */
   parse: (source: string) => MarkdownProjection | null
   /** Optional properties UI above the rich editor. Receives the complete source. */
@@ -24,6 +28,8 @@ type MarkdownExtension = {
 **Properties**
 
 - [id](#id)
+- [priority](#priority)
+- [preservation](#preservation)
 - [Editor](#editor)
 
 **Methods**
@@ -34,15 +40,37 @@ type MarkdownExtension = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L336)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L352)
 
 ```typescript
 id: string
 ```
 
+### priority
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L354)
+
+Higher priority projects first; equal priorities use stable addon/feature IDs.
+
+```typescript
+priority?: number
+```
+
+### preservation
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L356)
+
+Verbatim projections keep the exact prefix and suffix around an unchanged source body.
+
+```typescript
+preservation?: SourcePreservation
+```
+
+Related: [SourcePreservation](SourcePreservation.md).
+
 ### Editor
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L340)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L360)
 
 Optional properties UI above the rich editor. Receives the complete source.
 
@@ -56,7 +84,7 @@ Related: [MarkdownEditorProps](MarkdownEditorProps.md).
 
 ### parse
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L338)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L358)
 
 Pure source-to-body projection; return null for unrecognized documents.
 
@@ -76,4 +104,4 @@ Related: [MarkdownProjection](MarkdownProjection.md).
 
 ## Related types
 
-[MarkdownProjection](MarkdownProjection.md), [MarkdownEditorProps](MarkdownEditorProps.md).
+[SourcePreservation](SourcePreservation.md), [MarkdownProjection](MarkdownProjection.md), [MarkdownEditorProps](MarkdownEditorProps.md).

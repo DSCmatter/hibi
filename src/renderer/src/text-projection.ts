@@ -1,6 +1,7 @@
 import { marked, type Token } from 'marked'
 import type { TextProjection } from '../../shared/document-projection.ts'
 import { readFrontmatter } from '../../shared/frontmatter.ts'
+import { sourceText } from './source-text.ts'
 
 /** Conservative literal spans: code, images, HTML, escapes, and generated text are omitted. */
 export function textProjection(
@@ -28,9 +29,11 @@ export function textProjection(
       offset + metadata.prefix.length,
     )
   const spans: TextProjection['spans'][number][] = []
+  const original = sourceText(source)
+  source = original.text
   const pieces: string[] = []
   let length = 0
-  const append = (text: string, sourceFrom: number) => {
+  const appendLine = (text: string, sourceFrom: number) => {
     if (!text) return
     if (pieces.length) {
       pieces.push('\n')
@@ -44,6 +47,13 @@ export function textProjection(
     })
     pieces.push(text)
     length += text.length
+  }
+  const append = (text: string, position: number) => {
+    let from = position - offset
+    for (const line of text.split('\n')) {
+      appendLine(line, offset + original.toSource(from))
+      from += line.length + 1
+    }
   }
   const visit = (tokens: readonly Token[], raw: string, base: number) => {
     let cursor = 0

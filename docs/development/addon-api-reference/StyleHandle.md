@@ -2,7 +2,7 @@
 
 # StyleHandle
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L181)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L190)
 
 <details>
 <summary>Declaration</summary>
@@ -27,7 +27,7 @@ type StyleHandle = {
 
 ### update
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L182)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L191)
 
 ```typescript
 update: (css: string) => void
@@ -43,7 +43,7 @@ update: (css: string) => void
 
 ### dispose
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L183)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L192)
 
 ```typescript
 dispose: () => void

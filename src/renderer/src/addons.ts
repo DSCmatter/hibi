@@ -24,6 +24,10 @@ import {
   documentExtension,
   isMarkdownDocument,
 } from '../../shared/document-types'
+import {
+  parseSyntaxDescriptors,
+  validatePreservation,
+} from '../../shared/preservation'
 import { startupSpan } from '../../shared/startup'
 import { useDialogService } from '../../ui/DialogProvider'
 import { performanceDiagnostics } from '../../ui/diagnostics'
@@ -132,7 +136,8 @@ export function useAddons(
               !extensions?.length ||
               !documentName ||
               extensions.includes(documentExtension(documentName)) ||
-              (!!addon.flavors?.length && isMarkdownDocument(documentName))
+              (!!(addon.flavors?.length || addon.manifest.syntax?.length) &&
+                isMarkdownDocument(documentName))
             )
           })
           .map((addon) => addon.manifest.id),
@@ -273,8 +278,9 @@ export function useAddons(
   }, [sources])
   const publishExtensions = useCallback(() => {
     setMarkdownExtensions((current) => {
-      const next = [...extensions.values()].sort((a, b) =>
-        a.id.localeCompare(b.id),
+      const next = [...extensions.values()].sort(
+        (a, b) =>
+          (b.priority ?? 100) - (a.priority ?? 100) || a.id.localeCompare(b.id),
       )
       return current.length === next.length &&
         current.every((entry, index) => entry === next[index])
@@ -433,6 +439,12 @@ export function useAddons(
         }
       }
       try {
+        parseSyntaxDescriptors(addon.manifest.syntax)
+        if (
+          addon.manifest.syntax?.length &&
+          (addon.manifest.activation || addon.manifest.startup === 'background')
+        )
+          throw new Error('Syntax owners must activate before editing.')
         if (!compatibleAddonManifest(addon.manifest))
           throw new Error(
             `The ${id} plugin needs an update before it can run in this version of Hibi.`,
@@ -832,6 +844,16 @@ export function useAddons(
               registerMarkdown(extension) {
                 if (disposed) return () => {}
                 assertSchemaActivation()
+                validatePreservation(extension.preservation)
+                if (
+                  extension.priority !== undefined &&
+                  (!Number.isSafeInteger(extension.priority) ||
+                    extension.priority < 0 ||
+                    extension.priority > 10000)
+                )
+                  throw new Error(
+                    'Projection priority must be an integer from 0 to 10000.',
+                  )
                 const key = `${id}.${extension.id}`
                 if (
                   !/^[a-z][a-z0-9-]*$/.test(extension.id) ||
@@ -844,6 +866,12 @@ export function useAddons(
                   id: key,
                   addonId: id,
                   ...(extension.Editor ? { Editor: extension.Editor } : {}),
+                  ...(extension.priority === undefined
+                    ? {}
+                    : { priority: extension.priority }),
+                  ...(extension.preservation
+                    ? { preservation: { ...extension.preservation } }
+                    : {}),
                   parse(source: string) {
                     if (disposed) return null
                     try {
@@ -1028,7 +1056,27 @@ export function useAddons(
             async () => {
               await start()
               if (disposed) startDetail.status = 'cancelled'
-              else batch.commit()
+              else {
+                batch.commit()
+                for (const syntax of addon.manifest.syntax ?? []) {
+                  const contribution =
+                    syntax.kind === 'flavor'
+                      ? flavors
+                          .snapshot()
+                          .find((flavor) => flavor.id === `${id}.${syntax.id}`)
+                      : extensions.get(`${id}.${syntax.id}`)
+                  if (
+                    !contribution ||
+                    contribution.preservation?.level !==
+                      syntax.preservation.level ||
+                    contribution.preservation.version !==
+                      syntax.preservation.version
+                  )
+                    throw new Error(
+                      `The ${syntax.id} syntax does not match its declared preservation contract.`,
+                    )
+                }
+              }
             },
             startDetail,
           )

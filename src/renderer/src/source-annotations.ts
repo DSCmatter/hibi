@@ -2,6 +2,8 @@ import { StateEffect, StateField } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { editorDocument } from './document-formats'
 import { editorAnnotations } from './editor-annotations'
+import { normalizeSource } from './source-text'
+import { editorPosition } from './source-view'
 
 const replace = StateEffect.define<DecorationSet>()
 const field = StateField.define<DecorationSet>({
@@ -22,10 +24,16 @@ export function observeSourceAnnotations(view: EditorView) {
       frame = 0
       const entries = editorAnnotations.forDocument(editorDocument.get())
       const marks = entries
+        .flatMap((entry) => {
+          const from = editorPosition(view, entry.from),
+            to = editorPosition(view, entry.to)
+          return from !== null && to !== null ? [{ ...entry, from, to }] : []
+        })
         .filter(
           (entry) =>
             entry.to <= view.state.doc.length &&
-            view.state.sliceDoc(entry.from, entry.to) === entry.expectedText,
+            view.state.sliceDoc(entry.from, entry.to) ===
+              normalizeSource(entry.expectedText),
         )
         .map((entry) =>
           Decoration.mark({

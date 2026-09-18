@@ -7,6 +7,7 @@ import {
   findNext,
   findPrev,
   getMatchHighlights,
+  getSearchState,
   SearchQuery,
   setSearchState,
 } from 'prosemirror-search'
@@ -56,7 +57,7 @@ import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
 import { observeRichAnnotations } from './rich-annotations'
 import { exactRichRange } from './rich-text-range'
-import { revealSourcePosition, sourceView } from './source-view'
+import { revealSourcePosition, sourcePosition, sourceView } from './source-view'
 import { textProjection } from './text-projection'
 
 const SourceEditor = lazy(() =>
@@ -567,7 +568,7 @@ export function MarkdownEditor({
           sourceReady &&
           view &&
           offset >= 0 &&
-          view.state.selection.main.head >= offset
+          sourcePosition(view, view.state.selection.main.head) >= offset
         ) {
           if (mappedBody !== body) {
             const map = markdownPositions(body, document)
@@ -584,7 +585,8 @@ export function MarkdownEditor({
             })
             mappedBody = body
           }
-          const position = view.state.selection.main.head - offset
+          const position =
+            sourcePosition(view, view.state.selection.main.head) - offset
           for (const heading of sourceHeadings)
             if (heading.start <= position) selected = heading.id
         }
@@ -651,8 +653,7 @@ export function MarkdownEditor({
       )
       if (offset < 0 || mapped === null) return
       handledOutline.current = outlineTarget
-      const anchor = Math.min(view.state.doc.length, offset + mapped)
-      revealSourcePosition(view, anchor)
+      revealSourcePosition(view, offset + mapped)
       view.focus()
     }
   }, [editor, outlineTarget, mode, sourceReady, value, projection.content])
@@ -749,6 +750,7 @@ export function MarkdownEditor({
       search: findOpen && findTarget === 'rich' ? findQuery : '',
       literal: true,
     })
+    if (!query.valid && !getSearchState(editor.state)?.query.valid) return
     editor.view.dispatch(setSearchState(editor.state.tr, query))
     const first = query.valid ? query.findNext(editor.state, 0) : null
     if (first)
@@ -885,6 +887,14 @@ export function MarkdownEditor({
                 ) : null,
               )}
             <div className="rich-editor-host" hidden={!markdownDocument}>
+              {markdownDocument && sourceOnly && !richExtensionError && (
+                <div className="source-notice">
+                  <DocumentNotice
+                    variant="warning"
+                    title="Edit this document in source view"
+                  />
+                </div>
+              )}
               {richExtensionError && (
                 <DocumentNotice
                   title="Editor plugin unavailable"

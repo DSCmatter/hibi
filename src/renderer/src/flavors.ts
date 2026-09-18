@@ -1,5 +1,6 @@
 import { Marked } from 'marked'
 import type { MarkdownFlavor, RenderedMarkdown } from '../../addons/api'
+import { validatePreservation } from '../../shared/preservation'
 import literalStyles from '../../ui/markdown-literal.css?raw'
 import syntaxStyles from '../../ui/syntax.css?raw'
 import { codeHtml, codeLanguages, escapeCode } from './code-languages'
@@ -40,6 +41,14 @@ export const flavors = {
     }
   },
   register(addonId: string, flavor: MarkdownFlavor) {
+    validatePreservation(flavor.preservation)
+    if (
+      flavor.preservation &&
+      (!['source', 'literal'].includes(flavor.preservation.fallback) ||
+        (flavor.preservation.level === 'verbatim' &&
+          flavor.preservation.fallback !== 'source'))
+    )
+      throw new Error('Verbatim syntax must retain a source-editing fallback.')
     const id = `${addonId}.${flavor.id}`
     if (!/^[a-z][a-z0-9-]*$/.test(flavor.id) || registry.has(id))
       throw new Error(`invalid or duplicate flavor: ${id}`)

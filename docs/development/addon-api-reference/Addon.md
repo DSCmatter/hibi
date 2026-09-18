@@ -2,7 +2,7 @@
 
 # Addon
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L484)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L504)
 
 A renderer addon and its lifecycle hooks. Use defineAddon to check this contract in source addons.
 
@@ -40,7 +40,7 @@ type Addon = {
 
 ### manifest
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L485)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L505)
 
 ```typescript
 manifest: AddonManifest
@@ -50,7 +50,7 @@ Related: [AddonManifest](AddonManifest.md).
 
 ### flavors
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L488)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L508)
 
 Lightweight descriptors remain discoverable while a bundled addon is disabled.
 
@@ -62,7 +62,7 @@ Related: [MarkdownFlavor](MarkdownFlavor.md).
 
 ### Settings
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L491)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L511)
 
 Optional settings content. The host supplies its heading and metadata.
 
@@ -74,7 +74,7 @@ Settings?: ComponentType
 
 ### start
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L486)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L506)
 
 ```typescript
 start: (context: AddonContext) => void | Promise<void>
@@ -92,7 +92,7 @@ Related: [AddonContext](AddonContext.md).
 
 ### stop
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L489)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L509)
 
 ```typescript
 stop?: () => void

@@ -7,6 +7,7 @@ export const flavorInfo: MarkdownFlavor = {
   id: 'github',
   name: 'GitHub Markdown',
   kind: 'dialect',
+  preservation: { level: 'semantic', version: '1', fallback: 'source' },
   description:
     'Alerts, tables, task lists, strikethrough, and automatic links.',
   detect(source) {

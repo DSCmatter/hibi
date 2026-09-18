@@ -2,7 +2,11 @@ import type { Editor } from '@tiptap/core'
 import { type RefObject, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { markdownPositions } from './markdown-positions'
-import { sourceView as findSourceView } from './source-view'
+import {
+  editorPosition,
+  sourceView as findSourceView,
+  sourcePosition,
+} from './source-view'
 
 export function MirrorCursor({
   editor,
@@ -61,7 +65,9 @@ export function MirrorCursor({
       const bodyOffset = source.lastIndexOf(body)
       if (
         bodyOffset < 0 ||
-        (sourceFocus && sourceView.state.selection.main.head < bodyOffset)
+        (sourceFocus &&
+          sourcePosition(sourceView, sourceView.state.selection.main.head) <
+            bodyOffset)
       ) {
         setPosition(null)
         return
@@ -75,7 +81,8 @@ export function MirrorCursor({
       const target = cached.map(
         richFocus
           ? editor.state.selection.head
-          : sourceView.state.selection.main.head - bodyOffset,
+          : sourcePosition(sourceView, sourceView.state.selection.main.head) -
+              bodyOffset,
         richFocus ? 'rich' : 'source',
       )
       const pane = root.current?.querySelector<HTMLElement>(
@@ -85,10 +92,11 @@ export function MirrorCursor({
         setPosition(null)
         return
       }
+      const sourceTarget = editorPosition(sourceView, target + bodyOffset)
       const caret = richFocus
-        ? sourceView.coordsAtPos(
-            Math.min(sourceView.state.doc.length, target + bodyOffset),
-          )
+        ? sourceTarget === null
+          ? null
+          : sourceView.coordsAtPos(sourceTarget)
         : editor.view.coordsAtPos(target)
       const bounds = pane.getBoundingClientRect()
       if (

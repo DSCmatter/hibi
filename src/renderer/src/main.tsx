@@ -27,6 +27,7 @@ import {
   type Hotkeys,
 } from '../../shared/hotkeys'
 import { isMediaFile } from '../../shared/media'
+import { needsOwnedSource } from '../../shared/preservation'
 import { startupMark } from '../../shared/startup'
 import { exceedsUtf8Limit } from '../../shared/text-size'
 import { DialogProvider, useDialogs } from '../../ui/DialogProvider'
@@ -1116,11 +1117,29 @@ function App() {
     () => knownFlavors.filter((flavor) => flavorMatches(flavor, flavorSource)),
     [knownFlavors, flavorSource],
   )
-  const unsupportedFlavor = detectedFlavors.some(
-    (flavor) =>
-      flavor.readOnlyWhenDisabled !== false &&
-      !chosenFlavors.some((chosen) => chosen.id === flavor.id),
+  const ownedSource = useMemo(
+    () =>
+      needsOwnedSource(
+        document?.markdown ?? '',
+        addonHost.catalog.map((addon) => addon.manifest),
+        new Set(
+          addonHost.states
+            .filter((state) => state.enabled)
+            .map((state) => state.id),
+        ),
+      ),
+    [document?.markdown, addonHost.catalog, addonHost.states],
   )
+  const unsupportedFlavor =
+    ownedSource ||
+    detectedFlavors.some(
+      (flavor) =>
+        flavor.preservation?.level === 'verbatim' ||
+        ((flavor.preservation
+          ? flavor.preservation.fallback === 'source'
+          : flavor.readOnlyWhenDisabled !== false) &&
+          !chosenFlavors.some((chosen) => chosen.id === flavor.id)),
+    )
   const flavorLabel = [
     (flavorChoice.dialect === 'auto'
       ? detectedFlavors.find((flavor) => flavor.kind === 'dialect')?.name

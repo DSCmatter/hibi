@@ -1,9 +1,12 @@
 import type { Node as RichNode } from '@tiptap/pm/model'
 import { marked, type Token } from 'marked'
+import { sourceText } from './source-text.ts'
 import { preserveDisabled } from './syntax-parser.ts'
 
 /** Map visible token text, never link destinations, image alt text, or markup. */
 export function markdownPositions(source: string, document: RichNode) {
+  const original = sourceText(source)
+  source = original.text
   let text = ''
   const offsets: number[] = []
   function visit(tokens: readonly Token[], raw: string, base: number) {
@@ -52,7 +55,7 @@ export function markdownPositions(source: string, document: RichNode) {
       const offset = offsets[start + Math.min(i, node.text.length - 1)]
       if (offset !== undefined)
         points.push({
-          source: offset + Number(i === node.text.length),
+          source: original.toSource(offset + Number(i === node.text.length)),
           rich: pos + i,
         })
     }

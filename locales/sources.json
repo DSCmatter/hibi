@@ -135,6 +135,9 @@
   "9ade719b95a9": [
     "src/renderer/src/document-edits.ts"
   ],
+  "9ab20d9f0486": [
+    "src/renderer/src/SourceEditor.tsx"
+  ],
   "293aad4970e4": [
     "src/renderer/src/Editor.tsx"
   ],
@@ -741,6 +744,9 @@
   "a2e7d5bd8495": [
     "src/main/sideload.ts"
   ],
+  "cae5ed2286f5": [
+    "src/shared/preservation.ts"
+  ],
   "e736541c1769": [
     "src/renderer/src/FormatsSettings.tsx"
   ],
@@ -921,6 +927,9 @@
   "0daa134af314": [
     "src/shared/document-edits.ts"
   ],
+  "41f0dc36eb89": [
+    "src/renderer/src/Editor.tsx"
+  ],
   "c7bf14938074": [
     "src/addons/asciidoc/manifest.ts"
   ],
@@ -973,6 +982,9 @@
   ],
   "f1056ff3b7e2": [
     "src/renderer/src/addons.ts"
+  ],
+  "a608f028f460": [
+    "src/renderer/src/SourceEditor.tsx"
   ],
   "61a62a841f54": [
     "src/addons/diagnostics/Settings.tsx",
@@ -1514,6 +1526,9 @@
   ],
   "ea7cb8d5da6c": [
     "src/main/ui-case.ts"
+  ],
+  "6917f99d1cef": [
+    "src/shared/preservation.ts"
   ],
   "d09eb4ceda72": [
     "src/main/document.ts"
@@ -2178,6 +2193,9 @@
   "762017f1d9dc": [
     "src/addons/_shared/document-project.ts"
   ],
+  "587fa263859c": [
+    "src/renderer/src/addons.ts"
+  ],
   "c64577c53a58": [
     "src/addons/_shared/document-project.ts"
   ],
@@ -2641,6 +2659,9 @@
     "src/renderer/src/SyntaxSettings.tsx",
     "src/renderer/src/settings-categories.ts"
   ],
+  "5d56d0cefb9f": [
+    "src/renderer/src/addons.ts"
+  ],
   "6725e7bbcd28": [
     "src/ui/ColorschemeSettings.tsx"
   ],
@@ -2902,6 +2923,9 @@
   ],
   "e7b664bd8730": [
     "src/renderer/src/addon-registry.ts"
+  ],
+  "ea84903d5e12": [
+    "src/renderer/src/addons.ts"
   ],
   "ae8d2458110c": [
     "src/main/sideload.ts"
@@ -3266,6 +3290,9 @@
   ],
   "ca4f485a9985": [
     "src/renderer/src/main.tsx"
+  ],
+  "7fc90e2bb6a9": [
+    "src/renderer/src/flavors.ts"
   ],
   "dd167905de0d": [
     "src/renderer/src/HibiSettings.tsx"

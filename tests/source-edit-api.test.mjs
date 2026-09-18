@@ -155,6 +155,50 @@ test('a review addon applies source edits atomically, preserves undo, and reject
   assert.equal(result.redone, `${corrected}!`)
   assert.equal(result.stale.status, 'stale')
   assert.equal(result.composing.status, 'composing')
+  await page.evaluate(() =>
+    window.reviewFixture.context.editor.updateMarkdown(
+      () => '😀\r\nteh note\r\n',
+    ),
+  )
+  await page.waitForFunction(() =>
+    document.querySelector('.cm-content')?.textContent.includes('teh note'),
+  )
+  const lineEndings = await page.evaluate(() => {
+    const { context, sdk } = window.reviewFixture
+    const view = sdk.codeMirror.view.EditorView.findFromDOM(
+      document.querySelector('.cm-content'),
+    )
+    const snapshot = context.editor.getDocument()
+    const request = (changes) => ({
+      requestId: crypto.randomUUID(),
+      tabId: snapshot.tabId,
+      revision: snapshot.revision,
+      contentVersion: snapshot.contentVersion,
+      changes,
+    })
+    const split = context.editor.applySourceEdits(
+      request([{ from: 3, to: 3, insert: 'x', expectedText: '' }]),
+    )
+    const applied = context.editor.applySourceEdits(
+      request([{ from: 4, to: 7, insert: 'the', expectedText: 'teh' }]),
+    )
+    const corrected = context.editor.getDocument().markdown
+    sdk.codeMirror.commands.undo(view)
+    const undone = context.editor.getDocument().markdown
+    sdk.codeMirror.commands.redo(view)
+    return {
+      split,
+      applied,
+      corrected,
+      undone,
+      redone: context.editor.getDocument().markdown,
+    }
+  })
+  assert.equal(lineEndings.split.status, 'invalid')
+  assert.equal(lineEndings.applied.status, 'applied')
+  assert.equal(lineEndings.corrected, '😀\r\nthe note\r\n')
+  assert.equal(lineEndings.undone, '😀\r\nteh note\r\n')
+  assert.equal(lineEndings.redone, lineEndings.corrected)
   await app.evaluate(({ dialog }) => {
     dialog.showSaveDialog = async () => ({ canceled: true })
   })

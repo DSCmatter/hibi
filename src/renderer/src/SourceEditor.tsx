@@ -51,6 +51,7 @@ import {
   type SourceFormatting,
   sourceFormatting,
 } from './source-formatting'
+import { normalizeSource, sourceText } from './source-text'
 import { registerSourceView } from './source-view'
 import { textProjection } from './text-projection'
 
@@ -155,6 +156,28 @@ export function SourceEditor({
   editContext.current = { document, editTarget, disabled, inputReady }
   const change = useRef(onChange)
   const initialValue = useRef(value)
+  const sourceBuffer = useRef<ReturnType<typeof sourceText> | null>(null)
+  if (!sourceBuffer.current) sourceBuffer.current = sourceText(value)
+  const exactChange = useRef<string | null>(null)
+  const sourceHistory = useRef(new Map<string, string>())
+  const rememberSource = (source: string) => {
+    const next = sourceText(source, sourceBuffer.current?.lineBreak)
+    if (next.nativeLineBreaks || exactChange.current !== null) {
+      sourceHistory.current.set(next.text, source)
+      let size = [...sourceHistory.current].reduce(
+        (size, [text, raw]) => size + text.length + raw.length,
+        0,
+      )
+      while (sourceHistory.current.size > 32 || size > 8 * 1024 * 1024) {
+        const oldest = sourceHistory.current.keys().next().value!
+        size -= oldest.length + sourceHistory.current.get(oldest)!.length
+        sourceHistory.current.delete(oldest)
+      }
+    }
+    sourceBuffer.current = next
+  }
+  const remember = useRef(rememberSource)
+  remember.current = rememberSource
   const appliedRevision = useRef(externalRevision)
   const editable = useRef(new Compartment())
   const numbers = useRef(new Compartment())
@@ -196,7 +219,7 @@ export function SourceEditor({
     const editor = new EditorView({
       parent: host.current,
       state: EditorState.create({
-        doc: initialValue.current,
+        doc: normalizeSource(initialValue.current),
         extensions: [
           addons.current.of([]),
           search({
@@ -306,13 +329,34 @@ export function SourceEditor({
                 transaction.annotation(externalChange),
               )
             ) {
-              change.current(update.state.doc.toString())
+              const text = update.state.doc.toString()
+              const changes: { from: number; to: number; insert: string }[] = []
+              if (sourceBuffer.current!.nativeLineBreaks)
+                update.changes.iterChanges(
+                  (from, to, _fromB, _toB, inserted) => {
+                    changes.push({ from, to, insert: inserted.toString() })
+                  },
+                )
+              const undo = update.transactions.some(
+                (transaction) =>
+                  transaction.isUserEvent('undo') ||
+                  transaction.isUserEvent('redo'),
+              )
+              const source =
+                exactChange.current ??
+                (undo ? sourceHistory.current.get(text) : undefined) ??
+                (sourceBuffer.current!.nativeLineBreaks
+                  ? sourceBuffer.current!.apply(changes)
+                  : text)
+              remember.current(source)
+              change.current(source)
             }
           }),
         ],
       }),
     })
     view.current = editor
+    remember.current(sourceBuffer.current!.source)
     const removeAnnotations = observeSourceAnnotations(editor)
     const unregisterProjection = documentProjections.register(
       'source',
@@ -326,7 +370,7 @@ export function SourceEditor({
           !current ||
           current.tabId !== context.document.tabId ||
           current.revision !== context.document.revision ||
-          editor.state.doc.toString() !== current.markdown
+          sourceBuffer.current!.source !== current.markdown
         )
           return null
         return (
@@ -363,38 +407,79 @@ export function SourceEditor({
           status: 'composing',
           message: 'Finish composing text before applying edits.',
         }
-      const source = editor.state.doc.toString()
+      const source = sourceBuffer.current!.source
       if (source !== current.markdown)
         return {
           status: 'stale',
           message: 'The editor is synchronizing. Review the edits again.',
         }
+      let expected: string
       try {
-        if (
-          editedSource(source, request.changes, MAX_DOCUMENT_BYTES) === source
-        )
+        expected = editedSource(source, request.changes, MAX_DOCUMENT_BYTES)
+        if (expected === source)
           return { status: 'applied', contentVersion: current.contentVersion }
       } catch (error) {
         return { status: 'invalid', message: String(error) }
       }
-      editor.dispatch({
-        changes: request.changes,
+      const changes = request.changes.map((change) => ({
+        from: sourceBuffer.current!.toEditor(change.from),
+        to: sourceBuffer.current!.toEditor(change.to),
+        insert: normalizeSource(change.insert),
+      }))
+      if (
+        changes.some((change) => change.from === null || change.to === null) ||
+        normalizeSource(expected) === sourceBuffer.current!.text
+      )
+        return {
+          status: 'invalid',
+          message:
+            'Edits must keep line-ending pairs intact. Use a whole-source transform to change only line endings.',
+        }
+      const transaction = editor.state.update({
+        changes: changes.map((change) => ({
+          from: change.from!,
+          to: change.to!,
+          insert: change.insert,
+        })),
         annotations: [
           isolateHistory.of('full'),
           Transaction.userEvent.of('input.addon'),
         ],
       })
+      if (transaction.newDoc.toString() !== normalizeSource(expected))
+        return {
+          status: 'invalid',
+          message: 'An editor extension changed this edit.',
+        }
+      exactChange.current = expected
+      try {
+        editor.dispatch(transaction)
+      } finally {
+        exactChange.current = null
+      }
       return {
         status: 'applied',
         contentVersion: editorDocument.get()!.contentVersion,
       }
     })
     let disposed = false
-    const unregister = registerSourceView(editor, (anchor) =>
-      editor.dispatch({
-        selection: { anchor },
-        effects: EditorView.scrollIntoView(anchor, { y: 'start', yMargin: 48 }),
-      }),
+    const unregister = registerSourceView(
+      editor,
+      (raw) => {
+        const anchor = sourceBuffer.current!.toEditor(raw)
+        if (anchor !== null)
+          editor.dispatch({
+            selection: { anchor },
+            effects: EditorView.scrollIntoView(anchor, {
+              y: 'start',
+              yMargin: 48,
+            }),
+          })
+      },
+      {
+        toSource: (position) => sourceBuffer.current!.toSource(position),
+        toEditor: (position) => sourceBuffer.current!.toEditor(position),
+      },
     )
     configureParser.current = () => {
       const id = parserOptions.current.codeLanguage
@@ -490,9 +575,16 @@ export function SourceEditor({
     if (!active || appliedRevision.current === externalRevision) return
     appliedRevision.current = externalRevision
     const editor = view.current
-    if (editor && editor.state.doc.toString() !== value) {
+    if (editor && sourceBuffer.current?.source !== value) {
+      sourceBuffer.current = sourceText(value)
+      sourceHistory.current.clear()
+      remember.current(value)
       editor.dispatch({
-        changes: { from: 0, to: editor.state.doc.length, insert: value },
+        changes: {
+          from: 0,
+          to: editor.state.doc.length,
+          insert: normalizeSource(value),
+        },
         annotations: [
           externalChange.of(true),
           Transaction.addToHistory.of(false),
