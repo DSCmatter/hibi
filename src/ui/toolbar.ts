@@ -7,6 +7,8 @@ export type ToolbarPreferences = {
   mode: 'icons' | 'icons-and-text' | 'text'
   /** Fully qualified item ids; omitted/new items retain registration order. */
   order?: readonly string[]
+  /** Fully qualified item IDs. Omitted items use the toolbar; menu items always stay in the dropdown. */
+  placements?: Readonly<Record<string, 'toolbar' | 'menu' | 'hidden'>>
 }
 export type ToolbarItem = {
   id: string

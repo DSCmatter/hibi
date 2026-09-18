@@ -6,18 +6,21 @@ import type {
 } from '../../ui/toolbar'
 
 const key = 'hibi:toolbar'
+const validId = (id: unknown): id is string =>
+  typeof id === 'string' && /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(id)
 const validOrder = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? [
-        ...new Set(
-          value.filter(
-            (id): id is string =>
-              typeof id === 'string' &&
-              /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(id),
-          ),
+  Array.isArray(value) ? [...new Set(value.filter(validId))] : []
+const validPlacements = (
+  value: unknown,
+): NonNullable<ToolbarPreferences['placements']> =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(
+        Object.entries(value).filter(
+          ([id, placement]) =>
+            validId(id) && (placement === 'menu' || placement === 'hidden'),
         ),
-      ]
-    : []
+      )
+    : {}
 let preferences: ToolbarPreferences = {
   visible: true,
   mode: 'icons',
@@ -31,6 +34,7 @@ try {
   if (['icons', 'icons-and-text', 'text'].includes(saved?.mode))
     preferences.mode = saved.mode
   preferences.order = validOrder(saved?.order)
+  preferences.placements = validPlacements(saved?.placements)
 } catch {
   /* Keep defaults when stored preferences cannot be read. */
 }
@@ -66,6 +70,10 @@ function setPreferences(changes: Partial<ToolbarPreferences>) {
       changes.order === undefined
         ? (preferences.order ?? [])
         : validOrder(changes.order),
+    placements:
+      changes.placements === undefined
+        ? (preferences.placements ?? {})
+        : validPlacements(changes.placements),
     visible:
       typeof changes.visible === 'boolean'
         ? changes.visible
@@ -111,6 +119,7 @@ export const toolbar = {
       getPreferences: () => ({
         ...preferences,
         order: [...(preferences.order ?? [])],
+        placements: { ...preferences.placements },
       }),
       setPreferences(changes) {
         if (!disposed) setPreferences(changes)

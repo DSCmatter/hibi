@@ -3,6 +3,7 @@ import {
   ArrowRight,
   ChevronRight,
   Ellipsis,
+  EyeOff,
   GripVertical,
   Puzzle,
 } from 'lucide-react'
@@ -86,9 +87,14 @@ export function EditorToolbar({
   const visible = items.filter(
     (item) =>
       !item.hidden &&
+      preferences.placements?.[item.id] !== 'hidden' &&
       (!item.when ||
         (item.when === 'source' ? mode !== 'normal' : mode !== 'markdown')),
   )
+  const inline = visible.filter(
+    (item) => preferences.placements?.[item.id] !== 'menu',
+  )
+  const hasMenuItems = inline.length !== visible.length
   // biome-ignore lint/correctness/useExhaustiveDependencies: action and mode changes alter the measured DOM.
   useLayoutEffect(() => {
     const element = row.current,
@@ -110,7 +116,7 @@ export function EditorToolbar({
         widths.reduce((sum, width) => sum + width, 0) +
         Math.max(0, widths.length - 1) * gap
       let fit = widths.length
-      if (total > space) {
+      if (total > space || hasMenuItems) {
         let used = overflowWidth
         fit = 0
         for (const width of widths) {
@@ -126,8 +132,9 @@ export function EditorToolbar({
     observer.observe(element)
     observer.observe(measurement)
     return () => observer.disconnect()
-  }, [items, mode, preferences.mode, preferences.visible])
-  const overflow = visible.slice(count)
+  }, [items, mode, preferences, hasMenuItems])
+  const shown = new Set(inline.slice(0, count).map((item) => item.id))
+  const overflow = visible.filter((item) => !shown.has(item.id))
   const hidden = typing && preferences.autoHide !== false && !open
   const closeMenu = () => {
     menu.current?.hidePopover()
@@ -164,7 +171,7 @@ export function EditorToolbar({
           data-mode={preferences.mode}
           onDragStart={(event) => event.preventDefault()}
         >
-          {visible.slice(0, count).map((item) => {
+          {inline.slice(0, count).map((item) => {
             return (
               <Button
                 key={item.id}
@@ -252,7 +259,7 @@ export function EditorToolbar({
             ))}
           </div>
           <div className="toolbar-measure" ref={probe} aria-hidden inert>
-            {visible.map((item) => (
+            {inline.map((item) => (
               <span className="ui-button" key={item.id}>
                 <ActionContent item={item} mode={preferences.mode} />
               </span>
@@ -356,7 +363,9 @@ export function ToolbarSettings() {
         <div className="toolbar-order-panel">
           <div className="toolbar-order-heading">
             <p id={help}>
-              Drag actions to reorder them, or select one and use the arrows.
+              Drag actions to reorder them, or select one to change its
+              placement and use the arrows. Menu-only actions always stay in the
+              dropdown.
             </p>
             <Button
               disabled={!preferences.order?.length}
@@ -406,6 +415,12 @@ export function ToolbarSettings() {
                     />
                     <Icon size={16} aria-hidden />
                     <span>{item.label}</span>
+                    {preferences.placements?.[item.id] === 'menu' && (
+                      <Ellipsis size={14} aria-hidden />
+                    )}
+                    {preferences.placements?.[item.id] === 'hidden' && (
+                      <EyeOff size={14} aria-hidden />
+                    )}
                   </button>
                 </li>
               )
@@ -420,6 +435,25 @@ export function ToolbarSettings() {
                 </span>
               </p>
               <div>
+                <Select
+                  aria-label={`Toolbar placement for ${active.label}`}
+                  value={preferences.placements?.[active.id] ?? 'toolbar'}
+                  onChange={(event) =>
+                    toolbar.setPreferences({
+                      placements: {
+                        ...preferences.placements,
+                        [active.id]: event.target.value as
+                          | 'toolbar'
+                          | 'menu'
+                          | 'hidden',
+                      },
+                    })
+                  }
+                >
+                  <option value="toolbar">Show in toolbar</option>
+                  <option value="menu">Menu only</option>
+                  <option value="hidden">Hide</option>
+                </Select>
                 <IconButton
                   aria-label={`Move ${active.label} earlier`}
                   disabled={position === 0}

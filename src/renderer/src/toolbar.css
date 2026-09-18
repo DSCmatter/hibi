@@ -182,6 +182,7 @@
 }
 .toolbar-order-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -200,6 +201,7 @@
 }
 .toolbar-order-footer > div {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
 }
 .toolbar-order .drag-handle {

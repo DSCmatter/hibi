@@ -15,6 +15,8 @@ type ToolbarPreferences = {
   mode: 'icons' | 'icons-and-text' | 'text'
   /** Fully qualified item ids; omitted/new items retain registration order. */
   order?: readonly string[]
+  /** Fully qualified item IDs. Omitted items use the toolbar; menu items always stay in the dropdown. */
+  placements?: Readonly<Record<string, 'toolbar' | 'menu' | 'hidden'>>
 }
 ```
 
@@ -28,6 +30,7 @@ type ToolbarPreferences = {
 - [autoHide](#autohide)
 - [mode](#mode)
 - [order](#order)
+- [placements](#placements)
 
 ## Properties
 
@@ -65,4 +68,14 @@ Fully qualified item ids; omitted/new items retain registration order.
 
 ```typescript
 order?: readonly string[]
+```
+
+### placements
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L11)
+
+Fully qualified item IDs. Omitted items use the toolbar; menu items always stay in the dropdown.
+
+```typescript
+placements?: Readonly<Record<string, 'toolbar' | 'menu' | 'hidden'>>
 ```

@@ -20,13 +20,15 @@ const action = context.toolbar.register({
 
 ## Preferences and layout
 
-`getPreferences()` returns `{ visible, mode, order?, autoHide? }`. `setPreferences(partial)` changes saved window preferences. `mode` accepts `icons`, `icons-and-text`, or `text`.
+`getPreferences()` returns `{ visible, mode, order?, autoHide?, placements? }`. `setPreferences(partial)` changes saved window preferences. `mode` accepts `icons`, `icons-and-text`, or `text`.
 
 `order` contains fully qualified IDs such as `format.bold` and `keybeats.mute`. Invalid/duplicate IDs are ignored. Unlisted actions follow registration order; disabled addons keep their saved positions. An empty array restores defaults. Returned arrays are copies.
 
+`placements` maps fully qualified IDs to `toolbar`, `menu`, or `hidden`. Omitted IDs default to `toolbar`, which allows automatic overflow. `menu` always puts the action in the dropdown, regardless of available width. `hidden` removes it from both surfaces without disabling its command or shortcut. Contextual `hidden` and `when` still take precedence. Invalid entries are ignored; explicit `toolbar` entries are normalized away. Passing a map replaces the saved map, so merge with `getPreferences().placements` to change one action. Returned maps are copies. Choices survive addon disable/re-enable and app restarts.
+
 The host measures button widths and moves overflow into an ellipsis menu in saved order. It adapts to fonts, sidebar width, and display mode without horizontal scrolling. The toolbar's inset surface uses 12 px horizontal and 4 px vertical padding. Individual buttons get backgrounds only when hovered or active. Overflow supports arrow keys, Home/End, Escape, and outside dismissal.
 
-Appearance settings expose visibility, display mode, and **Arrange toolbar actions**. Users can drag tiles, use Earlier/Later buttons, or press Alt+Left/Right on a focused tile. Tiles wrap, and the selected action's position appears below them. The toolbar also supports dragging. Changes save immediately. Reset order preserves display mode and visibility.
+Appearance settings expose visibility, display mode, and **Arrange toolbar actions**. Users can drag tiles, use Earlier/Later buttons, or press Alt+Left/Right on a focused tile. Tiles wrap, and the selected action's position and placement control appear below them. Dragging is limited to settings. Changes save immediately. Reset order preserves display mode, visibility, and item placements.
 
 ## Auto-hide
 

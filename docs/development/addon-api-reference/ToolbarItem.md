@@ -2,7 +2,7 @@
 
 # ToolbarItem
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L11)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L13)
 
 <details>
 <summary>Declaration</summary>
@@ -49,7 +49,7 @@ type ToolbarItem = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L12)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L14)
 
 ```typescript
 id: string
@@ -57,7 +57,7 @@ id: string
 
 ### label
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L13)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L15)
 
 ```typescript
 label: string
@@ -65,7 +65,7 @@ label: string
 
 ### icon
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L14)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L16)
 
 ```typescript
 icon?: ComponentType<{
@@ -77,7 +77,7 @@ icon?: ComponentType<{
 
 ### tooltip
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L19)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L21)
 
 ```typescript
 tooltip?: string
@@ -85,7 +85,7 @@ tooltip?: string
 
 ### disabled
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L20)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L22)
 
 ```typescript
 disabled?: boolean
@@ -93,7 +93,7 @@ disabled?: boolean
 
 ### hidden
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L22)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L24)
 
 Hide context-specific actions without losing their saved position.
 
@@ -103,7 +103,7 @@ hidden?: boolean
 
 ### pressed
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L23)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L25)
 
 ```typescript
 pressed?: boolean
@@ -111,7 +111,7 @@ pressed?: boolean
 
 ### when
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L24)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L26)
 
 ```typescript
 when?: 'normal' | 'source'
@@ -121,7 +121,7 @@ when?: 'normal' | 'source'
 
 ### onClick
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L25)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L27)
 
 ```typescript
 onClick: () => void | Promise<void>

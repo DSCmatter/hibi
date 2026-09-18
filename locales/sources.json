@@ -1012,7 +1012,7 @@
   "ad23f434e670": [
     "src/main/media.ts"
   ],
-  "5cf9d4d3034b": [
+  "b07a24db4354": [
     "src/renderer/src/EditorToolbar.tsx"
   ],
   "f5d8a4fcbe0e": [
@@ -1528,6 +1528,7 @@
     "src/renderer/src/ImportDialog.tsx"
   ],
   "ac20a57bfde0": [
+    "src/renderer/src/EditorToolbar.tsx",
     "src/renderer/src/SettingsScreen.tsx"
   ],
   "09f07073c96a": [
@@ -2000,6 +2001,9 @@
   ],
   "c3963aedaac6": [
     "src/addons/diagnostics/Settings.tsx"
+  ],
+  "8b56fc0ea9b7": [
+    "src/renderer/src/EditorToolbar.tsx"
   ],
   "1356a57a7a4b": [
     "src/addons/mermaid/manifest.ts"
@@ -2901,6 +2905,9 @@
   "2ebca79ee1b1": [
     "src/renderer/src/EditorToolbar.tsx"
   ],
+  "d939dc73e46c": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
   "d03262ba19b0": [
     "src/renderer/src/SettingsScreen.tsx"
   ],
@@ -3590,6 +3597,9 @@
     "src/renderer/src/EditorToolbar.tsx"
   ],
   "e2386f6156ae": [
+    "src/renderer/src/EditorToolbar.tsx"
+  ],
+  "fc887fc99835": [
     "src/renderer/src/EditorToolbar.tsx"
   ],
   "c9b3c38247f7": [

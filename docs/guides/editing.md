@@ -22,7 +22,9 @@ To keep one file open at a time, turn off **Settings → Editor → Documents �
 
 Select text, then choose a toolbar action. In side-by-side view, actions apply to the pane you last used. The toolbar offers tools for the current format, with extra buttons in the **More** menu. Within a formatted table, additional actions let you add or remove rows and columns.
 
-Under **Settings → Appearance → Toolbar → Arrange toolbar actions**, drag actions or use the arrow controls to reorder them. You can also choose how toolbar buttons appear. If the toolbar hides while typing, pause or move the pointer to the top of the window to reveal it.
+Under **Settings → Appearance → Toolbar → Arrange toolbar actions**, drag actions or use the arrow controls to reorder them. Select an action and choose **Show in toolbar**, **Menu only**, or **Hide**. Menu-only actions always stay in the **More** dropdown, even in a wide window. Hidden actions disappear from both the toolbar and its dropdown; their commands and shortcuts remain available. These choices are saved separately from the order, so **Reset order** keeps each action's placement.
+
+You can also choose how toolbar buttons appear. If the toolbar hides while typing, pause or move the pointer to the top of the window to reveal it.
 
 See [images and attachments](../editing/media-and-navigation.md#attachments) for adding media to your notes.
 
