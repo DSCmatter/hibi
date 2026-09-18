@@ -112,9 +112,11 @@ test('github alerts edit in rich/split view, keep markers, and export with theme
       })
       dialog.showSaveDialog = async (_window, options) => ({
         canceled: false,
-        filePath: options.filters[0].extensions.includes('html')
-          ? output
-          : file,
+        filePath:
+          options.filters[0].extensions.length === 1 &&
+          options.filters[0].extensions.includes('html')
+            ? output
+            : file,
       })
       dialog.showMessageBox = async () => ({ response: 1 })
     },

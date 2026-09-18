@@ -201,12 +201,9 @@ test('syntax settings preserve edits, update rich formatting, and discover addon
     edited,
   )
   // Keep the detected flavor present while exercising rich input rules.
-  // CDP does not reliably perform native macOS document-end shortcuts.
+  // Set the editor selection directly; DOM selection changes are asynchronous.
   await rich.evaluate((element) => {
-    element.focus()
-    const selection = window.getSelection()
-    selection.selectAllChildren(element)
-    selection.collapseToEnd()
+    element.editor.commands.focus('end')
   })
   await rich.press('Enter')
   await rich.press('Enter')

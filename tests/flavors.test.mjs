@@ -47,9 +47,11 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
       })
       dialog.showSaveDialog = async (_window, options) => ({
         canceled: false,
-        filePath: options.filters[0].extensions.includes('html')
-          ? output
-          : file,
+        filePath:
+          options.filters[0].extensions.length === 1 &&
+          options.filters[0].extensions.includes('html')
+            ? output
+            : file,
       })
       dialog.showMessageBox = async () => ({ response: 1 })
     },
