@@ -230,7 +230,7 @@ export function ExportDialog({
             {toggle(
               'autoSeo',
               'Automatic SEO',
-              'Use page headings and opening paragraphs for titles and descriptions.',
+              'Generate page descriptions and structured data.',
             )}
             {toggle('indexing', 'Allow search indexing')}
           </div>

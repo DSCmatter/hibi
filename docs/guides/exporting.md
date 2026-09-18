@@ -20,7 +20,7 @@ Enable the **Graph** addon before exporting to include the note graph. You can t
 
 ## Search and sharing
 
-**Automatic SEO** uses document headings and opening paragraphs for page titles and descriptions. To override them for a page, add `title` and `description` to its frontmatter:
+Page titles come from document headings. **Automatic SEO** adds descriptions from opening paragraphs and structured data for search engines. To override a page’s title and description, add them to its frontmatter:
 
 ```yaml
 ---

@@ -251,6 +251,19 @@ test('published sites support direct routes, crawlable HTML, branding, locked th
   assert.equal(page.url(), `${base}development/README.md/`)
   await page.goto(`${base}#page=development%2FREADME.md`)
   await page.waitForURL(`${base}development/README.md/`)
+  await page.goto(`${base}development/README.md/#%`)
+  await page.getByRole('button', { name: /^toggle navigation$/i }).waitFor()
+  files.set(
+    'hibi-assets/custom.css',
+    files.get('hibi-assets/custom.css') +
+      '\narticle h1 { color: rgb(65, 43, 21); }',
+  )
+  await page.reload()
+  await page.waitForFunction(
+    () =>
+      getComputedStyle(document.querySelector('article h1')).color ===
+      'rgb(65, 43, 21)',
+  )
   await mkdir('test-results', { recursive: true })
   await page.screenshot({ path: 'test-results/export-custom-site.png' })
   const lockedFile = join(folder, 'protected.html')

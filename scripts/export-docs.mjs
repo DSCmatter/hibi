@@ -12,6 +12,7 @@ import {
   resolveDocumentMediaPath,
 } from '../src/main/images.ts'
 import { codeHtml, codeLanguages } from '../src/renderer/src/code-languages.ts'
+import { readFrontmatter } from '../src/shared/frontmatter.ts'
 
 const markdownParser = new Marked({
   async: true,
@@ -65,7 +66,9 @@ for (const file of files) {
   pages.push({
     path: relative(root, file).split(sep).join('/'),
     markdown,
-    html: await markdownParser.parse(markdown),
+    html: await markdownParser.parse(
+      readFrontmatter(markdown)?.content ?? markdown,
+    ),
     images,
   })
 }

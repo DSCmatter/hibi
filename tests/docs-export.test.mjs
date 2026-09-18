@@ -9,7 +9,9 @@ test('public documentation exports exclude agent notes', async (t) => {
   const folder = await mkdtemp(join(tmpdir(), 'hibi-docs-'))
   t.after(() => rm(folder, { recursive: true, force: true }))
   await mkdir(join(folder, 'ai-agents'))
-  await writeFile(join(folder, 'README.md'), '# User guide')
+  const source =
+    '---\ntitle: Getting started\ndescription: Public guide.\n---\n\n# User guide'
+  await writeFile(join(folder, 'README.md'), source)
   await writeFile(join(folder, 'ai-agents', 'README.md'), '# Internal notes')
   const output = join(folder, 'index.html')
   execFileSync(process.execPath, ['scripts/export-docs.mjs', folder, output])
@@ -21,7 +23,9 @@ test('public documentation exports exclude agent notes', async (t) => {
     data.pages.map((page) => page.path),
     ['README.md'],
   )
-  assert.equal(data.pages[0].markdown, '# User guide')
+  assert.equal(data.pages[0].markdown, source)
+  assert.equal(data.pages[0].title, 'Getting started')
+  assert.doesNotMatch(data.pages[0].html, /title:|description:/)
   const staticOutput = join(folder, 'website')
   const args = [
     'scripts/export-docs.mjs',
