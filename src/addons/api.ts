@@ -123,10 +123,12 @@ export type AddonManifest = {
   syntax?: readonly AddonSyntaxDescriptor[]
   /** Self-contained ES module exporting analyze(projection). Runs without app, filesystem, or network access. */
   analysis?: { entry: string }
-  /** Required plugin release version, separate from the host API version. */
+  /** Required addon release version, separate from the host API version. */
   version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
   fileExtensions?: readonly string[]
+  /** Placement and Lucide icon name for the addon's default settings page. */
+  settings?: { category?: string; icon?: string }
   authors?: readonly AddonAuthor[]
   /** Shipped third-party notices, shown under hibi's open source licenses. */
   licenses?: readonly {
@@ -425,8 +427,29 @@ export type ViewRegistration = {
 }
 export type ViewApi = { register: (view: AddonView) => ViewRegistration }
 
+export type SettingsCategory = {
+  /** Local ID. The host prefixes custom categories with the addon ID. */
+  id: string
+  label: string
+}
+export type SettingsPage = {
+  id: string
+  label: string
+  /** general, editing, interface, addons, or a local category ID. Defaults to addons. */
+  category?: string
+  icon?: SidebarView['icon']
+  /** Use shared SettingRow controls to include individual settings in search. */
+  Content: ComponentType
+}
+export type SettingsApi = {
+  registerCategory: (category: SettingsCategory) => () => void
+  register: (page: SettingsPage) => () => void
+}
+
 /** APIs available while your renderer addon is enabled. Registrations are removed when it stops. */
 export type AddonContext = {
+  /** Enabled addon settings. Registrations are removed when the addon stops. */
+  settings: SettingsApi
   colorschemes: {
     register: (scheme: ColorschemeInput) => () => void
     list: () => readonly Colorscheme[]

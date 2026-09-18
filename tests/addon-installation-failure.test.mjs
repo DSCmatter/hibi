@@ -62,7 +62,7 @@ test('failed editor attachments stay read-only and disabling the addon restores 
   page.setDefaultTimeout(6000)
   await page
     .locator('.rich-pane .document-notice')
-    .filter({ hasText: /editor plugin unavailable/i })
+    .filter({ hasText: /editor addon unavailable/i })
     .waitFor()
   assert.equal(
     await page.locator('.tiptap').evaluate((el) => el.isContentEditable),

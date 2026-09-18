@@ -11,7 +11,11 @@ export type ToolbarPreferences = {
 export type ToolbarItem = {
   id: string
   label: string
-  icon?: ComponentType<{ size?: number; 'aria-hidden'?: boolean }>
+  icon?: ComponentType<{
+    size?: number
+    strokeWidth?: number
+    'aria-hidden'?: boolean
+  }>
   tooltip?: string
   disabled?: boolean
   /** Hide context-specific actions without losing their saved position. */

@@ -305,7 +305,7 @@ export function ToolbarSettings() {
         <SettingRow
           id="toolbar-visible"
           label="Show toolbar"
-          description="Show formatting and plugin actions below the top bar."
+          description="Show formatting and addon actions below the top bar."
         >
           <Toggle
             id="toolbar-visible"

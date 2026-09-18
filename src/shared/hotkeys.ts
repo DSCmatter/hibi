@@ -31,6 +31,7 @@ export const actions = [
     key: '',
   },
   { id: 'toggle-sidebar', label: 'Toggle sidebar', category: 'view', key: '/' },
+  { id: 'toggle-zen', label: 'Toggle zen mode', category: 'view', key: '' },
   { id: 'normal', label: 'Normal view', category: 'view', key: 'shift+[' },
   {
     id: 'side-by-side',

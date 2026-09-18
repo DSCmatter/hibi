@@ -503,7 +503,7 @@ button:disabled {
   padding: 0 0 var(--space-2);
   margin-bottom: var(--space-2);
 }
-.settings-sidebar .sidebar-header button:hover {
+.settings-sidebar .sidebar-header .sidebar-items > button:hover {
   background: var(--hover);
 }
 .settings-search {
@@ -527,6 +527,9 @@ button:disabled {
   right: 2px;
   top: 50%;
   transform: translateY(-50%);
+}
+.settings-search .icon-button:hover {
+  background: transparent;
 }
 .settings-searching .sidebar-chevron {
   display: none;
@@ -791,6 +794,52 @@ button:disabled {
   z-index: 2;
   background: var(--background);
   overflow: hidden;
+}
+.statusbar-slot {
+  flex-shrink: 0;
+}
+.statusbar-slot[data-visibility="auto"] {
+  position: absolute;
+  inset: auto 0 0;
+  height: 8px;
+  z-index: 2;
+}
+.statusbar-slot[data-visibility="auto"] .app-statusbar {
+  position: absolute;
+  inset: auto 0 0;
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-fast) ease-out,
+    transform var(--motion-fast) ease-out;
+}
+.statusbar-slot[data-visibility="auto"]:is(:hover, :focus-within)
+  .app-statusbar {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.app[data-zen="true"] > .titlebar,
+.app[data-zen="true"] .toolbar-slot {
+  display: none;
+}
+.zen-bar {
+  position: relative;
+  z-index: 3;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-inline: var(--space-2);
+  -webkit-app-region: drag;
+}
+.zen-bar button {
+  -webkit-app-region: no-drag;
+}
+.app:not([data-platform="darwin"]) .zen-bar {
+  padding-right: calc(132px + var(--space-2));
 }
 .status-pill {
   display: inline-flex;
@@ -1604,6 +1653,7 @@ summary {
     animation: none;
   }
   .notification,
+  .statusbar-slot[data-visibility="auto"] .app-statusbar,
   .sidebar-toolbar,
   .settings-screen,
   .editor-surface,

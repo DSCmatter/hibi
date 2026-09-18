@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleX, ExternalLink, Puzzle, Search } from 'lucide-react'
+import { ArrowLeft, CircleX, ExternalLink, Search } from 'lucide-react'
 import {
   Component,
   type ReactNode,
@@ -39,8 +39,14 @@ import { FormatsSettings } from './FormatsSettings'
 import { HibiSettings } from './HibiSettings'
 import { HotkeySettings } from './HotkeySettings'
 import { NotificationSettings } from './NotificationSettings'
+import type { StatusBarVisibility } from './StatusBar'
 import { SyntaxSettings } from './SyntaxSettings'
-import { settingsCategories } from './settings-categories'
+import {
+  settingsCategories,
+  settingsIcon,
+  settingsNavigation,
+} from './settings-categories'
+import { settingsCategory, settingsPages } from './settings-pages'
 import { WorkspaceSettings } from './WorkspaceSettings'
 
 class PluginSettingsBoundary extends Component<
@@ -55,7 +61,7 @@ class PluginSettingsBoundary extends Component<
     return this.state.failed ? (
       <DocumentNotice
         title="Settings unavailable"
-        message="Could not load this plugin’s settings. Try again."
+        message="Could not load this addon’s settings. Try again."
       >
         <button type="button" onClick={() => this.setState({ failed: false })}>
           Retry
@@ -68,6 +74,10 @@ class PluginSettingsBoundary extends Component<
 }
 
 export function SettingsScreen({
+  statusBar,
+  onStatusBar,
+  zen,
+  onZen,
   discover,
   selected,
   onCategory,
@@ -104,6 +114,10 @@ export function SettingsScreen({
   onTabsEnabled,
   onWorkspaceChanged,
 }: {
+  statusBar: StatusBarVisibility
+  onStatusBar: (visibility: StatusBarVisibility) => void
+  zen: boolean
+  onZen: (enabled: boolean) => void
   discover: boolean
   selected: string
   onCategory: (category: string) => void
@@ -150,6 +164,13 @@ export function SettingsScreen({
     settingsIndex.subscribe,
     settingsIndex.snapshot,
   )
+  const registered = useSyncExternalStore(
+    settingsPages.subscribe,
+    settingsPages.snapshot,
+  )
+  const extraPages = registered.pages.filter((page) =>
+    addonStates.some((state) => state.id === page.owner && state.enabled),
+  )
   const searchable = [
     ...indexed,
     ...actions.map(({ id, label, category }) => ({
@@ -180,18 +201,32 @@ export function SettingsScreen({
         (state) => state.id === addon.manifest.id && state.enabled,
       ),
   )
-  const items: SidebarItem[] = [
-    ...settingsCategories,
-    ...pluginPages.map(({ manifest }, index) => ({
-      id: `plugin-${manifest.id}`,
-      label: manifest.name,
-      icon: Puzzle,
-      ...(index === 0 ? { section: 'Plugins' } : {}),
-    })),
-  ]
+  const items: SidebarItem[] = settingsNavigation(
+    [
+      ...settingsCategories,
+      ...pluginPages.map(({ manifest }) => ({
+        id: `plugin-${manifest.id}`,
+        label: manifest.name,
+        icon: settingsIcon(
+          manifest.settings?.icon ??
+            (manifest.fileExtensions?.length ? 'file-text' : 'puzzle'),
+        ),
+        category: settingsCategory(
+          manifest.id,
+          manifest.settings?.category ??
+            (manifest.fileExtensions?.length ? 'editing' : 'addons'),
+        ),
+      })),
+      ...extraPages.map((page) => ({
+        ...page,
+        icon: page.icon ?? settingsIcon(),
+      })),
+    ],
+    registered.categories,
+  )
   const category = items.some((item) => item.id === selected)
     ? selected
-    : selected.startsWith('plugin-')
+    : selected.startsWith('plugin-') || selected.startsWith('addon-')
       ? 'addons'
       : 'hibi'
   const matches = (text: string) =>
@@ -541,6 +576,30 @@ export function SettingsScreen({
             </div>
             <h2>Window</h2>
             <div className="settings-group">
+              <SettingRow id="status-bar" label="Status bar">
+                <Select
+                  id="status-bar"
+                  value={statusBar}
+                  onChange={(event) =>
+                    onStatusBar(event.target.value as StatusBarVisibility)
+                  }
+                >
+                  <option value="shown">Show</option>
+                  <option value="auto">Auto-hide</option>
+                  <option value="hidden">Hide</option>
+                </Select>
+              </SettingRow>
+              <SettingRow
+                id="zen-mode"
+                label="Zen mode"
+                description="Hide navigation, toolbars, and status while writing."
+              >
+                <Toggle
+                  id="zen-mode"
+                  checked={zen}
+                  onChange={(event) => onZen(event.target.checked)}
+                />
+              </SettingRow>
               <SettingRow
                 id="hide-titlebar"
                 label="Hide top bar while typing"
@@ -615,6 +674,27 @@ export function SettingsScreen({
               onChanged={onWorkspaceChanged}
             />
           </section>
+          {extraPages.map(({ id, label, Content }) => (
+            <section
+              key={id}
+              id={`settings-${id}`}
+              role="tabpanel"
+              aria-labelledby={`category-${id}`}
+              aria-label={label}
+              hidden={category !== id}
+            >
+              <h1>{label}</h1>
+              {(discover || (open && (searching || category === id))) && (
+                <PluginSettingsBoundary key={id}>
+                  <Suspense
+                    fallback={<DocumentNotice title="Loading settings…" busy />}
+                  >
+                    <Content />
+                  </Suspense>
+                </PluginSettingsBoundary>
+              )}
+            </section>
+          ))}
           {pluginPages.map(({ manifest, Settings }) => (
             <section
               key={manifest.id}

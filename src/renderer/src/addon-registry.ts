@@ -35,7 +35,7 @@ const bundled = Object.entries(manifests).map(([path, manifest]): Addon => {
         ? loader()
         : Promise.reject(
             new Error(
-              `The ${manifest.id} plugin is missing its startup file. Reinstall it.`,
+              `The ${manifest.id} addon is missing its startup file. Reinstall it.`,
             ),
           )
     ).catch((error) => {
@@ -67,7 +67,7 @@ const bundled = Object.entries(manifests).map(([path, manifest]): Addon => {
       if (token !== generation) return
       if (addon.manifest.id !== manifest.id)
         throw new Error(
-          'This plugin’s files do not match its manifest. Reinstall it.',
+          'This addon’s files do not match its manifest. Reinstall it.',
         )
       instance = addon
       let changed = false
@@ -117,9 +117,7 @@ function installedAddon(item: InstalledAddon): Addon {
         return
       }
       if (!item.url)
-        throw new Error(
-          'This plugin is missing its startup file. Reinstall it.',
-        )
+        throw new Error('This addon is missing its startup file. Reinstall it.')
       const url = item.url
       const [module, sdk] = await startupSpan(
         `addon-load:${item.manifest.id}`,
@@ -137,7 +135,7 @@ function installedAddon(item: InstalledAddon): Addon {
       if (token !== generation) return
       if (typeof module.default !== 'function')
         throw new Error(
-          'This plugin has no valid startup function. Contact its author.',
+          'This addon has no valid startup function. Contact its author.',
         )
       // The manifest selects the new optional SDK or the unchanged legacy factory contract.
       const definition = (
@@ -152,7 +150,7 @@ function installedAddon(item: InstalledAddon): Addon {
           typeof definition.Settings !== 'function')
       )
         throw new Error(
-          'This plugin cannot start. Contact its author for an updated version.',
+          'This addon cannot start. Contact its author for an updated version.',
         )
       instance = definition
       if (definition.Settings) addon.Settings = definition.Settings

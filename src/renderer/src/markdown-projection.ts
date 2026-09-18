@@ -58,7 +58,7 @@ export function projectMarkdown(
           serialize: () => source,
           readOnly: true,
         }
-      // The host owns untouched bytes; a plugin serializer cannot rewrite these regions.
+      // The host owns untouched bytes; a addon serializer cannot rewrite these regions.
       serialize = (content) => prefix + content + suffix
     }
     result = {

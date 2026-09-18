@@ -2,7 +2,7 @@
 
 # SidebarItem
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L17)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L18)
 
 <details>
 <summary>Declaration</summary>
@@ -11,7 +11,7 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Si
 type SidebarItem = {
   id: string
   label: string
-  icon?: LucideIcon
+  icon?: ToolbarItem['icon']
   children?: SidebarItem[]
   /** Optional section label immediately before this row. */
   section?: string
@@ -38,7 +38,7 @@ type SidebarItem = {
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L18)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L19)
 
 ```typescript
 id: string
@@ -46,7 +46,7 @@ id: string
 
 ### label
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L19)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L20)
 
 ```typescript
 label: string
@@ -54,15 +54,17 @@ label: string
 
 ### icon
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L20)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L21)
 
 ```typescript
-icon?: LucideIcon
+icon?: ToolbarItem['icon']
 ```
+
+Related: [ToolbarItem](ToolbarItem.md).
 
 ### children
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L21)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L22)
 
 ```typescript
 children?: SidebarItem[]
@@ -70,7 +72,7 @@ children?: SidebarItem[]
 
 ### section
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L23)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L24)
 
 Optional section label immediately before this row.
 
@@ -80,7 +82,7 @@ section?: string
 
 ### dirty
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L24)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L25)
 
 ```typescript
 dirty?: boolean
@@ -88,7 +90,7 @@ dirty?: boolean
 
 ### decoration
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L25)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L26)
 
 ```typescript
 decoration?: Omit<ExplorerDecoration, 'path'>
@@ -98,4 +100,4 @@ Related: [ExplorerDecoration](ExplorerDecoration.md).
 
 ## Related types
 
-[ExplorerDecoration](ExplorerDecoration.md).
+[ToolbarItem](ToolbarItem.md), [ExplorerDecoration](ExplorerDecoration.md).

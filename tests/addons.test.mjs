@@ -129,9 +129,9 @@ test('plugin pages, metadata, shared controls, and full source vim editing', {
       ) < 1
     )
   })
-  assert.equal(
-    await page.locator('.settings-sidebar .sidebar-section').innerText(),
-    'Plugins',
+  assert.deepEqual(
+    await page.locator('.settings-sidebar .sidebar-section').allTextContents(),
+    ['General', 'Editing', 'Interface', 'Addons'],
   )
   await page.getByRole('checkbox', { name: /show vim status/i }).uncheck()
   await page.getByRole('checkbox', { name: /show vim status/i }).check()

@@ -5,7 +5,7 @@ export default {
   id: 'quarto',
   name: 'Quarto Markdown',
   apiVersion: 2,
-  version: '1.0.0',
+  version: '1.0.1',
   kind: 'extension',
   description: 'Edit and preview Quarto; run embedded code when you choose.',
   fileExtensions: fileAssociations.quarto.ext,

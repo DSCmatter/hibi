@@ -653,7 +653,7 @@ export function SourceEditor({
     <>
       {(extensionError || languageError) && (
         <DocumentNotice
-          title="Editor plugin unavailable"
+          title="Editor addon unavailable"
           message={extensionError || languageError}
         />
       )}

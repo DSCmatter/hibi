@@ -36,6 +36,7 @@ import { ToastProvider, useToasts } from '../../ui/Sonner'
 import type { ToastHandle } from '../../ui/toasts'
 import './styles.css'
 import '../../ui/ui-case'
+import { Minimize2 } from 'lucide-react'
 import { documentExtension, isDocumentView } from '../../shared/document-types'
 import type {
   RecentWorkspace,
@@ -43,6 +44,7 @@ import type {
   WorkspaceActionResult,
   WorkspaceState,
 } from '../../shared/workspace'
+import { IconButton } from '../../ui/Controls'
 import { settingsIndex } from '../../ui/settings-index'
 import {
   SIDEBAR_OVERLAY_WIDTH,
@@ -77,8 +79,9 @@ import {
 } from './OutlineSidebar'
 import { RecoveryBoundary } from './RecoveryScreen'
 import { StartupPlaceholder } from './StartupPlaceholder'
-import { StatusBar } from './StatusBar'
+import { StatusBar, type StatusBarVisibility } from './StatusBar'
 import { settingsCategories } from './settings-categories'
+import { settingsPages } from './settings-pages'
 import { Titlebar } from './Titlebar'
 import { toolbar } from './toolbar'
 import { WorkspaceSidebar } from './WorkspaceSidebar'
@@ -98,6 +101,10 @@ const VersionHistory = lazy(() =>
 function App() {
   const [settingsCategory, setSettingsCategory] = useState('hibi')
   const [settingTarget, setSettingTarget] = useState<string | null>(null)
+  const registeredSettings = useSyncExternalStore(
+    settingsPages.subscribe,
+    settingsPages.snapshot,
+  )
   const indexedSettings = useSyncExternalStore(
     settingsIndex.subscribe,
     settingsIndex.snapshot,
@@ -322,6 +329,7 @@ function App() {
     null,
   )
   function selectSidebarView(view: string, input?: unknown) {
+    setZen(false)
     setSidebarView(view)
     setSidebarInput(input)
     setSettingsOpen(false)
@@ -363,6 +371,12 @@ function App() {
       ?.focus({ preventScroll: true })
   }
   function toggleSidebar() {
+    if (zen && !settingsOpen) {
+      setZen(false)
+      setSidebarOpen(true)
+      showTitlebar()
+      return
+    }
     if (settingsOpen ? settingsSidebarOpen : sidebarOpen) closeSidebar()
     else if (settingsOpen) setSettingsSidebarOpen(true)
     else setSidebarOpen(true)
@@ -464,7 +478,7 @@ function App() {
         setError(
           error instanceof Error
             ? error.message
-            : 'The plugin could not complete this action.',
+            : 'The addon could not complete this action.',
         ),
     },
     document?.name,
@@ -523,6 +537,12 @@ function App() {
   const [hideTitlebar, setHideTitlebar] = useState(
     () => localStorage.getItem('hide-titlebar') !== 'false',
   )
+  const [statusBar, setStatusBar] = useState<StatusBarVisibility>(() => {
+    const saved = localStorage.getItem('status-bar')
+    return saved === 'auto' || saved === 'hidden' ? saved : 'shown'
+  })
+  const [zen, setZen] = useState(false)
+  useEffect(() => localStorage.setItem('status-bar', statusBar), [statusBar])
   const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   )
@@ -1096,6 +1116,16 @@ function App() {
       case 'toggle-sidebar':
         toggleSidebar()
         break
+      case 'toggle-zen':
+        setZen(!zen)
+        setSettingsOpen(false)
+        showTitlebar()
+        requestAnimationFrame(() =>
+          window.document
+            .querySelector<HTMLElement>('.editor-page [contenteditable="true"]')
+            ?.focus(),
+        )
+        break
       case 'install-addon':
         void addonHost.install()
         break
@@ -1185,7 +1215,7 @@ function App() {
     dialogs.open({
       title: 'Markdown flavor',
       description:
-        'Choose which Markdown features this file uses. Automatic detection uses enabled plugins.',
+        'Choose which Markdown features this file uses. Automatic detection uses enabled addons.',
       content: () => (
         <FlavorPicker
           initial={flavorChoice}
@@ -1219,15 +1249,19 @@ function App() {
           id,
           category,
           label:
-            id === 'settings' && settingsOpen
-              ? 'Back to editor'
-              : id === 'markdown' && !markdownDocument
-                ? 'Source view'
-                : id === 'toggle-titlebar'
-                  ? hideTitlebar
-                    ? 'Keep top bar visible'
-                    : 'Hide top bar while typing'
-                  : label,
+            id === 'toggle-zen'
+              ? zen
+                ? 'Exit zen mode'
+                : 'Enter zen mode'
+              : id === 'settings' && settingsOpen
+                ? 'Back to editor'
+                : id === 'markdown' && !markdownDocument
+                  ? 'Source view'
+                  : id === 'toggle-titlebar'
+                    ? hideTitlebar
+                      ? 'Keep top bar visible'
+                      : 'Hide top bar while typing'
+                    : label,
           shortcut: hotkeys[id],
           run: () => addonHost.app.runAction(id),
         })),
@@ -1303,6 +1337,18 @@ function App() {
         label: `Open ${label} settings`,
         run: () => openSetting(id),
       })),
+      ...registeredSettings.pages
+        .filter((page) =>
+          addonHost.states.some(
+            (state) => state.id === page.owner && state.enabled,
+          ),
+        )
+        .map(({ id, label }) => ({
+          id: `settings.${id}`,
+          category: 'settings' as const,
+          label: `Open ${label} settings`,
+          run: () => openSetting(id),
+        })),
       ...indexedSettings
         .filter((setting) => !setting.id.startsWith('addon-'))
         .map((setting) => ({
@@ -1494,8 +1540,9 @@ function App() {
       style={{ '--sidebar-width': `${sidebarResize.width}px` } as CSSProperties}
       data-platform={info?.platform}
       data-screen={settingsOpen ? 'settings' : 'editor'}
+      data-zen={zen && !settingsOpen}
       data-typing={typing && hideTitlebar}
-      data-sidebar={sidebarOpen}
+      data-sidebar={sidebarOpen && !zen}
       data-sidebar-overlay={sidebarResize.overlay}
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes('Files')) {
@@ -1544,7 +1591,7 @@ function App() {
         if (
           event.key === 'Escape' &&
           sidebarResize.overlay &&
-          (settingsOpen ? settingsSidebarOpen : sidebarOpen) &&
+          (settingsOpen ? settingsSidebarOpen : sidebarOpen && !zen) &&
           !paletteOpen &&
           !dialogs.isOpen()
         ) {
@@ -1587,6 +1634,17 @@ function App() {
         if (event.target.closest('.titlebar, .editor-toolbar')) showTitlebar()
       }}
     >
+      {zen && !settingsOpen && (
+        <div className="zen-bar">
+          <IconButton
+            aria-label="Exit zen mode"
+            title="Exit zen mode"
+            onClick={() => addonHost.app.runAction('toggle-zen')}
+          >
+            <Minimize2 size={16} aria-hidden />
+          </IconButton>
+        </div>
+      )}
       <Titlebar
         busy={busy}
         sidebarView={sidebarView}
@@ -1631,7 +1689,9 @@ function App() {
         onAction={runWorkspaceAction}
         onError={(error) => setError(String(error))}
         resize={documentSidebarResize}
-        open={sidebarOpen && !settingsOpen && sidebarView === 'workspace'}
+        open={
+          sidebarOpen && !zen && !settingsOpen && sidebarView === 'workspace'
+        }
         workspace={workspace}
         onOpen={() => addonHost.app.runAction('open-workspace')}
         onFile={(path) => void openFile(path)}
@@ -1641,7 +1701,7 @@ function App() {
       <OutlineSidebar
         overlay={sidebarResize.overlay}
         onDismiss={() => closeSidebar(false)}
-        open={sidebarOpen && !settingsOpen && sidebarView === 'outline'}
+        open={sidebarOpen && !zen && !settingsOpen && sidebarView === 'outline'}
         resize={documentSidebarResize}
         headings={outline}
         selected={activeOutline}
@@ -1658,13 +1718,17 @@ function App() {
         onDismiss={() => closeSidebar(false)}
         view={activeAddonView}
         input={sidebarInput}
-        open={sidebarOpen && !settingsOpen}
+        open={sidebarOpen && !zen && !settingsOpen}
         resize={documentSidebarResize}
       />
       <MenuHost />
       {(settingsLoaded || settingsOpen || paletteOpen) && (
         <Suspense fallback={settingsOpen ? <LoadingScreen full /> : null}>
           <SettingsScreen
+            statusBar={statusBar}
+            onStatusBar={setStatusBar}
+            zen={zen}
+            onZen={setZen}
             sidebarOpen={settingsSidebarOpen}
             overlay={sidebarResize.overlay}
             onSidebarClose={() => closeSidebar(true)}
@@ -1720,7 +1784,7 @@ function App() {
       <div
         className="editor-surface"
         aria-hidden={settingsOpen}
-        inert={settingsOpen || (sidebarResize.overlay && sidebarOpen)}
+        inert={settingsOpen || (sidebarResize.overlay && sidebarOpen && !zen)}
       >
         <EditorToolbar mode={mode} typing={typing} />
         {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: tabpanel and region both support accessible names. */}
@@ -1788,6 +1852,7 @@ function App() {
           )}
           {!settingsOpen && (
             <StatusBar
+              visibility={zen ? 'hidden' : statusBar}
               items={[
                 {
                   id: 'flavor',
@@ -1795,7 +1860,7 @@ function App() {
                   tooltip: !markdownDocument
                     ? `${sourceName} document · click for format settings`
                     : unsupportedFlavor
-                      ? 'Some Markdown features are disabled. Choose a flavor or enable the plugin.'
+                      ? 'Some Markdown features are disabled. Choose a flavor or enable the addon.'
                       : `${flavorChoice.dialect === 'auto' ? 'Detected' : 'Selected'} Markdown flavor · click to change`,
                   onClick: openFlavors,
                 },
@@ -1814,7 +1879,7 @@ function App() {
             />
           )}
         </div>
-        <AddonPanel hidden={settingsOpen} />
+        <AddonPanel hidden={settingsOpen || zen} />
       </div>
       {failed && (
         <p role="alert">

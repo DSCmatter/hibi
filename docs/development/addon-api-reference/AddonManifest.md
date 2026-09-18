@@ -34,10 +34,12 @@ type AddonManifest = {
   syntax?: readonly AddonSyntaxDescriptor[]
   /** Self-contained ES module exporting analyze(projection). Runs without app, filesystem, or network access. */
   analysis?: { entry: string }
-  /** Required plugin release version, separate from the host API version. */
+  /** Required addon release version, separate from the host API version. */
   version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
   fileExtensions?: readonly string[]
+  /** Placement and Lucide icon name for the addon's default settings page. */
+  settings?: { category?: string; icon?: string }
   authors?: readonly AddonAuthor[]
   /** Shipped third-party notices, shown under hibi's open source licenses. */
   licenses?: readonly {
@@ -70,6 +72,7 @@ type AddonManifest = {
 - [analysis](#analysis)
 - [version](#version)
 - [fileExtensions](#fileextensions)
+- [settings](#settings)
 - [authors](#authors)
 - [licenses](#licenses)
 
@@ -211,7 +214,7 @@ analysis?: { entry: string }
 
 [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L127)
 
-Required plugin release version, separate from the host API version.
+Required addon release version, separate from the host API version.
 
 ```typescript
 version: string
@@ -227,9 +230,19 @@ Additional source-file extensions, without dots. Files remain openable when disa
 fileExtensions?: readonly string[]
 ```
 
+### settings
+
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L131)
+
+Placement and Lucide icon name for the addon's default settings page.
+
+```typescript
+settings?: { category?: string; icon?: string }
+```
+
 ### authors
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L130)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L132)
 
 ```typescript
 authors?: readonly AddonAuthor[]
@@ -239,7 +252,7 @@ Related: [AddonAuthor](AddonAuthor.md).
 
 ### licenses
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L132)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L134)
 
 Shipped third-party notices, shown under hibi's open source licenses.
 

@@ -85,7 +85,7 @@ function open(
     ).length >= 8 ||
     instances.size >= 32
   )
-    throw new Error('Close a plugin view before opening another.')
+    throw new Error('Close a addon view before opening another.')
   const panel = definition.location === 'panel'
   const returnFocus =
     window.document.activeElement instanceof HTMLElement
@@ -170,9 +170,7 @@ export const addonViews = {
       (view.location && !['sidebar', 'panel'].includes(view.location)) ||
       (view.lifetime && !['visible', 'session'].includes(view.lifetime))
     )
-      throw new Error(
-        `This plugin supplied a duplicate or invalid view: ${id}.`,
-      )
+      throw new Error(`This addon supplied a duplicate or invalid view: ${id}.`)
     const definition = { ...view, id, owner, environment }
     definitions.set(id, definition)
     publish()

@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/a11y/useAriaPropsSupportedByRole: both conditional tree/tab roles support the corresponding ARIA attributes. */
-import { ChevronRight, type LucideIcon, MoreHorizontal } from 'lucide-react'
+import { ChevronRight, MoreHorizontal } from 'lucide-react'
 import {
   Fragment,
   type ReactNode,
@@ -12,12 +12,13 @@ import {
 import './sidebar.css'
 import type { ExplorerDecoration } from '../shared/workspace'
 import { TextInput } from './Controls'
+import type { ToolbarItem } from './toolbar'
 import { MIN_SIDEBAR_WIDTH } from './useSidebarResize'
 
 export type SidebarItem = {
   id: string
   label: string
-  icon?: LucideIcon
+  icon?: ToolbarItem['icon']
   children?: SidebarItem[]
   /** Optional section label immediately before this row. */
   section?: string
@@ -355,11 +356,7 @@ export function Sidebar({
                           />
                         )}
                         {Icon && (
-                          <Icon
-                            size={15}
-                            strokeWidth={1.5}
-                            aria-hidden="true"
-                          />
+                          <Icon size={15} strokeWidth={1.5} aria-hidden />
                         )}
                         <RenameInput editing={editing} />
                       </div>
@@ -495,11 +492,7 @@ export function Sidebar({
                           />
                         )}
                         {Icon && (
-                          <Icon
-                            size={15}
-                            strokeWidth={1.5}
-                            aria-hidden="true"
-                          />
+                          <Icon size={15} strokeWidth={1.5} aria-hidden />
                         )}
                         <span className="sidebar-label">{item.label}</span>
                         {item.dirty && (

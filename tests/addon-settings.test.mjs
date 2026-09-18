@@ -161,7 +161,7 @@ test('compact filters reset preferences, keep addon rows stable, and install rev
   assert.deepEqual(await app.evaluate(() => globalThis.openedAddonLinks), [
     'https://hibi.garden/addons',
   ])
-  await addons.getByRole('button', { name: /open plugins folder/i }).click()
+  await addons.getByRole('button', { name: /open addons folder/i }).click()
   await waitForAsync(app, () => Boolean(globalThis.openedAddonFolder))
   assert.equal(
     await app.evaluate(() => globalThis.openedAddonFolder),

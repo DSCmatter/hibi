@@ -897,7 +897,7 @@ export function MarkdownEditor({
               )}
               {richExtensionError && (
                 <DocumentNotice
-                  title="Editor plugin unavailable"
+                  title="Editor addon unavailable"
                   message={richExtensionError}
                 />
               )}

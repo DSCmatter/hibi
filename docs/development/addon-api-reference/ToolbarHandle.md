@@ -2,7 +2,7 @@
 
 # ToolbarHandle
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L23)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L27)
 
 <details>
 <summary>Declaration</summary>
@@ -27,7 +27,7 @@ type ToolbarHandle = {
 
 ### update
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L24)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L28)
 
 ```typescript
 update: (changes: Partial<Omit<ToolbarItem, 'id'>>) => void
@@ -45,7 +45,7 @@ Related: [ToolbarItem](ToolbarItem.md).
 
 ### dispose
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L25)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L29)
 
 ```typescript
 dispose: () => void

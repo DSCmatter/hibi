@@ -81,6 +81,9 @@
 .dialog-content:empty {
   display: none;
 }
+.dialog-content .document-notice {
+  margin: 0;
+}
 .dialog-content:empty + .dialog-footer {
   border-top: 0;
 }

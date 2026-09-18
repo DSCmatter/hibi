@@ -11,7 +11,11 @@ Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/to
 type ToolbarItem = {
   id: string
   label: string
-  icon?: ComponentType<{ size?: number; 'aria-hidden'?: boolean }>
+  icon?: ComponentType<{
+    size?: number
+    strokeWidth?: number
+    'aria-hidden'?: boolean
+  }>
   tooltip?: string
   disabled?: boolean
   /** Hide context-specific actions without losing their saved position. */
@@ -64,12 +68,16 @@ label: string
 Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L14)
 
 ```typescript
-icon?: ComponentType<{ size?: number; 'aria-hidden'?: boolean }>
+icon?: ComponentType<{
+    size?: number
+    strokeWidth?: number
+    'aria-hidden'?: boolean
+  }>
 ```
 
 ### tooltip
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L15)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L19)
 
 ```typescript
 tooltip?: string
@@ -77,7 +85,7 @@ tooltip?: string
 
 ### disabled
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L16)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L20)
 
 ```typescript
 disabled?: boolean
@@ -85,7 +93,7 @@ disabled?: boolean
 
 ### hidden
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L18)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L22)
 
 Hide context-specific actions without losing their saved position.
 
@@ -95,7 +103,7 @@ hidden?: boolean
 
 ### pressed
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L19)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L23)
 
 ```typescript
 pressed?: boolean
@@ -103,7 +111,7 @@ pressed?: boolean
 
 ### when
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L20)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L24)
 
 ```typescript
 when?: 'normal' | 'source'
@@ -113,7 +121,7 @@ when?: 'normal' | 'source'
 
 ### onClick
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L21)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/toolbar.ts#L25)
 
 ```typescript
 onClick: () => void | Promise<void>

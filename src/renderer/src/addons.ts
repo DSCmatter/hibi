@@ -53,6 +53,7 @@ import { flavors, renderMarkdown, renderMarkdownAsync } from './flavors'
 import { projectMarkdown } from './markdown'
 import { markdownSyntax } from './markdown-syntax'
 import { registrationBatch } from './registration-batch'
+import { settingsPages } from './settings-pages'
 import { toolbar } from './toolbar'
 
 export { addons } from './addon-registry'
@@ -78,6 +79,7 @@ type Environment = Omit<
   | 'colorschemes'
   | 'toolbar'
   | 'tooltips'
+  | 'settings'
 > & {
   workspace: Omit<AddonContext['workspace'], 'registerDecorations'>
   invoke: (id: string, method: string, input?: unknown) => Promise<unknown>
@@ -396,7 +398,7 @@ export function useAddons(
               return previous.proxy
             }
             if (pending.size >= 8 && !pending.has(key))
-              throw new Error('Close a plugin view before opening another.')
+              throw new Error('Close a addon view before opening another.')
             const entry = { options } as {
               options: typeof options
               handle?: ViewInstance
@@ -530,18 +532,32 @@ export function useAddons(
           throw new Error('Syntax owners must activate before editing.')
         if (!compatibleAddonManifest(addon.manifest))
           throw new Error(
-            `The ${id} plugin needs an update before it can run in this version of Hibi.`,
+            `The ${id} addon needs an update before it can run in this version of Hibi.`,
           )
         running.set(id, { addon, stop })
         const start = () =>
           addon.start({
+            settings: {
+              registerCategory(category) {
+                if (disposed) return () => {}
+                return batch.register(`settings-category:${category.id}`, () =>
+                  settingsPages.registerCategory(id, category),
+                )
+              },
+              register(page) {
+                if (disposed) return () => {}
+                return batch.register(`settings-page:${page.id}`, () =>
+                  settingsPages.register(id, page),
+                )
+              },
+            },
             menus: menuScope.api,
             colorschemes: {
               register(scheme) {
                 if (disposed) return () => {}
                 if (!/^[a-z][a-z0-9-]*$/.test(scheme.id))
                   throw new Error(
-                    'This plugin supplied an invalid color scheme name.',
+                    'This addon supplied an invalid color scheme name.',
                   )
                 const remove = colorschemes.register({
                   ...scheme,
@@ -624,7 +640,7 @@ export function useAddons(
                 const key = `${id}.${initial.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(initial.id) || status.has(key))
                   throw new Error(
-                    `This plugin supplied a duplicate or invalid status item: ${key}.`,
+                    `This addon supplied a duplicate or invalid status item: ${key}.`,
                   )
                 let active = true
                 let item = initial
@@ -751,7 +767,7 @@ export function useAddons(
                 if (format?.render) return format.render(source, documentId)
                 if (format?.editing !== 'markdown')
                   throw new Error(
-                    `Enable the plugin for ${name} before exporting this document.`,
+                    `Enable the addon for ${name} before exporting this document.`,
                   )
                 return renderMarkdownAsync(
                   projectMarkdown(source, [...extensions.values()]).content,
@@ -834,7 +850,7 @@ export function useAddons(
                 const key = `${id}.${extension.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(extension.id) || rich.has(key))
                   throw new Error(
-                    `This plugin supplied a duplicate or invalid editor feature: ${key}.`,
+                    `This addon supplied a duplicate or invalid editor feature: ${key}.`,
                   )
                 const entry = {
                   id: key,
@@ -883,7 +899,7 @@ export function useAddons(
                 const key = `${id}.${extension.id}`
                 if (!/^[a-z][a-z0-9-]*$/.test(extension.id) || sources.has(key))
                   throw new Error(
-                    `This plugin supplied a duplicate or invalid source-editor feature: ${key}.`,
+                    `This addon supplied a duplicate or invalid source-editor feature: ${key}.`,
                   )
                 const entry = {
                   id: key,
@@ -936,7 +952,7 @@ export function useAddons(
                   extensions.has(key)
                 )
                   throw new Error(
-                    `This plugin supplied a duplicate or invalid Markdown feature: ${key}.`,
+                    `This addon supplied a duplicate or invalid Markdown feature: ${key}.`,
                   )
                 const entry = {
                   id: key,
@@ -994,7 +1010,7 @@ export function useAddons(
                   registered.has(key)
                 )
                   throw new Error(
-                    `This plugin supplied a duplicate or invalid command: ${key}.`,
+                    `This addon supplied a duplicate or invalid command: ${key}.`,
                   )
                 let active = true
                 const entry: RegisteredCommand = {
@@ -1056,7 +1072,7 @@ export function useAddons(
                 if (disposed) return () => {}
                 if (!/^[a-z][a-z0-9-]*$/.test(provider.id))
                   throw new Error(
-                    'This plugin supplied an invalid file-list feature name.',
+                    'This addon supplied an invalid file-list feature name.',
                   )
                 const remove = explorerDecorations.register(
                   `${id}.${provider.id}`,

@@ -39,6 +39,26 @@ const validId = (value: unknown): value is string =>
 
 import { validDocumentExtensions } from '../shared/document-types'
 
+function settingsMetadata(
+  value: unknown,
+): NonNullable<AddonManifest['settings']> {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error('The addon settings metadata is invalid.')
+  const { category, icon } = value as Record<string, unknown>
+  if (
+    [category, icon].some(
+      (field) =>
+        field !== undefined &&
+        (typeof field !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(field)),
+    )
+  )
+    throw new Error('The addon settings category or icon is invalid.')
+  return {
+    ...(typeof category === 'string' ? { category } : {}),
+    ...(typeof icon === 'string' ? { icon } : {}),
+  }
+}
+
 function manifest(value: unknown): {
   manifest: AddonManifest
   entry: string
@@ -142,6 +162,9 @@ function manifest(value: unknown): {
     version: data.version,
     authors: data.authors,
     defaultEnabled: false,
+    ...(data.settings === undefined
+      ? {}
+      : { settings: settingsMetadata(data.settings) }),
     ...(data.analysis === undefined
       ? {}
       : { analysis: parseAnalysis(data.analysis) }),

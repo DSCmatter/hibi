@@ -182,7 +182,7 @@ export function AddonSettings({
           disabled={busy}
           onClick={() => void run(() => window.hibi.openAddonsFolder())}
         >
-          Open plugins folder
+          Open addons folder
         </Button>
       </ControlRow>
       <SettingsFilter

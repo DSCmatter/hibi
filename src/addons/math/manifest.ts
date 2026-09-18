@@ -5,7 +5,8 @@ export default {
   id: 'math',
   name: 'LaTeX',
   kind: 'extension',
-  version: '1.1.0',
+  version: '1.1.1',
+  settings: { category: 'editing', icon: 'sigma' },
   apiVersion: 2,
   description:
     'Write LaTeX documents, export PDFs, and add equations to Markdown.',

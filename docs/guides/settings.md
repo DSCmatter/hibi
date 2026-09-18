@@ -1,6 +1,6 @@
 # Settings
 
-Open Settings from the command palette. Choose a page in the sidebar, or search below **Back to app** for a setting or enabled plugin.
+Open Settings from the command palette. Choose a page in the sidebar, or search below **Back to app** for a setting or enabled addon.
 
 Use the sidebar button or `Cmd/Ctrl+/` to collapse or expand settings navigation. In a narrow window, it opens over the page and closes when you choose a page or search result. Press Escape or click outside to dismiss it.
 
@@ -11,6 +11,10 @@ Use **Editor** for [tabs, default view, and spell check](editing.md). Use **Appe
 Turn on **Focus outlines** under **Appearance → Focus** if you want borders around focused buttons and navigation. To reduce animations, enable your system's reduced-motion setting.
 
 **Lowercase interface** displays app text in lowercase without changing documents, typed values, code, or case-sensitive commands.
+
+Under **Appearance → Window**, set **Status bar** to **Show**, **Auto-hide**, or **Hide**. Auto-hide reveals the bar when you move to the bottom edge of the editor or focus one of its controls.
+
+**Zen mode** hides navigation, toolbars, and status while you write. Use **Enter zen mode** in the command palette or turn it on in Appearance. Leave with the exit button at the top or **Exit zen mode** in the palette. Your previous layout returns when you leave. You can assign a shortcut under Hotkeys.
 
 ## Autosave
 
@@ -28,15 +32,15 @@ The dropdown beside the sidebar button lists available views. Use its first item
 
 ## Formats, syntax, and code highlighting
 
-**Formats** lists Markdown, plain text, and enabled format plugins. Open a format's settings to configure it or make Hibi its [default application](../features/file-associations.md).
+**Formats** lists Markdown, plain text, and enabled format addons. Open a format's settings to configure it or make Hibi its [default application](../features/file-associations.md).
 
 Use **Syntax** to enable or disable formatting features, and **Code highlighting** to choose which programming languages receive highlighting.
 
 ## Addons
 
-Enable or disable plugins and themes in the alphabetical **Addons** list. Enabling a plugin makes its settings and formats available. **Reset all** restores the default enabled addons without removing installed packages.
+Enable or disable addons and themes in the alphabetical **Addons** list. Enabling a addon makes its settings and formats available. **Reset all** restores the default enabled addons without removing installed packages.
 
-Click an addon row to read its documentation. On a plugin’s settings page, click its title. The row’s enable switch and remove button work separately.
+Click an addon row to read its documentation. On a addon’s settings page, click its title. The row’s enable switch and remove button work separately.
 
 ### Install an addon
 
@@ -45,9 +49,9 @@ Click an addon row to read its documentation. On a plugin’s settings page, cli
 3. Review the package details and trust notice, then install it.
 4. Enable the addon when you are ready to use it.
 
-Only install plugins you trust. Enabled plugins can access your documents and workspace. Git installation requires Git on your computer; private repositories and packages that need a build are unsupported.
+Only install addons you trust. Enabled addons can access your documents and workspace. Git installation requires Git on your computer; private repositories and packages that need a build are unsupported.
 
-**Open plugins folder** shows installed packages. Replacing a package starts the new version disabled; removing one moves it to the system trash.
+**Open addons folder** shows installed packages. Replacing a package starts the new version disabled; removing one moves it to the system trash.
 
 ## Notifications
 

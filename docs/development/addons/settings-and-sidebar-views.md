@@ -48,6 +48,30 @@ export default defineAddon({
 
 Prefix stored keys with your addon ID. Shared `SettingRow` controls are discoverable through settings search and the command palette. Settings may mount in the background for discovery, so avoid starting work merely because the component mounted.
 
+## Group settings and choose icons
+
+Set `settings` in your manifest to place the default page in a category and choose its icon:
+
+```typescript
+settings: { category: 'editing', icon: 'book-open' }
+```
+
+The built-in category IDs are `general`, `editing`, `interface`, and `addons`. Format pages default to `editing`; other addon pages default to `addons`. Supported manifest icons are `activity`, `audio-lines`, `book-open`, `braces`, `code`, `file`, `file-down`, `file-text`, `folder`, `keyboard`, `palette`, `puzzle`, `settings`, `sigma`, `tags`, and `type`. Unknown names use the addon icon.
+
+For extra pages or a custom category, register them inside `start(context)`. Registered pages can use a React icon component, including icons from Lucide.
+
+```tsx
+context.settings.registerCategory({ id: 'workflow', label: 'My workflow' })
+context.settings.register({
+  id: 'greeting',
+  label: 'Greeting',
+  category: 'workflow',
+  Content: Settings,
+})
+```
+
+Category and page IDs are local to your addon. Custom categories must use an ID other than the four built-in names. Each method returns a function that removes its registration; Hibi also removes registrations when the addon stops. Pages appear in navigation and the command palette. Use `SettingRow` for individual controls to make them searchable. Existing `Settings` components continue to work.
+
 ## Add a sidebar view
 
 Register a [SidebarView](../addon-api-reference/SidebarView.md) inside `start`. The view appears in the sidebar picker and command palette.

@@ -31,6 +31,7 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     version: '1.0.0',
     authors: [{ displayName: 'fixture author' }],
     entry: 'index.js',
+    settings: { category: 'general', icon: 'book-open' },
   }
   await writeFile(join(extension, 'hibi-addon.json'), JSON.stringify(metadata))
   await writeFile(join(extension, 'README.md'), '# fixture addon')
@@ -39,6 +40,10 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     `export default ({ React, ui, codeMirror }) => ({
     start(context) {
       window.fixtureStarts = (window.fixtureStarts || 0) + 1;
+      context.settings.registerCategory({id:'tools',label:'Fixture tools'});
+      context.settings.register({id:'extra',label:'Fixture preferences',category:'tools',icon:(props)=>React.createElement('svg',{...props,'data-settings-icon':'fixture'}),Content() {
+        return React.createElement(ui.SettingRow,{id:'fixture-extra',label:'Fixture chime'},React.createElement(ui.Toggle,{id:'fixture-extra',defaultChecked:true}));
+      }});
       const view = context.sidebar.register({id:'view',label:'Fixture view',Content({input}) {
         React.useEffect(() => { window.fixtureViewMounted = true; return () => { window.fixtureViewMounted = false; }; }, []);
         return React.createElement('p', null, input || 'Fixture sidebar content');
@@ -152,6 +157,7 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   assert.equal(await page.locator('#addon-fixture-addon').isChecked(), false)
   assert.equal(await page.evaluate(() => window.fixtureStarts), undefined)
   const packages = await page.evaluate(() => window.hibi.getInstalledAddons())
+  assert.deepEqual(packages[0].manifest.settings, metadata.settings)
   assert.equal(
     await page.evaluate(
       async (url) => (await fetch(url)).status,
@@ -164,6 +170,24 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
   await choose('fixture option')
   await page.waitForFunction(
     () => document.activeElement?.id === 'fixture-option',
+  )
+  await page
+    .getByRole('tab', { name: 'Fixture preferences', exact: true })
+    .click()
+  await page
+    .getByRole('checkbox', { name: 'Fixture chime', exact: true })
+    .waitFor()
+  assert.equal(
+    await page
+      .locator('.sidebar-section')
+      .filter({ hasText: 'Fixture tools' })
+      .count(),
+    1,
+  )
+  assert.equal(await page.locator('[data-settings-icon="fixture"]').count(), 1)
+  await choose('Fixture chime')
+  await page.waitForFunction(
+    () => document.activeElement?.id === 'fixture-extra',
   )
   await page.getByRole('button', { name: /^back to app$/i }).click()
   await page.getByText(/^fixture active$/i, { exact: true }).waitFor()
@@ -209,6 +233,13 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     window.syntaxRich = document.querySelector('.tiptap')
   })
   await choose('disable fixture addon')
+  await page
+    .locator('[id="settings-addon-fixture-addon.extra"]')
+    .waitFor({ state: 'detached' })
+  assert.equal(
+    await page.locator('[id="settings-addon-fixture-addon.extra"]').count(),
+    0,
+  )
   await page.waitForFunction(() => window.fixtureViewMounted === false)
   await page.evaluate(() => window.fixtureSidebar.open('Disposed view'))
   assert.equal(

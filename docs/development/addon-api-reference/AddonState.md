@@ -2,7 +2,7 @@
 
 # AddonState
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L263)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L265)
 
 <details>
 <summary>Declaration</summary>
@@ -24,7 +24,7 @@ type AddonState = { id: string; enabled: boolean }
 
 ### id
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L263)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L265)
 
 ```typescript
 id: string
@@ -32,7 +32,7 @@ id: string
 
 ### enabled
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L263)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/addons/api.ts#L265)
 
 ```typescript
 enabled: boolean

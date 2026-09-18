@@ -36,7 +36,7 @@ export function AddonSidebar({
   return (
     <Sidebar
       className="document-sidebar addon-sidebar"
-      label={view?.label ?? 'Plugin view'}
+      label={view?.label ?? 'Addon view'}
       header={<span>{view?.label}</span>}
       items={[]}
       selected={null}

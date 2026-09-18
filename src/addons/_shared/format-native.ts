@@ -47,8 +47,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
   const serialized = <T>(operation: () => Promise<T>): Promise<T> => {
     const owner = generation
     const next = latexWork.then(() => {
-      if (owner !== generation)
-        throw new Error('The LaTeX plugin was disabled.')
+      if (owner !== generation) throw new Error('The LaTeX addon was disabled.')
       return operation()
     })
     latexWork = next.catch(() => {})

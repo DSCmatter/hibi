@@ -28,7 +28,7 @@ export function AddonPanel({ hidden }: { hidden: boolean }) {
       ref={root}
       className="addon-panel"
       hidden={hidden || !active}
-      aria-label={active?.definition.label ?? 'Plugin panel'}
+      aria-label={active?.definition.label ?? 'Addon panel'}
     >
       <header className="addon-panel-header">
         <span>
