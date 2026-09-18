@@ -12,7 +12,11 @@ import {
 } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import { app, type BrowserWindow, dialog, shell } from 'electron'
-import { ADDON_API_VERSION, type AddonManifest } from '../addons/api'
+import {
+  ADDON_API_VERSION,
+  type AddonManifest,
+  compatibleAddonManifest,
+} from '../addons/api'
 import {
   MAX_ADDON_BYTES,
   MAX_ADDON_ENTRIES,
@@ -48,7 +52,7 @@ function manifest(value: unknown): {
     !validId(data.id) ||
     !string(data.name, 100) ||
     !string(data.description, 500) ||
-    data.apiVersion !== ADDON_API_VERSION ||
+    !compatibleAddonManifest(data) ||
     !['theme', 'extension'].includes(String(data.kind)) ||
     !string(data.version, 40) ||
     !Array.isArray(data.authors) ||

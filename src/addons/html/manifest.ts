@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'html',
   name: 'HTML',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'HTML source editing, preview, and export.',
   fileExtensions: fileAssociations.html.ext,

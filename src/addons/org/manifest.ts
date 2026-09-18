@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'org',
   name: 'Org mode',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'Org mode source editing, preview, and export.',
   fileExtensions: fileAssociations.org.ext,

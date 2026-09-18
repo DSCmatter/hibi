@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'markdoc',
   name: 'Markdoc',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'Markdoc source editing, preview, and export.',
   fileExtensions: fileAssociations.markdoc.ext,

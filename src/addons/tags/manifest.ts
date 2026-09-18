@@ -5,7 +5,7 @@ export default {
   name: 'Tags',
   kind: 'extension',
   version: '1.0.0',
-  apiVersion: 1,
+  apiVersion: 2,
   description: 'Inline #tags and a searchable workspace tag browser.',
   defaultEnabled: false,
   authors: [authors.may],

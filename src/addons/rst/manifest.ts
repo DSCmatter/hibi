@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'rst',
   name: 'reStructuredText',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'reStructuredText source editing, preview, and export.',
   fileExtensions: fileAssociations.rst.ext,

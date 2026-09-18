@@ -13,7 +13,7 @@ export function AddonMetadata({ manifest }: { manifest: AddonManifest }) {
     <span className="addon-metadata">
       <span>{sentenceCase(addonRegistry.origin(manifest.id))}</span>
       <span>{sentenceCase(manifest.kind ?? 'Extension')}</span>
-      {manifest.version && <span>v{manifest.version}</span>}
+      <span>v{manifest.version}</span>
       {manifest.authors?.map((author) => (
         <span
           key={author.discordId ?? author.github ?? author.displayName}

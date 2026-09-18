@@ -7,6 +7,6 @@ export default {
   version: '0.1.0',
   authors: [authors.may],
   description: 'Insert Markdown blocks by typing / at the start of a line.',
-  apiVersion: 1,
+  apiVersion: 2,
   defaultEnabled: true,
 } satisfies AddonManifest

@@ -8,7 +8,7 @@ export default {
   authors: [authors.may],
   description:
     'Publish a Markdown workspace as a searchable, self-contained static site.',
-  apiVersion: 1,
+  apiVersion: 2,
   defaultEnabled: true,
   startup: 'background',
 } satisfies AddonManifest

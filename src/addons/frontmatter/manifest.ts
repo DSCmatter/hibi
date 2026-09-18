@@ -8,6 +8,6 @@ export default {
   authors: [authors.may],
   description:
     'Edit YAML properties while preserving metadata and the document body.',
-  apiVersion: 1,
+  apiVersion: 2,
   defaultEnabled: true,
 } satisfies AddonManifest

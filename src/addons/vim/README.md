@@ -6,6 +6,12 @@ the pending/last-command status pill uses `verbatim: true`, preserving meaningfu
 
 version 0.2.0 · may (`1262793452236570667`). disabled by default.
 
+## credits
+
+hibi integration: may and [angelo](https://github.com/angelofallars). vim engine: the [codemirror-vim contributors](https://github.com/replit/codemirror-vim). engine license notices remain available in hibi's open source licenses.
+
+## behavior
+
 adds the CodeMirror vim engine to source panes through `context.editor.registerSource`. the engine is imported on demand and includes mode-aware cursors, visual selections, motions, operators, registers, macros, search, and ex commands. the normal wysiwyg view keeps its existing input behavior.
 
 native file commands use `context.editor.runCommand` and `context.workspace.openFile`, preserving dialogs, unsaved edits, external-change checks, and source focus after saves. `:w`, `:e`, `:enew`, `:q`, `:wq`, and `:x` integrate with hibi. force-quit flags still check unsaved edits. shell execution, vimscript, external vim plugins, and `:w filename` are outside this embedded engine.

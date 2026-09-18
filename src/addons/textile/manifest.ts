@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'textile',
   name: 'Textile',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'Textile source editing, preview, and export.',
   fileExtensions: fileAssociations.textile.ext,

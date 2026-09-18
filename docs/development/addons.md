@@ -41,7 +41,7 @@ vite discovers these folders. add files and rebuild, or use `npm start` while de
 
 ## renderer entry
 
-manifests may include a plugin `version` and `authors`, an array of `{ displayName, discordId?, github?, role? }` records. bundled plugins share entries from `src/addons/authors.ts`. these fields are optional for older API v1 addons; new plugins should supply both version and authors. settings shows display names and roles, with Discord IDs or GitHub usernames in tooltips. do not invent missing identifiers.
+manifests require a nonempty plugin `version` (at most 40 characters). `authors` contains `{ displayName, discordId?, github?, role? }` records for people who wrote or contributed to the hibi plugin, including its port. upstream library, engine, and asset creators belong in the plugin README's credits section; preserve their license notices. bundled plugins share entries from `src/addons/authors.ts`. settings shows display names and roles, with Discord IDs or GitHub usernames in tooltips. do not invent missing identifiers.
 
 optional `licenses` entries (`id`, `name`, `license`, full `text`) expose shipped third-party notices in hibi → open source licenses, even when the addon is disabled. ids are namespaced by addon. preserve upstream copyright notices when porting code or assets.
 
@@ -199,6 +199,6 @@ the optional `resize` prop adds the shared pointer and keyboard resize handle. p
 
 ## compatibility
 
-the public API is version 1. manifests declare `apiVersion`; incompatible manifests are rejected. preserve existing signatures when adding capabilities. breaking changes require an API version bump, addon migration, and documentation updates.
+the public API is version 2. migrate source plugins by adding `version` and setting `apiVersion: 2`; all bundled plugins use this contract. versioned API v1 packages remain runtime-compatible and are normalized on installation. missing/empty versions and unsupported API versions are rejected in both processes. preserve existing signatures when adding capabilities. breaking changes require an API version bump, addon migration, and documentation updates.
 
 `npm start` regenerates API references when their source declarations change. outside watch mode, run `npm run docs` after changing public types. `npm run docs:check`, included in `npm run check`, fails if generated references differ from the actual SDK or shared types. keep your addon’s README updated with behavior changes.

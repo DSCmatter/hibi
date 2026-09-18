@@ -5,7 +5,8 @@ import { authors } from '../authors'
 export default {
   id: 'markdown',
   name: 'Markdown',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description:
     'Markdown documents with rich editing, source view, and HTML export.',

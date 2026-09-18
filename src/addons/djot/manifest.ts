@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'djot',
   name: 'Djot',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'Djot source editing, preview, and export.',
   fileExtensions: fileAssociations.djot.ext,

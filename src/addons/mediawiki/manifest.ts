@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'mediawiki',
   name: 'MediaWiki',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'MediaWiki source editing, preview, and export.',
   fileExtensions: fileAssociations.mediawiki.ext,

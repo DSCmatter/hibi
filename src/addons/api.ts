@@ -68,7 +68,20 @@ export type {
 export type { TooltipApi, TooltipOptions } from '../ui/tooltips'
 
 /** Increment when a public contract changes incompatibly. */
-export const ADDON_API_VERSION = 1
+export const ADDON_API_VERSION = 2
+
+/** Versioned API v1 packages retain the same runtime contract. */
+export function compatibleAddonManifest(manifest: {
+  apiVersion?: unknown
+  version?: unknown
+}): boolean {
+  return (
+    (manifest.apiVersion === 1 || manifest.apiVersion === ADDON_API_VERSION) &&
+    typeof manifest.version === 'string' &&
+    !!manifest.version.trim() &&
+    manifest.version.length <= 40
+  )
+}
 
 export type AddonManifest = {
   id: string
@@ -80,8 +93,8 @@ export type AddonManifest = {
   defaultEnabled?: boolean
   /** Background-only UI/services can activate after editing is ready. Omit for schema/input addons. */
   startup?: 'background'
-  /** Plugin release version; optional for existing API v1 addons. */
-  version?: string
+  /** Required plugin release version, separate from the host API version. */
+  version: string
   /** Additional source-file extensions, without dots. Files remain openable when disabled. */
   fileExtensions?: readonly string[]
   authors?: readonly AddonAuthor[]

@@ -7,7 +7,7 @@ export default {
   description: 'Subscript and discord-style small text.',
   kind: 'extension',
   version: '1.0.0',
-  apiVersion: 1,
+  apiVersion: 2,
   defaultEnabled: true,
   authors: [authors.may],
 } satisfies AddonManifest

@@ -26,7 +26,7 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     id: 'fixture-addon',
     name: 'fixture addon',
     description: 'sideload test',
-    apiVersion: 1,
+    apiVersion: 2,
     kind: 'extension',
     version: '1.0.0',
     authors: [{ displayName: 'fixture author' }],
@@ -58,6 +58,7 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     JSON.stringify({
       ...metadata,
       id: 'fixture-theme',
+      apiVersion: 1,
       name: 'fixture theme',
       kind: 'theme',
       entry: undefined,

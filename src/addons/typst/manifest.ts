@@ -8,24 +8,12 @@ export default {
   name: 'Typst',
   kind: 'extension',
   version: '1.0.0',
-  apiVersion: 1,
+  apiVersion: 2,
   description:
     'Typst documents, live previews, PDF export, and rendered Markdown blocks.',
   defaultEnabled: false,
   fileExtensions: fileAssociations.typst.ext,
-  authors: [
-    authors.may,
-    {
-      displayName: 'typst contributors',
-      github: 'typst',
-      role: 'typesetting engine',
-    },
-    {
-      displayName: 'myriad-dreamin',
-      github: 'Myriad-Dreamin',
-      role: 'typst.ts compiler bindings',
-    },
-  ],
+  authors: [authors.may],
   licenses: [
     {
       id: 'typst-assets',

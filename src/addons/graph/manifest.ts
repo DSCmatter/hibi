@@ -5,7 +5,7 @@ export default {
   name: 'Graph',
   kind: 'extension',
   version: '1.0.0',
-  apiVersion: 1,
+  apiVersion: 2,
   description:
     'Explore connections between notes in an interactive workspace graph.',
   defaultEnabled: false,

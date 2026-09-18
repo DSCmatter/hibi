@@ -3,9 +3,9 @@ import { lstat, readFile, realpath, rename, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { app, type BrowserWindow, dialog } from 'electron'
 import {
-  ADDON_API_VERSION,
   type AddonManifest,
   type AddonState,
+  compatibleAddonManifest,
   type NativeAddon,
 } from '../addons/api'
 import { validDocumentExtensions } from '../shared/document-types'
@@ -110,7 +110,7 @@ export async function loadAddons(): Promise<void> {
       ids.has(manifest.id) ||
       (manifest.fileExtensions !== undefined &&
         !validDocumentExtensions(manifest.fileExtensions)) ||
-      manifest.apiVersion !== ADDON_API_VERSION
+      !compatibleAddonManifest(manifest)
     )
       throw new Error('invalid or incompatible addon manifest.')
     ids.add(manifest.id)

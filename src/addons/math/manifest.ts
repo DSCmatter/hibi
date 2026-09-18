@@ -6,7 +6,7 @@ export default {
   name: 'LaTeX',
   kind: 'extension',
   version: '1.0.0',
-  apiVersion: 1,
+  apiVersion: 2,
   description:
     'LaTeX documents, native PDF compilation, and inline and block math with KaTeX.',
   defaultEnabled: false,

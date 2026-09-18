@@ -7,12 +7,12 @@ import {
   useSyncExternalStore,
 } from 'react'
 import {
-  ADDON_API_VERSION,
   type Addon,
   type AddonApp,
   type AddonCommand,
   type AddonContext,
   type AddonState,
+  compatibleAddonManifest,
   type MarkdownExtension,
   type RichExtension,
   type SidebarView,
@@ -281,7 +281,7 @@ export function useAddons(environment: Environment, documentName?: string) {
         }
       }
       try {
-        if (addon.manifest.apiVersion !== ADDON_API_VERSION)
+        if (!compatibleAddonManifest(addon.manifest))
           throw new Error(`incompatible addon: ${id}`)
         running.set(id, { addon, stop })
         const start = () =>

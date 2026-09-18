@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'creole',
   name: 'Creole',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description: 'Creole source editing, preview, and export.',
   fileExtensions: fileAssociations.creole.ext,

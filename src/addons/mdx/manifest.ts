@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'mdx',
   name: 'MDX',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description:
     'MDX source editing, preview, and export with an explicit native run action.',

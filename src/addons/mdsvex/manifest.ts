@@ -4,7 +4,8 @@ import { authors } from '../authors'
 export default {
   id: 'mdsvex',
   name: 'MDsveX',
-  apiVersion: 1,
+  apiVersion: 2,
+  version: '1.0.0',
   kind: 'extension',
   description:
     'MDsveX source editing, preview, and export with an explicit native run action.',
