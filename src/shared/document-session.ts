@@ -44,6 +44,11 @@ type SessionOptions = SourceBufferOptions & {
   enqueue: (operation: SourceOperation) => void
   onError: (error: unknown) => void
 }
+export type AcceptedSourceEdit = Readonly<{
+  prepared: PreparedSourceOperation
+  /** Finish after the accepted native editor transaction updates its view. */
+  finish: () => void
+}>
 const editBytes = (changes: readonly RawEdit[]) =>
   changes.reduce((sum, change) => sum + change.insert.length * 2 + 48, 0)
 
@@ -275,6 +280,72 @@ export class DocumentSession {
       changes,
     }
   }
+  #begin(
+    operation: SourceOperation,
+    history: (
+      prepared: PreparedSourceOperation,
+      beforeSelection: SourceSelection | null,
+    ) => void,
+    selection?: (prepared: PreparedSourceOperation) => SourceSelection | null,
+  ): AcceptedSourceEdit {
+    if (this.#disposed || this.#dispatching)
+      throw new Error(
+        'Document session is disposed or dispatching another operation.',
+      )
+    this.#dispatching = true
+    let prepared: PreparedSourceOperation | undefined
+    try {
+      prepared = this.#store.prepare(operation)
+      const accepted = prepared,
+        beforeSelection = this.#selection
+      const requested = selection?.(prepared)
+      const afterSelection = selection
+        ? requested
+          ? sourceSelection(prepared.after, requested)
+          : null
+        : mapSourceSelection(prepared.after, beforeSelection, operation.changes)
+      this.#store.commit(prepared)
+      this.#selection = afterSelection
+      history(prepared, beforeSelection)
+      this.#identities.set(prepared.after, this.#contentIdentity)
+      const changed = this.#publish(false)
+      // Source is already savable when enqueue/reconcile or an observer runs.
+      // Failures preserve accepted source and are reported, never rolled back.
+      const errors: unknown[] = []
+      try {
+        this.#options.enqueue(prepared.operation)
+      } catch (error) {
+        errors.push(error)
+      }
+      let finished = false
+      return Object.freeze({
+        prepared: accepted,
+        finish: () => {
+          if (finished) return
+          finished = true
+          try {
+            for (const listener of [...this.#operationListeners]) {
+              try {
+                listener(accepted)
+              } catch (error) {
+                errors.push(error)
+              }
+            }
+            if (changed) this.#notify()
+            if (beforeSelection !== afterSelection) this.#notifySelection()
+            for (const error of errors) this.#options.onError(error)
+          } finally {
+            this.#dispatching = false
+            this.#verifySaved()
+          }
+        },
+      })
+    } catch (error) {
+      if (prepared) this.#store.abort(prepared)
+      this.#dispatching = false
+      throw error
+    }
+  }
   #accept(
     operation: SourceOperation,
     history: (
@@ -284,55 +355,29 @@ export class DocumentSession {
     reconcile?: (prepared: PreparedSourceOperation) => void,
     selection?: (prepared: PreparedSourceOperation) => SourceSelection | null,
   ) {
-    if (this.#disposed || this.#dispatching)
-      throw new Error(
-        'Document session is disposed or dispatching another operation.',
-      )
-    const prepared = this.#store.prepare(operation)
-    const beforeSelection = this.#selection
-    let afterSelection: SourceSelection | null
+    const accepted = this.#begin(operation, history, selection)
     try {
-      const requested = selection?.(prepared)
-      afterSelection = requested
-        ? sourceSelection(prepared.after, requested)
-        : mapSourceSelection(prepared.after, beforeSelection, operation.changes)
+      reconcile?.(accepted.prepared)
     } catch (error) {
-      this.#store.abort(prepared)
-      throw error
-    }
-    this.#dispatching = true
-    try {
-      this.#store.commit(prepared)
-      this.#selection = afterSelection
-      history(prepared, beforeSelection)
-      this.#identities.set(prepared.after, this.#contentIdentity)
-      const changed = this.#publish(false)
-      // Source is already savable when enqueue/reconcile or an observer runs.
-      // Failures preserve accepted source and are reported, never rolled back.
-      try {
-        this.#options.enqueue(prepared.operation)
-      } catch (error) {
-        this.#options.onError(error)
-      }
-      try {
-        reconcile?.(prepared)
-      } catch (error) {
-        this.#options.onError(error)
-      }
-      for (const listener of [...this.#operationListeners]) {
-        try {
-          listener(prepared)
-        } catch (error) {
-          this.#options.onError(error)
-        }
-      }
-      if (changed) this.#notify()
-      if (beforeSelection !== afterSelection) this.#notifySelection()
+      this.#options.onError(error)
     } finally {
-      this.#dispatching = false
+      accepted.finish()
     }
-    this.#verifySaved()
-    return prepared
+    return accepted.prepared
+  }
+  beginEdit(
+    changes: readonly RawEdit[],
+    origin: SourceOperation['origin'],
+    historyGroup: string,
+    selection?: (prepared: PreparedSourceOperation) => SourceSelection | null,
+  ): AcceptedSourceEdit {
+    if (origin === 'undo' || origin === 'redo')
+      throw new Error('Use session history for undo and redo.')
+    return this.#begin(
+      this.#operation(changes, origin, historyGroup),
+      (prepared, beforeSelection) => this.#record(prepared, beforeSelection),
+      selection,
+    )
   }
   edit(
     changes: readonly RawEdit[],

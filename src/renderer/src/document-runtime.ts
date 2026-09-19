@@ -151,16 +151,11 @@ export class DocumentRuntime {
     }
     this.#publish()
   }
-  /** Explicit whole-source compatibility transform. Incremental surfaces use session.edit. */
-  replace(
-    source: string,
-    origin: SourceOperation['origin'] = 'addon',
-    group: string = crypto.randomUUID(),
-  ) {
+  #replacement(source: string) {
     const session = this.#active
     if (!session) return null
     const snapshot = session.snapshot(),
-      change = sourceChange(snapshot.materialize(), source)
+      change = sourceChange(this.get()!.markdown, source)
     if (!change) return null
     // Whole-source compatibility can change CRLF spelling. Own complete pairs.
     let { from, to, insert } = change
@@ -172,7 +167,20 @@ export class DocumentRuntime {
       insert += snapshot.sliceRaw(to, to + 1)
       to++
     }
-    return session.edit([{ from, to, insert }], origin, group)
+    return { session, changes: [{ from, to, insert }] }
+  }
+  /** Explicit whole-source compatibility transform. Incremental surfaces use session.edit. */
+  replace(
+    source: string,
+    origin: SourceOperation['origin'] = 'addon',
+    group: string = crypto.randomUUID(),
+  ) {
+    const edit = this.#replacement(source)
+    return edit?.session.edit(edit.changes, origin, group) ?? null
+  }
+  beginReplace(source: string, group: string) {
+    const edit = this.#replacement(source)
+    return edit?.session.beginEdit(edit.changes, 'visual', group) ?? null
   }
   dispose() {
     for (const detach of this.#detach) detach()

@@ -1,7 +1,8 @@
-import type { Editor } from '@tiptap/core'
+import type { Editor, EditorEvents } from '@tiptap/core'
 import { closeHistory } from '@tiptap/pm/history'
 import type { Node as RichNode } from '@tiptap/pm/model'
 import { AllSelection, TextSelection } from '@tiptap/pm/state'
+import { ReplaceStep } from '@tiptap/pm/transform'
 import { EditorContent, useEditor } from '@tiptap/react'
 import {
   findNext,
@@ -31,8 +32,10 @@ import type {
 import type { DocumentState } from '../../shared/desktop'
 import { MAX_DOCUMENT_BYTES } from '../../shared/desktop'
 import { editedSource, sourceEditMatches } from '../../shared/document-edits'
+import type { AcceptedSourceEdit } from '../../shared/document-session'
 import type { DocumentView } from '../../shared/document-types'
 import { isMediaFile } from '../../shared/media'
+import { Button } from '../../ui/Controls'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { performanceDiagnostics } from '../../ui/diagnostics'
 import { documentImage } from './DocumentImage'
@@ -60,6 +63,11 @@ import { markdownSerializer } from './markdown-serialization'
 import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
 import { observeRichAnnotations } from './rich-annotations'
+import {
+  richSourceEcho,
+  richSourceSession,
+  richSourceSnapshot,
+} from './rich-source-session'
 import { exactRichRange } from './rich-text-range'
 import { revealSourcePosition, sourcePosition, sourceView } from './source-view'
 import { textProjection } from './text-projection'
@@ -175,6 +183,10 @@ export function MarkdownEditor({
     ],
   )
   const richHistoryGroup = useRef({ id: '', time: 0 })
+  const [richInputError, setRichInputError] = useState('')
+  const retryRich = useRef(() => {})
+  const prepareRichRef = useRef(prepareRich)
+  prepareRichRef.current = prepareRich
   const [richExtensionError, setRichExtensionError] = useState('')
   const [findQuery, setFindQuery] = useState('')
   const [findStatus, setFindStatus] = useState<FindStatus>({
@@ -251,10 +263,29 @@ export function MarkdownEditor({
   useEffect(() => {
     if (mode !== 'normal') setSourceMounted(true)
   }, [mode])
-  // biome-ignore lint/correctness/useExhaustiveDependencies: syntax changes rebuild configured extensions even when the flavor identities stay unchanged.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: capture the initial source stamp only when rebuilding the schema; normal edits synchronize through the source bridge.
   const extensions = useMemo(
     () => [
       ...editorExtensions(flavors, documentHistory),
+      richSourceSession.configure({
+        initialSource: {
+          document: {
+            tabId: documentState.tabId,
+            revision: documentState.revision,
+          },
+          version: documentState.contentVersion,
+        },
+        prepare: (event) => prepareRichRef.current(event),
+        reject: (error) => {
+          generated.current = null
+          setRichInputError(
+            error instanceof Error ? error.message : String(error),
+          )
+        },
+        reconciled: () => {
+          setRichInputError('')
+        },
+      }),
       ...(markdownSyntax.enabled('core.images')
         ? [documentImage(documentRevision)]
         : []),
@@ -295,52 +326,84 @@ export function MarkdownEditor({
       onSelectionUpdate: ({ transaction }) => {
         if (!transaction.docChanged) richHistoryGroup.current.id = ''
       },
-      onUpdate: ({ editor, transaction }) => {
-        let serialize = serializers.current.get(editor)
-        if (!serialize) {
-          serialize = markdownSerializer(
-            editor.markdown!,
-            flavors.every((flavor) => flavor.serialization === 'block-local'),
-          )
-          serializers.current.set(editor, serialize)
-        }
-        const serialized = performanceDiagnostics.measure(
-          'core',
-          'Markdown serialization',
-          () => serialize(editor.state.doc),
-        )
-        const preserved =
-          exactSource.current ??
-          exactHistory.current.get(editor)?.get(serialized.source)
-        const source = preserved?.document.eq(editor.state.doc)
-          ? preserved.source
-          : projection.serialize(serialized.source)
-        generated.current = {
-          source,
-          body: serialized.source,
-          sourceOnly: serialized.sourceOnly,
-          flavors,
-          syntaxVersion,
-          adapters: markdownExtensions,
-        }
-        const typing =
-          !exactSource.current &&
-          transaction.steps.length === 1 &&
-          transaction.steps[0]?.toJSON().stepType === 'replace' &&
-          !transaction.getMeta('uiEvent')
-        const now = performance.now(),
-          previous = richHistoryGroup.current
-        if (!typing || !previous.id || now - previous.time > 500)
-          previous.id = crypto.randomUUID()
-        performanceDiagnostics.measure('core', 'document update', () =>
-          onChange(source, previous.id),
-        )
-        previous.time = now
-        if (!typing) previous.id = ''
-      },
     },
     [markdownExtensions, flavors, syntaxVersion],
   )
+  function prepareRich({
+    editor,
+    transaction,
+    nextState,
+  }: EditorEvents['beforeTransaction']): AcceptedSourceEdit | null {
+    if (!markdownDocument) return null
+    const known = richSourceSnapshot(editor),
+      current = documentRuntime.session()?.snapshot()
+    if (
+      !known ||
+      !current ||
+      known.version !== current.version ||
+      known.document.tabId !== current.document.tabId ||
+      known.document.revision !== current.document.revision
+    )
+      throw new Error(
+        'The editor is still synchronizing. Retry before editing this view.',
+      )
+    if (exactSource.current && !exactSource.current.document.eq(nextState.doc))
+      throw new Error(
+        'An editor extension changed this edit. Review the document before continuing.',
+      )
+    let serialize = serializers.current.get(editor)
+    if (!serialize) {
+      serialize = markdownSerializer(
+        editor.markdown!,
+        flavors.every((flavor) => flavor.serialization === 'block-local'),
+      )
+      serializers.current.set(editor, serialize)
+    }
+    const serialized = performanceDiagnostics.measure(
+      'core',
+      'Markdown serialization',
+      () => serialize(nextState.doc),
+    )
+    const preserved =
+      exactSource.current ??
+      exactHistory.current.get(editor)?.get(serialized.source)
+    const currentSource = documentRuntime.get()?.markdown ?? value
+    const source = preserved?.document.eq(nextState.doc)
+      ? preserved.source
+      : projectMarkdown(currentSource, markdownExtensions).serialize(
+          serialized.source,
+        )
+    const step = transaction.steps[0]
+    const typing =
+      !exactSource.current &&
+      transaction.steps.length === 1 &&
+      step instanceof ReplaceStep &&
+      step.slice.content.childCount <= 1 &&
+      (!step.slice.content.firstChild ||
+        step.slice.content.firstChild.isText) &&
+      !transaction.getMeta('uiEvent')
+    const now = performance.now(),
+      previous = richHistoryGroup.current
+    if (!typing || !previous.id || now - previous.time > 500)
+      previous.id = crypto.randomUUID()
+    const accepted = performanceDiagnostics.measure(
+      'core',
+      'document update',
+      () => documentRuntime.beginReplace(source, previous.id),
+    )
+    generated.current = {
+      source,
+      body: serialized.source,
+      sourceOnly: serialized.sourceOnly,
+      flavors,
+      syntaxVersion,
+      adapters: markdownExtensions,
+    }
+    previous.time = now
+    if (!typing) previous.id = ''
+    setRichInputError('')
+    return accepted
+  }
   useLayoutEffect(() => {
     const session = documentRuntime.session()
     if (!editor || !markdownDocument || !session) return
@@ -349,19 +412,31 @@ export function MarkdownEditor({
     const sync = () => {
       scheduled = false
       if (disposed || editor.isDestroyed) return
-      const source = session.snapshot().materialize()
-      if (generated.current?.source === source) return
-      editor.commands.setContent(
-        projectMarkdown(source, markdownExtensions).content,
-        { contentType: 'markdown', emitUpdate: false },
-      )
+      if (richSourceSnapshot(editor)?.version === session.snapshot().version) {
+        setRichInputError('')
+        return
+      }
+      const snapshot = session.snapshot(),
+        source = snapshot.materialize()
+      editor
+        .chain()
+        .setContent(projectMarkdown(source, markdownExtensions).content, {
+          contentType: 'markdown',
+          emitUpdate: false,
+        })
+        .command(({ tr }) => {
+          tr.setMeta(richSourceEcho, snapshot)
+          return true
+        })
+        .run()
       generated.current = null
       richHistoryGroup.current.id = ''
     }
+    retryRich.current = sync
     const remove = session.subscribeOperations((prepared) => {
       if (
         prepared.operation.origin === 'visual' &&
-        generated.current?.source === session.snapshot().materialize()
+        richSourceSnapshot(editor)?.version === prepared.after.version
       )
         return
       if (
@@ -374,8 +449,10 @@ export function MarkdownEditor({
         queueMicrotask(sync)
       }
     })
+    sync()
     return () => {
       disposed = true
+      retryRich.current = () => {}
       remove()
     }
   }, [editor, markdownDocument, markdownExtensions])
@@ -846,15 +923,6 @@ export function MarkdownEditor({
   }, [editor, findMove, findOpen, findTarget])
 
   function updateFromSource(markdown: string) {
-    if (markdownDocument)
-      editor
-        ?.chain()
-        .setContent(projectMarkdown(markdown, markdownExtensions).content, {
-          contentType: 'markdown',
-          emitUpdate: false,
-        })
-        .setMeta('addToHistory', false)
-        .run()
     onChange(markdown)
   }
 
@@ -972,6 +1040,18 @@ export function MarkdownEditor({
                   title="Editor addon unavailable"
                   message={richExtensionError}
                 />
+              )}
+              {richInputError && (
+                <DocumentNotice
+                  title="Edit could not be applied"
+                  message={richInputError}
+                >
+                  {editor &&
+                    richSourceSnapshot(editor)?.version !==
+                      documentState.contentVersion && (
+                      <Button onClick={() => retryRich.current()}>Retry</Button>
+                    )}
+                </DocumentNotice>
               )}
               <EditorContent editor={editor} />
             </div>

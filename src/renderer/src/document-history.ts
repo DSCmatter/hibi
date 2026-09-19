@@ -1,4 +1,10 @@
-import { type CommandProps, Extension } from '@tiptap/core'
+import {
+  type CommandProps,
+  commands as coreCommands,
+  Extension,
+  isiOS,
+  isMacOS,
+} from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
 import { documentRuntime } from './document-runtime'
 
@@ -19,9 +25,35 @@ export const documentHistory = Extension.create({
         if (dispatch) tr.setMeta('hibiHistory', direction)
         return true
       }
-    return { undo: command('undo'), redo: command('redo') }
+    return {
+      undo: command('undo'),
+      redo: command('redo'),
+      keyboardShortcut: (name) => (props) => {
+        const parts = name.toLowerCase().split(/-(?!$)/),
+          key = parts.pop()
+        const modifiers =
+          isiOS() || isMacOS()
+            ? ['mod', 'cmd', 'meta', 'm']
+            : ['mod', 'ctrl', 'control', 'c']
+        if (
+          parts.some((part) => modifiers.includes(part)) &&
+          parts.every((part) => part === 'shift' || modifiers.includes(part)) &&
+          (key === 'z' || (key === 'y' && !parts.includes('shift')))
+        ) {
+          command(key === 'y' || parts.includes('shift') ? 'redo' : 'undo')()(
+            props,
+          )
+          return true
+        }
+        return coreCommands.keyboardShortcut(name)(props)
+      },
+    }
   },
   dispatchTransaction({ transaction, next }) {
+    if (this.editor.isCapturingTransaction) {
+      next(transaction)
+      return
+    }
     const direction = transaction.getMeta('hibiHistory')
     if (direction === 'undo') documentRuntime.session()?.undo()
     else if (direction === 'redo') documentRuntime.session()?.redo()

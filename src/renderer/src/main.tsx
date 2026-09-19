@@ -507,7 +507,7 @@ function App() {
         return true
       },
       isBusy: () => busyRef.current,
-      getMarkdown: () => currentDocument.current?.markdown ?? '',
+      getMarkdown: () => editorDocument.get()?.markdown ?? '',
       runAction: (command) => runAction(command),
       runCommand: (command) => runCommand(command),
       updateMarkdown(transform, options) {

@@ -113,6 +113,58 @@ test('S08/ENG20: source and visual history groups share monotonic undo and redo'
   assert.deepEqual(errors, [])
 })
 
+test('S07: rich acceptance keeps one guarded source commit until native view callbacks finish', () => {
+  const { session, journal } = fixture('before')
+  const events = []
+  session.subscribeOperations(() => events.push('mirror'))
+  session.subscribe(() => events.push('observer'))
+  const accepted = session.beginEdit(
+    [{ from: 0, to: 6, insert: 'after' }],
+    'visual',
+    'typing',
+  )
+  assert.equal(session.snapshot().materialize(), 'after')
+  assert.equal(journal.length, 1)
+  assert.deepEqual(events, [])
+  assert.throws(
+    () =>
+      session.edit([{ from: 0, to: 0, insert: 'nested' }], 'addon', 'nested'),
+    /dispatching/,
+  )
+  events.push('native view callbacks')
+  accepted.finish()
+  accepted.finish()
+  assert.deepEqual(events, ['native view callbacks', 'mirror', 'observer'])
+  session.undo()
+  assert.equal(session.snapshot().materialize(), 'before')
+  assert.equal(journal.length, 2)
+})
+
+test('selection preparation cannot reenter the source commit and rejection releases its guard', () => {
+  const { session, journal } = fixture('original')
+  assert.throws(
+    () =>
+      session.beginEdit(
+        [{ from: 0, to: 8, insert: 'changed' }],
+        'visual',
+        'test',
+        () => {
+          session.edit(
+            [{ from: 0, to: 0, insert: 'nested' }],
+            'addon',
+            'nested',
+          )
+          return null
+        },
+      ),
+    /dispatching/,
+  )
+  assert.equal(session.snapshot().materialize(), 'original')
+  assert.equal(journal.length, 0)
+  session.edit([{ from: 0, to: 0, insert: 'safe ' }], 'source', 'next')
+  assert.equal(session.snapshot().materialize(), 'safe original')
+})
+
 test('group cancellation and new line-ending seams preserve undo source', () => {
   const { session } = fixture('\rX\n')
   session.edit([{ from: 1, to: 2, insert: '' }], 'source', 'typing')

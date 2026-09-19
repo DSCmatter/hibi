@@ -5,9 +5,15 @@ export type SourceOwner = Readonly<{
   revision: number
   kind: string
   length: number
+  parsed: boolean
 }>
-type OwnerInput = Pick<SourceOwner, 'kind' | 'length'>
-type Node = Readonly<{ count: number; length: number; height: number }> &
+type OwnerInput = Pick<SourceOwner, 'kind' | 'length'> & { parsed?: boolean }
+type Node = Readonly<{
+  count: number
+  length: number
+  height: number
+  invalid: number
+}> &
   (
     | Readonly<{ kind: 'page'; entries: readonly SourceOwner[] }>
     | Readonly<{ kind: 'branch'; entries: readonly Node[] }>
@@ -61,7 +67,8 @@ class OwnerPages {
       !value.kind ||
       value.kind.length > 128 ||
       !safe(value.length) ||
-      !value.length
+      !value.length ||
+      (value.parsed !== undefined && typeof value.parsed !== 'boolean')
     )
       throw new Error('Source owners need a kind and a positive safe length.')
     const slot = previous?.slot ?? this.#nextSlot
@@ -72,6 +79,7 @@ class OwnerPages {
       revision: previous ? add(previous.revision, 1) : 0,
       kind: value.kind,
       length: value.length,
+      parsed: value.parsed !== false,
     })
   }
   page(entries: readonly SourceOwner[]): Node {
@@ -81,6 +89,7 @@ class OwnerPages {
       kind: 'page',
       entries: Object.freeze([...entries]),
       count: entries.length,
+      invalid: entries.reduce((sum, entry) => sum + Number(!entry.parsed), 0),
       length: entries.reduce((sum, entry) => add(sum, entry.length), 0),
       height: 0,
     })
@@ -91,6 +100,7 @@ class OwnerPages {
       kind: 'branch',
       entries: Object.freeze([...entries]),
       count: entries.reduce((sum, entry) => add(sum, entry.count), 0),
+      invalid: entries.reduce((sum, entry) => sum + entry.invalid, 0),
       length: entries.reduce((sum, entry) => add(sum, entry.length), 0),
       height: entries[0]!.height + 1,
     })
@@ -234,6 +244,84 @@ export class SourceOwners {
   get length() {
     return this.#root.length
   }
+  invalid(from = 0, to = this.count) {
+    if (!safe(from) || !safe(to) || to < from || to > this.count)
+      throw new Error('Source owner range is outside its index.')
+    const count = (node: Node, start: number): number => {
+      this.#pages.work.visits++
+      if (start >= to || start + node.count <= from || !node.invalid) return 0
+      if (start >= from && start + node.count <= to) return node.invalid
+      if (node.kind === 'page')
+        return node.entries
+          .slice(Math.max(0, from - start), Math.min(node.count, to - start))
+          .reduce((sum, owner) => sum + Number(!owner.parsed), 0)
+      let result = 0,
+        index = start
+      for (const child of node.entries) {
+        result += count(child, index)
+        index += child.count
+      }
+      return result
+    }
+    return count(this.#root, 0)
+  }
+  *pending() {
+    function* visit(
+      node: Node,
+      index: number,
+      from: number,
+    ): Generator<
+      Readonly<{ owner: SourceOwner; index: number; from: number; to: number }>
+    > {
+      if (!node.invalid) return
+      if (node.kind === 'page') {
+        for (const owner of node.entries) {
+          if (!owner.parsed)
+            yield Object.freeze({ owner, index, from, to: from + owner.length })
+          index++
+          from += owner.length
+        }
+      } else
+        for (const child of node.entries) {
+          yield* visit(child, index, from)
+          index += child.count
+          from += child.length
+        }
+    }
+    yield* visit(this.#root, 0, 0)
+  }
+  *records(from = 0, to = this.count) {
+    if (!safe(from) || !safe(to) || to < from || to > this.count)
+      throw new Error('Source owner range is outside its index.')
+    function* visit(
+      node: Node,
+      index: number,
+      offset: number,
+    ): Generator<
+      Readonly<{ owner: SourceOwner; index: number; from: number; to: number }>
+    > {
+      if (index >= to || index + node.count <= from) return
+      if (node.kind === 'page') {
+        for (const owner of node.entries) {
+          if (index >= from && index < to)
+            yield Object.freeze({
+              owner,
+              index,
+              from: offset,
+              to: offset + owner.length,
+            })
+          index++
+          offset += owner.length
+        }
+      } else
+        for (const child of node.entries) {
+          yield* visit(child, index, offset)
+          index += child.count
+          offset += child.length
+        }
+    }
+    yield* visit(this.#root, 0, 0)
+  }
   counters(reset = false) {
     const result = { ...this.#pages.work }
     if (reset)
@@ -324,6 +412,8 @@ export class SourceOwners {
     return new SourceOwners([], {}, { token: fork, pages: this.#pages, root })
   }
   splice(from: number, to: number, records: readonly OwnerInput[]) {
+    if (from === to && !records.length && safe(from) && from <= this.count)
+      return this
     return this.#replace(
       from,
       to,
@@ -362,6 +452,13 @@ export class SourceOwners {
           : node.entries.reduce((sum, entry) => sum + entry.count, 0))
       )
         problems.push('count')
+      if (
+        node.invalid !==
+        (node.kind === 'page'
+          ? node.entries.reduce((sum, owner) => sum + Number(!owner.parsed), 0)
+          : node.entries.reduce((sum, child) => sum + child.invalid, 0))
+      )
+        problems.push('invalid')
       if (node.kind === 'branch')
         for (const child of node.entries) {
           if (child.height !== node.height - 1) problems.push('height')

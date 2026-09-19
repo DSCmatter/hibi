@@ -62,6 +62,9 @@
   "6a03f5d4708e": [
     "src/main/workspace-settings.ts"
   ],
+  "eab4b9331e40": [
+    "src/shared/markdown-source-model.ts"
+  ],
   "e008e52e004d": [
     "src/addons/_shared/document-project.ts"
   ],
@@ -150,6 +153,9 @@
   ],
   "9ade719b95a9": [
     "src/renderer/src/document-edits.ts"
+  ],
+  "a6d662de7706": [
+    "src/renderer/src/rich-source-session.ts"
   ],
   "9ab20d9f0486": [
     "src/renderer/src/SourceEditor.tsx"
@@ -1128,6 +1134,7 @@
     "src/addons/rmarkdown/manifest.ts"
   ],
   "14c7bbeb603c": [
+    "src/renderer/src/Editor.tsx",
     "src/renderer/src/SourceEditor.tsx"
   ],
   "7bc860ccf5e3": [
@@ -2123,6 +2130,9 @@
   "7f31c42b51e4": [
     "src/renderer/src/markdown-syntax.ts"
   ],
+  "6cb9762ada13": [
+    "src/shared/markdown-source-model.ts"
+  ],
   "07fea37695a6": [
     "src/ui/ColorschemeSettings.tsx"
   ],
@@ -2540,6 +2550,9 @@
   "74f6739f0c0a": [
     "src/addons/diagnostics/Settings.tsx"
   ],
+  "2dc63088b984": [
+    "src/shared/markdown-source-model.ts"
+  ],
   "1d393b0081b6": [
     "src/addons/_shared/format-renderer.tsx"
   ],
@@ -2570,8 +2583,17 @@
   "c3b03dd28595": [
     "src/renderer/src/FormattingToolbar.tsx"
   ],
+  "8cf5cfcfb5cf": [
+    "src/shared/markdown-source-model.ts"
+  ],
   "7210e2c9cfdd": [
     "src/shared/source-parser.ts"
+  ],
+  "26f98a0491bd": [
+    "src/shared/markdown-source-model.ts"
+  ],
+  "6001d42abb1a": [
+    "src/shared/markdown-source-model.ts"
   ],
   "79e412e0dc93": [
     "src/shared/source-parser.ts"
@@ -2907,6 +2929,7 @@
   ],
   "942087cc2d41": [
     "src/renderer/src/AddonViewContent.tsx",
+    "src/renderer/src/Editor.tsx",
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/main.tsx"
   ],
@@ -2919,6 +2942,9 @@
   ],
   "8612007e996d": [
     "src/addons/review/index.tsx"
+  ],
+  "af6cace30a4a": [
+    "src/renderer/src/rich-source-session.ts"
   ],
   "e6cc8441ae78": [
     "src/renderer/src/Titlebar.tsx"
@@ -3172,6 +3198,9 @@
   "0e570ca6fabe": [
     "src/renderer/src/ImportDialog.tsx"
   ],
+  "99eefeb52942": [
+    "src/shared/markdown-source-model.ts"
+  ],
   "aa3b053da39c": [
     "src/shared/source-metrics.ts"
   ],
@@ -3180,6 +3209,9 @@
   ],
   "0a2ccf3286b2": [
     "src/renderer/src/source-session.ts"
+  ],
+  "d7095e9386aa": [
+    "src/shared/markdown-source-model.ts"
   ],
   "bb4430a2cffb": [
     "src/shared/source-buffer.ts"
@@ -3206,6 +3238,9 @@
     "src/shared/source-owners.ts"
   ],
   "85d854e2ed5c": [
+    "src/shared/source-owners.ts"
+  ],
+  "c568849cefd6": [
     "src/shared/source-owners.ts"
   ],
   "e4978139d696": [
@@ -3538,6 +3573,9 @@
   ],
   "4ef953980674": [
     "src/renderer/src/SourceEditor.tsx"
+  ],
+  "3e41238f8b4d": [
+    "src/renderer/src/Editor.tsx"
   ],
   "b813945dd20c": [
     "src/renderer/src/SourceEditor.tsx"
