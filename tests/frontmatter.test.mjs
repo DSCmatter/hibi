@@ -11,7 +11,7 @@ import {
   splitFrontmatter,
 } from '../src/addons/frontmatter/markdown.ts'
 import { electron } from './electron.mjs'
-import { clickMenu } from './keyboard.mjs'
+import { clickMenu, replaceRichText } from './keyboard.mjs'
 import { renameDocument } from './rename.mjs'
 import { uiName } from './ui.mjs'
 
@@ -266,9 +266,11 @@ test('frontmatter fields preserve comments, types, nested YAML and body edits', 
   assert.equal(values.alias, 'light')
   assert.equal(values.draft, true)
   assert.equal(values.order, undefined)
-  await page
-    .getByRole('textbox', { name: /document editor/i })
-    .fill('updated body')
+  await replaceRichText(
+    page,
+    page.getByRole('textbox', { name: /document editor/i }),
+    'updated body',
+  )
   assert.equal(splitFrontmatter(await read()).content, 'updated body')
   await page
     .getByRole('button', { name: /^side-by-side$/i, exact: true })
@@ -447,7 +449,7 @@ test('frontmatter addon, inline rename, and centered workspace entry preserve do
     original,
   )
   assert.equal(await page.locator('.source-notice').count(), 0)
-  await rich.fill('updated body')
+  await replaceRichText(page, rich, 'updated body')
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     `${prefix}updated body`,
@@ -459,7 +461,7 @@ test('frontmatter addon, inline rename, and centered workspace entry preserve do
   await source.fill('---\ntitle: changed\n---\n\nsource body')
   await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
   await source.waitFor({ state: 'hidden' })
-  await rich.fill('visual body')
+  await replaceRichText(page, rich, 'visual body')
   const edited = (await page.evaluate(() => window.hibi.getDocument())).markdown
   assert.equal(edited, '---\r\ntitle: changed\r\n---\r\n\r\nvisual body')
   for (const enabled of [false, true]) {
