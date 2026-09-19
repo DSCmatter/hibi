@@ -24,6 +24,8 @@ Relative paths start from the saved note's folder. Absolute paths and local `fil
 
 Shift-click a link to follow it. Web and email links open in your default app; local note links open in Hibi. Regular clicks keep editing.
 
+In Markdown source, this also follows reference links such as `[guide][help]` with a `[help]: guide.md` definition elsewhere in the note. Labels ignore case, and the first matching definition wins. Definitions inside enabled frontmatter are excluded. This supports the built-in Markdown, GitHub Markdown and Text extras readers; addons with custom parsers or projections keep their existing link behavior.
+
 Use `Cmd/Ctrl+[` to go back and `Cmd/Ctrl+]` to go forward through opened notes. In Settings, these shortcuts navigate settings pages instead. History lasts until you close the app.
 
 ## Open remote Markdown

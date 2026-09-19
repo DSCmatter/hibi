@@ -80,6 +80,38 @@ function fixture(t, source = 'one two one', extra = {}) {
   return { client, session, workers, results, errors, find, append }
 }
 
+test('reference lookup shares find replica, cancels find independently and drops stale replies', async (t) => {
+  const pages = []
+  const f = fixture(t, '[ref]: /one\n\n[ref]', {
+    metadataResult: (page, reference) => pages.push({ page, reference }),
+  })
+  const reference = { label: 'ref', gfm: true, alerts: true, textExtras: true }
+  f.client.metadata('gfm', 0, 0, 1, false, reference)
+  f.find('ref')
+  f.client.cancelFind()
+  await wait(() => pages.length)
+  assert.equal(f.workers.length, 1)
+  assert.equal(f.results.length, 0)
+  assert.equal(pages[0].reference.href, '/one')
+  const worker = f.workers[0]
+  worker.blocked = true
+  f.client.metadata('gfm', 0, 0, 1, false, reference)
+  const stale = worker.messages.at(-1)
+  f.append('\nmore')
+  worker.onmessage({
+    data: {
+      type: 'metadata',
+      epoch: stale.epoch,
+      id: stale.id,
+      version: 0,
+      page: pages[0].page,
+      reference: { href: '/stale' },
+    },
+  })
+  assert.equal(pages.length, 1)
+  assert.equal(f.errors.length, 0)
+})
+
 test('find and bounded metadata share one replica and keep source/owner generations coherent', async (t) => {
   const pages = [],
     failures = []

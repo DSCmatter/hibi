@@ -3,12 +3,14 @@ import type { DocumentSession } from '../../shared/document-session.ts'
 import type {
   DocumentWorkerReply,
   DocumentWorkerRequest,
+  MarkdownReferenceRequest,
   MetadataDialect,
 } from '../../shared/document-worker-protocol.ts'
 import { reportDiagnosticFailure } from '../../shared/local-diagnostics-observer.ts'
 import type { SourceOwnerPage } from '../../shared/markdown-source-model.ts'
 import type { SourceSnapshot } from '../../shared/source-buffer.ts'
 import type { SourceOperation } from '../../shared/source-operations.ts'
+import type { ReferenceValue } from '../../shared/source-references.ts'
 import type { SearchLocation } from '../../shared/source-search-index.ts'
 
 type Transport = Pick<
@@ -25,7 +27,10 @@ type ClientOptions = {
   result: (location: SearchLocation, action: FindAction) => void
   error: (message: string) => void
   metadataPending?: () => void
-  metadataResult?: (page: SourceOwnerPage) => void
+  metadataResult?: (
+    page: SourceOwnerPage,
+    reference?: ReferenceValue | null,
+  ) => void
   metadataError?: (message: string) => void
   worker?: () => Transport
   maximumPendingBytes?: number
@@ -136,6 +141,7 @@ export class DocumentWorkerClient {
     to: number,
     limit = 128,
     frontmatter = false,
+    reference?: MarkdownReferenceRequest,
   ) {
     if (this.#disposed || this.#failed) return
     if (!this.#worker && !this.#startTimer && !this.#bootstrap) this.#restart()
@@ -146,12 +152,20 @@ export class DocumentWorkerClient {
       version: this.#session.snapshot().version,
       dialect,
       frontmatter,
+      ...(reference ? { reference: { ...reference } } : {}),
       from,
       to,
       limit,
     }
     this.#options.metadataPending?.()
     this.#flushMetadata()
+  }
+  cancelFind() {
+    this.#latest = null
+    this.#sentRequest = 0
+    if (this.#flight === null || this.#canceling !== null) return
+    this.#canceling = this.#flight
+    this.#post({ type: 'cancel-find', epoch: this.#epoch, id: this.#flight })
   }
   releaseMetadata() {
     const id =
@@ -338,7 +352,7 @@ export class DocumentWorkerClient {
         request.version === reply.version &&
         reply.version === this.#session.snapshot().version
       )
-        this.#options.metadataResult?.(reply.page)
+        this.#options.metadataResult?.(reply.page, reply.reference)
     } else if (reply.stage === 'replica') {
       this.#fail(new Error(reply.message))
       return

@@ -1,8 +1,17 @@
 import type { SourceOwnerPage } from './markdown-source-model.ts'
 import type { DocumentKey, SourceOperation } from './source-operations.ts'
+import type { ReferenceValue } from './source-references.ts'
 import type { SearchLocation } from './source-search-index.ts'
 
 export type MetadataDialect = 'commonmark' | 'gfm'
+export type MarkdownReferenceSyntax = Readonly<{
+  gfm: boolean
+  alerts: boolean
+  textExtras: boolean
+}>
+export type MarkdownReferenceRequest = MarkdownReferenceSyntax & {
+  label: string
+}
 
 export type DocumentWorkerRequest =
   | {
@@ -30,6 +39,7 @@ export type DocumentWorkerRequest =
       version: number
       dialect: MetadataDialect
       frontmatter?: boolean
+      reference?: MarkdownReferenceRequest
       from: number
       to: number
       limit: number
@@ -46,6 +56,7 @@ export type DocumentWorkerReply =
       id: number
       version: number
       page: SourceOwnerPage
+      reference?: ReferenceValue | null
     }
   | {
       type: 'find'

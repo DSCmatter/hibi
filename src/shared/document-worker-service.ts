@@ -3,8 +3,10 @@ import type {
   DocumentWorkerRequest,
 } from './document-worker-protocol.ts'
 import type { MarkdownSourceModel } from './markdown-source-model.ts'
+import type { MarkdownSourceReferences } from './markdown-source-references.ts'
 import { SourceStore } from './source-buffer.ts'
 import { SourceMaintenance } from './source-maintenance.ts'
+import type { ReferenceValue } from './source-references.ts'
 import { SourceSearchIndex } from './source-search-index.ts'
 
 type FindRequest = Extract<DocumentWorkerRequest, { type: 'find' }>
@@ -30,6 +32,8 @@ export class DocumentWorkerService {
   #metadataLoading = false
   #metadataTimer: ReturnType<typeof setTimeout> | undefined
   #metadataServiced = 0
+  #references: MarkdownSourceReferences | null = null
+  #referenceSyntax = ''
   constructor(post: (reply: DocumentWorkerReply) => void) {
     this.#post = post
   }
@@ -45,6 +49,9 @@ export class DocumentWorkerService {
     this.#metadataTimer = undefined
     this.#metadata = null
     if (release) {
+      this.#references?.dispose()
+      this.#references = null
+      this.#referenceSyntax = ''
       this.#model?.dispose()
       this.#model = null
     }
@@ -185,6 +192,14 @@ export class DocumentWorkerService {
           !['commonmark', 'gfm'].includes(message.dialect) ||
           (message.frontmatter !== undefined &&
             typeof message.frontmatter !== 'boolean') ||
+          (message.reference !== undefined &&
+            (!message.reference ||
+              typeof message.reference.label !== 'string' ||
+              message.reference.label.length > 1000 ||
+              typeof message.reference.gfm !== 'boolean' ||
+              typeof message.reference.alerts !== 'boolean' ||
+              typeof message.reference.textExtras !== 'boolean' ||
+              message.reference.gfm !== (message.dialect === 'gfm'))) ||
           !Number.isSafeInteger(message.from) ||
           !Number.isSafeInteger(message.to) ||
           message.from < 0 ||
@@ -260,18 +275,32 @@ export class DocumentWorkerService {
           ? (await import('./frontmatter-source-model.ts'))
               .FrontmatterSourceModel
           : undefined,
+        MarkdownSourceReferences: this.#metadata?.reference
+          ? (await import('./markdown-source-references.ts'))
+              .MarkdownSourceReferences
+          : undefined,
       }))
       .then(
-        ({ metadataParsers, MarkdownSourceModel, FrontmatterSourceModel }) => {
+        ({
+          metadataParsers,
+          MarkdownSourceModel,
+          FrontmatterSourceModel,
+          MarkdownSourceReferences,
+        }) => {
           this.#metadataLoading = false
           const request = this.#metadata
           if (this.#disposed || !request || !this.#store) return
-          if (request.frontmatter && !FrontmatterSourceModel) {
+          if (
+            (request.frontmatter && !FrontmatterSourceModel) ||
+            (request.reference && !MarkdownSourceReferences)
+          ) {
             this.#loadMetadata()
             return
           }
           const dialect = `${request.dialect}${request.frontmatter ? '+frontmatter' : ''}`
           if (!this.#model || this.#model.state().dialect !== dialect) {
+            this.#references?.dispose()
+            this.#references = null
             this.#model?.dispose()
             const Model = request.frontmatter
               ? FrontmatterSourceModel!
@@ -281,6 +310,19 @@ export class DocumentWorkerService {
               metadataParsers[request.dialect],
               dialect,
             )
+          }
+          if (request.reference) {
+            const { gfm, alerts, textExtras } = request.reference
+            const syntax = JSON.stringify([gfm, alerts, textExtras])
+            if (!this.#references || syntax !== this.#referenceSyntax) {
+              this.#references?.dispose()
+              this.#references = new MarkdownSourceReferences!({
+                gfm,
+                alerts,
+                textExtras,
+              })
+              this.#referenceSyntax = syntax
+            }
           }
           this.#scheduleMetadata()
         },
@@ -310,6 +352,12 @@ export class DocumentWorkerService {
       // one timer per block otherwise adds seconds before a small page is ready.
       do {
         if (model.advance().complete) {
+          let reference: ReferenceValue | null = null
+          if (request.reference) {
+            const state = model.state()
+            this.#references!.update(state.source, state.owners!)
+            reference = this.#references!.lookup(request.reference.label)
+          }
           this.#metadata = null
           this.#post({
             type: 'metadata',
@@ -317,6 +365,7 @@ export class DocumentWorkerService {
             id: request.id,
             version: request.version,
             page: model.page(request.from, request.to, request.limit),
+            ...(request.reference ? { reference } : {}),
           })
           return
         }

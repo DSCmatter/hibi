@@ -20,11 +20,12 @@ import {
 } from '@codemirror/state'
 import { EditorView, keymap, lineNumbers, placeholder } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
-import { marked } from 'marked'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentFormat, SourceExtension } from '../../addons/api'
 import { type DocumentState, MAX_DOCUMENT_BYTES } from '../../shared/desktop'
 import { editedSource, sourceEditMatches } from '../../shared/document-edits'
+import type { MarkdownReferenceSyntax } from '../../shared/document-worker-protocol'
+import { markdownLink } from '../../shared/markdown-link'
 import type { RawEdit } from '../../shared/source-operations'
 import {
   editorChangesFromSource,
@@ -68,6 +69,7 @@ export function SourceEditor({
   editTarget,
   markdownMode,
   markdownLanguage,
+  referenceSyntax,
   sourceLanguage,
   codeLanguage,
   sourceFormat,
@@ -88,6 +90,9 @@ export function SourceEditor({
   editTarget: boolean
   markdownMode: boolean
   markdownLanguage?: typeof import('@codemirror/lang-markdown').markdown
+  referenceSyntax?:
+    | (MarkdownReferenceSyntax & { frontmatter: boolean })
+    | undefined
   sourceLanguage: Language | undefined
   codeLanguage?: string | undefined
   sourceFormat?: DocumentFormat['formatting']
@@ -107,6 +112,7 @@ export function SourceEditor({
   const parserOptions = useRef({
     markdownMode,
     markdownLanguage,
+    referenceSyntax,
     sourceLanguage,
     codeLanguage,
     label,
@@ -116,6 +122,7 @@ export function SourceEditor({
   parserOptions.current = {
     markdownMode,
     markdownLanguage,
+    referenceSyntax,
     sourceLanguage,
     codeLanguage,
     label,
@@ -160,6 +167,12 @@ export function SourceEditor({
     report: onFindStatus,
   })
   const sourceFind = useRef<DocumentWorkerClient | null>(null)
+  const referenceUsed = useRef(false)
+  const pendingLink = useRef<{
+    version: number
+    syntax: typeof referenceSyntax
+  } | null>(null)
+  const repeatFind = useRef<(action?: FindAction) => void>(() => {})
   const findCoverage = useRef({ query: '', version: -1, total: 0 })
   const findActions = useRef<FindAction[]>([])
   const navigatingFind = useRef(false)
@@ -174,15 +187,28 @@ export function SourceEditor({
   ready.current = onReady
   find.current = { active: findActive, query: findQuery, report: onFindStatus }
 
-  const requestFind = useCallback(
-    function requestFind(action: FindAction = null) {
-      const editor = view.current
-      if (!editor || !find.current.active || !find.current.query) return
+  const getWorker = useCallback(
+    function getWorker() {
       sourceFind.current ??= new DocumentWorkerClient(session, {
         changed: () => {
+          pendingLink.current = null
           findActions.current = []
           navigatingFind.current = false
-          requestFind()
+          repeatFind.current()
+        },
+        metadataResult: (_page, reference) => {
+          const pending = pendingLink.current
+          pendingLink.current = null
+          if (
+            pending &&
+            pending.version === session.snapshot().version &&
+            pending.syntax === parserOptions.current.referenceSyntax &&
+            reference?.href
+          )
+            openLink.current(reference.href)
+        },
+        metadataError: () => {
+          pendingLink.current = null
         },
         pending: () => {
           const known = findCoverage.current
@@ -233,20 +259,29 @@ export function SourceEditor({
           const next = findActions.current.shift()
           if (next) {
             navigatingFind.current = true
-            requestFind(next)
+            repeatFind.current(next)
           }
         },
       })
+      return sourceFind.current
+    },
+    [session],
+  )
+  const requestFind = useCallback(
+    function requestFind(action: FindAction = null) {
+      const editor = view.current
+      if (!editor || !find.current.active || !find.current.query) return
       const selection = editor.state.selection.main
-      sourceFind.current.find(
+      getWorker().find(
         find.current.query,
         action === 'first' ? 0 : selection.from,
         action === 'first' ? 0 : selection.to,
         action,
       )
     },
-    [session],
+    [getWorker],
   )
+  repeatFind.current = requestFind
 
   useEffect(() => {
     if (!host.current) return
@@ -345,16 +380,33 @@ export function SourceEditor({
               while (node.parent && !['Link', 'Autolink'].includes(node.name))
                 node = node.parent
               if (!['Link', 'Autolink'].includes(node.name)) return false
-              let href = ''
-              marked.walkTokens(
-                marked.lexer(view.state.sliceDoc(node.from, node.to)),
-                (token) => {
-                  if (token.type === 'link') href = token.href
-                },
+              const target = markdownLink(
+                view.state.sliceDoc(node.from, node.to),
               )
-              if (!href) return false
+              if (!target) return false
+              const syntax = parserOptions.current.referenceSyntax
+              if ('label' in target) {
+                if (!syntax) return false
+                event.preventDefault()
+                referenceUsed.current = true
+                pendingLink.current = {
+                  version: session.snapshot().version,
+                  syntax,
+                }
+                getWorker().metadata(
+                  syntax.gfm ? 'gfm' : 'commonmark',
+                  0,
+                  0,
+                  1,
+                  syntax.frontmatter,
+                  { ...syntax, label: target.label },
+                )
+                return true
+              }
+              if (!target.href) return false
+              pendingLink.current = null
               event.preventDefault()
-              openLink.current(href)
+              openLink.current(target.href)
               return true
             },
           }),
@@ -571,6 +623,8 @@ export function SourceEditor({
     return () => {
       sourceFind.current?.dispose()
       sourceFind.current = null
+      referenceUsed.current = false
+      pendingLink.current = null
       unsubscribe()
       configureParser.current = () => {}
       disposed = true
@@ -584,7 +638,7 @@ export function SourceEditor({
       editor.destroy()
       view.current = null
     }
-  }, [bridge, session, requestFind])
+  }, [bridge, session, requestFind, getWorker])
 
   useEffect(() => {
     let canceled = false
@@ -652,10 +706,16 @@ export function SourceEditor({
   useEffect(() => {
     const editor = view.current
     if (!editor) return
+    const stopFind = () => {
+      if (referenceUsed.current) sourceFind.current?.cancelFind()
+      else {
+        sourceFind.current?.dispose()
+        sourceFind.current = null
+      }
+    }
     if (!findActive) {
       closeSearchPanel(editor)
-      sourceFind.current?.dispose()
-      sourceFind.current = null
+      stopFind()
       findActions.current = []
       navigatingFind.current = false
       return
@@ -667,8 +727,7 @@ export function SourceEditor({
     navigatingFind.current = query.valid
     if (query.valid) requestFind('first')
     else {
-      sourceFind.current?.dispose()
-      sourceFind.current = null
+      stopFind()
       find.current.report({ current: 0, total: 0 })
     }
   }, [findActive, findQuery, requestFind])

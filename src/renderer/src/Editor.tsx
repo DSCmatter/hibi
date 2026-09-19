@@ -159,6 +159,37 @@ export function MarkdownEditor({
     markdownSyntax.subscribe,
     markdownSyntax.version,
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: syntaxVersion invalidates the current registry preferences.
+  const referenceSyntax = useMemo(() => {
+    // Unknown parser/projection contributions keep their existing link behavior.
+    if (
+      !markdownSyntax.enabled('core.links') ||
+      flavors.some(
+        (flavor) =>
+          flavor.export?.extensions?.length &&
+          !['github-markdown.github', 'text-extras.text-extras'].includes(
+            flavor.id,
+          ),
+      ) ||
+      markdownExtensions.some(
+        (extension) => extension.id !== 'frontmatter.metadata',
+      )
+    )
+      return undefined
+    return {
+      gfm: Object.assign(
+        { gfm: false },
+        ...flavors.map((flavor) => flavor.markedOptions),
+      ).gfm,
+      alerts: flavors.some((flavor) => flavor.id === 'github-markdown.github'),
+      textExtras: flavors.some(
+        (flavor) => flavor.id === 'text-extras.text-extras',
+      ),
+      frontmatter: markdownExtensions.some(
+        (extension) => extension.id === 'frontmatter.metadata',
+      ),
+    }
+  }, [flavors, markdownExtensions, syntaxVersion])
   const projection = useMemo(
     () =>
       markdownDocument
@@ -1033,6 +1064,7 @@ export function MarkdownEditor({
                   document={documentState}
                   editTarget={findTarget === 'source'}
                   markdownMode={markdownDocument}
+                  referenceSyntax={referenceSyntax}
                   sourceLanguage={format?.language}
                   sourceFormat={format?.formatting}
                   supportsMedia={!!format?.insertMedia}

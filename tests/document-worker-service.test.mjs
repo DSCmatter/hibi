@@ -54,6 +54,74 @@ function fixture(t, source = 'one two one') {
   return { worker, messages, next, load, find }
 }
 
+test('metadata reference lookup uses exact edits, grammar, first definitions and opaque frontmatter', async (t) => {
+  const source =
+    '---\nvalue: |\n  [ref]: /metadata\n---\n\n[ref]\n\n[REF]: /first\n\n[ref]: /second\n'
+  const f = fixture(t, source)
+  let id = 0
+  const request = (version, frontmatter = true, label = 'ref', extras = {}) => {
+    const requestId = ++id
+    f.worker.receive({
+      type: 'metadata',
+      epoch: 'first',
+      id: requestId,
+      version,
+      dialect: 'gfm',
+      frontmatter,
+      from: 0,
+      to: 0,
+      limit: 1,
+      reference: {
+        label,
+        gfm: true,
+        alerts: true,
+        textExtras: true,
+        ...extras,
+      },
+    })
+    return f.next(
+      (reply) =>
+        reply.id === requestId &&
+        (reply.type === 'metadata' || reply.type === 'error'),
+    )
+  }
+  assert.equal((await request(0)).reference.href, '/first')
+  const from = source.indexOf('[REF]:'),
+    to = source.indexOf('[ref]: /second')
+  f.worker.receive({
+    type: 'edit',
+    epoch: 'first',
+    operation: {
+      document: { tabId: 'a', revision: 0 },
+      operationId: 'remove-first',
+      baseVersion: 0,
+      contentVersion: 1,
+      origin: 'source',
+      historyGroup: 'typing',
+      changes: [{ from, to, insert: '' }],
+    },
+  })
+  assert.equal((await request(1)).reference.href, '/second')
+  assert.equal((await request(1, true, 'missing')).reference, null)
+  f.worker.receive({
+    type: 'cancel-metadata',
+    epoch: 'first',
+    id,
+    release: true,
+  })
+  assert.equal((await request(1)).reference.href, '/second')
+  assert.equal(
+    (await request(1, true, 'ref', { gfm: false })).stage,
+    'metadata',
+  )
+  f.load('first', '-# small\n[ref]: /extra\n\n[ref]\n')
+  assert.equal((await request(0)).reference.href, '/extra')
+  assert.equal(
+    (await request(0, true, 'ref', { textExtras: false })).reference,
+    null,
+  )
+})
+
 test('metadata batches cheap parser advances while yielding between work slices', async (t) => {
   const { MarkdownSourceModel } = await import(
     '../src/shared/markdown-source-model.ts'
