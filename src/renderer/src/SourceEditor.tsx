@@ -1,5 +1,4 @@
 import { defaultKeymap, isolateHistory, selectAll } from '@codemirror/commands'
-import { markdown as markdownLanguage } from '@codemirror/lang-markdown'
 import {
   HighlightStyle,
   type Language,
@@ -68,6 +67,7 @@ export function SourceEditor({
   document,
   editTarget,
   markdownMode,
+  markdownLanguage,
   sourceLanguage,
   codeLanguage,
   sourceFormat,
@@ -87,6 +87,7 @@ export function SourceEditor({
   document: DocumentState
   editTarget: boolean
   markdownMode: boolean
+  markdownLanguage?: typeof import('@codemirror/lang-markdown').markdown
   sourceLanguage: Language | undefined
   codeLanguage?: string | undefined
   sourceFormat?: DocumentFormat['formatting']
@@ -105,6 +106,7 @@ export function SourceEditor({
 }) {
   const parserOptions = useRef({
     markdownMode,
+    markdownLanguage,
     sourceLanguage,
     codeLanguage,
     label,
@@ -113,6 +115,7 @@ export function SourceEditor({
   })
   parserOptions.current = {
     markdownMode,
+    markdownLanguage,
     sourceLanguage,
     codeLanguage,
     label,
@@ -125,6 +128,7 @@ export function SourceEditor({
     configureParser.current()
   }, [
     markdownMode,
+    markdownLanguage,
     sourceLanguage,
     codeLanguage,
     label,
@@ -248,13 +252,19 @@ export function SourceEditor({
     if (!host.current) return
     const language = new Compartment()
     const markdown = () => {
-      const { markdownMode, sourceLanguage, codeLanguage, label } =
-        parserOptions.current
+      const {
+        markdownMode,
+        markdownLanguage,
+        sourceLanguage,
+        codeLanguage,
+        label,
+      } = parserOptions.current
       return [
         markdownMode
           ? codeLanguage && !codeLanguages.resolve(codeLanguage)
             ? []
-            : markdownLanguage({ codeLanguages: codeLanguages.resolve })
+            : (markdownLanguage?.({ codeLanguages: codeLanguages.resolve }) ??
+              [])
           : codeLanguage
             ? (codeLanguages.resolve(codeLanguage) ?? [])
             : (sourceLanguage ?? []),

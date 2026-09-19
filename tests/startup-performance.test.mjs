@@ -256,6 +256,7 @@ test('unrelated enabled formats defer source parsers until first source use', as
   await page.locator('.source-pane .hibi-token-type').first().waitFor()
   assert.match(modules(), /src\/addons\/_shared\/format-language\.ts/)
   assert.match(modules(), /node_modules\/@codemirror\/lang-html\//)
+  assert.doesNotMatch(modules(), /node_modules\/@codemirror\/lang-markdown\//)
   assert.doesNotMatch(
     modules(),
     /node_modules\/@codemirror\/legacy-modes\/mode\/(?:stex|textile|r)\./,

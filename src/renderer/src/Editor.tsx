@@ -74,7 +74,9 @@ import { textProjection } from './text-projection'
 import { useEditorPanes } from './use-editor-panes'
 
 const SourceEditor = lazy(() =>
-  import('./SourceEditor').then((module) => ({ default: module.SourceEditor })),
+  import('./MarkdownSourceEditor').then((module) => ({
+    default: module.MarkdownSourceEditor,
+  })),
 )
 
 export type ViewMode = DocumentView
