@@ -1,3 +1,18 @@
+export async function replaceRichText(page, target, text) {
+  await target.evaluate((element) => {
+    const editor = element.closest('.tiptap').editor
+    // DOM-only fill ranges race ProseMirror's deferred focus reconciliation.
+    if (element === editor.view.dom) editor.commands.selectAll()
+    else
+      editor.commands.setTextSelection({
+        from: editor.view.posAtDOM(element, 0),
+        to: editor.view.posAtDOM(element, element.childNodes.length),
+      })
+    editor.view.focus()
+  })
+  await page.keyboard.insertText(text)
+}
+
 // CDP keyboard events bypass Electron's native shortcut processing.
 export async function clickMenu(app, label) {
   const page = await app.firstWindow()

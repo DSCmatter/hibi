@@ -9,7 +9,7 @@ import {
   parseSyntaxDescriptors,
 } from '../src/shared/preservation.ts'
 import { electron } from './electron.mjs'
-import { clickMenu } from './keyboard.mjs'
+import { clickMenu, replaceRichText } from './keyboard.mjs'
 
 test('verbatim projections preserve surrounding bytes and reject unprovable bodies', () => {
   const adapter = {
@@ -168,9 +168,11 @@ test('unsaved custom source survives enabling, rich editing, disabling, saving, 
   await page.waitForFunction(
     () => document.querySelector('.tiptap')?.isContentEditable,
   )
-  await page
-    .getByRole('textbox', { name: 'Document editor', exact: true })
-    .fill('Changed body')
+  await replaceRichText(
+    page,
+    page.getByRole('textbox', { name: 'Document editor', exact: true }),
+    'Changed body',
+  )
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     `${prefix}Changed body`,
