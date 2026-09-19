@@ -56,7 +56,7 @@ function fixture(t, source = 'one two one') {
 
 test('metadata reference lookup uses exact edits, grammar, first definitions and opaque frontmatter', async (t) => {
   const source =
-    '---\nvalue: |\n  [ref]: /metadata\n---\n\n[ref]\n\n[REF]: /first\n\n[ref]: /second\n'
+    '---\nvalue: |\n\n  [ref]: /metadata\n---\n\n[ref]\n\n[REF]: /first\n\n[ref]: /second\n'
   const f = fixture(t, source)
   let id = 0
   const request = (version, frontmatter = true, label = 'ref', extras = {}) => {
@@ -120,6 +120,130 @@ test('metadata reference lookup uses exact edits, grammar, first definitions and
     (await request(0, true, 'ref', { textExtras: false })).reference,
     null,
   )
+})
+
+test('reference preparation yields to find, cancels and reacquires without partial publication', async (t) => {
+  const { MarkdownSourceReferences } = await import(
+    '../src/shared/markdown-source-references.ts'
+  )
+  const update = MarkdownSourceReferences.prototype.update
+  const f = fixture(t, '[ref]: /first\n\n'.repeat(4000))
+  let entered = false,
+    cancel = false,
+    turn = 0
+  const turns = new Set()
+  const timer = setInterval(() => turn++, 0)
+  t.after(() => clearInterval(timer))
+  t.mock.method(
+    MarkdownSourceReferences.prototype,
+    'update',
+    function* (...args) {
+      for (const step of update.apply(this, args)) {
+        turns.add(turn)
+        if (!entered) {
+          entered = true
+          f.find(1, 0, 'absent')
+          if (cancel)
+            setTimeout(
+              () =>
+                f.worker.receive({
+                  type: 'cancel-metadata',
+                  epoch: 'first',
+                  id: 2,
+                  release: false,
+                }),
+              0,
+            )
+        }
+        yield step
+      }
+    },
+  )
+  const request = (id) =>
+    f.worker.receive({
+      type: 'metadata',
+      epoch: 'first',
+      id,
+      version: 0,
+      dialect: 'gfm',
+      from: 0,
+      to: 0,
+      limit: 1,
+      reference: { label: 'ref', gfm: true, alerts: false, textExtras: false },
+    })
+  request(1)
+  const reply = await f.next(
+    (message) => message.type === 'metadata' && message.id === 1,
+  )
+  assert.equal(reply.reference.href, '/first')
+  assert.ok(turns.size > 1, 'definition reading must yield to the event loop')
+  assert.ok(
+    f.messages.findIndex((message) => message.type === 'find') <
+      f.messages.indexOf(reply),
+  )
+  f.worker.receive({
+    type: 'cancel-metadata',
+    epoch: 'first',
+    id: 1,
+    release: true,
+  })
+  entered = false
+  cancel = true
+  request(2)
+  await f.next(
+    (message) => message.type === 'metadata-canceled' && message.id === 2,
+  )
+  assert.equal(
+    f.messages.some(
+      (message) => message.type === 'metadata' && message.id === 2,
+    ),
+    false,
+  )
+  cancel = false
+  request(3)
+  assert.equal(
+    (await f.next((message) => message.type === 'metadata' && message.id === 3))
+      .reference.href,
+    '/first',
+  )
+})
+
+test('frontmatter boundary changes replace reference owner namespaces safely', async (t) => {
+  const source = '---\nname: hibi\n---\n\n[ref]: /body\n'
+  const f = fixture(t, source)
+  const request = (id, version) => {
+    f.worker.receive({
+      type: 'metadata',
+      epoch: 'first',
+      id,
+      version,
+      dialect: 'gfm',
+      frontmatter: true,
+      from: 0,
+      to: 0,
+      limit: 1,
+      reference: { label: 'ref', gfm: true, alerts: false, textExtras: false },
+    })
+    return f.next((message) => message.type === 'metadata' && message.id === id)
+  }
+  const before = await request(1, 0)
+  const from = source.indexOf('hibi')
+  f.worker.receive({
+    type: 'edit',
+    epoch: 'first',
+    operation: {
+      document: { tabId: 'a', revision: 0 },
+      operationId: 'header',
+      baseVersion: 0,
+      contentVersion: 1,
+      origin: 'source',
+      historyGroup: 'typing',
+      changes: [{ from, to: from + 4, insert: 'longer workspace name' }],
+    },
+  })
+  const after = await request(2, 1)
+  assert.notEqual(after.page.epoch, before.page.epoch)
+  assert.equal(after.reference.href, '/body')
 })
 
 test('metadata batches cheap parser advances while yielding between work slices', async (t) => {

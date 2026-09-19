@@ -25,7 +25,9 @@ test('built-in reference reader keeps prefix edits local without materializing s
     do {
       state = model.advance()
     } while (!state.complete)
-    references.update(state.source, state.owners)
+    for (const _ of references.update(state.source, state.owners)) {
+      /* Complete the cooperative read. */
+    }
   }
   finish()
   assert.equal(references.lookup('ref').href, '/first')

@@ -950,6 +950,7 @@
   "4d6a06685cc6": "Reference index is already updating.",
   "cc46f8be291a": "Reference index is disposed or already updating.",
   "8e117ed560ea": "Reference index is disposed.",
+  "e37c1d93b910": "Reference index is not ready.",
   "903ae9ad0d9f": "Refresh Git",
   "e2b488cb6e0d": "Refresh files",
   "306960dcad4c": "Refresh workspace",

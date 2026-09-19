@@ -34,6 +34,7 @@ export class DocumentWorkerService {
   #metadataServiced = 0
   #references: MarkdownSourceReferences | null = null
   #referenceSyntax = ''
+  #referenceWork: Generator<void> | null = null
   constructor(post: (reply: DocumentWorkerReply) => void) {
     this.#post = post
   }
@@ -47,6 +48,8 @@ export class DocumentWorkerService {
   #cancelMetadata(release = false) {
     clearTimeout(this.#metadataTimer)
     this.#metadataTimer = undefined
+    this.#referenceWork?.return(undefined)
+    this.#referenceWork = null
     this.#metadata = null
     if (release) {
       this.#references?.dispose()
@@ -355,7 +358,12 @@ export class DocumentWorkerService {
           let reference: ReferenceValue | null = null
           if (request.reference) {
             const state = model.state()
-            this.#references!.update(state.source, state.owners!)
+            this.#referenceWork ??= this.#references!.update(
+              state.source,
+              state.owners!,
+            )
+            if (!this.#referenceWork.next().done) continue
+            this.#referenceWork = null
             reference = this.#references!.lookup(request.reference.label)
           }
           this.#metadata = null

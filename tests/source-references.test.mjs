@@ -9,6 +9,46 @@ import { SourceStore } from '../src/shared/source-buffer.ts'
 import { SourceOwners } from '../src/shared/source-owners.ts'
 import { SourceReferences } from '../src/shared/source-references.ts'
 
+test('cooperative reference preparation cancels atomically and protects incomplete reads', () => {
+  const owners = new SourceOwners([
+    { kind: 'a', length: 3 },
+    { kind: 'b', length: 3 },
+  ])
+  const index = new SourceReferences(owners)
+  const coldScope = index.scope()
+  assert.equal(coldScope.current(), false)
+  assert.throws(() => coldScope.links.ref, /not ready/)
+  let count = 0
+  const read = (region) => {
+    count++
+    return { ref: { href: region.owner.kind } }
+  }
+  const cold = index.updateWork(owners, read)
+  assert.equal(count, 0)
+  assert.equal(cold.next().done, false)
+  assert.equal(count, 1)
+  assert.equal(coldScope.current(), false)
+  assert.throws(() => coldScope.links.ref, /not ready/)
+  assert.throws(() => index.dispose(), /updating/)
+  cold.return()
+  assert.equal(index.counters().definitions, 0)
+  index.update(owners, read)
+  const scope = index.scope()
+  assert.equal(scope.links.ref.href, 'a')
+  const changed = owners.update(0, { kind: 'changed', length: 4 })
+  const warm = index.updateWork(changed, read)
+  assert.equal(warm.next().done, false)
+  assert.equal(scope.current(), true)
+  assert.equal(index.scope().links.ref.href, 'a')
+  assert.throws(() => index.update(changed, read), /updating/)
+  warm.return()
+  assert.equal(scope.current(), true)
+  index.update(changed, read)
+  assert.equal(index.scope().links.ref.href, 'changed')
+  assert.equal(scope.current(), false)
+  index.dispose()
+})
+
 test('reference winners, misses, mixed reads and disposal retain exact dependency meaning', () => {
   let owners = new SourceOwners([
     { kind: 'first', length: 5 },

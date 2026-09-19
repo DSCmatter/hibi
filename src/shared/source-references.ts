@@ -76,15 +76,14 @@ export class SourceReferences {
   readonly #candidates = new Map<string, Candidates>()
   readonly #winners = new Map<string, Candidate>()
   #reading = false
+  #ready = false
   #count = 0
   #work = { ownersRead: 0, definitionsRead: 0, comparisons: 0, scopeReads: 0 }
-  constructor(owners: SourceOwners, read: Reader) {
+  constructor(owners: SourceOwners, read?: Reader) {
     if (owners.invalid())
       throw new Error('Reference definitions require complete source owners.')
     this.#owners = owners
-    const ids = new Set<number>()
-    for (const row of owners.records()) ids.add(row.owner.slot)
-    this.#replace(owners, ids, read)
+    if (read) this.update(owners, read)
   }
   #region(owners: SourceOwners, slot: number): ReferenceRegion | null {
     const row = owners.bySlot(slot)
@@ -107,13 +106,50 @@ export class SourceReferences {
     if (next) to = row.to
     return Object.freeze({ ...row, from, contentFrom: row.from, to })
   }
-  #replace(owners: SourceOwners, ids: ReadonlySet<number>, read: Reader) {
+  #add(
+    slot: number,
+    definitions: Map<string, Candidate>,
+    changed?: Set<string>,
+  ) {
+    this.#definitions.set(slot, definitions)
+    this.#count += definitions.size
+    for (const [label, value] of definitions) {
+      let candidates = this.#candidates.get(label)
+      if (!candidates) {
+        candidates = new Candidates((a, b) => {
+          this.#work.comparisons++
+          return (
+            this.#owners!.bySlot(a.owner.slot)!.index <
+            this.#owners!.bySlot(b.owner.slot)!.index
+          )
+        })
+        this.#candidates.set(label, candidates)
+      }
+      candidates.add(value)
+      if (changed) changed.add(label)
+      else this.#winners.set(label, candidates.first()!)
+    }
+  }
+  #clear() {
+    this.#definitions.clear()
+    this.#candidates.clear()
+    this.#winners.clear()
+    this.#count = 0
+  }
+  *#replace(owners: SourceOwners, slots: Iterable<number>, read: Reader) {
+    const cold = !this.#ready
+    const ids = new Set<number>()
     const prepared = new Map<number, Map<string, Candidate>>()
     this.#reading = true
+    if (cold) this.#owners = owners
     try {
-      for (const slot of ids) {
+      for (const slot of slots) {
+        if (!cold) ids.add(slot)
         const region = this.#region(owners, slot)
-        if (!region) continue
+        if (!region) {
+          yield
+          continue
+        }
         this.#work.ownersRead++
         const values = read(region),
           definitions = new Map<string, Candidate>()
@@ -136,10 +172,19 @@ export class SourceReferences {
             }),
           )
         }
-        if (definitions.size) prepared.set(slot, definitions)
+        if (definitions.size) {
+          if (cold) this.#add(slot, definitions)
+          else prepared.set(slot, definitions)
+        }
+        yield
+      }
+      if (cold) {
+        this.#ready = true
+        return
       }
     } finally {
       this.#reading = false
+      if (cold && !this.#ready) this.#clear()
     }
     const changed = new Set<string>()
     // Remove against the old order before switching the comparator's snapshot.
@@ -154,25 +199,8 @@ export class SourceReferences {
       this.#definitions.delete(slot)
     }
     this.#owners = owners
-    for (const [slot, definitions] of prepared) {
-      this.#definitions.set(slot, definitions)
-      this.#count += definitions.size
-      for (const [label, value] of definitions) {
-        let candidates = this.#candidates.get(label)
-        if (!candidates) {
-          candidates = new Candidates((a, b) => {
-            this.#work.comparisons++
-            return (
-              this.#owners!.bySlot(a.owner.slot)!.index <
-              this.#owners!.bySlot(b.owner.slot)!.index
-            )
-          })
-          this.#candidates.set(label, candidates)
-        }
-        candidates.add(value)
-        changed.add(label)
-      }
-    }
+    for (const [slot, definitions] of prepared)
+      this.#add(slot, definitions, changed)
     for (const label of changed) {
       const first = this.#candidates.get(label)?.first()
       if (first) this.#winners.set(label, first)
@@ -181,14 +209,30 @@ export class SourceReferences {
         this.#candidates.delete(label)
       }
     }
+    this.#ready = true
   }
   update(owners: SourceOwners, read: Reader) {
+    for (const _ of this.updateWork(owners, read)) {
+      /* Synchronous callers drain the same atomic preparation. */
+    }
+  }
+  *updateWork(owners: SourceOwners, read: Reader): Generator<void> {
     if (!this.#owners || this.#reading)
       throw new Error('Reference index is disposed or already updating.')
     if (owners.invalid())
       throw new Error('Reference definitions require complete source owners.')
     const previous = this.#owners,
       delta = owners.changesSince(previous)
+    if (!this.#ready) {
+      yield* this.#replace(
+        owners,
+        (function* () {
+          for (const row of owners.records()) yield row.owner.slot
+        })(),
+        read,
+      )
+      return
+    }
     const ids = new Set(
       [...delta.changed, ...delta.removed].map((owner) => owner.slot),
     )
@@ -221,7 +265,7 @@ export class SourceReferences {
       if (oldLast) ids.add(oldLast.owner.slot)
       if (newLast) ids.add(newLast.owner.slot)
     }
-    this.#replace(owners, ids, read)
+    yield* this.#replace(owners, ids, read)
   }
   scope() {
     const reads = new Map<string, Candidate | undefined>()
@@ -231,6 +275,7 @@ export class SourceReferences {
       {
         get: (_target, name) => {
           if (!this.#owners) throw new Error('Reference index is disposed.')
+          if (!this.#ready) throw new Error('Reference index is not ready.')
           if (typeof name !== 'string') return undefined
           this.#work.scopeReads++
           const current = this.#winners.get(name)
@@ -248,7 +293,7 @@ export class SourceReferences {
     return Object.freeze({
       links,
       current: () => {
-        if (!this.#owners || mixed) return false
+        if (!this.#owners || !this.#ready || mixed) return false
         for (const [name, value] of reads)
           if (this.#winners.get(name) !== value) return false
         return true
@@ -274,9 +319,7 @@ export class SourceReferences {
   dispose() {
     if (this.#reading) throw new Error('Reference index is already updating.')
     this.#owners = null
-    this.#definitions.clear()
-    this.#candidates.clear()
-    this.#winners.clear()
-    this.#count = 0
+    this.#ready = false
+    this.#clear()
   }
 }

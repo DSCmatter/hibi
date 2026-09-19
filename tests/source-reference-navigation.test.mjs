@@ -12,7 +12,7 @@ test('source reference links use current definitions and coexist with find', {
 }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'hibi-reference-links-'))
   const source =
-    '---\r\nvalue: |\r\n  [target]: https://metadata.invalid/\r\n---\r\n\r\n[reference][TARGET]\r\n\r\n[target]: https://first.example/\r\n\r\n[target]: https://second.example/\r\n'
+    '---\r\nvalue: |\r\n\r\n  [target]: https://metadata.invalid/\r\n---\r\n\r\n[reference][TARGET]\r\n\r\n[target]: https://first.example/\r\n\r\n[target]: https://second.example/\r\n'
   const path = join(root, 'references.md')
   await writeFile(path, source)
   const app = await electron.launch({
