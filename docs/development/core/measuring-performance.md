@@ -6,7 +6,7 @@ The optional [Diagnostics addon](../../features/diagnostics.md) shows per-addon 
 
 Preload begins document, addon, and recent-workspace reads before the renderer mounts. These promises remain independent: the recent list does not wait for addon discovery. Blank startup skips the external-file drain; queued files and a configured startup workspace still use it.
 
-The rich editor caches immutable top-level Markdown blocks for compatible serializers. Changed blocks and their context are rechecked; undeclared serializers keep the full-document path. The outline subscribes only while visible. Document changes cross IPC as ordered replacements rather than complete source strings; see [document persistence](document-persistence.md).
+The rich editor caches immutable top-level Markdown blocks for compatible serializers. Changed blocks and their context are rechecked; undeclared serializers keep the full-document path. The outline subscribes only while visible. Caret-only outline updates use a binary position lookup and reuse the sidebar item tree. Heading extraction and source mapping still rebuild after document changes; these remain separate migration work. Document changes cross IPC as ordered replacements rather than complete source strings; see [document persistence](document-persistence.md).
 
 ## Core benchmarks
 

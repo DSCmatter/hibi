@@ -6,6 +6,7 @@ import {
   Heading5,
   Heading6,
 } from 'lucide-react'
+import { useMemo } from 'react'
 import { Sidebar, type SidebarItem, type SidebarProps } from '../../ui/Sidebar'
 
 export type OutlineHeading = { id: string; label: string; level: number }
@@ -32,22 +33,25 @@ export function OutlineSidebar({
   resize: NonNullable<SidebarProps['resize']>
   side?: 'left' | 'right'
 }) {
-  const items: SidebarItem[] = []
-  const parents: { level: number; item: SidebarItem }[] = []
-  for (const heading of headings) {
-    while ((parents.at(-1)?.level ?? 0) >= heading.level) parents.pop()
-    const item: SidebarItem = {
-      id: heading.id,
-      label: heading.label,
-      icon: icons[heading.level - 1] ?? Heading1,
+  const items = useMemo(() => {
+    const items: SidebarItem[] = []
+    const parents: { level: number; item: SidebarItem }[] = []
+    for (const heading of headings) {
+      while ((parents.at(-1)?.level ?? 0) >= heading.level) parents.pop()
+      const item: SidebarItem = {
+        id: heading.id,
+        label: heading.label,
+        icon: icons[heading.level - 1] ?? Heading1,
+      }
+      const parent = parents.at(-1)?.item
+      if (parent) {
+        parent.children ??= []
+        parent.children.push(item)
+      } else items.push(item)
+      parents.push({ level: heading.level, item })
     }
-    const parent = parents.at(-1)?.item
-    if (parent) {
-      parent.children ??= []
-      parent.children.push(item)
-    } else items.push(item)
-    parents.push({ level: heading.level, item })
-  }
+    return items
+  }, [headings])
   return (
     <Sidebar
       className="document-sidebar outline-sidebar"

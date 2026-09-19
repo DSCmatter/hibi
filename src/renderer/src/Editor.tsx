@@ -62,6 +62,7 @@ import './markdown-markers.css'
 import { markdownSerializer } from './markdown-serialization'
 import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
+import { outlineHeadingAt } from './outline-position'
 import { observeRichAnnotations } from './rich-annotations'
 import {
   richSourceEcho,
@@ -682,13 +683,18 @@ export function MarkdownEditor({
           }
           const position =
             sourcePosition(view, view.state.selection.main.head) - offset
-          for (const heading of sourceHeadings)
-            if (heading.start <= position) selected = heading.id
+          selected =
+            outlineHeadingAt(
+              sourceHeadings,
+              position,
+              (heading) => heading.start,
+            )?.id ?? null
         }
       } else {
-        for (const heading of headings)
-          if (Number(heading.id) <= editor.state.selection.head)
-            selected = heading.id
+        selected =
+          outlineHeadingAt(headings, editor.state.selection.head, (heading) =>
+            Number(heading.id),
+          )?.id ?? null
       }
       onActiveOutline(selected)
     }
