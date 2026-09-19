@@ -265,6 +265,7 @@ export function SourceEditor({
         }),
       ]
     }
+    const selection = bridge.selection()
     const editor = new EditorView({
       parent: host.current,
       dispatchTransactions(transactions, editor) {
@@ -278,6 +279,7 @@ export function SourceEditor({
       },
       state: EditorState.create({
         doc: sourceEditorText(bridge.snapshot()),
+        ...(selection ? { selection } : {}),
         extensions: [
           addons.current.of([]),
           search({

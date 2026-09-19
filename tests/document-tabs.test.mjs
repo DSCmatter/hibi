@@ -655,3 +655,73 @@ test('file tabs preserve independent drafts and guard closing, saving, and works
   )
   assert.equal((await read()).tabs.length, 1)
 })
+
+test('source selection survives tab remounts with emoji and mixed line endings', {
+  timeout: 30000,
+}, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'hibi-source-bookmark-'))
+  const first = join(root, 'first.md'),
+    second = join(root, 'second.md')
+  await writeFile(first, 'first\r\n😀second\nthird')
+  await writeFile(second, 'another note')
+  const app = await electron.launch({
+    args: [resolve('.'), `--user-data-dir=${join(root, 'profile')}`],
+  })
+  t.after(async () => {
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 })
+    })
+    await app.close()
+    await rm(root, { recursive: true, force: true })
+  })
+  const page = await app.firstWindow()
+  page.setDefaultTimeout(6000)
+  await page
+    .getByRole('textbox', { name: 'Document editor', exact: true })
+    .waitFor()
+  const open = async (file) => {
+    await app.evaluate(({ dialog }, file) => {
+      dialog.showOpenDialog = async () => ({
+        canceled: false,
+        filePaths: [file],
+      })
+    }, file)
+    await clickMenu(app, 'Open…')
+    await waitForAsync(
+      page,
+      async (name) => (await window.hibi.getDocument()).name === name,
+      basename(file),
+    )
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.app').getAttribute('aria-busy') === 'false',
+    )
+  }
+  await open(first)
+  await page.getByRole('button', { name: 'Source view', exact: true }).click()
+  const source = page.locator('.cm-content')
+  await page.waitForFunction(
+    () => document.querySelector('.cm-content')?.isContentEditable,
+  )
+  await source.focus()
+  await source.press('ControlOrMeta+a')
+  await source.press('ArrowLeft')
+  for (let n = 0; n < 7; n++) await source.press('ArrowRight')
+  for (let n = 0; n < 6; n++) await source.press('Shift+ArrowRight')
+  assert.equal(await page.evaluate(() => getSelection().toString()), 'second')
+  await open(second)
+  await page.getByRole('tab', { name: 'first.md', exact: true }).click()
+  await waitForAsync(
+    page,
+    async () => (await window.hibi.getDocument()).name === 'first.md',
+  )
+  await page.waitForFunction(
+    () =>
+      document.activeElement?.classList.contains('cm-content') &&
+      getSelection().toString() === 'second',
+  )
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    'first\r\n😀second\nthird',
+  )
+})

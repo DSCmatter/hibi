@@ -23,9 +23,11 @@ function fixture(source, options = {}, extensions = []) {
   )
   const attach = () => {
     const bridge = createSourceSession(session)
+    const selection = bridge.selection()
     const view = {
       state: EditorState.create({
         doc: sourceEditorText(session.snapshot()),
+        ...(selection ? { selection } : {}),
         extensions,
       }),
       update(transactions) {
@@ -176,6 +178,28 @@ test('source selection survives reidentification and new CRLF seams without muta
   assert.equal(f.session.selection().ranges[0].head, 1)
   assert.equal(f.operations.at(-1).document.revision, 4)
   assert.deepEqual(f.errors, [])
+  f.session.dispose()
+})
+
+test('source remount restores the host selection through mixed endings and tab reidentification', () => {
+  const f = fixture('first\r\n😀second\nthird')
+  const first = f.attach()
+  first.dispatch({ selection: { anchor: 8, head: 14 } })
+  const bookmark = f.session.selection()
+  assert.deepEqual(bookmark.ranges[0], { anchor: 9, head: 15, association: -1 })
+  first.dispose()
+  f.session.reidentify({ tabId: 'cm-test', revision: 2 })
+  const remounted = f.attach()
+  assert.equal(remounted.view.state.selection.main.anchor, 8)
+  assert.equal(remounted.view.state.selection.main.head, 14)
+  assert.deepEqual(f.session.selection(), bookmark)
+  assert.equal(f.operations.length, 0)
+  remounted.dispatch(type(14, '!', 0))
+  f.session.undo()
+  assert.equal(remounted.view.state.selection.main.anchor, 8)
+  assert.equal(remounted.view.state.selection.main.head, 14)
+  assert.deepEqual(f.errors, [])
+  remounted.dispose()
   f.session.dispose()
 })
 

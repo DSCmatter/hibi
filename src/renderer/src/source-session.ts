@@ -163,6 +163,7 @@ export function createSourceSession(session: DocumentSession) {
   }
   return {
     snapshot: () => snapshot,
+    selection: () => editorSelection(snapshot, session.selection()),
     dispatch,
     attach(view: Pick<EditorView, 'state' | 'update'>) {
       if (!session.ownsCurrentSnapshot(snapshot))
