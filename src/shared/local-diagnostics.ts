@@ -1,7 +1,6 @@
 // Local diagnostics never accept free-form metadata or document identifiers.
 export const DIAGNOSTIC_SCHEMA = 1
 export const DIAGNOSTIC_CHANNEL = 'hibi:local-diagnostics'
-export const DIAGNOSTIC_REPORT_CHANNEL = 'hibi:local-diagnostic-report'
 export type DiagnosticProfile = 'release' | 'debug'
 export const diagnosticPolicies = {
   release: {
@@ -77,8 +76,6 @@ export const diagnosticEvents = {
     critical: true,
   },
   COMPILER_TIMEOUT: { severity: 'warning', producer: false, critical: false },
-  SERVICE_STARTED: { severity: 'debug', producer: false, critical: false },
-  SERVICE_STOPPED: { severity: 'debug', producer: false, critical: false },
   SINK_READY: { severity: 'debug', producer: false, critical: false },
   SINK_UNAVAILABLE: { severity: 'debug', producer: false, critical: false },
   DIAGNOSTICS_DROPPED: { severity: 'warning', producer: true, critical: false },

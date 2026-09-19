@@ -30,12 +30,8 @@ import { LocalDiagnosticSink } from './sink'
 
 declare const __HIBI_DIAGNOSTIC_BUILD__: string
 declare const __HIBI_DIAGNOSTIC_PROFILE__: 'auto' | DiagnosticProfile
-declare const __HIBI_DIAGNOSTICS_TEST_DISABLED__: boolean
 
 export class LocalDiagnostics {
-  private readonly disabled =
-    typeof __HIBI_DIAGNOSTICS_TEST_DISABLED__ !== 'undefined' &&
-    __HIBI_DIAGNOSTICS_TEST_DISABLED__
   private readonly profile: DiagnosticProfile =
     typeof __HIBI_DIAGNOSTIC_PROFILE__ !== 'undefined' &&
     __HIBI_DIAGNOSTIC_PROFILE__ !== 'auto'
@@ -55,7 +51,6 @@ export class LocalDiagnostics {
   private started = false
 
   constructor() {
-    if (this.disabled) return
     try {
       for (const [relative, id] of [
         ['index.js', 1],
@@ -90,7 +85,6 @@ export class LocalDiagnostics {
     error?: unknown,
     metadata: Pick<SafeDiagnostic, 'role' | 'reason' | 'exitCode'> = {},
   ) {
-    if (this.disabled) return
     try {
       if (!this.admission.admit(code, Date.now())) return
       const detail = metadata.reason
@@ -121,7 +115,7 @@ export class LocalDiagnostics {
     rendererUrl: string
     trusted: (event: IpcMainInvokeEvent) => boolean
   }): void {
-    if (this.disabled || this.started) return
+    if (this.started) return
     this.started = true
     try {
       this.sink = new LocalDiagnosticSink({
@@ -205,11 +199,9 @@ export class LocalDiagnostics {
           role:
             details.type === 'GPU'
               ? 'gpu'
-              : details.serviceName === 'hibi typst'
-                ? 'typst'
-                : details.type === 'Utility'
-                  ? 'utility'
-                  : 'other',
+              : details.type === 'Utility'
+                ? 'utility'
+                : 'other',
           reason: processReasons.includes(details.reason)
             ? details.reason
             : 'unknown',
@@ -277,7 +269,7 @@ export class LocalDiagnostics {
   }
 
   observeWindow(window: BrowserWindow): void {
-    if (this.disabled || this.observed.has(window)) return
+    if (this.observed.has(window)) return
     try {
       this.observed.add(window)
       const contents = window.webContents

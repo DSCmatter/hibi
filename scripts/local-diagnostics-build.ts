@@ -25,9 +25,6 @@ export function diagnosticsDefines() {
     __HIBI_DIAGNOSTIC_PROFILE__: JSON.stringify(
       profile === 'release' || profile === 'debug' ? profile : 'auto',
     ),
-    // Comparative test builds override this define through their own config.
-    // No production CLI, environment lookup or renderer API can disable logging.
-    __HIBI_DIAGNOSTICS_TEST_DISABLED__: 'false',
   }
 }
 

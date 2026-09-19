@@ -111,7 +111,7 @@ test('diagnostic profile is a build-owned selection, with logging enabled by def
       process.env.HIBI_DIAGNOSTIC_PROFILE = input
       const defines = diagnosticsDefines()
       assert.equal(JSON.parse(defines.__HIBI_DIAGNOSTIC_PROFILE__), expected)
-      assert.equal(defines.__HIBI_DIAGNOSTICS_TEST_DISABLED__, 'false')
+      assert.equal('__HIBI_DIAGNOSTICS_TEST_DISABLED__' in defines, false)
       assert.match(
         JSON.parse(defines.__HIBI_DIAGNOSTIC_BUILD__),
         /^(unknown|[a-f0-9]{40}(-dirty)?)$/,

@@ -38,7 +38,6 @@ test('pinned Electron exposes exact utility identity and passive JS observation 
     define: {
       __HIBI_DIAGNOSTIC_BUILD__: '"unknown"',
       __HIBI_DIAGNOSTIC_PROFILE__: '"debug"',
-      __HIBI_DIAGNOSTICS_TEST_DISABLED__: 'false',
     },
   })
   const app = await electron.launch({ args: [root] })

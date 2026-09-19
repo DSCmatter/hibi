@@ -67,6 +67,45 @@ function faultyOpen(override) {
 }
 
 for (const profile of ['release', 'debug']) {
+  test(`${profile}: rotation open failure retires the writer before exceeding a segment cap`, async (t) => {
+    let failRotation = false
+    const storage = {
+      ...fs,
+      open: async (...args) => {
+        if (failRotation && args[0].endsWith('segment-1.log'))
+          throw Object.assign(new Error('PRIVATE_ROTATION_PATH'), {
+            code: 'EACCES',
+          })
+        return fs.open(...args)
+      },
+    }
+    const { sink, directory } = await fixture(t, profile, {
+      filesystem: storage,
+    })
+    failRotation = true
+    const record = event('RUN_STARTED', {
+      stackStatus: 'captured',
+      frames: Array.from({ length: diagnosticPolicies[profile].frames }, () => [
+        1, 100000000, 100000000,
+      ]),
+    })
+    for (
+      let batch = 0;
+      batch < 1000 && sink.status.state === 'ready';
+      batch++
+    ) {
+      for (let i = 0; i < 32; i++) sink.enqueue(record)
+      await sink.flush()
+    }
+    assert.equal(sink.status.state, 'failed')
+    assert.equal(sink.status.failures, 1)
+    assert.equal(sink.enqueue(record), false)
+    assert.ok(
+      (await fs.stat(join(directory, 'segment-0.log'))).size <=
+        diagnosticPolicies[profile].segmentBytes,
+    )
+    assert.doesNotMatch(sink.report(), /PRIVATE_ROTATION_PATH/)
+  })
   test(`${profile}: immediate reports retain admitted incidents and refuse linked export targets`, async (t) => {
     const { root, sink } = await fixture(t, profile)
     sink.enqueue(event('RENDERER_ERROR'))
@@ -176,7 +215,7 @@ for (const profile of ['release', 'debug']) {
         }),
       ),
     )
-    assert.equal(sink.enqueue(event('SERVICE_STARTED')), profile === 'debug')
+    assert.equal(sink.enqueue(event('SINK_READY')), profile === 'debug')
     assert.equal(
       sink.enqueue(event('RENDERER_ERROR', { message: 'PRIVATE_CONTENT' })),
       false,

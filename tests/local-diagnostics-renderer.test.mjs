@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
+import { pathToFileURL } from 'node:url'
 import { build } from 'vite'
 import { electron } from './electron.mjs'
 
@@ -47,9 +48,36 @@ test('both renderer profiles preserve native error propagation, safe original lo
   const count = (records, code) =>
     records.filter((r) => JSON.parse(r).code === code).length
   for (const profile of ['release', 'debug']) {
-    await page.goto(`file://${join(root, 'index.html')}?profile=${profile}`)
+    await page.goto(
+      `${pathToFileURL(join(root, 'index.html')).href}?profile=${profile}`,
+    )
     await page.getByRole('button', { name: 'Trigger render failure' }).waitFor()
     await page.waitForFunction(() => window.diagnosticHarness)
+    await page.evaluate(() => {
+      const input = document.createElement('textarea')
+      document.body.append(input)
+      input.value = 'PRIVATE_TYPED_PASTED_IME_雪'
+      input.dispatchEvent(
+        new InputEvent('input', { bubbles: true, data: 'PRIVATE_INPUT' }),
+      )
+      input.dispatchEvent(
+        new CompositionEvent('compositionend', {
+          bubbles: true,
+          data: 'PRIVATE_IME',
+        }),
+      )
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, key: 'PRIVATE_KEY' }),
+      )
+      const transfer = new DataTransfer()
+      transfer.setData('text/plain', 'PRIVATE_CLIPBOARD')
+      input.dispatchEvent(
+        new ClipboardEvent('paste', { bubbles: true, clipboardData: transfer }),
+      )
+      console.error('PRIVATE_CONSOLE', { source: 'PRIVATE_DOCUMENT' })
+      input.remove()
+    })
+    assert.deepEqual((await read()).records, [])
     const observed = page.waitForEvent('pageerror')
     await page.evaluate(() => window.diagnosticHarness.exception())
     assert.match((await observed).message, /PRIVATE_RENDERER_MESSAGE/)

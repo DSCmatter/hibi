@@ -1,10 +1,50 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
 import { clickMenu } from './keyboard.mjs'
+
+test('an unavailable unsafe log directory leaves editing, saving and user files intact', {
+  timeout: 20000,
+}, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'hibi-unsafe-logs-'))
+  const profile = join(root, 'profile')
+  await mkdir(profile)
+  const kept = join(root, 'kept.md'),
+    saved = join(root, 'saved.md')
+  await writeFile(kept, 'PRIVATE ORIGINAL DOCUMENT')
+  await symlink(root, join(profile, 'logs'), 'dir')
+  const app = await electron.launch({
+    args: [resolve('.'), `--user-data-dir=${profile}`],
+  })
+  t.after(async () => {
+    await app.close().catch(() => {})
+    await rm(root, { recursive: true, force: true })
+  })
+  const page = await app.firstWindow()
+  page.setDefaultTimeout(6000)
+  await page
+    .getByRole('textbox', { name: 'Document editor', exact: true })
+    .fill('PRIVATE SAVED DOCUMENT')
+  await app.evaluate(({ dialog }, path) => {
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath: path })
+    dialog.showMessageBox = async () => ({ response: 1 })
+  }, saved)
+  await page.evaluate(() => window.hibi.saveDocument(true))
+  assert.equal(await readFile(saved, 'utf8'), 'PRIVATE SAVED DOCUMENT')
+  assert.equal(await readFile(kept, 'utf8'), 'PRIVATE ORIGINAL DOCUMENT')
+  assert.ok(!(await readdir(root)).some((name) => name.startsWith('segment-')))
+})
 
 test('default diagnostics preserve editing, use the raw bridge and export only safe records', {
   timeout: 30000,
