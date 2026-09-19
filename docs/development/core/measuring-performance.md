@@ -27,6 +27,8 @@ Desktop benchmarks launch the built app in isolated profiles. They measure start
 
 Use `npm run bench:startup` for a detailed local launch report. Compare several runs; a single launch can be affected by disk caches or other processes.
 
+Use `node scripts/benchmark-sidebar.mjs 100000` (also `1000` or `10000`) to inspect the shared tree's rendered row count, DOM size, scroll extent and elapsed time through two animation frames. Each run uses the existing production build and a temporary addon/profile. Item metadata is still prepared eagerly. This exploratory probe does not establish percentile latency or physical presentation; preserve before/after output and use repeated controlled runs for timing claims. `tests/sidebar-window.test.mjs` covers far-row keyboard navigation, rename focus, section/row geometry, scroll anchors and retained drag/menu targets.
+
 Use `npm run bench:input` to measure document-changing ProseMirror transactions and count formatting checks and Markdown serializations. First and subsequent keystrokes use the same driver endpoint: sending a key and observing changed editor text. Renderer processing time is reported separately and includes synchronous listeners. Neither measurement proves that pixels reached the display.
 
 `HIBI_INPUT_RUNS=10 npm run bench:input` changes the sample count. Set `HIBI_BENCH_FOREGROUND=1` to focus isolated benchmark windows and include foreground editor behavior. The default keeps test windows hidden; custom caret work may therefore be absent. Benchmark instrumentation is installed by the driver and does not ship with the app.

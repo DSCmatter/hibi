@@ -12,8 +12,10 @@ import {
 import './sidebar.css'
 import type { ExplorerDecoration } from '../shared/workspace'
 import { TextInput } from './Controls'
+import { sidebarParents, sidebarRows } from './sidebar-rows'
 import type { ToolbarItem } from './toolbar'
 import { MIN_SIDEBAR_WIDTH } from './useSidebarResize'
+import { useSidebarWindow } from './useSidebarWindow'
 
 export type SidebarItem = {
   id: string
@@ -152,63 +154,70 @@ export function Sidebar({
   )
   const [dragging, setDragging] = useState(false)
   const draggedItem = useRef<string | null>(null)
+  const [dragged, setDragged] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [focused, setFocused] = useState<string | null>(null)
   const buttons = useRef(new Map<string, HTMLButtonElement>())
+  const pendingFocus = useRef<string | null>(null)
   const revealed = useRef('')
+  const parents = useMemo(() => sidebarParents(items), [items])
   useEffect(() => {
     if (mode === 'tabs' || !collapsible) return
-    const parents: string[] = []
-    function find(items: readonly SidebarItem[], target: string): boolean {
-      return items.some((item) => {
-        if (item.id === target) return true
-        if (item.children && find(item.children, target)) {
-          parents.push(item.id)
-          return true
-        }
-        return false
-      })
+    const ancestors: string[] = []
+    for (const target of [selected, editing?.id]) {
+      let parent = target ? parents.get(target) : null
+      while (parent != null) {
+        ancestors.push(parent)
+        parent = parents.get(parent)
+      }
     }
-    if (selected) find(items, selected)
-    if (editing?.id) find(items, editing.id)
-    const key = JSON.stringify([selected, editing?.id, parents])
+    const key = JSON.stringify([selected, editing?.id, ancestors])
     if (revealed.current === key) return
     revealed.current = key
-    if (parents.length) setExpanded((old) => new Set([...old, ...parents]))
-  }, [items, selected, mode, editing?.id, collapsible])
-  const rows = useMemo(() => {
-    const visible: {
-      item: SidebarItem
-      depth: number
-      parent: string | null
-      position: number
-      size: number
-    }[] = []
-    function visit(
-      items: readonly SidebarItem[],
-      depth: number,
-      parent: string | null,
-    ) {
-      items.forEach((item, index) => {
-        visible.push({
-          item,
-          depth,
-          parent,
-          position: index + 1,
-          size: items.length,
-        })
-        if (item.children && (!collapsible || expanded.has(item.id)))
-          visit(item.children, depth + 1, item.id)
-      })
+    if (ancestors.length) setExpanded((old) => new Set([...old, ...ancestors]))
+  }, [parents, selected, mode, editing?.id, collapsible])
+  const model = useMemo(
+    () => sidebarRows(items, expanded, collapsible),
+    [items, expanded, collapsible],
+  )
+  const { rows, indices } = model
+  const active = selected === null ? -1 : (indices.get(selected) ?? -1)
+  const focusId =
+    focused !== null && indices.has(focused)
+      ? focused
+      : (rows[active]?.item.id ?? rows[0]?.item.id)
+  const windowed = mode === 'tree' && rows.length > 200
+  const rowWindow = useSidebarWindow(model, windowed, editing?.id)
+  const rendered = windowed
+    ? (() => {
+        const visible = new Set<number>()
+        for (
+          let index = rowWindow.range.from;
+          index < rowWindow.range.to;
+          index++
+        )
+          visible.add(index)
+        for (const id of [focusId, selected, editing?.id, dragged]) {
+          const index = id == null ? undefined : indices.get(id)
+          if (index !== undefined) visible.add(index)
+        }
+        return [...visible].sort((a, b) => a - b)
+      })()
+    : rows.map((_row, index) => index)
+  useLayoutEffect(() => {
+    const id = pendingFocus.current
+    if (!id) return
+    if (!indices.has(id)) {
+      pendingFocus.current = null
+      return
     }
-    visit(items, 0, null)
-    return visible
-  }, [items, expanded, collapsible])
-  const active = rows.findIndex(({ item }) => item.id === selected)
-  const focusId = rows.some(({ item }) => item.id === focused)
-    ? focused
-    : (rows[active]?.item.id ?? rows[0]?.item.id)
+    const button = buttons.current.get(id)
+    if (button) {
+      pendingFocus.current = null
+      button.focus({ preventScroll: true })
+    }
+  })
   const toggle = (id: string) =>
     setExpanded((old) => {
       const next = new Set(old)
@@ -219,7 +228,15 @@ export function Sidebar({
   function focus(id: string | undefined) {
     if (!id) return
     setFocused(id)
-    buttons.current.get(id)?.focus()
+    const button = buttons.current.get(id)
+    if (button) {
+      pendingFocus.current = null
+      button.focus()
+    } else {
+      pendingFocus.current = id
+      const index = indices.get(id)
+      if (index !== undefined) rowWindow.reveal(index)
+    }
     if (mode === 'tabs' && !overlay) onSelect(id)
   }
   return (
@@ -258,6 +275,9 @@ export function Sidebar({
         {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop supplements the keyboard-accessible move menu. */}
         <div
           className="sidebar-scroll"
+          ref={rowWindow.scroll}
+          data-windowed={windowed || undefined}
+          onScroll={rowWindow.onScroll}
           hidden={content !== undefined}
           data-drop-target={dropTarget === ''}
           onDragOver={(event) => {
@@ -278,36 +298,75 @@ export function Sidebar({
             event.stopPropagation()
             onMove(draggedItem.current, null)
             draggedItem.current = null
+            setDragged(null)
             setDropTarget(null)
           }}
         >
           <div
             className="sidebar-items"
+            data-windowed={windowed || undefined}
+            style={
+              windowed
+                ? {
+                    height: `calc(${rows.length} * var(--sidebar-row-height) + ${model.sections} * var(--sidebar-section-height))`,
+                  }
+                : undefined
+            }
             role={mode === 'tabs' ? 'tablist' : 'tree'}
             aria-label={label}
             aria-orientation={mode === 'tabs' ? 'vertical' : undefined}
           >
+            <div className="sidebar-metrics" aria-hidden="true">
+              <span
+                ref={rowWindow.rowMeasure}
+                className="sidebar-row-measure"
+              />
+              <span
+                ref={rowWindow.sectionMeasure}
+                className="sidebar-section-measure"
+              />
+            </div>
             {active >= 0 && (
               <span
                 className="sidebar-selection category-selection"
                 aria-hidden="true"
                 style={{
-                  transform: `translateY(calc(${active} * var(--sidebar-row-height) + ${rows.slice(0, active + 1).filter(({ item }) => item.section).length} * var(--sidebar-section-height)))`,
+                  transform: `translateY(calc(${active} * var(--sidebar-row-height) + ${rows[active]!.sections} * var(--sidebar-section-height)))`,
                 }}
               />
             )}
-            {rows.map(({ item, depth, parent, position, size }, index) => {
+            {rendered.map((index) => {
+              const { item, depth, parent, position, size, sections } =
+                rows[index]!
               const Icon = item.icon
               return (
                 <Fragment key={item.id}>
                   {item.section && (
-                    <div className="sidebar-section" role="presentation">
+                    <div
+                      className="sidebar-section"
+                      role="presentation"
+                      style={
+                        windowed
+                          ? {
+                              top: `calc(${index} * var(--sidebar-row-height) + ${sections - 1} * var(--sidebar-section-height))`,
+                            }
+                          : undefined
+                      }
+                    >
                       {item.section}
                     </div>
                   )}
                   {/* biome-ignore lint/a11y/noStaticElementInteractions: tree buttons and the move menu provide keyboard equivalents. */}
                   <div
                     className="sidebar-row"
+                    style={
+                      windowed
+                        ? {
+                            top: `calc(${index} * var(--sidebar-row-height) + ${sections} * var(--sidebar-section-height))`,
+                          }
+                        : undefined
+                    }
+                    onFocusCapture={() => setFocused(item.id)}
                     data-editing={editing?.id === item.id}
                     data-drop-target={dropTarget === item.id}
                     onDragOver={(event) => {
@@ -341,6 +400,7 @@ export function Sidebar({
                           setExpanded((old) => new Set([...old, target]))
                       }
                       draggedItem.current = null
+                      setDragged(null)
                       setDropTarget(null)
                     }}
                   >
@@ -380,6 +440,7 @@ export function Sidebar({
                         onDragStart={(event) => {
                           if (!onMove) return
                           draggedItem.current = item.id
+                          setDragged(item.id)
                           event.dataTransfer.setData(
                             'application/x-hibi-sidebar',
                             item.id,
@@ -388,6 +449,7 @@ export function Sidebar({
                         }}
                         onDragEnd={() => {
                           draggedItem.current = null
+                          setDragged(null)
                           setDropTarget(null)
                         }}
                         role={mode === 'tabs' ? 'tab' : 'treeitem'}
@@ -427,10 +489,14 @@ export function Sidebar({
                         onContextMenu={(event) => {
                           if (onMenu) {
                             event.preventDefault()
+                            setFocused(item.id)
                             onMenu(item.id, event.currentTarget)
                           }
                         }}
-                        onFocus={() => setFocused(item.id)}
+                        onFocus={() => {
+                          setFocused(item.id)
+                          rowWindow.reveal(index)
+                        }}
                         onClick={() => {
                           if (item.children && collapsible) toggle(item.id)
                           else onSelect(item.id)
@@ -522,11 +588,15 @@ export function Sidebar({
                       <button
                         type="button"
                         className="sidebar-more"
+                        tabIndex={
+                          windowed && focusId !== item.id ? -1 : undefined
+                        }
                         aria-label={`Actions for ${item.label}`}
                         aria-haspopup="menu"
-                        onClick={(event) =>
+                        onClick={(event) => {
+                          setFocused(item.id)
                           onMenu(item.id, event.currentTarget)
-                        }
+                        }}
                       >
                         <MoreHorizontal size={14} aria-hidden="true" />
                       </button>

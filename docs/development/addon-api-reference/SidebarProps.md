@@ -2,7 +2,7 @@
 
 # SidebarProps
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L28)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L30)
 
 <details>
 <summary>Declaration</summary>
@@ -89,7 +89,7 @@ type SidebarProps = {
 
 ### items
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L29)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L31)
 
 ```typescript
 items: readonly SidebarItem[]
@@ -99,7 +99,7 @@ Related: [SidebarItem](SidebarItem.md).
 
 ### selected
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L30)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L32)
 
 ```typescript
 selected: string | null
@@ -107,7 +107,7 @@ selected: string | null
 
 ### label
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L32)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L34)
 
 ```typescript
 label: string
@@ -115,7 +115,7 @@ label: string
 
 ### mode
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L33)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L35)
 
 ```typescript
 mode?: 'tree' | 'tabs'
@@ -123,7 +123,7 @@ mode?: 'tree' | 'tabs'
 
 ### collapsible
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L35)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L37)
 
 False keeps every branch open and lets parent rows select content.
 
@@ -133,7 +133,7 @@ collapsible?: boolean
 
 ### open
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L36)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L38)
 
 ```typescript
 open?: boolean
@@ -141,7 +141,7 @@ open?: boolean
 
 ### side
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L38)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L40)
 
 Dock edge; resize gestures and overlay motion follow this side.
 
@@ -151,7 +151,7 @@ side?: 'left' | 'right'
 
 ### overlay
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L40)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L42)
 
 Show a dismissible drawer over the content, keeping desktop-sized controls.
 
@@ -161,7 +161,7 @@ overlay?: boolean
 
 ### className
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L42)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L44)
 
 ```typescript
 className?: string
@@ -169,7 +169,7 @@ className?: string
 
 ### idPrefix
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L43)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L45)
 
 ```typescript
 idPrefix?: string
@@ -177,7 +177,7 @@ idPrefix?: string
 
 ### panelPrefix
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L44)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L46)
 
 ```typescript
 panelPrefix?: string
@@ -185,7 +185,7 @@ panelPrefix?: string
 
 ### header
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L45)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L47)
 
 ```typescript
 header?: ReactNode
@@ -193,7 +193,7 @@ header?: ReactNode
 
 ### footer
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L46)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L48)
 
 ```typescript
 footer?: ReactNode
@@ -201,7 +201,7 @@ footer?: ReactNode
 
 ### content
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L48)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L50)
 
 Custom view content in the shared sidebar frame instead of tree rows.
 
@@ -211,7 +211,7 @@ content?: ReactNode
 
 ### empty
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L49)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L51)
 
 ```typescript
 empty?: ReactNode
@@ -219,7 +219,7 @@ empty?: ReactNode
 
 ### editing
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L53)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L55)
 
 ```typescript
 editing?: {
@@ -238,7 +238,7 @@ Related: [Select](Select.md).
 
 ### resize
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L63)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L65)
 
 ```typescript
 resize?: {
@@ -255,7 +255,7 @@ resize?: {
 
 ### onSelect
 
-[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L31)
+[Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L33)
 
 ```typescript
 onSelect: (id: string) => void
@@ -271,7 +271,7 @@ onSelect: (id: string) => void
 
 ### onDismiss
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L41)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L43)
 
 ```typescript
 onDismiss?: () => void
@@ -281,7 +281,7 @@ onDismiss?: () => void
 
 ### onMenu
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L50)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L52)
 
 ```typescript
 onMenu?: (id: string, anchor: HTMLElement) => void
@@ -298,7 +298,7 @@ onMenu?: (id: string, anchor: HTMLElement) => void
 
 ### onMove
 
-Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L52)
+Optional · [Source](https://github.com/schmayterling/hibi/blob/main/src/ui/Sidebar.tsx#L54)
 
 Move a tree item into a folder; null targets the tree root.
 

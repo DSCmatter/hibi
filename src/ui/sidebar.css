@@ -118,6 +118,34 @@
   display: flex;
   flex-direction: column;
 }
+.sidebar-scroll[data-windowed="true"] {
+  overflow-anchor: none;
+}
+.sidebar-items[data-windowed="true"] {
+  display: block;
+}
+.sidebar-items[data-windowed="true"] > :is(.sidebar-row, .sidebar-section) {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.sidebar-metrics {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+.sidebar-metrics > span {
+  display: block;
+}
+.sidebar-row-measure {
+  height: var(--sidebar-row-height);
+}
+.sidebar-section-measure {
+  height: var(--sidebar-section-height);
+}
 .sidebar-selection {
   position: absolute;
   inset: 0 0 auto;
