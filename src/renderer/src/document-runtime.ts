@@ -8,6 +8,9 @@ import type {
 } from '../../shared/source-operations.ts'
 
 type RuntimeOptions = {
+  /** Combined retained history across open tabs; payload bytes are estimated. */
+  historyBytes?: number
+  historyGroups?: number
   admit?: (operation: SourceOperation) => void
   enqueue: (operation: SourceOperation) => void
   onError: (error: unknown) => void
@@ -23,6 +26,13 @@ export class DocumentRuntime {
   readonly #sources = new WeakMap<DocumentState, SourceSnapshot>()
   readonly #listeners = new Set<Listener>()
   readonly #options: RuntimeOptions
+  readonly #history = new Map<
+    DocumentSession,
+    { bytes: number; groups: number }
+  >()
+  readonly #historySubscriptions = new Map<DocumentSession, () => void>()
+  readonly #historyLimits: { bytes: number; groups: number }
+  #historySize = { bytes: 0, groups: 0 }
   #active: DocumentSession | null = null
   #metadata: Omit<DocumentState, 'markdown' | 'savedMarkdown'> | null = null
   #cached: DocumentState | null = null
@@ -33,9 +43,71 @@ export class DocumentRuntime {
   #updating = false
 
   constructor(options: RuntimeOptions) {
+    this.#historyLimits = {
+      bytes: options.historyBytes ?? 32 * 1024 * 1024,
+      groups: options.historyGroups ?? 512,
+    }
+    if (
+      !Object.values(this.#historyLimits).every(
+        (value) => Number.isSafeInteger(value) && value >= 0,
+      )
+    )
+      throw new Error('Invalid combined document history limits.')
     this.#options = options
   }
   session = () => this.#active
+  retainedHistory = () => ({
+    ...this.#historySize,
+    sessions: this.#history.size,
+  })
+  #forgetHistory(session: DocumentSession) {
+    const previous = this.#history.get(session)
+    if (!previous) return
+    this.#historySize.bytes -= previous.bytes
+    this.#historySize.groups -= previous.groups
+    this.#history.delete(session)
+  }
+  #discardSession(session: DocumentSession) {
+    this.#historySubscriptions.get(session)?.()
+    this.#historySubscriptions.delete(session)
+    this.#forgetHistory(session)
+    session.dispose()
+  }
+  #retainHistory(current = this.#active) {
+    if (!current) return
+    this.#forgetHistory(current)
+    const usage = current.historySize()
+    if (usage.groups) {
+      this.#history.set(current, usage)
+      this.#historySize.bytes += usage.bytes
+      this.#historySize.groups += usage.groups
+    }
+    while (
+      this.#historySize.bytes > this.#historyLimits.bytes ||
+      this.#historySize.groups > this.#historyLimits.groups
+    ) {
+      // Each session fits by itself; evict less recently used history first.
+      const [oldest, before] = this.#history.entries().next().value!
+      oldest.limitHistory(
+        Math.max(
+          0,
+          before.bytes -
+            Math.max(0, this.#historySize.bytes - this.#historyLimits.bytes),
+        ),
+        Math.max(
+          0,
+          before.groups -
+            Math.max(0, this.#historySize.groups - this.#historyLimits.groups),
+        ),
+        (after) => {
+          this.#historySize.bytes += after.bytes - before.bytes
+          this.#historySize.groups += after.groups - before.groups
+          if (after.groups) this.#history.set(oldest, after)
+          else this.#history.delete(oldest)
+        },
+      )
+    }
+  }
   sourceFor = (document: DocumentState) => this.#sources.get(document)
   subscribe = (listener: Listener) => {
     this.#listeners.add(listener)
@@ -93,7 +165,7 @@ export class DocumentRuntime {
         (session.snapshot().version !== document.contentVersion ||
           session.snapshot().materialize() !== markdown)
       ) {
-        session.dispose()
+        this.#discardSession(session)
         session = undefined
       }
       if (!session) {
@@ -103,10 +175,17 @@ export class DocumentRuntime {
           document.contentVersion,
           {
             ...this.#options,
+            historyBytes: Math.min(8 * 1024 * 1024, this.#historyLimits.bytes),
+            historyGroups: Math.min(128, this.#historyLimits.groups),
             maximumBytes: MAX_DOCUMENT_BYTES,
           },
         )
         this.#sessions.set(document.tabId, session)
+        const retained = session
+        this.#historySubscriptions.set(
+          session,
+          session.subscribeOperations(() => this.#retainHistory(retained)),
+        )
       } else session.reidentify(document)
       session.importSaved(savedMarkdown)
       this.#active = session
@@ -130,9 +209,10 @@ export class DocumentRuntime {
       ])
       for (const [id, retained] of this.#sessions)
         if (!open.has(id)) {
-          retained.dispose()
+          this.#discardSession(retained)
           this.#sessions.delete(id)
         }
+      this.#retainHistory()
     } finally {
       this.#updating = false
     }
@@ -190,8 +270,10 @@ export class DocumentRuntime {
   }
   dispose() {
     for (const detach of this.#detach) detach()
-    for (const session of this.#sessions.values()) session.dispose()
+    for (const session of this.#sessions.values()) this.#discardSession(session)
     this.#sessions.clear()
+    this.#history.clear()
+    this.#historySize = { bytes: 0, groups: 0 }
     this.#listeners.clear()
     this.#active = null
     this.#metadata = null

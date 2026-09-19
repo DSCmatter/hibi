@@ -12,11 +12,17 @@ Use `Cmd` on macOS and `Ctrl` on Windows and Linux where a shortcut says `Cmd/Ct
 | `Cmd/Ctrl+N` | New note |
 | `Cmd/Ctrl+O` | Open a file |
 | `Cmd/Ctrl+S` | Save |
+| `Cmd/Ctrl+Z` | Undo |
+| `Cmd/Ctrl+Shift+Z` | Redo |
 | `Cmd/Ctrl+Shift+S` | Save as |
 | `Cmd/Ctrl+W` | Close the current tab |
 | `Cmd/Ctrl+[` / `]` | Go back / forward |
 | `Cmd/Ctrl+Shift+[` / `]` | Normal / Source view |
 | `Cmd/Ctrl+Shift+\` | Side-by-side view |
+
+## Undo and redo
+
+Undo history is shared between source and formatted editing and survives switching tabs. Hibi limits the memory used by history; when it needs space, older edits in less recently used tabs may stop being undoable. This keeps your current text and saved files intact. Use [Version history](version-history.md) to restore an earlier saved version.
 
 ## Markdown formatting
 

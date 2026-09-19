@@ -196,6 +196,27 @@ export class DocumentSession {
   historyDepth() {
     return { undo: this.#undo.length, redo: this.#redo.length }
   }
+  /** Release older history without changing source, selection or saved identity. */
+  limitHistory(
+    bytes: number,
+    groups: number,
+    retained?: (usage: { bytes: number; groups: number }) => void,
+  ) {
+    if (
+      this.#disposed ||
+      ![bytes, groups].every(
+        (value) => Number.isSafeInteger(value) && value >= 0,
+      )
+    )
+      throw new Error(
+        'Document history limits are invalid or the session is disposed.',
+      )
+    this.#trim(bytes, groups)
+    // Update the owner's accounting before history observers can run again.
+    retained?.(this.historySize())
+    // An accepted native edit will notify after its view finishes reconciliation.
+    this.#publish(!this.#dispatching)
+  }
 
   #publish(notify = true) {
     const current = this.snapshot()
@@ -236,10 +257,11 @@ export class DocumentSession {
       }
     }
   }
-  #trim() {
+  #trim(
+    maximumBytes = this.#options.historyBytes ?? 8 * 1024 * 1024,
+    maximumGroups = this.#options.historyGroups ?? 128,
+  ) {
     let bytes = this.historySize().bytes
-    const maximumBytes = this.#options.historyBytes ?? 8 * 1024 * 1024
-    const maximumGroups = this.#options.historyGroups ?? 128
     while (
       this.#undo.length &&
       (bytes > maximumBytes ||

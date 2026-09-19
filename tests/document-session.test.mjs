@@ -206,6 +206,86 @@ test('ENG21: history is bounded and redo is revoked by new input', () => {
   assert.equal(session.state().canRedo, false)
 })
 
+test('history reclamation preserves current source, saved state and the reachable undo/redo chain', () => {
+  const { session, journal, errors } = fixture('a')
+  for (let index = 1; index <= 3; index++)
+    session.edit(
+      [{ from: index, to: index, insert: String(index) }],
+      'source',
+      `group-${index}`,
+    )
+  session.undo()
+  const source = session.snapshot(),
+    saved = session.savedSnapshot(),
+    selection = session.selection()
+  const entries = journal.length
+  session.counters(true)
+  let retained
+  session.limitHistory(10000, 2, (usage) => {
+    retained = usage
+  })
+  assert.equal(session.snapshot(), source)
+  assert.equal(session.savedSnapshot(), saved)
+  assert.equal(session.selection(), selection)
+  assert.equal(session.state().dirty, true)
+  assert.equal(session.counters().materializations, 0)
+  assert.equal(journal.length, entries)
+  assert.equal(retained.groups, 2)
+  assert.deepEqual(session.historyDepth(), { undo: 1, redo: 1 })
+  session.undo()
+  assert.equal(session.snapshot().materialize(), 'a1')
+  assert.equal(session.undo(), null)
+  session.redo()
+  session.redo()
+  assert.equal(session.snapshot().materialize(), 'a123')
+  assert.equal(session.snapshot().version, 7)
+  assert.deepEqual(errors, [])
+  session.dispose()
+})
+
+test('redo reclamation drops the far end and keeps an executable prefix', () => {
+  const { session } = fixture('')
+  for (let index = 0; index < 3; index++)
+    session.edit(
+      [{ from: index, to: index, insert: String(index) }],
+      'source',
+      `group-${index}`,
+    )
+  session.undo()
+  session.undo()
+  session.undo()
+  session.limitHistory(10000, 2)
+  session.redo()
+  session.redo()
+  assert.equal(session.snapshot().materialize(), '01')
+  assert.equal(session.redo(), null)
+  session.dispose()
+})
+
+test('history reclamation defers notifications until an accepted native edit finishes', () => {
+  const { session, journal, errors } = fixture('a')
+  let notices = 0
+  session.subscribe(() => {
+    notices++
+  })
+  const accepted = session.beginEdit(
+    [{ from: 1, to: 1, insert: 'b' }],
+    'source',
+    'pending',
+  )
+  session.limitHistory(0, 0)
+  assert.equal(notices, 0)
+  assert.equal(session.state().canUndo, false)
+  accepted.finish()
+  assert.equal(notices, 1)
+  assert.equal(session.snapshot().materialize(), 'ab')
+  assert.equal(journal.length, 1)
+  assert.deepEqual(errors, [])
+  for (const invalid of [-1, NaN, Infinity, 1.5])
+    assert.throws(() => session.limitHistory(invalid, 1), /invalid/)
+  session.dispose()
+})
+
 test('reentrant edits and observer failures cannot corrupt committed source', () => {
   const { session, errors, journal } = fixture('a')
   session.subscribe(() => {

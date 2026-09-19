@@ -1045,6 +1045,9 @@
   "f5dd68e8bde8": [
     "src/renderer/src/FormatsSettings.tsx"
   ],
+  "f1734bdae36f": [
+    "src/shared/document-session.ts"
+  ],
   "ebe67d68f86c": [
     "src/renderer/src/document-worker-client.ts"
   ],
@@ -1931,6 +1934,9 @@
   ],
   "440c06b497b1": [
     "src/main/file-associations.ts"
+  ],
+  "2296b7344bc6": [
+    "src/renderer/src/document-runtime.ts"
   ],
   "78fc79d2cefd": [
     "src/shared/source-operations.ts"

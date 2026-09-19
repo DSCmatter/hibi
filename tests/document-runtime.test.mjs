@@ -17,10 +17,11 @@ const document = (text, overrides = {}) => ({
   canAutosave: true,
   ...overrides,
 })
-const fixture = () => {
+const fixture = (options = {}) => {
   const operations = [],
     errors = []
   const runtime = new DocumentRuntime({
+    ...options,
     enqueue: (op) => operations.push(op),
     onError: (error) => errors.push(error),
   })
@@ -91,5 +92,156 @@ test('runtime treats whole-source line-ending transforms as explicit atomic comp
   assert.equal(operations.length, 1)
   runtime.session().undo()
   assert.equal(runtime.get().markdown, 'a\r\nb\n')
+  runtime.dispose()
+})
+
+test('combined history limits trim older tabs without changing their source or saved baselines', () => {
+  const { runtime, errors } = fixture({ historyGroups: 3 })
+  const tabs = ['one', 'two'].map((id) => ({
+    id,
+    name: `${id}.md`,
+    dirty: true,
+  }))
+  runtime.activate(document('a', { tabs }))
+  const first = runtime.session()
+  runtime.replace('a1')
+  runtime.replace('a12')
+  const firstDocument = { ...runtime.get() }
+  const firstSource = first.snapshot(),
+    firstSaved = first.savedSnapshot()
+  runtime.activate(
+    document('b', { tabId: 'two', id: 'file-two', revision: 2, tabs }),
+  )
+  const second = runtime.session()
+  first.counters(true)
+  runtime.replace('b1')
+  runtime.replace('b12')
+  assert.equal(runtime.retainedHistory().groups, 3)
+  assert.deepEqual(first.historyDepth(), { undo: 1, redo: 0 })
+  assert.deepEqual(second.historyDepth(), { undo: 2, redo: 0 })
+  assert.equal(first.snapshot(), firstSource)
+  assert.equal(first.savedSnapshot(), firstSaved)
+  assert.equal(first.counters().materializations, 0)
+  assert.equal(first.state().dirty, true)
+  runtime.activate({ ...firstDocument, revision: 3, tabs })
+  assert.equal(runtime.session(), first)
+  runtime.replace('a123')
+  assert.deepEqual(second.historyDepth(), { undo: 1, redo: 0 })
+  first.undo()
+  first.undo()
+  assert.equal(runtime.get().markdown, 'a1')
+  assert.equal(first.undo(), null)
+  assert.equal(runtime.get().dirty, true)
+  runtime.activate({ ...runtime.get(), revision: 4, tabs: [tabs[0]] })
+  assert.deepEqual(runtime.retainedHistory(), {
+    ...first.historySize(),
+    sessions: 1,
+  })
+  assert.throws(
+    () => second.edit([{ from: 0, to: 0, insert: 'x' }], 'source', 'closed'),
+    /disposed/,
+  )
+  runtime.activate(document('replacement', { revision: 5 }))
+  assert.deepEqual(runtime.retainedHistory(), {
+    bytes: 0,
+    groups: 0,
+    sessions: 0,
+  })
+  assert.deepEqual(errors, [])
+  runtime.dispose()
+})
+
+test('combined history byte limits release payloads, and inactive completed edits are accounted for', () => {
+  const { runtime, errors } = fixture({ historyBytes: 300 })
+  const tabs = ['one', 'two'].map((id) => ({
+    id,
+    name: `${id}.md`,
+    dirty: true,
+  }))
+  runtime.activate(document('', { tabs }))
+  const first = runtime.session()
+  runtime.replace('a'.repeat(50))
+  runtime.activate(
+    document('', { tabId: 'two', id: 'file-two', revision: 2, tabs }),
+  )
+  const second = runtime.session()
+  runtime.replace('b'.repeat(50))
+  assert.equal(first.historySize().groups, 0)
+  assert.equal(first.snapshot().materialize(), 'a'.repeat(50))
+  assert.ok(runtime.retainedHistory().bytes <= 300)
+  first.edit([{ from: 0, to: 0, insert: 'c'.repeat(50) }], 'source', 'inactive')
+  assert.equal(second.historySize().groups, 0)
+  assert.equal(second.snapshot().materialize(), 'b'.repeat(50))
+  assert.deepEqual(runtime.retainedHistory(), {
+    ...first.historySize(),
+    sessions: 1,
+  })
+  runtime.dispose()
+  assert.deepEqual(runtime.retainedHistory(), {
+    bytes: 0,
+    groups: 0,
+    sessions: 0,
+  })
+  assert.deepEqual(errors, [])
+})
+
+test('history accounting is updated before an eviction observer edits another session', () => {
+  const { runtime, errors } = fixture({ historyGroups: 2 })
+  const tabs = ['one', 'two', 'three'].map((id) => ({
+    id,
+    name: `${id}.md`,
+    dirty: true,
+  }))
+  runtime.activate(document('a', { tabs }))
+  const first = runtime.session()
+  runtime.replace('a1')
+  runtime.activate(
+    document('b', { tabId: 'two', id: 'file-two', revision: 2, tabs }),
+  )
+  const second = runtime.session()
+  runtime.replace('b1')
+  runtime.activate(
+    document('c', { tabId: 'three', id: 'file-three', revision: 3, tabs }),
+  )
+  const third = runtime.session()
+  let observed = false
+  first.subscribe(() => {
+    if (observed) return
+    observed = true
+    second.edit([{ from: 2, to: 2, insert: '2' }], 'source', 'observer')
+  })
+  runtime.replace('c1')
+  assert.equal(observed, true)
+  assert.equal(first.snapshot().materialize(), 'a1')
+  assert.equal(second.snapshot().materialize(), 'b12')
+  assert.equal(third.snapshot().materialize(), 'c1')
+  assert.equal(runtime.retainedHistory().groups, 2)
+  assert.equal(
+    first.historySize().groups +
+      second.historySize().groups +
+      third.historySize().groups,
+    2,
+  )
+  assert.deepEqual(errors, [])
+  runtime.dispose()
+})
+
+test('combined history limits reject invalid values and allow history-free editing', () => {
+  for (const invalid of [-1, NaN, Infinity, 1.5]) {
+    assert.throws(() => fixture({ historyGroups: invalid }), /Invalid/)
+    assert.throws(() => fixture({ historyBytes: invalid }), /Invalid/)
+  }
+  const { runtime, errors } = fixture({ historyGroups: 0, historyBytes: 0 })
+  runtime.activate(document('a'))
+  runtime.replace('b')
+  assert.equal(runtime.get().markdown, 'b')
+  assert.equal(runtime.get().dirty, true)
+  assert.equal(runtime.session().state().canUndo, false)
+  assert.deepEqual(runtime.retainedHistory(), {
+    bytes: 0,
+    groups: 0,
+    sessions: 0,
+  })
+  assert.deepEqual(errors, [])
   runtime.dispose()
 })
