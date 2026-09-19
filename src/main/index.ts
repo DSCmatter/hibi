@@ -453,12 +453,8 @@ function createWindow(): void {
   })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   window.webContents.on('will-frame-navigate', (event) => {
-    // Vite reloads this page when a change cannot be applied in place.
-    if (
-      !devUrl ||
-      !event.isMainFrame ||
-      !isTrustedRendererUrl(event.url, rendererUrl)
-    )
+    // Recovery and Vite may reload the main frame's exact trusted entrypoint.
+    if (!event.isMainFrame || !isTrustedRendererUrl(event.url, rendererUrl))
       event.preventDefault()
   })
   window.webContents.on('will-redirect', (event) => event.preventDefault())

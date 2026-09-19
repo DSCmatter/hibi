@@ -218,19 +218,28 @@ test('desktop launch, isolation, offline reload, and recovery', {
   })
 
   await t.test('navigation and popup requests are denied', async () => {
-    await app.evaluate(({ BrowserWindow }) => {
-      const contents = BrowserWindow.getAllWindows()[0].webContents
-      globalThis.navigationPrevented = new Promise((resolve) =>
-        contents.once('will-frame-navigate', (event) =>
-          resolve(event.defaultPrevented),
-        ),
+    for (const destination of [
+      'https://example.com',
+      'app://hibi/assets/index.html',
+      'app://hibi/?injected=1',
+    ]) {
+      await app.evaluate(({ BrowserWindow }) => {
+        const contents = BrowserWindow.getAllWindows()[0].webContents
+        globalThis.navigationPrevented = new Promise((resolve) =>
+          contents.once('will-frame-navigate', (event) =>
+            resolve(event.defaultPrevented),
+          ),
+        )
+      })
+      await page.evaluate((destination) => {
+        location.href = destination
+      }, destination)
+      assert.equal(
+        await app.evaluate(() => globalThis.navigationPrevented),
+        true,
       )
-    })
-    await page.evaluate(() => {
-      location.href = 'https://example.com'
-    })
-    assert.equal(await app.evaluate(() => globalThis.navigationPrevented), true)
-    assert.equal(page.url(), 'app://hibi/')
+      assert.equal(page.url(), 'app://hibi/')
+    }
     assert.equal(
       await page.evaluate(() => window.open('https://example.com') === null),
       true,

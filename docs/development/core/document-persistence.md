@@ -10,6 +10,8 @@ Preload announces journal readiness before exposing editing APIs. Closing a wind
 
 The main-process snapshot survives a renderer crash. It is not a disk journal: a whole-app crash or power loss can still lose unsaved work. Autosave and ordinary saving provide disk persistence, including the existing checks for external file changes.
 
+The recovery screen can reload the main frame's trusted app entrypoint and recover the native snapshot. The navigation guard allows that same entrypoint in production and development while rejecting other paths, query strings, external destinations and subframe navigation. A failed editor-module load uses this same recovery path.
+
 Saving captures a particular immutable source snapshot. Completing that write updates the saved baseline for that snapshot, while newer source remains dirty. Exact source operations reject boundaries inside CRLF. The legacy bridge preserves its previous raw-offset meaning by extending only a split CRLF boundary before applying it to the store.
 
 Renderer migration to exact operation production is ongoing; legacy producers may still flatten and diff source before enqueueing. Receipt-horizon resynchronization and sender backpressure remain separate migration work. See the [document-engine migration](document-engine.md) for the distinction between implemented foundations and complete editor integration.
