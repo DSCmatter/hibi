@@ -5,6 +5,7 @@ import type {
   DocumentWorkerRequest,
   MetadataDialect,
 } from '../../shared/document-worker-protocol.ts'
+import { reportDiagnosticFailure } from '../../shared/local-diagnostics-observer.ts'
 import type { SourceOwnerPage } from '../../shared/markdown-source-model.ts'
 import type { SourceSnapshot } from '../../shared/source-buffer.ts'
 import type { SourceOperation } from '../../shared/source-operations.ts'
@@ -447,12 +448,16 @@ export class DocumentWorkerClient {
       this.#reply(event.data)
     worker.onerror = (event) => {
       event.preventDefault()
-      if (epoch === this.#epoch && this.#worker === worker)
+      if (epoch === this.#epoch && this.#worker === worker) {
+        reportDiagnosticFailure('SOURCE_WORKER_FAILED', event, worker)
         this.#fail(new Error('Could not start document find.'))
+      }
     }
-    worker.onmessageerror = () => {
-      if (epoch === this.#epoch && this.#worker === worker)
+    worker.onmessageerror = (event) => {
+      if (epoch === this.#epoch && this.#worker === worker) {
+        reportDiagnosticFailure('SOURCE_WORKER_FAILED', event, worker)
         this.#fail(new Error('Could not read a document worker reply.'))
+      }
     }
     this.#sent = snapshot.version
     this.#loaded = true

@@ -17,13 +17,26 @@ import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
 import { type AppCommand, HOTKEY_CHANNELS } from '../shared/hotkeys'
 import { IMPORT_CHANNELS } from '../shared/imports'
+import { DIAGNOSTIC_CHANNEL } from '../shared/local-diagnostics'
 import { MEDIA_CHANNELS } from '../shared/media'
 import { SIDELOAD_CHANNELS } from '../shared/sideload'
 import { UI_CASE_CHANNEL } from '../shared/ui-case'
 import { WORKSPACE_CHANNELS, type WorkspaceState } from '../shared/workspace'
 import { WORKSPACE_SETTINGS_CHANNELS } from '../shared/workspace-settings'
+import { DiagnosticProducer } from './local-diagnostics'
 
 if (process.isMainFrame) {
+  try {
+    const diagnostics = new DiagnosticProducer((operation, token, body) =>
+      transport.invoke(DIAGNOSTIC_CHANNEL, operation, token, body),
+    )
+    contextBridge.exposeInMainWorld('hibiDiagnostics', {
+      record: (wire: unknown) => diagnostics.record(wire),
+      configuration: () => diagnostics.configuration,
+    })
+  } catch {
+    /* Diagnostics cannot prevent the document bridge from starting. */
+  }
   let checkpoint: (() => JournalCheckpoint) | undefined
   const journal = createDocumentJournal(
     (change) => transport.invoke(DOCUMENT_CHANNELS.append, change),

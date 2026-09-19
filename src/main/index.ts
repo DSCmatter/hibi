@@ -94,6 +94,7 @@ import {
   openExternalDocumentLink,
   openRemoteDocument,
 } from './links'
+import { LocalDiagnostics } from './local-diagnostics/runtime'
 import {
   attachMedia,
   openDroppedFile,
@@ -127,6 +128,7 @@ import {
   updateWorkspaceSettings,
 } from './workspace-settings'
 
+const localDiagnostics = new LocalDiagnostics()
 startupMark('main-entry')
 app.setName('hibi')
 // Let held Vim motions repeat instead of opening macOS's accent picker.
@@ -487,6 +489,7 @@ function createWindow(): void {
   window.webContents.on('did-finish-load', () => {
     rendererGone = false
   })
+  localDiagnostics.observeWindow(window)
   void window.loadURL(rendererUrl).catch((error: unknown) => {
     // Vite dependency optimization can replace the initial navigation with a reload.
     if (
@@ -598,6 +601,7 @@ function installMenu(): void {
       ],
     },
     { role: 'windowMenu' },
+    { role: 'help', submenu: localDiagnostics.menuItems() },
   ]
   const built = Menu.buildFromTemplate(menu)
   if (getUiCase() === 'lowercase') {
@@ -615,6 +619,18 @@ function installMenu(): void {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
+  localDiagnostics.start({
+    userData: app.getPath('userData'),
+    rendererUrl,
+    trusted: (event) => {
+      try {
+        trustedWindow(event)
+        return true
+      } catch {
+        return false
+      }
+    },
+  })
   externalFiles.push(
     ...externalFileArguments(process.argv, process.cwd(), !app.isPackaged),
   )

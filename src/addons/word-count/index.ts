@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/core'
 import { isMarkdownDocument } from '../../shared/document-types'
+import { reportDiagnosticFailure } from '../../shared/local-diagnostics-observer'
 import { defineAddon } from '../api'
 import type { countText } from './count'
 import manifest from './manifest'
@@ -11,6 +12,10 @@ export default defineAddon({
     const worker = new Worker(new URL('./counter.worker.ts', import.meta.url), {
       type: 'module',
     })
+    const failed = (event: Event) =>
+      reportDiagnosticFailure('WORD_COUNT_WORKER_FAILED', event, worker)
+    worker.addEventListener('error', failed)
+    worker.addEventListener('messageerror', failed)
     const status = context.statusBar.register({ id: 'total', label: '' })
     let editor: Editor | null = null
     let frame = 0
@@ -73,6 +78,8 @@ export default defineAddon({
     context.editor.onDocumentChange(refresh)
     stop = () => {
       cancelAnimationFrame(frame)
+      worker.removeEventListener('error', failed)
+      worker.removeEventListener('messageerror', failed)
       worker.terminate()
     }
   },

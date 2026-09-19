@@ -19,6 +19,7 @@ import {
 import type { TextProjection } from '../shared/document-projection'
 import { getAddonStates } from './addons'
 import { getDocument } from './document'
+import { reportAnalysisProcessFailure } from './local-diagnostics/owned'
 import { installedAddons, installedDocumentationPath } from './sideload'
 
 const CSP =
@@ -183,12 +184,17 @@ async function start(runtime: Runtime) {
     contents.on('will-navigate', (event) => event.preventDefault())
     contents.on('will-frame-navigate', (event) => event.preventDefault())
     contents.on('will-attach-webview', (event) => event.preventDefault())
-    contents.on('render-process-gone', () =>
+    contents.on('render-process-gone', (_event, details) => {
+      if (
+        runtimes.get(runtime.owner) === runtime &&
+        details.reason !== 'clean-exit'
+      )
+        reportAnalysisProcessFailure(details.reason, details.exitCode)
       stop(runtime, {
         status: 'failed',
         message: 'The analyzer stopped. Try again.',
-      }),
-    )
+      })
+    })
     const sender = (event: IpcMainEvent) =>
       event.sender === contents &&
       event.senderFrame === contents.mainFrame &&

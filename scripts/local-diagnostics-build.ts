@@ -1,0 +1,107 @@
+import { execFileSync } from 'node:child_process'
+import { resolve } from 'node:path'
+import type { Plugin } from 'vite'
+
+export function diagnosticsDefines() {
+  let build = 'unknown'
+  try {
+    const revision = execFileSync('git', ['rev-parse', 'HEAD'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+    const dirty =
+      execFileSync('git', ['status', '--porcelain'], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).length > 0
+    if (/^[a-f0-9]{40}$/.test(revision))
+      build = `${revision}${dirty ? '-dirty' : ''}`
+  } catch {
+    /* Source archives can legitimately have no Git metadata. */
+  }
+  const profile = process.env.HIBI_DIAGNOSTIC_PROFILE
+  return {
+    __HIBI_DIAGNOSTIC_BUILD__: JSON.stringify(build),
+    __HIBI_DIAGNOSTIC_PROFILE__: JSON.stringify(
+      profile === 'release' || profile === 'debug' ? profile : 'auto',
+    ),
+    // Comparative test builds override this define through their own config.
+    // No production CLI, environment lookup or renderer API can disable logging.
+    __HIBI_DIAGNOSTICS_TEST_DISABLED__: 'false',
+  }
+}
+
+export function diagnosticsBuild() {
+  const root = `${resolve('.').replaceAll('\\', '/')}/`
+  const workers = new Set<string>()
+  const artifact = (name: string) =>
+    name.length <= 200 && /^assets\/[a-zA-Z0-9._-]+\.js$/.test(name)
+  const trustedModules = (modules: Record<string, unknown>) => {
+    const names = Object.keys(modules)
+    return (
+      names.length > 0 &&
+      names.every((name) => {
+        const path = name.replaceAll('\\', '/')
+        if (path.includes('/src/useraddons/')) return false
+        if (
+          /^\0(?:vite\/|commonjsHelpers\.js$|commonjs-dynamic-modules$)/.test(
+            path,
+          )
+        )
+          return true
+        if (
+          path.startsWith(`${root}docs/licenses/`) &&
+          path.endsWith('.md?raw')
+        )
+          return true
+        const file = path.replace(/^\0/, '').split('?')[0] ?? ''
+        return (
+          file.startsWith(`${root}src/`) ||
+          file.startsWith(`${root}node_modules/`)
+        )
+      })
+    )
+  }
+  const worker = (): Plugin => ({
+    name: 'local-diagnostic-worker-artifacts',
+    generateBundle(_options, bundle) {
+      // Vite later turns worker chunks into opaque assets. Approve them here,
+      // while their actual module ownership is still available.
+      for (const [name, entry] of Object.entries(bundle)) {
+        if (
+          artifact(name) &&
+          entry.type === 'chunk' &&
+          trustedModules(entry.modules) &&
+          workers.size < 256
+        )
+          workers.add(name)
+      }
+    },
+  })
+  const renderer: Plugin = {
+    name: 'local-diagnostic-artifacts',
+    generateBundle(_options, bundle) {
+      const files = Object.entries(bundle)
+        .filter(
+          ([name, entry]) =>
+            artifact(name) &&
+            (entry.type === 'chunk'
+              ? trustedModules(entry.modules)
+              : workers.has(name)),
+        )
+        .map(([name]) => name)
+        .sort()
+        .slice(0, 256)
+      const artifacts = files.map((file, index) => [file, index + 100])
+      this.emitFile({
+        type: 'asset',
+        fileName: 'diagnostic-artifacts.json',
+        source: JSON.stringify({ schema: 1, artifacts }),
+      })
+      // Keep cached worker approvals during watch builds, but forget outputs
+      // that no longer belong to the current renderer bundle.
+      for (const name of workers) if (!(name in bundle)) workers.delete(name)
+    },
+  }
+  return { renderer, worker }
+}

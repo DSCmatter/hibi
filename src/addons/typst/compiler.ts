@@ -3,6 +3,12 @@ import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, type UtilityProcess, utilityProcess } from 'electron'
+import {
+  attachDiagnosticService,
+  diagnosticServiceName,
+  expectDiagnosticStop,
+  reportOwnedFailure,
+} from '../../main/local-diagnostics/owned'
 import { documentProject } from '../_shared/document-project'
 import type { NativeAddonContext } from '../api'
 import type { TypstResult } from './types'
@@ -35,6 +41,7 @@ const dependencies = new Map<string, Set<string>>()
 
 function terminate(worker: UtilityProcess | null) {
   if (!worker) return
+  expectDiagnosticStop(worker)
   // A synchronous native compile may never process SIGTERM; terminate only this owned utility process.
   if (worker.pid) {
     try {
@@ -126,11 +133,12 @@ export async function compileTypst(
             'Could not block network access for the Typst preview.',
           )
         const proxy = `http://127.0.0.1:${address.port}`
+        const diagnosticName = diagnosticServiceName('typst')
         child = utilityProcess.fork(
           join(app.getAppPath(), 'out/main/typst-worker.js'),
           [],
           {
-            serviceName: 'hibi typst',
+            serviceName: diagnosticName,
             stdio: 'pipe',
             env: {
               ...process.env,
@@ -151,6 +159,7 @@ export async function compileTypst(
             },
           },
         )
+        attachDiagnosticService(child, diagnosticName)
         child.stderr?.on('data', () => {})
         child.stdout?.on('data', () => {})
         child.on('error', () => {}) // The exit handler rejects the active job and permits a fresh worker.
@@ -225,6 +234,7 @@ export async function compileTypst(
             reject(new Error('Typst compilation canceled.'))
           }
           const timer = setTimeout(() => {
+            reportOwnedFailure('COMPILER_TIMEOUT', 'typst')
             clean()
             terminate(worker)
             child = null

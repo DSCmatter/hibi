@@ -2164,6 +2164,9 @@
   "3d171d73a47a": [
     "src/renderer/src/FormatEditor.tsx"
   ],
+  "d7cd79b5925c": [
+    "src/main/local-diagnostics/runtime.ts"
+  ],
   "15b61974b270": [
     "src/renderer/src/WorkspaceSettings.tsx"
   ],
@@ -2616,6 +2619,9 @@
   ],
   "9fa7894a6b62": [
     "src/site/main.tsx"
+  ],
+  "cb30b7d97617": [
+    "src/main/local-diagnostics/runtime.ts"
   ],
   "ca381c1e76e6": [
     "src/shared/hotkeys.ts"
@@ -3119,6 +3125,12 @@
   ],
   "d9b50cc1d6df": [
     "src/main/document.ts"
+  ],
+  "930c5eba1097": [
+    "src/main/local-diagnostics/runtime.ts"
+  ],
+  "885da35a7ad7": [
+    "src/main/local-diagnostics/runtime.ts"
   ],
   "b568cdeff403": [
     "src/shared/hotkeys.ts"
@@ -4395,6 +4407,9 @@
   "b3afd9209200": [
     "src/main/document.ts"
   ],
+  "05093a331f0b": [
+    "src/main/local-diagnostics/runtime.ts"
+  ],
   "bc344ccd6540": [
     "src/renderer/src/ImportDialog.tsx"
   ],
@@ -4422,6 +4437,12 @@
   "277089d91c0b": [
     "src/renderer/src/VersionHistory.tsx"
   ],
+  "060c0785c6fe": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
+  "a6bd834d77d1": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
   "0d38e23a44a2": [
     "src/ui/colorschemes.ts"
   ],
@@ -4433,6 +4454,15 @@
   ],
   "bb812e0ca964": [
     "src/renderer/src/document-formats.ts"
+  ],
+  "5e430914716e": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
+  "664d2e91b8fe": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
+  "ef6d3f29da74": [
+    "src/main/local-diagnostics/sink.ts"
   ],
   "f1f44e1b7d9a": [
     "src/ui/DialogProvider.tsx"
@@ -4463,6 +4493,9 @@
   ],
   "d8a4351e1a76": [
     "src/renderer/src/FormatEditor.tsx"
+  ],
+  "221d2f9633bf": [
+    "src/main/local-diagnostics/sink.ts"
   ],
   "77ebec0d0b40": [
     "src/renderer/src/code-languages.ts"
@@ -4533,6 +4566,21 @@
   ],
   "0620e3b71e5a": [
     "src/ui/Sonner.tsx"
+  ],
+  "c14c177f108b": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
+  "d9a5a6e310b3": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
+  "2b308a745e54": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
+  "fef4e83a4c41": [
+    "src/main/local-diagnostics/sink.ts"
+  ],
+  "3252dd23a01b": [
+    "src/main/local-diagnostics/sink.ts"
   ],
   "7a30651bca5a": [
     "src/main/index.ts"

@@ -67,6 +67,62 @@ function faultyOpen(override) {
 }
 
 for (const profile of ['release', 'debug']) {
+  test(`${profile}: immediate reports retain admitted incidents and refuse linked export targets`, async (t) => {
+    const { root, sink } = await fixture(t, profile)
+    sink.enqueue(event('RENDERER_ERROR'))
+    assert.match(sink.report(), /RENDERER_ERROR/)
+    assert.equal(sink.report().includes('SINK_READY'), profile === 'debug')
+    const original = join(root, 'document.txt')
+    await fs.writeFile(original, 'PRIVATE_DOCUMENT')
+    for (const link of ['symbolic', 'hard']) {
+      const destination = join(root, `${link}.txt`)
+      if (link === 'symbolic') await fs.symlink(original, destination)
+      else await fs.link(original, destination)
+      await assert.rejects(sink.saveReport(destination))
+    }
+    assert.equal(await fs.readFile(original, 'utf8'), 'PRIVATE_DOCUMENT')
+    const exported = join(root, 'report.txt')
+    await sink.saveReport(exported)
+    assert.match(await fs.readFile(exported, 'utf8'), /RENDERER_ERROR/)
+    assert.ok(!sink.report().includes('PRIVATE_DOCUMENT'))
+  })
+
+  test(`${profile}: failed final marker cannot turn an uncertain run into a clean run`, async (t) => {
+    for (const fault of ['close', 'rename']) {
+      let ending = false
+      const storage = faultyOpen((handle, key, path) =>
+        key === 'close' && path.endsWith('.log')
+          ? async () => {
+              await handle.close()
+              if (ending && fault === 'close') throw new Error('private close')
+            }
+          : null,
+      )
+      storage.rename = async (from, to) => {
+        if (ending && fault === 'rename' && to.endsWith('run-state.txt'))
+          throw new Error('private rename')
+        return fs.rename(from, to)
+      }
+      const { sink, directory } = await fixture(t, profile, {
+        filesystem: storage,
+      })
+      await sink.flush()
+      ending = true
+      await sink.finish()
+      assert.equal(sink.status.state, 'failed')
+      assert.equal(
+        JSON.parse(await fs.readFile(join(directory, 'run-state.txt'), 'utf8'))
+          .state,
+        'active',
+      )
+      assert.equal(
+        sink.report().includes('SINK_UNAVAILABLE'),
+        profile === 'debug',
+      )
+      assert.ok(!sink.report().includes('private'))
+    }
+  })
+
   test(`${profile}: a hung write holds one bounded batch and drops pressure without blocking callers`, async (t) => {
     let blocked = false
     let release

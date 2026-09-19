@@ -5,6 +5,12 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { app, utilityProcess } from 'electron'
+import {
+  attachDiagnosticService,
+  diagnosticServiceName,
+  expectDiagnosticStop,
+  reportOwnedFailure,
+} from '../../main/local-diagnostics/owned'
 import type { AddonManifest, NativeAddon, NativeAddonContext } from '../api'
 import { type LatexPackageTask, packageName } from '../math/packages'
 import { formatImage } from './format-image-native'
@@ -82,11 +88,12 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
     try {
       if (run) await writeFile(entry, data.source, { flag: 'wx', mode: 0o600 })
       if (owner !== generation) throw new Error('Document rendering canceled.')
+      const diagnosticName = diagnosticServiceName('format')
       const worker = utilityProcess.fork(
         join(app.getAppPath(), 'out/main/format-worker.js'),
         [],
         {
-          serviceName: `hibi ${spec.name}`,
+          serviceName: diagnosticName,
           stdio: 'pipe',
           ...(app.isPackaged
             ? {
@@ -102,12 +109,17 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
             : {}),
         },
       )
+      attachDiagnosticService(worker, diagnosticName)
       const children = new Set<number>()
       worker.stdout?.on('data', () => {})
       worker.stderr?.on('data', () => {})
       return await new Promise<FormatResult>((resolve, reject) => {
         let settled = false
-        const finish = (error?: Error, result?: FormatResult) => {
+        const finish = (
+          error?: Error,
+          result?: FormatResult,
+          observedExit = false,
+        ) => {
           if (settled) return
           settled = true
           clearTimeout(timer)
@@ -123,6 +135,7 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
               /* The compiler already exited. */
             }
           }
+          if (!observedExit) expectDiagnosticStop(worker)
           if (worker.pid) {
             try {
               process.kill(worker.pid, 'SIGKILL')
@@ -141,19 +154,24 @@ export function nativeFormat(manifest: AddonManifest): NativeAddon {
           runningPreview = cancel
         }
         const timer = setTimeout(
-          () =>
+          () => {
+            reportOwnedFailure('COMPILER_TIMEOUT', 'format')
             finish(
               new Error(
                 packages
                   ? 'The package request timed out. Try again.'
                   : `The preview took longer than ${run ? 90 : 15} seconds. Try again.`,
               ),
-            ),
+            )
+          },
           run || packages ? 90000 : 15000,
         )
-        worker.once('error', (error) => finish(new Error(String(error))))
+        worker.once('error', (error) => {
+          reportOwnedFailure('COMPILER_PROCESS_FAILED', 'format', error)
+          finish(new Error(String(error)))
+        })
         worker.once('exit', () =>
-          finish(new Error('The preview stopped. Try again.')),
+          finish(new Error('The preview stopped. Try again.'), undefined, true),
         )
         worker.on(
           'message',

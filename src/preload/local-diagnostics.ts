@@ -24,6 +24,8 @@ export class DiagnosticProducer {
   private alive = true
   private inFlight = true
   private inFlightBytes = 0
+  private dropped = 0
+  private readonly unload = () => this.dispose()
   readonly configuration: Promise<string | null>
 
   constructor(
@@ -35,6 +37,22 @@ export class DiagnosticProducer {
   ) {
     this.request = request
     this.configuration = this.connect()
+    try {
+      this.host.addEventListener?.('unload', this.unload, { once: true })
+    } catch {
+      this.dispose()
+    }
+  }
+
+  private get host() {
+    return globalThis as typeof globalThis & {
+      addEventListener?: (
+        event: 'unload',
+        listener: () => void,
+        options: { once: true },
+      ) => void
+      removeEventListener?: (event: 'unload', listener: () => void) => void
+    }
   }
 
   private async connect(): Promise<string | null> {
@@ -77,14 +95,17 @@ export class DiagnosticProducer {
       !this.alive ||
       this.inFlight ||
       !this.session ||
-      this.timer ||
       !this.queue.size.records
     )
       return
-    if (this.queue.size.records >= diagnosticLimits.batchRecords) {
+    if (
+      this.queue.size.records >= diagnosticLimits.batchRecords ||
+      this.queue.size.bytes >= (diagnosticLimits.batchBytes - 64) / 2
+    ) {
       this.flush()
       return
     }
+    if (this.timer) return
     this.timer = setTimeout(() => {
       this.timer = undefined
       this.flush()
@@ -132,22 +153,34 @@ export class DiagnosticProducer {
   }
 
   private summarizeDrops() {
-    const dropped = this.admission.takeDropped() + this.queue.takeDropped()
-    if (dropped)
+    this.dropped = Math.min(
+      diagnosticLimits.counter,
+      this.dropped + this.admission.takeDropped() + this.queue.takeDropped(),
+    )
+    if (
+      this.dropped &&
       this.queue.push(
         JSON.stringify({
           code: 'DIAGNOSTICS_DROPPED',
           stackStatus: 'unavailable',
-          count: Math.min(diagnosticLimits.counter, dropped),
+          count: this.dropped,
         }),
       )
+    )
+      this.dropped = 0
   }
 
   dispose(): void {
     this.alive = false
+    try {
+      this.host.removeEventListener?.('unload', this.unload)
+    } catch {
+      /* The frame may already be gone. */
+    }
     if (this.timer) clearTimeout(this.timer)
     this.timer = undefined
     this.queue.clear()
+    this.dropped = 0
     this.session = null
     this.inFlightBytes = 0
   }

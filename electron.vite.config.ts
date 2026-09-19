@@ -3,10 +3,17 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
 import { analysisBundles, analysisPreload } from './scripts/analysis-bundles'
 import { writeLicenses } from './scripts/licenses'
+import {
+  diagnosticsBuild,
+  diagnosticsDefines,
+} from './scripts/local-diagnostics-build'
 import { startupBundle } from './scripts/startup-bundle'
+
+const diagnosticArtifacts = diagnosticsBuild()
 
 export default defineConfig({
   main: {
+    define: diagnosticsDefines(),
     plugins: [
       { name: 'app-licenses', buildStart: writeLicenses },
       analysisBundles(),
@@ -31,8 +38,8 @@ export default defineConfig({
     },
   },
   renderer: {
-    plugins: [react(), startupBundle()],
-    worker: { format: 'es' },
+    plugins: [react(), startupBundle(), diagnosticArtifacts.renderer],
+    worker: { format: 'es', plugins: () => [diagnosticArtifacts.worker()] },
     build: { target: 'chrome152', minify: 'esbuild' },
     server: { host: '127.0.0.1' },
   },

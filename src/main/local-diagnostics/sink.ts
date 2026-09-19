@@ -237,6 +237,12 @@ export class LocalDiagnosticSink {
         role: 'main',
       }),
     )
+    if (this.profile === 'debug')
+      this.store({
+        code: 'SINK_READY',
+        stackStatus: 'unavailable',
+        role: 'main',
+      })
     this.schedule()
   }
 
@@ -250,22 +256,32 @@ export class LocalDiagnosticSink {
         diagnosticEvents[record.code].severity === 'debug')
     )
       return false
-    const accepted = this.queue.push(
-      wire,
-      diagnosticEvents[record.code].critical,
-    )
+    const accepted = this.store(record)
     if (this.state === 'ready') this.schedule()
     return accepted
   }
 
+  private store(
+    record: SafeDiagnostic,
+    critical = diagnosticEvents[record.code].critical,
+  ) {
+    const owned = { ...record, time: record.time ?? Date.now() }
+    const accepted = this.queue.push(JSON.stringify(owned), critical)
+    if (accepted) this.remember(this.line(owned))
+    return accepted
+  }
+
   private schedule() {
-    if (
-      this.timer ||
-      this.draining ||
-      this.state !== 'ready' ||
-      !this.queue.size.records
-    )
+    if (this.draining || this.state !== 'ready' || !this.queue.size.records)
       return
+    if (
+      this.queue.size.records >= diagnosticLimits.batchRecords ||
+      this.queue.size.bytes >= diagnosticLimits.batchBytes
+    ) {
+      void this.flush()
+      return
+    }
+    if (this.timer) return
     this.timer = setTimeout(() => {
       this.timer = undefined
       void this.flush()
@@ -331,9 +347,11 @@ export class LocalDiagnosticSink {
     name: string,
     fields: Record<string, unknown>,
     maximum: number,
+    contentMaximum = maximum,
   ) {
     const data = Buffer.from(`${JSON.stringify(this.header(fields))}\n`)
-    if (data.length > maximum) throw new Error('diagnostic summary limit')
+    if (data.length > contentMaximum)
+      throw new Error('diagnostic summary limit')
     const handle = await this.openOwned(name, maximum)
     try {
       await handle.truncate(0)
@@ -344,7 +362,7 @@ export class LocalDiagnosticSink {
   }
 
   private line(record: SafeDiagnostic) {
-    return `${JSON.stringify({ schema: 1, run: this.run, profile: this.profile, time: Date.now(), ...record })}\n`
+    return `${JSON.stringify({ schema: 1, run: this.run, profile: this.profile, time: record.time ?? Date.now(), severity: diagnosticEvents[record.code].severity, label: record.code.toLowerCase().replaceAll('_', ' '), ...record })}\n`
   }
 
   private remember(line: string) {
@@ -393,7 +411,6 @@ export class LocalDiagnosticSink {
         if (pending.length + line.length > diagnosticLimits.batchBytes)
           await write()
         pending += line
-        this.remember(line)
         incident ||=
           diagnosticEvents[record.code].severity === 'error' ||
           diagnosticEvents[record.code].critical
@@ -420,13 +437,13 @@ export class LocalDiagnosticSink {
       }
       const dropped = this.queue.takeDropped()
       if (dropped)
-        this.queue.push(
-          JSON.stringify({
+        this.store(
+          {
             code: 'DIAGNOSTICS_DROPPED',
             stackStatus: 'unavailable',
             count: dropped,
             role: 'main',
-          }),
+          },
           true,
         )
     }
@@ -454,9 +471,21 @@ export class LocalDiagnosticSink {
     if (this.timer) clearTimeout(this.timer)
     this.timer = undefined
     this.queue.clear()
+    if (this.profile === 'debug')
+      this.remember(
+        this.line({
+          code: 'SINK_UNAVAILABLE',
+          stackStatus: 'unavailable',
+          role: 'main',
+        }),
+      )
     const handle = this.handle
     this.handle = null
-    await handle?.close().catch(() => {})
+    try {
+      await handle?.close()
+    } catch {
+      /* The sink is already retired. */
+    }
   }
 
   // Called only after final, non-cancelable shutdown confirmation. Best effort:
@@ -469,29 +498,75 @@ export class LocalDiagnosticSink {
   private async closeCleanly() {
     await this.ready
     if (this.state !== 'ready') return
-    this.queue.push(
-      JSON.stringify({
-        code: 'RUN_ENDED',
-        stackStatus: 'unavailable',
-        role: 'main',
-      }),
-    )
+    this.store({
+      code: 'RUN_ENDED',
+      stackStatus: 'unavailable',
+      role: 'main',
+    })
     await this.flush()
     if (this.state !== 'ready') return
     try {
+      const handle = this.handle
+      this.handle = null
+      await handle?.close()
       await this.writeSmall(
-        'run-state.txt',
+        'incident-next.txt',
         { state: 'clean' },
+        diagnosticLimits.summaryBytes,
         diagnosticLimits.markerBytes,
+      )
+      const marker = await this.openOwned(
+        'run-state.txt',
+        diagnosticLimits.markerBytes,
+      )
+      await marker.close()
+      await this.checkDirectory()
+      await this.fs.rename(
+        join(this.directory, 'incident-next.txt'),
+        join(this.directory, 'run-state.txt'),
       )
     } catch {
       await this.fail()
       return
     }
     this.state = 'closed'
-    const handle = this.handle
-    this.handle = null
-    await handle?.close().catch(() => {})
+  }
+
+  // Only the native save dialog supplies this explicit destination. Refuse a
+  // symlink/hardlink leaf before truncating; never inspect document contents.
+  async saveReport(path: string): Promise<void> {
+    const data = Buffer.from(this.report(), 'utf8')
+    if (data.length > diagnosticLimits.summaryBytes)
+      throw new Error('diagnostic report limit')
+    const before = await this.fs.lstat(path).catch((error: unknown) => {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
+      throw error
+    })
+    if (
+      before &&
+      (!before.isFile() || before.isSymbolicLink() || before.nlink !== 1)
+    )
+      throw new Error('unsafe report destination')
+    const handle = await this.fs.open(
+      path,
+      constants.O_WRONLY |
+        constants.O_NOFOLLOW |
+        (before ? 0 : constants.O_CREAT | constants.O_EXCL),
+      0o600,
+    )
+    try {
+      const stat = await handle.stat()
+      if (
+        !stat.isFile() ||
+        stat.nlink !== 1 ||
+        (before && (before.ino !== stat.ino || before.dev !== stat.dev))
+      )
+        throw new Error('changed report destination')
+      await handle.truncate(0)
+      await this.writeComplete(handle, data, 0)
+    } finally {
+      await handle.close()
+    }
   }
 
   // Explicit report action uses only already-projected memory, never app state.

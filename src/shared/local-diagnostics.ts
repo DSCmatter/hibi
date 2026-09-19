@@ -47,6 +47,7 @@ export const diagnosticEvents = {
     critical: true,
   },
   MAIN_EXCEPTION: { severity: 'error', producer: false, critical: true },
+  MAIN_REJECTION: { severity: 'error', producer: false, critical: true },
   RENDERER_ERROR: { severity: 'error', producer: true, critical: false },
   RENDERER_REJECTION: { severity: 'error', producer: true, critical: false },
   REACT_RENDER_FAILED: { severity: 'error', producer: true, critical: false },
@@ -75,8 +76,11 @@ export const diagnosticEvents = {
     producer: false,
     critical: true,
   },
+  COMPILER_TIMEOUT: { severity: 'warning', producer: false, critical: false },
   SERVICE_STARTED: { severity: 'debug', producer: false, critical: false },
   SERVICE_STOPPED: { severity: 'debug', producer: false, critical: false },
+  SINK_READY: { severity: 'debug', producer: false, critical: false },
+  SINK_UNAVAILABLE: { severity: 'debug', producer: false, critical: false },
   DIAGNOSTICS_DROPPED: { severity: 'warning', producer: true, critical: false },
 } as const
 export type DiagnosticCode = keyof typeof diagnosticEvents
@@ -136,6 +140,7 @@ export type SafeDiagnostic = Readonly<{
   role?: (typeof diagnosticRoles)[number]
   reason?: (typeof processReasons)[number]
   exitCode?: number
+  time?: number
 }>
 export type ArtifactCatalog = ReadonlyMap<string, number>
 export type DiagnosticSession = {
@@ -209,7 +214,7 @@ export function decodeDiagnostic(
     if (!data || typeof data !== 'object' || Array.isArray(data)) return null
     const keys = Object.keys(data)
     if (
-      keys.length > 8 ||
+      keys.length > 9 ||
       keys.some(
         (key) =>
           ![
@@ -221,13 +226,16 @@ export function decodeDiagnostic(
             'role',
             'reason',
             'exitCode',
+            'time',
           ].includes(key),
       )
     )
       return null
     if (
       producer &&
-      ['role', 'reason', 'exitCode'].some((key) => Object.hasOwn(data, key))
+      ['role', 'reason', 'exitCode', 'time'].some((key) =>
+        Object.hasOwn(data, key),
+      )
     )
       return null
     if (data.role !== undefined && !diagnosticRoles.includes(data.role))
@@ -238,7 +246,12 @@ export function decodeDiagnostic(
       data.exitCode !== undefined &&
       (!Number.isInteger(data.exitCode) ||
         data.exitCode < -2147483648 ||
-        data.exitCode > 2147483647)
+        data.exitCode > 4294967295)
+    )
+      return null
+    if (
+      data.time !== undefined &&
+      (!Number.isSafeInteger(data.time) || data.time < 0)
     )
       return null
     const code: unknown = data.code
