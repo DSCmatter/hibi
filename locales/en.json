@@ -485,6 +485,7 @@
   "c7c62a20bbf5": "Find request is stale.",
   "15182c44f611": "Find selection is outside its source snapshot.",
   "5c1d80f74650": "Find starts outside a complete source character.",
+  "996e3be92632": "Find storage change is stale or untrusted.",
   "2cee7495c451": "Find text exceeds the 65,536-character limit.",
   "17c5a92f32f2": "Find text is too long.",
   "9a836ad69f34": "Find worker stopped responding.",

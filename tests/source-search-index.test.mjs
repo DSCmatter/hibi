@@ -75,3 +75,25 @@ test('canceled scans never publish complete coverage and empty queries have no l
     previous: null,
   })
 })
+
+test('trusted storage swaps preserve completed and in-progress search coverage', () => {
+  for (const complete of [false, true]) {
+    const store = new SourceStore('x '.repeat(10000), {
+      tabId: 'find-storage',
+      revision: 0,
+    })
+    const index = new SourceSearchIndex(store.snapshot(), 'x')
+    const build = index.build()
+    if (complete) finish(build)
+    else build.next()
+    const change = finish(store.prepareCompaction()).result
+    assert.throws(() => index.adoptStorage(change), /untrusted/)
+    store.commitCompaction(change)
+    assert.throws(() => index.adoptStorage({ ...change }), /untrusted/)
+    index.adoptStorage(change)
+    if (!complete) finish(build)
+    assert.equal(index.state().total, 10000)
+    assert.equal(finish(index.locate(12000, 12001)).result.current, 6001)
+    assert.throws(() => index.adoptStorage(change), /stale/)
+  }
+})

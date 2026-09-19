@@ -160,3 +160,54 @@ test('iterable source bootstrap preserves raw seams without joining the document
     /strings/,
   )
 })
+
+test('worker maintenance preserves live find results and disposes its previous replica owner', async (t) => {
+  const commits = []
+  const commit = SourceStore.prototype.commitCompaction
+  t.mock.method(SourceStore.prototype, 'commitCompaction', function (change) {
+    commits.push(change.after.version)
+    return commit.call(this, change)
+  })
+  const f = fixture(t, 'x'.repeat(80 * 4096))
+  f.worker.receive({
+    type: 'edit',
+    epoch: 'first',
+    operation: {
+      document: { tabId: 'a', revision: 0 },
+      operationId: 'holes',
+      baseVersion: 0,
+      contentVersion: 1,
+      origin: 'source',
+      historyGroup: 'holes',
+      changes: Array.from({ length: 80 }, (_, n) => ({
+        from: n * 4096,
+        to: (n + 1) * 4096 - 1,
+        insert: '',
+      })),
+    },
+  })
+  f.find(1, 1, 'x')
+  assert.equal(
+    (await f.next((reply) => reply.type === 'find' && reply.id === 1)).location
+      .total,
+    80,
+  )
+  const deadline = performance.now() + 2000
+  while (!commits.length && performance.now() < deadline)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  assert.deepEqual(commits, [1])
+  f.find(2, 1, 'x', 40, 41)
+  const result = await f.next(
+    (reply) => reply.type === 'find' && reply.id === 2,
+  )
+  assert.equal(result.location.total, 80)
+  assert.equal(result.location.current, 41)
+  f.load('replacement', 'fresh')
+  f.worker.dispose()
+  await new Promise((resolve) => setTimeout(resolve, 550))
+  assert.deepEqual(commits, [1])
+  assert.equal(
+    f.messages.some((reply) => reply.type === 'error'),
+    false,
+  )
+})

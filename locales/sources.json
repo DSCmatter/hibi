@@ -1513,6 +1513,9 @@
   "5c1d80f74650": [
     "src/shared/source-search.ts"
   ],
+  "996e3be92632": [
+    "src/shared/source-search-index.ts"
+  ],
   "2cee7495c451": [
     "src/shared/source-search.ts"
   ],

@@ -3,6 +3,7 @@ import type {
   DocumentWorkerRequest,
 } from './document-worker-protocol.ts'
 import { SourceStore } from './source-buffer.ts'
+import { SourceMaintenance } from './source-maintenance.ts'
 import { SourceSearchIndex } from './source-search-index.ts'
 
 type FindRequest = Extract<DocumentWorkerRequest, { type: 'find' }>
@@ -11,6 +12,7 @@ type FindRequest = Extract<DocumentWorkerRequest, { type: 'find' }>
 export class DocumentWorkerService {
   readonly #post: (reply: DocumentWorkerReply) => void
   #store: SourceStore | null = null
+  #maintenance: SourceMaintenance | null = null
   #epoch = ''
   #index: SourceSearchIndex | null = null
   #query = ''
@@ -33,7 +35,11 @@ export class DocumentWorkerService {
   #fail(stage: 'replica' | 'find', error: unknown, id = this.#request?.id) {
     this.#cancel()
     this.#index = null
-    if (stage === 'replica') this.#store = null
+    if (stage === 'replica') {
+      this.#maintenance?.dispose()
+      this.#maintenance = null
+      this.#store = null
+    }
     this.#post({
       type: 'error',
       epoch: this.#epoch,
@@ -53,6 +59,8 @@ export class DocumentWorkerService {
         throw new Error('Invalid document worker identity.')
       if (message.type === 'load') {
         this.#cancel()
+        this.#maintenance?.dispose()
+        this.#maintenance = null
         this.#index = null
         this.#store = null
         this.#epoch = message.epoch
@@ -73,6 +81,15 @@ export class DocumentWorkerService {
           message.version,
           { maximumBytes: 32 * 1024 * 1024 },
         )
+        const store = this.#store
+        this.#maintenance = new SourceMaintenance(
+          store,
+          (change) => {
+            store.commitCompaction(change)
+            this.#index?.adoptStorage(change)
+          },
+          (error) => this.#fail('replica', error),
+        )
         this.#post({
           type: 'ack',
           epoch: this.#epoch,
@@ -87,6 +104,12 @@ export class DocumentWorkerService {
         this.#cancel()
         this.#index = null
         this.#store.commit(prepared)
+        this.#maintenance!.changed(
+          prepared.operation.changes.reduce(
+            (sum, edit) => sum + edit.to - edit.from + edit.insert.length,
+            0,
+          ),
+        )
         this.#post({
           type: 'ack',
           epoch: this.#epoch,
@@ -178,6 +201,8 @@ export class DocumentWorkerService {
   dispose() {
     this.#disposed = true
     this.#cancel()
+    this.#maintenance?.dispose()
+    this.#maintenance = null
     this.#index = null
     this.#store = null
   }

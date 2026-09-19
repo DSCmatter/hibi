@@ -1,4 +1,8 @@
-import type { SourceSnapshot } from './source-buffer.ts'
+import {
+  acceptedStorageChange,
+  type SourceSnapshot,
+  type SourceStorageChange,
+} from './source-buffer.ts'
 import {
   type LiteralSearchOptions,
   type SourceMatch,
@@ -15,7 +19,7 @@ export type SearchLocation = Readonly<{
 
 /** Sparse restart points retain rank without retaining every match. */
 export class SourceSearchIndex {
-  readonly #source: SourceSnapshot
+  #source: SourceSnapshot
   readonly #query: string
   readonly #options: LiteralSearchOptions
   readonly #checkpoints: RankedMatch[] = []
@@ -31,6 +35,11 @@ export class SourceSearchIndex {
     this.#source = source
     this.#query = query
     this.#options = { caseSensitive: options.caseSensitive ?? false }
+  }
+  adoptStorage(change: SourceStorageChange) {
+    if (!acceptedStorageChange(change) || change.before !== this.#source)
+      throw new Error('Find storage change is stale or untrusted.')
+    this.#source = change.after
   }
   state() {
     return Object.freeze({
