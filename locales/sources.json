@@ -1998,6 +1998,9 @@
   "bcf712e5ce93": [
     "src/shared/source-parser.ts"
   ],
+  "e0d30e96afde": [
+    "src/shared/source-references.ts"
+  ],
   "965a8cfa61e5": [
     "src/renderer/src/addon-views.ts"
   ],
@@ -2941,6 +2944,21 @@
   "74273989b096": [
     "src/renderer/src/FormattingToolbar.tsx"
   ],
+  "9c241dc5ee9d": [
+    "src/shared/source-references.ts"
+  ],
+  "42ece9517888": [
+    "src/shared/source-references.ts"
+  ],
+  "4d6a06685cc6": [
+    "src/shared/source-references.ts"
+  ],
+  "cc46f8be291a": [
+    "src/shared/source-references.ts"
+  ],
+  "8e117ed560ea": [
+    "src/shared/source-references.ts"
+  ],
   "903ae9ad0d9f": [
     "src/addons/git/Panel.tsx"
   ],
@@ -3398,6 +3416,9 @@
     "src/shared/source-owners.ts"
   ],
   "c568849cefd6": [
+    "src/shared/source-owners.ts"
+  ],
+  "5e48333282d5": [
     "src/shared/source-owners.ts"
   ],
   "e4978139d696": [

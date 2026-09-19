@@ -107,3 +107,70 @@ test('owner lookup preserves wide coordinates and scopes identical slots to thei
   assert.equal(first.bySlot(Number.MAX_SAFE_INTEGER), null)
   assert.deepEqual(first.bySlot(tail.owner.slot), tail)
 })
+
+test('owner identity deltas match snapshot oracles without treating prefix shifts as changes', () => {
+  let current = new SourceOwners(
+    Array.from({ length: 100000 }, () => ({ kind: 'body', length: 2 })),
+  )
+  current.bySlot(current.get(0).owner.slot)
+  const before = current
+  current = current.splice(0, 0, [{ kind: 'prefix', length: 9 }])
+  current.counters(true)
+  const delta = current.changesSince(before)
+  assert.deepEqual(delta.changed, [current.get(0).owner])
+  assert.deepEqual(delta.removed, [])
+  assert.ok(current.counters().locator.rowsWritten < 2048)
+  assert.deepEqual(current.changesSince(current), { changed: [], removed: [] })
+
+  let seed = 9123
+  const random = (max) => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+    return seed % max
+  }
+  current = new SourceOwners(
+    Array.from({ length: 500 }, () => ({ kind: 'body', length: 2 })),
+    { pageSize: 8, fanout: 4 },
+  )
+  for (let run = 0; run < 200; run++) {
+    const previous = current
+    const from = random(current.count + 1),
+      to = Math.min(current.count, from + random(8))
+    current = current.splice(
+      from,
+      to,
+      Array.from({ length: random(8) }, () => ({
+        kind: 'changed',
+        length: 1 + random(40),
+      })),
+    )
+    if (current.count)
+      current = current.update(random(current.count), {
+        kind: 'revision',
+        length: 7,
+      })
+    const old = new Map(
+      [...previous.records()].map((row) => [row.owner.slot, row.owner]),
+    )
+    const next = new Map(
+      [...current.records()].map((row) => [row.owner.slot, row.owner]),
+    )
+    const result = current.changesSince(previous)
+    assert.deepEqual(
+      result.changed,
+      [...next.values()].filter((owner) => old.get(owner.slot) !== owner),
+    )
+    assert.deepEqual(
+      result.removed,
+      [...old.values()].filter((owner) => !next.has(owner.slot)),
+    )
+    assert.ok(
+      Object.isFrozen(result) &&
+        Object.isFrozen(result.changed) &&
+        Object.isFrozen(result.removed),
+    )
+  }
+  assert.throws(
+    () => current.changesSince(new SourceOwners([])),
+    /different arenas/,
+  )
+})

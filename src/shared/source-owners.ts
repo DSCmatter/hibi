@@ -23,6 +23,10 @@ export type OwnerIndexOptions = {
   fanout?: number
   firstSlot?: number
 }
+export type SourceOwnerChanges = Readonly<{
+  changed: readonly SourceOwner[]
+  removed: readonly SourceOwner[]
+}>
 const fork = Symbol('source owner snapshot')
 const safe = (value: number) => Number.isSafeInteger(value) && value >= 0
 const add = (a: number, b: number) => {
@@ -61,7 +65,10 @@ class OwnerLocator {
       node = edge.parent
     }
   }
-  adopt(root: Node) {
+  adopt(
+    root: Node,
+    changes?: { changed: SourceOwner[]; removed: SourceOwner[] },
+  ) {
     if (root === this.#root) return
     const previous = this.#root
     this.#root = root
@@ -76,7 +83,13 @@ class OwnerLocator {
       this.#live.add(node)
       if (node.kind === 'page') {
         for (let at = 0; at < node.entries.length; at++) {
-          this.#slots.set(node.entries[at]!.slot, { page: node, index: at })
+          const owner = node.entries[at]!
+          if (changes) {
+            const previous = this.#slots.get(owner.slot)
+            if (previous?.page.entries[previous.index] !== owner)
+              changes.changed.push(owner)
+          }
+          this.#slots.set(owner.slot, { page: node, index: at })
           this.work.rowsWritten++
         }
       } else
@@ -92,8 +105,10 @@ class OwnerLocator {
       this.#parents.delete(node)
       if (node.kind === 'page') {
         for (const owner of node.entries) {
-          if (this.#slots.get(owner.slot)?.page === node)
+          if (this.#slots.get(owner.slot)?.page === node) {
             this.#slots.delete(owner.slot)
+            changes?.removed.push(owner)
+          }
           this.work.rowsWritten++
         }
       } else node.entries.forEach(retire)
@@ -149,6 +164,24 @@ class OwnerPages {
     // relying on it for bounded large-file metadata startup.
     this.#locator ??= new OwnerLocator()
     return this.#locator.find(root, slot)
+  }
+  changes(before: Node, after: Node): SourceOwnerChanges {
+    if (before === after)
+      return Object.freeze({
+        changed: Object.freeze([]),
+        removed: Object.freeze([]),
+      })
+    this.#locator ??= new OwnerLocator()
+    this.#locator.adopt(before)
+    const changes = {
+      changed: [] as SourceOwner[],
+      removed: [] as SourceOwner[],
+    }
+    this.#locator.adopt(after, changes)
+    return Object.freeze({
+      changed: Object.freeze(changes.changed),
+      removed: Object.freeze(changes.removed),
+    })
   }
   locatorCounters(reset: boolean) {
     const result = {
@@ -482,6 +515,12 @@ export class SourceOwners {
   bySlot(slot: number) {
     if (!safe(slot) || !slot) return null
     return this.#pages.locate(this.#root, slot)
+  }
+  /** Identity changes only; shifting unchanged owners does not invalidate their payloads. */
+  changesSince(previous: SourceOwners): SourceOwnerChanges {
+    if (previous.#pages !== this.#pages)
+      throw new Error('Source owner snapshots belong to different arenas.')
+    return this.#pages.changes(previous.#root, this.#root)
   }
   get(index: number) {
     if (!safe(index) || index >= this.count) return null
