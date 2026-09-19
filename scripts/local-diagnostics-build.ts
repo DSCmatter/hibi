@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process'
+import { realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
@@ -30,6 +31,14 @@ export function diagnosticsDefines() {
 
 export function diagnosticsBuild() {
   const root = `${resolve('.').replaceAll('\\', '/')}/`
+  const dependencyRoots = [`${root}node_modules/`]
+  try {
+    dependencyRoots.push(
+      `${realpathSync(resolve('node_modules')).replaceAll('\\', '/')}/`,
+    )
+  } catch {
+    /* A missing dependency directory grants no additional module ownership. */
+  }
   const workers = new Set<string>()
   const artifact = (name: string) =>
     name.length <= 200 && /^assets\/[a-zA-Z0-9._-]+\.js$/.test(name)
@@ -54,7 +63,7 @@ export function diagnosticsBuild() {
         const file = path.replace(/^\0/, '').split('?')[0] ?? ''
         return (
           file.startsWith(`${root}src/`) ||
-          file.startsWith(`${root}node_modules/`)
+          dependencyRoots.some((dependency) => file.startsWith(dependency))
         )
       })
     )

@@ -1,5 +1,14 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 import {
   diagnosticsBuild,
@@ -102,6 +111,59 @@ test('build catalog contains generated app and lazy worker artifacts, never sour
   assert.ok(!emitted.source.includes('/owned'))
   assert.ok(!emitted.source.includes('user-addon'))
   assert.ok(emitted.source.length <= 64 * 1024)
+})
+
+test('catalog trusts only the configured dependency directory and its resolved symlink target', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hibi-diagnostic-build-'))
+  const previous = process.cwd()
+  const project = join(directory, 'project')
+  const dependencies = join(directory, 'shared', 'node_modules')
+  mkdirSync(project, { recursive: true })
+  mkdirSync(dependencies, { recursive: true })
+  symlinkSync(dependencies, join(project, 'node_modules'), 'junction')
+  try {
+    process.chdir(project)
+    const sourceRoot = process.cwd()
+    const resolvedDependencies = realpathSync(dependencies)
+    const chunk = (modules) => ({
+      type: 'chunk',
+      modules: Object.fromEntries(modules.map((name) => [name, {}])),
+    })
+    let emitted
+    diagnosticsBuild().renderer.generateBundle.call(
+      {
+        emitFile: (value) => {
+          emitted = value
+        },
+      },
+      {},
+      {
+        'assets/entry.js': chunk([
+          join(sourceRoot, 'src', 'main.tsx'),
+          join(resolvedDependencies, 'react', 'index.js'),
+        ]),
+        'assets/lexical.js': chunk([
+          join(sourceRoot, 'node_modules', 'react', 'index.js'),
+        ]),
+        'assets/foreign.js': chunk([
+          join(sourceRoot, 'src', 'main.tsx'),
+          join(directory, 'foreign', 'node_modules', 'index.js'),
+        ]),
+        'assets/adjacent.js': chunk([`${resolvedDependencies}-other/index.js`]),
+        'assets/private.js': chunk([
+          join(sourceRoot, 'src', 'useraddons', 'private.ts'),
+          join(resolvedDependencies, 'react', 'index.js'),
+        ]),
+      },
+    )
+    assert.deepEqual(JSON.parse(emitted.source).artifacts, [
+      ['assets/entry.js', 100],
+      ['assets/lexical.js', 101],
+    ])
+  } finally {
+    process.chdir(previous)
+    rmSync(directory, { recursive: true, force: true })
+  }
 })
 
 test('diagnostic profile is a build-owned selection, with logging enabled by default', () => {

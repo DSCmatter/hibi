@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import test from 'node:test'
+import electron from 'electron'
 
 test('queued projections retain no original errors, promises or document objects', () => {
   const schema = new URL('../src/shared/local-diagnostics.ts', import.meta.url)
@@ -10,7 +11,7 @@ test('queued projections retain no original errors, promises or document objects
     import.meta.url,
   ).href
   const probe = spawnSync(
-    process.execPath,
+    electron,
     [
       '--expose-gc',
       '--input-type=module',
@@ -33,7 +34,11 @@ test('queued projections retain no original errors, promises or document objects
     console.log(JSON.stringify({ collected: refs.every(ref => !ref.deref()), records: queue.take(), size: queue.size }));
   `,
     ],
-    { encoding: 'utf8', timeout: 10000 },
+    {
+      encoding: 'utf8',
+      timeout: 10000,
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+    },
   )
   assert.equal(probe.status, 0, probe.stderr)
   const result = JSON.parse(probe.stdout)

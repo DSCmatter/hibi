@@ -8,6 +8,8 @@ Logging is enabled by default. An unpackaged app selects `debug`; a packaged app
 
 Build metadata records the Git revision with a dirty suffix when applicable, or `unknown` for a source archive. Runtime metadata comes from the main process. The generated artifact catalog assigns numeric IDs to trusted output files. Worker filenames require approval from their actual build module graph before Vite converts them into assets. Private addon code and unknown generated code are excluded. Keep the matching build and catalog when investigating numeric frame locations; the report does not contain source maps or paths.
 
+Dependency ownership includes the configured `node_modules` directory and its resolved symlink target, so an isolated checkout can share installed dependencies. Other dependency trees and adjacent directories remain untrusted.
+
 ## Privacy boundary
 
 Records use a finite event catalog, integer locations, static roles and reasons, and a small error-code allowlist. No generic object serializer, arbitrary metadata bag, console interception or raw exception message is supported. Renderer records cross a separate raw IPC channel in bounded batches. Main validates frame ownership, origin, generation, fields, sizes and artifact IDs again. A transport acknowledgement means the batch was consumed, including deliberate drops; it does not promise disk persistence or document recovery.
@@ -44,3 +46,5 @@ Native stacks, heap dumps, durable tails and power-loss recovery are not provide
 ## Verification
 
 Run `npm run check` for integrated validation. Focused diagnostics tests are `node --test --test-concurrency=1 tests/local-diagnostics-*.test.mjs` after `npm run build`. Native tests use disposable profiles and synthetic documents. Fault entrypoints belong only in test fixtures; never expose them through a shipped bridge. Timing tests must use matching integrated builds with a test-only disabled control and must not overlap competing builds or tests. A passing correctness test is not a performance measurement.
+
+Stack-branding, schema privacy and retained-reference probes use Electron's embedded Node/V8 runtime. This keeps the shipped stack-inspection contract covered when the development shell uses a supported older Node version without `Error.isError`.
