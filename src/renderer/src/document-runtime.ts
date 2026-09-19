@@ -8,6 +8,7 @@ import type {
 } from '../../shared/source-operations.ts'
 
 type RuntimeOptions = {
+  admit?: (operation: SourceOperation) => void
   enqueue: (operation: SourceOperation) => void
   onError: (error: unknown) => void
 }
@@ -199,6 +200,14 @@ const reportError = (error: unknown) => {
   for (const listener of errors) listener(error)
 }
 export const documentRuntime = new DocumentRuntime({
+  admit: (operation) => {
+    try {
+      window.hibi.admitSourceOperation(operation)
+    } catch (error) {
+      reportError(error)
+      throw error
+    }
+  },
   enqueue: (operation) => {
     void window.hibi.appendSourceOperation(operation).catch(reportError)
   },

@@ -2,7 +2,7 @@
 
 # DocumentCommand
 
-Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L56)
+Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L58)
 
 ```typescript
 type DocumentCommand =

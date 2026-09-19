@@ -26,7 +26,12 @@ import {
   type AppInfo,
   BOOTSTRAP_CHANNELS,
   DOCUMENT_CHANNELS,
+  MAX_DOCUMENT_BYTES,
 } from '../shared/desktop'
+import {
+  journalHead,
+  verifyJournalCheckpoint,
+} from '../shared/document-checkpoint'
 import { createJournalReceiver } from '../shared/document-journal'
 import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
@@ -1025,6 +1030,21 @@ if (!app.requestSingleInstanceLock()) {
         updateDocumentEdited(window)
         return ack
       })
+      handle(DOCUMENT_CHANNELS.recoveryHead, (event) => {
+        trustedWindow(event)
+        return journalHead(getDocumentSource())
+      })
+      handle(
+        DOCUMENT_CHANNELS.verifyCheckpoint,
+        (event, checkpoint: unknown) => {
+          trustedWindow(event)
+          return verifyJournalCheckpoint(
+            getDocumentSource,
+            checkpoint,
+            MAX_DOCUMENT_BYTES,
+          )
+        },
+      )
       handle(DOCUMENT_CHANNELS.open, (event) =>
         runFileOperation(event, openDocument),
       )

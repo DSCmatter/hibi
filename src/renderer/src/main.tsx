@@ -192,6 +192,20 @@ function App() {
   currentDocument.current = documentRuntime.get() ?? document
   useLayoutEffect(
     () =>
+      window.hibi.onDocumentCheckpoint(() => {
+        const source = documentRuntime.session()?.snapshot()
+        if (!source) throw new Error('No active document recovery checkpoint.')
+        return {
+          tabId: source.document.tabId,
+          revision: source.document.revision,
+          contentVersion: source.version,
+          source: source.materialize(),
+        }
+      }),
+    [],
+  )
+  useLayoutEffect(
+    () =>
       documentRuntime.subscribe((next, changes) => {
         if (changes) {
           setWelcomeDismissed(true)

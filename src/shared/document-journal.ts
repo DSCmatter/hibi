@@ -1,4 +1,10 @@
 import type { DocumentState } from './desktop'
+import {
+  type JournalCheckpoint,
+  type JournalHead,
+  parseJournalCheckpoint,
+  parseJournalHead,
+} from './document-checkpoint.ts'
 import type { SourceStore } from './source-buffer'
 import {
   parseSourceOperation,
@@ -98,6 +104,22 @@ const key = (change: JournalMessage) => {
 const samePayload = (a: JournalMessage, b: JournalMessage) =>
   JSON.stringify(a) === JSON.stringify(b)
 
+/** Retained UTF-16 payload estimate, not Electron wire bytes or measured heap. */
+export const journalMessageBytes = (change: JournalMessage) => {
+  const document = identity(change)
+  return (
+    128 +
+    document.tabId.length * 2 +
+    ('document' in change
+      ? (change.operationId.length + change.historyGroup.length) * 2 +
+        change.changes.reduce(
+          (bytes, range) => bytes + 48 + range.insert.length * 2,
+          0,
+        )
+      : 48 + change.insert.length * 2)
+  )
+}
+
 /** Both legacy replacements and atomic batches commit to one persistent recovery replica. */
 export function createJournalReceiver(read: () => SourceStore) {
   const receipts = new Map<
@@ -165,7 +187,7 @@ export function createJournalReceiver(read: () => SourceStore) {
       contentVersion: change.contentVersion,
       ...('document' in change ? { operationId: change.operationId } : {}),
     }
-    const bytes = JSON.stringify(change).length * 2 + 128
+    const bytes = journalMessageBytes(change)
     receipts.set(key(change), { change, ack, bytes })
     receiptSize += bytes
     while (receipts.size > 128 || receiptSize > 8 * 1024 * 1024) {
@@ -177,49 +199,133 @@ export function createJournalReceiver(read: () => SourceStore) {
   }
 }
 
-/** Send immediately for crash recovery. Barriers retry unacknowledged changes in order. */
+type JournalOptions = {
+  maximumBytes?: number
+  /** One separately bounded bulk operation can enter an empty queue. */
+  maximumBulkBytes?: number
+  timeoutMs?: number
+  retryDelays?: readonly number[]
+  checkpoint?: () => JournalCheckpoint | Promise<JournalCheckpoint>
+  head?: () => Promise<JournalHead>
+  verify?: (checkpoint: JournalCheckpoint) => Promise<JournalHead>
+  maximumCheckpointUnits?: number
+}
+
+/** One lossless queue for legacy and atomic edits; failed delivery never forgets an edit. */
 export function createDocumentJournal(
   send: (change: JournalMessage) => Promise<DocumentAcknowledgment>,
+  options: JournalOptions = {},
 ) {
   type PendingChange = {
     change: JournalMessage
     promise: Promise<DocumentAcknowledgment>
+    resolve: (ack: DocumentAcknowledgment) => void
+    reject: (error: unknown) => void
+    started: boolean
     failed: boolean
     bytes: number
   }
   const pending = new Map<string, PendingChange>()
+  const inFlight = new Map<
+    string,
+    { change: JournalMessage; promise: Promise<DocumentAcknowledgment> }
+  >()
   let pendingBytes = 0
+  let inFlightBytes = 0
+  let paused = false
+  let flushing: Promise<void> | undefined
+  let retryTimer: ReturnType<typeof setTimeout> | undefined
+  let retryAttempt = 0
+  let lastMemoryAck: DocumentAcknowledgment | null = null
+  let lastError: string | null = null
+  let controlPending = false
+  const withinDeadline = <T>(work: () => Promise<T>): Promise<T> => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const result = new Promise<T>((resolve, reject) => {
+      if (options.timeoutMs)
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                'Document recovery timed out. Your pending edits are kept; retry saving.',
+              ),
+            ),
+          options.timeoutMs,
+        )
+      try {
+        Promise.resolve(work()).then(resolve, reject)
+      } catch (error) {
+        reject(error)
+      }
+    })
+    return result.finally(() => clearTimeout(timer))
+  }
   const forget = (id: string, entry: PendingChange) => {
     if (pending.get(id) !== entry) return
     pending.delete(id)
     pendingBytes -= entry.bytes
+    if (!pending.size) {
+      clearTimeout(retryTimer)
+      retryTimer = undefined
+      retryAttempt = 0
+      lastError = null
+    }
   }
-  const append = (value: JournalMessage) => {
+  const assertCapacity = (value: JournalMessage) => {
     const change = parseMessage(value),
-      document = identity(change)
+      bytes = journalMessageBytes(change)
     const existing = pending.get(key(change))
     if (existing) {
       if (!samePayload(existing.change, change))
-        return Promise.reject(
-          new Error('Conflicting document change sequence.'),
-        )
-      return existing.promise
+        throw new Error('Conflicting document change sequence.')
+      return
     }
-    const entry = {
-      change,
-      promise: null as unknown as Promise<DocumentAcknowledgment>,
-      failed: false,
-      bytes: JSON.stringify(change).length * 2 + 128,
+    const outstanding = inFlight.get(key(change))
+    if (outstanding && !samePayload(outstanding.change, change))
+      throw new Error('Conflicting document change sequence.')
+    const maximum =
+      pending.size || inFlight.size
+        ? (options.maximumBytes ?? 8 * 1024 * 1024)
+        : (options.maximumBulkBytes ?? 40 * 1024 * 1024)
+    if (pendingBytes + inFlightBytes + bytes > maximum)
+      throw new Error(
+        'Document recovery is full. Your accepted edits are kept; retry saving before editing again.',
+      )
+  }
+  const scheduleRetry = () => {
+    const delay = options.retryDelays?.[retryAttempt]
+    if (retryTimer || flushing || !pending.size || delay === undefined) return
+    retryTimer = setTimeout(() => {
+      retryTimer = undefined
+      retryAttempt++
+      void flush().catch(() => {})
+    }, delay)
+  }
+  const deliver = (entry: PendingChange) => {
+    const change = entry.change,
+      document = identity(change)
+    entry.started = true
+    entry.failed = false
+    const id = key(change)
+    let transport = inFlight.get(id)?.promise
+    if (!transport) {
+      inFlightBytes += entry.bytes
+      // A deadline cannot cancel an Electron invoke. Reuse its outstanding
+      // promise instead of retaining another payload on every retry.
+      transport = new Promise<DocumentAcknowledgment>((resolve, reject) => {
+        try {
+          Promise.resolve(send(change)).then(resolve, reject)
+        } catch (error) {
+          reject(error)
+        }
+      }).finally(() => {
+        inFlight.delete(id)
+        inFlightBytes -= entry.bytes
+      })
+      inFlight.set(id, { change, promise: transport })
     }
-    pending.set(key(change), entry)
-    pendingBytes += entry.bytes
-    let delivery: Promise<DocumentAcknowledgment>
-    try {
-      delivery = send(change)
-    } catch (error) {
-      delivery = Promise.reject(error)
-    }
-    entry.promise = delivery
+    const delivery = transport
+    entry.promise = withinDeadline(() => delivery)
       .then((ack) => {
         if (
           ack.tabId !== document.tabId ||
@@ -228,42 +334,201 @@ export function createDocumentJournal(
           ('document' in change && ack.operationId !== change.operationId)
         )
           throw new Error('Could not confirm the latest document changes.')
+        if (
+          !lastMemoryAck ||
+          lastMemoryAck.tabId !== ack.tabId ||
+          lastMemoryAck.revision !== ack.revision ||
+          lastMemoryAck.contentVersion < ack.contentVersion
+        )
+          lastMemoryAck = ack
         forget(key(change), entry)
         return ack
       })
       .catch((error) => {
         entry.failed = true
+        lastError = error instanceof Error ? error.message : String(error)
+        scheduleRetry()
         throw error
       })
-    void entry.promise.catch(() => {})
+    void entry.promise.then(entry.resolve, entry.reject)
     return entry.promise
   }
-  let flushing: Promise<void> | undefined
+  const append = (value: JournalMessage): Promise<DocumentAcknowledgment> => {
+    try {
+      const change = parseMessage(value),
+        existing = pending.get(key(change))
+      if (existing) {
+        if (!samePayload(existing.change, change))
+          throw new Error('Conflicting document change sequence.')
+        return existing.promise
+      }
+      assertCapacity(change)
+      let resolve!: PendingChange['resolve'], reject!: PendingChange['reject']
+      const promise = new Promise<DocumentAcknowledgment>((yes, no) => {
+        resolve = yes
+        reject = no
+      })
+      const entry: PendingChange = {
+        change,
+        promise,
+        resolve,
+        reject,
+        started: false,
+        failed: false,
+        bytes: journalMessageBytes(change),
+      }
+      pending.set(key(change), entry)
+      pendingBytes += entry.bytes
+      void promise.catch(() => {})
+      if (!paused) deliver(entry)
+      return promise
+    } catch (error) {
+      return Promise.reject(error)
+    }
+  }
+  const control = <T>(work: () => Promise<T>): Promise<T> => {
+    if (controlPending)
+      return Promise.reject(
+        new Error(
+          'A document recovery request is still pending. Retry when the app responds.',
+        ),
+      )
+    controlPending = true
+    const request = Promise.resolve()
+      .then(work)
+      .finally(() => {
+        controlPending = false
+      })
+    return withinDeadline(() => request)
+  }
+  const reconcile = async () => {
+    if (!options.checkpoint || !options.head || !options.verify)
+      throw new Error('Document recovery checkpoint is unavailable.')
+    paused = true
+    try {
+      await Promise.allSettled(
+        [...pending.values()]
+          .filter((entry) => entry.started)
+          .map((entry) => entry.promise),
+      )
+      const checkpoint = parseJournalCheckpoint(
+        await control(async () => options.checkpoint!()),
+        options.maximumCheckpointUnits ?? 16 * 1024 * 1024,
+      )
+      const head = parseJournalHead(await control(options.head))
+      if (
+        head.tabId !== checkpoint.tabId ||
+        head.revision !== checkpoint.revision ||
+        head.contentVersion > checkpoint.contentVersion
+      )
+        throw new Error(
+          'The native document changed before recovery could be verified.',
+        )
+      let version = head.contentVersion
+      const entries = [...pending.values()]
+      for (const entry of entries) {
+        const document = identity(entry.change)
+        if (
+          document.tabId !== checkpoint.tabId ||
+          document.revision !== checkpoint.revision
+        )
+          throw new Error(
+            'Pending edits belong to another document. Recovery stopped.',
+          )
+      }
+      for (const entry of entries.sort(
+        (a, b) => a.change.contentVersion - b.change.contentVersion,
+      )) {
+        const change = entry.change
+        if (change.contentVersion > checkpoint.contentVersion) continue
+        if (change.contentVersion <= version) {
+          if (!entry.started)
+            throw new Error(
+              'Native recovery contains an unsent change. Recovery stopped.',
+            )
+          continue
+        }
+        if (change.baseVersion !== version)
+          throw new Error(
+            'Document recovery is missing an operation. Your pending edits are kept.',
+          )
+        await deliver(entry)
+        version = change.contentVersion
+      }
+      if (version !== checkpoint.contentVersion)
+        throw new Error(
+          'Document recovery is missing an operation. Your pending edits are kept.',
+        )
+      const verified = parseJournalHead(
+        await control(() => options.verify!(checkpoint)),
+      )
+      if (
+        verified.tabId !== checkpoint.tabId ||
+        verified.revision !== checkpoint.revision ||
+        verified.contentVersion !== checkpoint.contentVersion
+      )
+        throw new Error('Could not verify the document recovery checkpoint.')
+      lastMemoryAck = verified
+      for (const entry of entries)
+        if (entry.change.contentVersion <= checkpoint.contentVersion)
+          forget(key(entry.change), entry)
+    } finally {
+      paused = false
+      for (const entry of pending.values()) if (!entry.started) deliver(entry)
+    }
+  }
+  const drain = async () => {
+    while (pending.size) {
+      await Promise.allSettled(
+        [...pending.values()].map((entry) => entry.promise),
+      )
+      for (const entry of pending.values())
+        if (entry.failed) await deliver(entry)
+    }
+  }
+  function flush() {
+    const barrier = (flushing ?? Promise.resolve())
+      .catch(() => {})
+      .then(async () => {
+        try {
+          await drain()
+        } catch (error) {
+          if (!options.checkpoint || !options.head || !options.verify)
+            throw error
+          await reconcile()
+          await drain()
+        }
+      })
+      .finally(() => {
+        if (flushing === barrier) {
+          flushing = undefined
+          scheduleRetry()
+        }
+      })
+    flushing = barrier
+    return barrier
+  }
   return {
     append,
     appendOperation: (operation: SourceOperation) => append(operation),
+    assertCapacity,
     hasPending: () => pending.size > 0,
     pendingBytes: () => pendingBytes,
-    flush() {
-      const barrier = (flushing ?? Promise.resolve())
-        .catch(() => {})
-        .then(async () => {
-          while (pending.size) {
-            await Promise.allSettled(
-              [...pending.values()].map((entry) => entry.promise),
-            )
-            for (const [id, entry] of pending) {
-              if (!entry.failed) continue
-              forget(id, entry)
-              await append(entry.change)
-            }
-          }
-        })
-        .finally(() => {
-          if (flushing === barrier) flushing = undefined
-        })
-      flushing = barrier
-      return barrier
-    },
+    state: () => ({
+      pendingCount: pending.size,
+      pendingBytes,
+      inFlightCount: inFlight.size,
+      inFlightBytes,
+      lastMemoryAck,
+      status: !pending.size
+        ? 'idle'
+        : flushing
+          ? 'retrying'
+          : lastError
+            ? 'failed'
+            : 'pending',
+      error: lastError,
+    }),
+    flush,
   }
 }

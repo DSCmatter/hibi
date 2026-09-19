@@ -44,6 +44,9 @@
   "d9ee2b8b5fe8": [
     "src/main/workspace-actions.ts"
   ],
+  "6417304a8a8b": [
+    "src/shared/document-journal.ts"
+  ],
   "db042b1a7322": [
     "src/main/import-files.ts"
   ],
@@ -871,6 +874,9 @@
   "655907890730": [
     "src/addons/frontmatter/Properties.tsx"
   ],
+  "841f66a926a7": [
+    "src/shared/document-journal.ts"
+  ],
   "72b5c3e0383d": [
     "src/renderer/src/WorkspaceSettings.tsx"
   ],
@@ -1032,6 +1038,21 @@
   ],
   "f5dd68e8bde8": [
     "src/renderer/src/FormatsSettings.tsx"
+  ],
+  "610a1ccb7572": [
+    "src/shared/document-journal.ts"
+  ],
+  "662f930d8e8c": [
+    "src/shared/document-journal.ts"
+  ],
+  "612d6d66d8c4": [
+    "src/shared/document-journal.ts"
+  ],
+  "8e52c7044ad7": [
+    "src/preload/index.ts"
+  ],
+  "e4debee874c3": [
+    "src/shared/document-journal.ts"
   ],
   "4ba14479a49a": [
     "src/addons/_shared/format-native.ts"
@@ -1860,6 +1881,12 @@
   "5a2f299940cc": [
     "src/shared/document-journal.ts"
   ],
+  "5f0c6a56de07": [
+    "src/shared/document-checkpoint.ts"
+  ],
+  "62734d46cb24": [
+    "src/shared/document-checkpoint.ts"
+  ],
   "194c34611a1c": [
     "src/shared/document-edits.ts"
   ],
@@ -2211,6 +2238,9 @@
   "cd452315c10b": [
     "src/main/addons.ts"
   ],
+  "793e568c3c97": [
+    "src/shared/document-journal.ts"
+  ],
   "5ea5fbe811db": [
     "src/renderer/src/CommandPalette.tsx"
   ],
@@ -2268,6 +2298,9 @@
   ],
   "115967f77ac6": [
     "src/renderer/src/FindBar.tsx"
+  ],
+  "c1152a9f9069": [
+    "src/renderer/src/main.tsx"
   ],
   "fcfa3087d422": [
     "src/addons/diagnostics/Settings.tsx"
@@ -2625,6 +2658,9 @@
   ],
   "a4f17dfc576b": [
     "src/addons/vim/engine.ts"
+  ],
+  "cf2b92c2e475": [
+    "src/shared/document-journal.ts"
   ],
   "49bac35016ed": [
     "src/addons/review/index.tsx"
@@ -3523,6 +3559,9 @@
   "6626018b72b7": [
     "src/main/analysis.ts"
   ],
+  "33848694bf6a": [
+    "src/shared/document-checkpoint.ts"
+  ],
   "6ad5e9ddb386": [
     "src/main/links.ts"
   ],
@@ -3547,6 +3586,12 @@
     "src/renderer/src/document-edits.ts",
     "src/renderer/src/main.tsx"
   ],
+  "8ea97b4e248c": [
+    "src/shared/document-checkpoint.ts"
+  ],
+  "ee76fd92b752": [
+    "src/shared/document-checkpoint.ts"
+  ],
   "53a9d03e9663": [
     "src/main/addon-documentation.ts"
   ],
@@ -3561,6 +3606,9 @@
   ],
   "a6cea19581d6": [
     "src/shared/document-edits.ts"
+  ],
+  "978a49bd685e": [
+    "src/renderer/src/SourceEditor.tsx"
   ],
   "aab4c81b2baa": [
     "src/shared/document-edits.ts"
@@ -3597,6 +3645,9 @@
   ],
   "23aa870889ee": [
     "src/main/import-files.ts"
+  ],
+  "5b9df36cc43f": [
+    "src/shared/document-journal.ts"
   ],
   "c7085d2772ec": [
     "src/renderer/src/FormattingToolbar.tsx"

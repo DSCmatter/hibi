@@ -412,6 +412,12 @@ export function SourceEditor({
       } finally {
         exactChanges.current = undefined
       }
+      if (bridge.snapshot().version === snapshot.version)
+        return {
+          status: 'busy',
+          message:
+            'The edit was not accepted. Check document recovery and retry.',
+        }
       return {
         status: 'applied',
         contentVersion: editorDocument.get()!.contentVersion,

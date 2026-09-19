@@ -177,11 +177,20 @@ test('right sidebar starts empty, remembers its view and width, and collapses in
   await rightToggle.click()
   await right.getByRole('treeitem', { name: 'second', exact: true }).waitFor()
   await command('Enter zen mode')
+  await page.waitForFunction(
+    () => document.querySelector('.app')?.getAttribute('data-zen') === 'true',
+  )
   assert.equal(await right.count(), 0)
   assert.equal(await shell.getAttribute('data-right-sidebar'), 'false')
   await page.getByRole('button', { name: 'Exit zen mode', exact: true }).click()
   await right.getByRole('treeitem', { name: 'second', exact: true }).waitFor()
   await command('Toggle right sidebar')
+  // The palette runs commands on the frame after its dialog closes.
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.app')?.getAttribute('data-right-sidebar') ===
+      'false',
+  )
   assert.equal(await shell.getAttribute('data-right-sidebar'), 'false')
   await command('Toggle right sidebar')
   await right.getByRole('treeitem', { name: 'second', exact: true }).waitFor()

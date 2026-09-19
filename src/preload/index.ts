@@ -9,7 +9,9 @@ import {
   BOOTSTRAP_CHANNELS,
   type DesktopApi,
   DOCUMENT_CHANNELS,
+  MAX_DOCUMENT_BYTES,
 } from '../shared/desktop'
+import type { JournalCheckpoint } from '../shared/document-checkpoint'
 import { createDocumentJournal } from '../shared/document-journal'
 import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
 import { HISTORY_CHANNELS } from '../shared/history'
@@ -22,8 +24,22 @@ import { WORKSPACE_CHANNELS, type WorkspaceState } from '../shared/workspace'
 import { WORKSPACE_SETTINGS_CHANNELS } from '../shared/workspace-settings'
 
 if (process.isMainFrame) {
-  const journal = createDocumentJournal((change) =>
-    transport.invoke(DOCUMENT_CHANNELS.append, change),
+  let checkpoint: (() => JournalCheckpoint) | undefined
+  const journal = createDocumentJournal(
+    (change) => transport.invoke(DOCUMENT_CHANNELS.append, change),
+    {
+      timeoutMs: 5000,
+      retryDelays: [100, 500, 2000],
+      maximumCheckpointUnits: MAX_DOCUMENT_BYTES,
+      checkpoint: () => {
+        if (!checkpoint)
+          throw new Error('Document recovery is not ready. Retry saving.')
+        return checkpoint()
+      },
+      head: () => transport.invoke(DOCUMENT_CHANNELS.recoveryHead),
+      verify: (snapshot) =>
+        transport.invoke(DOCUMENT_CHANNELS.verifyCheckpoint, snapshot),
+    },
   )
   const invoke: typeof transport.invoke = (channel, ...args) =>
     journal.hasPending()
@@ -68,6 +84,14 @@ if (process.isMainFrame) {
       ipcRenderer.invoke(ANALYSIS_CHANNELS.cancel, owner),
     appendDocumentChange: journal.append,
     appendSourceOperation: journal.appendOperation,
+    admitSourceOperation: journal.assertCapacity,
+    getDocumentRecoveryState: journal.state,
+    onDocumentCheckpoint: (callback) => {
+      checkpoint = callback
+      return () => {
+        if (checkpoint === callback) checkpoint = undefined
+      }
+    },
     flushDocumentChanges: journal.flush,
     bootstrap: {
       document: () => startupDocument,

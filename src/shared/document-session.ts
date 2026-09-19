@@ -40,6 +40,8 @@ export type SessionState = Readonly<{
 type SessionOptions = SourceBufferOptions & {
   historyBytes?: number
   historyGroups?: number
+  /** Reject saturation before source/history/view commit; no accepted edit is dropped. */
+  admit?: (operation: SourceOperation) => void
   /** Must synchronously enqueue recovery. It must not wait for acknowledgement. */
   enqueue: (operation: SourceOperation) => void
   onError: (error: unknown) => void
@@ -304,6 +306,7 @@ export class DocumentSession {
           ? sourceSelection(prepared.after, requested)
           : null
         : mapSourceSelection(prepared.after, beforeSelection, operation.changes)
+      this.#options.admit?.(prepared.operation)
       this.#store.commit(prepared)
       this.#selection = afterSelection
       history(prepared, beforeSelection)

@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  journalHead,
+  verifyJournalCheckpoint,
+} from '../src/shared/document-checkpoint.ts'
+import {
   createDocumentJournal,
   createJournalReceiver,
   sourceChange,
 } from '../src/shared/document-journal.ts'
+import { DocumentSession } from '../src/shared/document-session.ts'
 import { SourceStore } from '../src/shared/source-buffer.ts'
 
 function fixture() {
@@ -207,4 +212,251 @@ test('legacy raw line-ending changes preserve meaning without native whole-sourc
   })
   assert.equal(store.counters().materializations, 0)
   assert.equal(store.snapshot().sliceRaw(0, 6), 'a\nba\r\n')
+})
+
+test('J07: saturation rejects before source/history/view commit and accepts input after recovery', async () => {
+  const { receive } = fixture()
+  let available = false
+  const journal = createDocumentJournal(
+    async (operation) => {
+      if (!available) throw new Error('offline')
+      return receive(operation)
+    },
+    { maximumBytes: 600, maximumBulkBytes: 600 },
+  )
+  const session = new DocumentSession('', { tabId: 'a', revision: 0 }, 0, {
+    admit: journal.assertCapacity,
+    enqueue: (operation) => {
+      void journal.appendOperation(operation).catch(() => {})
+    },
+    onError: () => {},
+  })
+  session.edit([{ from: 0, to: 0, insert: 'a'.repeat(100) }], 'source', 'first')
+  const before = session.snapshot(),
+    history = session.historyDepth()
+  let reconciled = false
+  assert.throws(
+    () =>
+      session.edit(
+        [{ from: 100, to: 100, insert: 'b'.repeat(100) }],
+        'source',
+        'second',
+        () => {
+          reconciled = true
+        },
+      ),
+    /recovery is full/,
+  )
+  assert.equal(session.snapshot(), before)
+  assert.deepEqual(session.historyDepth(), history)
+  assert.equal(reconciled, false)
+  assert.ok(journal.pendingBytes() <= 600)
+  available = true
+  await journal.flush()
+  session.edit([{ from: 100, to: 100, insert: 'b' }], 'source', 'second')
+  await journal.flush()
+  assert.equal(session.snapshot().version, 2)
+  session.dispose()
+})
+
+test('J02: delivery deadline retains edits and ignores a late acknowledgement after checkpoint recovery', async () => {
+  const { receive, change, state, store } = fixture()
+  let late,
+    calls = 0
+  const journal = createDocumentJournal(
+    (request) => {
+      calls++
+      const ack = receive(request)
+      return calls === 1
+        ? new Promise((resolve) => {
+            late = () => resolve(ack)
+          })
+        : Promise.resolve(ack)
+    },
+    {
+      timeoutMs: 10,
+      checkpoint: () => ({ ...journalHead(store), source: 'a' }),
+      head: async () => journalHead(store),
+      verify: (checkpoint) =>
+        verifyJournalCheckpoint(() => store, checkpoint, 1024),
+    },
+  )
+  await assert.rejects(journal.append(change('', 'a', 0)), /timed out/)
+  assert.equal(journal.hasPending(), true)
+  await journal.flush()
+  assert.equal(state.markdown, 'a')
+  assert.equal(state.contentVersion, 1)
+  assert.equal(journal.state().inFlightCount, 1)
+  assert.equal(calls, 1)
+  await assert.rejects(journal.append(change('', 'b', 0)), /Conflicting/)
+  await journal.append(change('a', 'ab', 1))
+  late()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(journal.pendingBytes(), 0)
+  assert.equal(calls, 2)
+  assert.equal(journal.state().inFlightCount, 0)
+  assert.equal(journal.state().lastMemoryAck.contentVersion, 2)
+})
+
+test('timed-out transport and checkpoint calls stay bounded across repeated barriers', async () => {
+  const { change, receive, store } = fixture()
+  let sends = 0,
+    verifies = 0
+  const journal = createDocumentJournal(
+    (request) => {
+      sends++
+      receive(request)
+      return new Promise(() => {})
+    },
+    {
+      timeoutMs: 2,
+      checkpoint: () => ({ ...journalHead(store), source: 'a' }),
+      head: async () => journalHead(store),
+      verify: () => {
+        verifies++
+        return new Promise(() => {})
+      },
+    },
+  )
+  await assert.rejects(journal.append(change('', 'a', 0)))
+  for (let i = 0; i < 5; i++) await assert.rejects(journal.flush())
+  assert.equal(sends, 1)
+  assert.equal(verifies, 1)
+  assert.equal(journal.state().inFlightCount, 1)
+  assert.equal(journal.state().pendingCount, 1)
+})
+
+test('J09: a lost receipt beyond the horizon is retired only by exact checkpoint verification', async () => {
+  const { receive, change, store, state } = fixture()
+  let verifications = 0
+  const journal = createDocumentJournal(
+    async (request) => {
+      const ack = receive(request)
+      if (request.contentVersion === 1) throw new Error('lost oldest receipt')
+      return ack
+    },
+    {
+      checkpoint: () => ({ ...journalHead(store), source: 'x'.repeat(140) }),
+      head: async () => journalHead(store),
+      verify: async (checkpoint) => {
+        verifications++
+        return verifyJournalCheckpoint(() => store, checkpoint, 1024)
+      },
+    },
+  )
+  await assert.rejects(journal.append(change('', 'x', 0)))
+  for (let version = 1; version < 140; version++)
+    await journal.append(
+      change('x'.repeat(version), 'x'.repeat(version + 1), version),
+    )
+  assert.equal(journal.state().pendingCount, 1)
+  await journal.flush()
+  assert.equal(verifications, 1)
+  assert.equal(journal.hasPending(), false)
+  assert.equal(journal.state().lastMemoryAck.contentVersion, 140)
+  assert.equal(state.contentVersion, 140)
+})
+
+test('J06/J09: restarted receipt cache replays a contiguous suffix and preserves edits during verification', async () => {
+  const { store, change, state } = fixture()
+  let receive = createJournalReceiver(() => store),
+    failed = true
+  let beginVerification, releaseVerification
+  const verifying = new Promise((resolve) => {
+    beginVerification = resolve
+  })
+  const hold = new Promise((resolve) => {
+    releaseVerification = resolve
+  })
+  let source = 'ab'
+  const journal = createDocumentJournal(
+    async (request) => {
+      if (failed) {
+        if (request.contentVersion === 1) receive(request)
+        throw new Error('lost delivery')
+      }
+      return receive(request)
+    },
+    {
+      checkpoint: () => ({
+        tabId: 'a',
+        revision: 0,
+        contentVersion: 2,
+        source,
+      }),
+      head: async () => journalHead(store),
+      verify: async (checkpoint) => {
+        beginVerification()
+        await hold
+        return verifyJournalCheckpoint(() => store, checkpoint, 1024)
+      },
+    },
+  )
+  await assert.rejects(journal.append(change('', 'a', 0)))
+  await assert.rejects(journal.append(change('a', 'ab', 1)))
+  receive = createJournalReceiver(() => store)
+  failed = false
+  const barrier = journal.flush()
+  await verifying
+  source = 'abc'
+  const third = journal.append(change('ab', source, 2))
+  assert.equal(state.markdown, 'ab')
+  assert.equal(journal.state().pendingCount, 2)
+  releaseVerification()
+  await barrier
+  await third
+  assert.equal(state.markdown, 'abc')
+  assert.equal(state.contentVersion, 3)
+  assert.equal(journal.pendingBytes(), 0)
+})
+
+test('checkpoint mismatch or missing suffix never retires pending edits or overwrites native text', async () => {
+  for (const invalid of ['content', 'identity', 'suffix', 'ack']) {
+    const { store, receive, change, state } = fixture()
+    const journal = createDocumentJournal(
+      async (request) => {
+        if (state.contentVersion === 0) receive(request)
+        throw new Error('lost')
+      },
+      {
+        checkpoint: () => ({
+          tabId: invalid === 'identity' ? 'b' : 'a',
+          revision: 0,
+          contentVersion: invalid === 'suffix' ? 2 : 1,
+          source: invalid === 'content' ? 'b' : 'a',
+        }),
+        head: async () => journalHead(store),
+        verify: async (checkpoint) =>
+          invalid === 'ack'
+            ? { ...journalHead(store), contentVersion: 0 }
+            : verifyJournalCheckpoint(() => store, checkpoint, 1024),
+      },
+    )
+    await assert.rejects(journal.append(change('', 'a', 0)))
+    await assert.rejects(journal.flush())
+    assert.equal(journal.state().pendingCount, 1, invalid)
+    assert.equal(state.markdown, 'a', invalid)
+  }
+})
+
+test('background retry budget is finite; manual barriers can retry after exhaustion', async () => {
+  const { receive, change } = fixture()
+  let calls = 0,
+    unavailable = true
+  const journal = createDocumentJournal(
+    async (request) => {
+      calls++
+      if (unavailable) throw new Error('offline')
+      return receive(request)
+    },
+    { retryDelays: [1, 1] },
+  )
+  await assert.rejects(journal.append(change('', 'a', 0)))
+  await new Promise((resolve) => setTimeout(resolve, 35))
+  assert.equal(calls, 3)
+  assert.equal(journal.hasPending(), true)
+  unavailable = false
+  await journal.flush()
+  assert.equal(calls, 4)
+  assert.equal(journal.hasPending(), false)
 })

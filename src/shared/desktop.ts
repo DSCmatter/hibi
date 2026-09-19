@@ -7,6 +7,8 @@ export const DOCUMENT_CHANNELS = {
   get: 'document:get',
   update: 'document:update',
   append: 'document:append',
+  recoveryHead: 'document:recovery-head',
+  verifyCheckpoint: 'document:verify-checkpoint',
   flush: 'document:flush',
   flushed: 'document:flushed',
   open: 'document:open',
@@ -192,6 +194,17 @@ export type DesktopApi = {
   appendSourceOperation: (
     operation: import('./source-operations').SourceOperation,
   ) => Promise<import('./document-journal').DocumentAcknowledgment>
+  admitSourceOperation: (
+    operation: import('./source-operations').SourceOperation,
+  ) => void
+  onDocumentCheckpoint: (
+    callback: () => import('./document-checkpoint').JournalCheckpoint,
+  ) => () => void
+  getDocumentRecoveryState: () => ReturnType<
+    ReturnType<
+      typeof import('./document-journal').createDocumentJournal
+    >['state']
+  >
   flushDocumentChanges: () => Promise<void>
   openDocument: () => Promise<DocumentState | null>
   openExternalDocuments: () => Promise<{
