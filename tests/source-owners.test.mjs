@@ -2,6 +2,66 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { SourceOwners } from '../src/shared/source-owners.ts'
 
+test('pending and partial invalid queries account for reads while pruning clean subtrees', () => {
+  const clean = new SourceOwners(
+    Array.from({ length: 100000 }, () => ({ kind: 'text', length: 2 })),
+  )
+  clean.counters(true)
+  assert.deepEqual([...clean.pending()], [])
+  assert.equal(clean.counters().visits, 1)
+  assert.equal(clean.counters().lookupSlotsRead, 0)
+  const dirty = clean.update(95000, {
+    kind: 'text',
+    length: 2,
+    parsed: false,
+  })
+  dirty.counters(true)
+  const pending = [...dirty.pending()]
+  assert.deepEqual(
+    pending.map(({ index, from, to }) => [index, from, to]),
+    [[95000, 190000, 190002]],
+  )
+  const work = dirty.counters(true)
+  assert.ok(
+    work.lookupSlotsRead >= 1 && work.lookupSlotsRead < 512,
+    JSON.stringify(work),
+  )
+  assert.ok(work.visits > 1 && work.visits < 128, JSON.stringify(work))
+  assert.equal(dirty.invalid(95000, 95001), 1)
+  const countWork = dirty.counters()
+  assert.ok(
+    countWork.lookupSlotsRead > 0 && countWork.lookupSlotsRead < 128,
+    JSON.stringify(countWork),
+  )
+  assert.equal(clean.invalid(), 0)
+})
+
+test('closing a pending iterator stops traversal after the requested prefix', () => {
+  const index = new SourceOwners(
+    Array.from({ length: 100000 }, () => ({
+      kind: 'text',
+      length: 1,
+      parsed: false,
+    })),
+  )
+  index.counters(true)
+  const rows = []
+  for (const row of index.pending()) {
+    rows.push(row.index)
+    if (rows.length === 10) break
+  }
+  assert.deepEqual(
+    rows,
+    Array.from({ length: 10 }, (_, index) => index),
+  )
+  const work = index.counters()
+  assert.ok(
+    work.lookupSlotsRead >= 10 && work.lookupSlotsRead < 32,
+    JSON.stringify(work),
+  )
+  assert.ok(work.visits > 0 && work.visits < 10, JSON.stringify(work))
+})
+
 test('range iteration accounts for its bounded page and directory reads', () => {
   const index = new SourceOwners(
     Array.from({ length: 100000 }, () => ({ kind: 'text', length: 1 })),

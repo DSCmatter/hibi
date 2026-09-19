@@ -251,13 +251,22 @@ export class SourceOwners {
       this.#pages.work.visits++
       if (start >= to || start + node.count <= from || !node.invalid) return 0
       if (start >= from && start + node.count <= to) return node.invalid
-      if (node.kind === 'page')
-        return node.entries
-          .slice(Math.max(0, from - start), Math.min(node.count, to - start))
-          .reduce((sum, owner) => sum + Number(!owner.parsed), 0)
+      if (node.kind === 'page') {
+        let result = 0
+        for (
+          let index = Math.max(0, from - start);
+          index < Math.min(node.count, to - start);
+          index++
+        ) {
+          this.#pages.work.lookupSlotsRead++
+          result += Number(!node.entries[index]!.parsed)
+        }
+        return result
+      }
       let result = 0,
         index = start
       for (const child of node.entries) {
+        this.#pages.work.lookupSlotsRead++
         result += count(child, index)
         index += child.count
       }
@@ -266,6 +275,7 @@ export class SourceOwners {
     return count(this.#root, 0)
   }
   *pending() {
+    const work = this.#pages.work
     function* visit(
       node: Node,
       index: number,
@@ -273,9 +283,11 @@ export class SourceOwners {
     ): Generator<
       Readonly<{ owner: SourceOwner; index: number; from: number; to: number }>
     > {
+      work.visits++
       if (!node.invalid) return
       if (node.kind === 'page') {
         for (const owner of node.entries) {
+          work.lookupSlotsRead++
           if (!owner.parsed)
             yield Object.freeze({ owner, index, from, to: from + owner.length })
           index++
@@ -283,6 +295,7 @@ export class SourceOwners {
         }
       } else
         for (const child of node.entries) {
+          work.lookupSlotsRead++
           yield* visit(child, index, from)
           index += child.count
           from += child.length
