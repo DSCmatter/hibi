@@ -80,6 +80,167 @@ function fixture(t, source = 'one two one', extra = {}) {
   return { client, session, workers, results, errors, find, append }
 }
 
+test('find and bounded metadata share one replica and keep source/owner generations coherent', async (t) => {
+  const pages = [],
+    failures = []
+  const f = fixture(t, '# one\r\n\r\nparagraph\r\n\r\n'.repeat(1000), {
+    metadataResult: (page) => pages.push(page),
+    metadataError: (error) => failures.push(error),
+  })
+  f.client.metadata('commonmark', 0, 500, 4)
+  f.find('one')
+  await wait(() => pages.length && f.results.length)
+  assert.equal(f.workers.length, 1)
+  assert.equal(pages[0].rows.length, 4)
+  assert.equal(pages[0].complete, true)
+  assert.equal(pages[0].rows[0].from, 0)
+  assert.equal(pages[0].rows[0].to, 5)
+  assert.equal(f.results.at(-1).location.total, 1000)
+  f.append('\r\nlast')
+  f.client.metadata('commonmark', 0, 500, 4)
+  await wait(() => pages.at(-1).version === 1)
+  assert.equal(pages.at(-1).epoch, pages[0].epoch)
+  const worker = f.workers[0]
+  worker.blocked = true
+  f.client.metadata('commonmark', 0, 500, 4)
+  for (let n = 0; n < 1000; n++) f.client.metadata('commonmark', n, n + 500, 4)
+  const sent = worker.messages
+    .filter((message) => message.type === 'metadata')
+    .at(-1)
+  f.client.releaseMetadata()
+  const release = worker.messages.at(-1)
+  assert.equal(release.type, 'cancel-metadata')
+  assert.equal(release.release, true)
+  assert.equal(release.id, sent.id)
+  assert.ok(
+    worker.messages.filter((message) => message.type === 'metadata').length <=
+      3,
+  )
+  const count = worker.messages.length
+  f.client.releaseMetadata()
+  assert.equal(worker.messages.length, count)
+  assert.deepEqual(failures, [])
+  assert.deepEqual(f.errors, [])
+})
+
+test('metadata deadlines remain finite while the find lane keeps replying', async (t) => {
+  const pages = []
+  const f = fixture(t, '# one\n\ntext', {
+    timeoutMs: 80,
+    metadataResult: (page) => pages.push(page),
+  })
+  f.find('one')
+  await wait(() => f.results.length)
+  const first = f.workers[0],
+    receive = first.service.receive.bind(first.service)
+  first.service.receive = (message) => {
+    if (message.type !== 'metadata') receive(message)
+  }
+  f.client.metadata('commonmark', 0, 5, 2)
+  const active = setInterval(() => f.find('one'), 5)
+  try {
+    await wait(() => f.workers.length === 2 && pages.length)
+  } finally {
+    clearInterval(active)
+  }
+  assert.equal(first.terminated, true)
+  assert.equal(pages[0].complete, true)
+  assert.deepEqual(f.errors, [])
+})
+
+test('find deadlines remain finite while the metadata lane keeps replying', async (t) => {
+  const pages = []
+  const f = fixture(t, '# one\n\ntext', {
+    timeoutMs: 80,
+    metadataResult: (page) => pages.push(page),
+  })
+  f.client.metadata('commonmark', 0, 5, 2)
+  await wait(() => pages.length)
+  const first = f.workers[0],
+    receive = first.service.receive.bind(first.service)
+  first.service.receive = (message) => {
+    if (message.type !== 'find') receive(message)
+  }
+  f.find('one')
+  const active = setInterval(() => f.client.metadata('commonmark', 0, 5, 2), 5)
+  try {
+    await wait(() => f.workers.length === 2 && f.results.length)
+  } finally {
+    clearInterval(active)
+  }
+  assert.equal(first.terminated, true)
+  assert.equal(f.results.at(-1).location.total, 1)
+  assert.deepEqual(f.errors, [])
+})
+
+test('closing metadata requires cancellation acknowledgement before releasing its deadline', async (t) => {
+  const pages = []
+  const f = fixture(t, '# one', {
+    timeoutMs: 80,
+    metadataResult: (page) => pages.push(page),
+  })
+  f.client.metadata('commonmark', 0, 5, 2)
+  await wait(() => pages.length)
+  const first = f.workers[0]
+  first.blocked = true
+  f.client.releaseMetadata()
+  await wait(() => f.workers.length === 2)
+  assert.equal(first.terminated, true)
+  assert.equal(f.session.snapshot().materialize(), '# one')
+  assert.deepEqual(f.errors, [])
+})
+
+test('supersession acknowledgement cannot stand in for metadata owner release', async (t) => {
+  const pages = []
+  const f = fixture(t, '# one', {
+    timeoutMs: 80,
+    metadataResult: (page) => pages.push(page),
+  })
+  f.client.metadata('commonmark', 0, 5, 2)
+  await wait(() => pages.length)
+  const first = f.workers[0]
+  first.blocked = true
+  f.client.metadata('commonmark', 0, 5, 2)
+  f.client.metadata('commonmark', 1, 4, 1)
+  f.client.releaseMetadata()
+  const release = first.messages.at(-1)
+  first.onmessage({
+    data: {
+      type: 'metadata-canceled',
+      epoch: release.epoch,
+      id: release.id,
+      release: false,
+    },
+  })
+  await wait(() => f.workers.length === 2)
+  assert.equal(first.terminated, true)
+  assert.equal(pages.length, 1)
+})
+
+test('a late find result does not retire a missing cancellation acknowledgement', async (t) => {
+  const f = fixture(t, 'one two one', { timeoutMs: 80 })
+  f.find('one')
+  await wait(() => f.results.length)
+  const first = f.workers[0]
+  first.blocked = true
+  f.find('two')
+  const pending = first.messages.at(-1)
+  f.find('one')
+  first.onmessage({
+    data: {
+      type: 'find',
+      epoch: pending.epoch,
+      id: pending.id,
+      version: 0,
+      location: f.results[0].location,
+    },
+  })
+  await wait(() => f.workers.length === 2 && f.results.length === 2)
+  assert.equal(first.terminated, true)
+  assert.equal(f.results.at(-1).location.total, 2)
+  assert.deepEqual(f.errors, [])
+})
+
 test('client lazily bootstraps immutable chunks and applies an exact operation suffix without materializing source', async (t) => {
   const f = fixture(t, 'one '.repeat(20000))
   f.session.counters(true)

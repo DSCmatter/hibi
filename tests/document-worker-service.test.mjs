@@ -211,3 +211,66 @@ test('worker maintenance preserves live find results and disposes its previous r
     false,
   )
 })
+
+test('metadata validates bounded dialect requests independently and rejects stale epochs', async (t) => {
+  const f = fixture(t, '| one | two |\n| --- | --- |\n| a | b |\n')
+  const request = {
+    type: 'metadata',
+    epoch: 'first',
+    id: 1,
+    version: 0,
+    dialect: 'gfm',
+    from: 0,
+    to: 5,
+    limit: 2,
+  }
+  f.worker.receive(request)
+  const reply = await f.next(
+    (message) => message.type === 'metadata' && message.id === 1,
+  )
+  assert.equal(reply.page.complete, true)
+  assert.equal(reply.page.rows[0].owner.kind, 'markdown:Table')
+  for (const change of [
+    { from: -1 },
+    { to: 1000 },
+    { limit: 257 },
+    { dialect: 'custom-code' },
+    { version: 1 },
+  ])
+    f.worker.receive({ ...request, id: 2, ...change })
+  assert.equal(
+    f.messages.filter(
+      (message) => message.type === 'error' && message.stage === 'metadata',
+    ).length,
+    5,
+  )
+  f.find(1, 0, 'one')
+  assert.equal(
+    (await f.next((message) => message.type === 'find')).location.total,
+    1,
+  )
+  f.worker.receive({ ...request, id: 3 })
+  f.load('replacement', '# fresh')
+  f.worker.receive({
+    ...request,
+    id: 1,
+    epoch: 'replacement',
+    dialect: 'commonmark',
+    to: 7,
+  })
+  const fresh = await f.next(
+    (message) => message.type === 'metadata' && message.epoch === 'replacement',
+  )
+  assert.equal(fresh.page.rows[0].owner.kind, 'markdown:ATXHeading1')
+  assert.equal(fresh.page.rows[0].to, 7)
+  assert.notEqual(fresh.page.epoch, reply.page.epoch)
+  assert.equal(
+    f.messages.some(
+      (message) =>
+        message.type === 'metadata' &&
+        message.epoch === 'first' &&
+        message.id === 3,
+    ),
+    false,
+  )
+})

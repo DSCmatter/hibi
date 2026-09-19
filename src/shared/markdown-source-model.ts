@@ -5,7 +5,11 @@ import type {
   SourceStorageChange,
 } from './source-buffer.ts'
 import type { RawEdit } from './source-operations.ts'
-import { type OwnerIndexOptions, SourceOwners } from './source-owners.ts'
+import {
+  type OwnerIndexOptions,
+  type SourceOwner,
+  SourceOwners,
+} from './source-owners.ts'
 import { SourceParserSession } from './source-parser.ts'
 
 type Range = { from: number; to: number }
@@ -15,6 +19,20 @@ export type MarkdownSourceState = Readonly<{
   owners: SourceOwners | null
   complete: boolean
   dialect: string
+}>
+/** Bounded coarse membership data, never an authorization for visual inverse edits. */
+export type SourceOwnerPage = Readonly<{
+  version: number
+  dialect: string
+  epoch: string | null
+  complete: boolean
+  rows: readonly Readonly<{
+    owner: SourceOwner
+    index: number
+    from: number
+    to: number
+  }>[]
+  next: number | null
 }>
 const emptyWork = () => ({
   nodesVisited: 0,
@@ -61,6 +79,33 @@ export class MarkdownSourceModel {
     })
   }
   state = () => this.#state
+  page(from: number, to: number, limit = 128): SourceOwnerPage {
+    const { source, owners, complete, dialect } = this.#state
+    if (
+      !Number.isSafeInteger(from) ||
+      !Number.isSafeInteger(to) ||
+      from < 0 ||
+      to < from ||
+      to > source.utf16Length ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1 ||
+      limit > 256
+    )
+      throw new Error('Invalid source owner page request.')
+    const first = owners?.at(from),
+      last = owners?.at(to, from === to ? 1 : -1)
+    const end =
+      first && last ? Math.min(last.index + 1, first.index + limit) : 0
+    const rows = first && last ? [...owners!.records(first.index, end)] : []
+    return Object.freeze({
+      version: source.version,
+      dialect,
+      epoch: owners?.epoch ?? null,
+      complete,
+      rows: Object.freeze(rows),
+      next: last && end <= last.index ? rows.at(-1)!.to : null,
+    })
+  }
   adoptStorage(change: SourceStorageChange) {
     this.#parser.adoptStorage(change)
     this.#state = Object.freeze({ ...this.#state, source: change.after })

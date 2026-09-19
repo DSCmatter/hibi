@@ -2,11 +2,13 @@ import type {
   DocumentWorkerReply,
   DocumentWorkerRequest,
 } from './document-worker-protocol.ts'
+import type { MarkdownSourceModel } from './markdown-source-model.ts'
 import { SourceStore } from './source-buffer.ts'
 import { SourceMaintenance } from './source-maintenance.ts'
 import { SourceSearchIndex } from './source-search-index.ts'
 
 type FindRequest = Extract<DocumentWorkerRequest, { type: 'find' }>
+type MetadataRequest = Extract<DocumentWorkerRequest, { type: 'metadata' }>
 
 /** Trusted derived replica. The renderer/native journal remain the source authority. */
 export class DocumentWorkerService {
@@ -22,6 +24,12 @@ export class DocumentWorkerService {
   #stage: 'build' | 'locate' = 'build'
   #timer: ReturnType<typeof setTimeout> | undefined
   #disposed = false
+  #model: MarkdownSourceModel | null = null
+  #metadata: MetadataRequest | null = null
+  #metadataId = 0
+  #metadataLoading = false
+  #metadataTimer: ReturnType<typeof setTimeout> | undefined
+  #metadataServiced = 0
   constructor(post: (reply: DocumentWorkerReply) => void) {
     this.#post = post
   }
@@ -32,10 +40,35 @@ export class DocumentWorkerService {
     this.#work = null
     this.#request = null
   }
-  #fail(stage: 'replica' | 'find', error: unknown, id = this.#request?.id) {
+  #cancelMetadata(release = false) {
+    clearTimeout(this.#metadataTimer)
+    this.#metadataTimer = undefined
+    this.#metadata = null
+    if (release) {
+      this.#model?.dispose()
+      this.#model = null
+    }
+  }
+  #fail(
+    stage: 'replica' | 'find' | 'metadata',
+    error: unknown,
+    id = this.#request?.id,
+  ) {
+    if (stage === 'metadata') {
+      this.#cancelMetadata(true)
+      this.#post({
+        type: 'error',
+        epoch: this.#epoch,
+        stage,
+        ...(id === undefined ? {} : { id }),
+        message: error instanceof Error ? error.message : String(error),
+      })
+      return
+    }
     this.#cancel()
     this.#index = null
     if (stage === 'replica') {
+      this.#cancelMetadata(true)
       this.#maintenance?.dispose()
       this.#maintenance = null
       this.#store = null
@@ -59,6 +92,8 @@ export class DocumentWorkerService {
         throw new Error('Invalid document worker identity.')
       if (message.type === 'load') {
         this.#cancel()
+        this.#cancelMetadata(true)
+        this.#metadataId = 0
         this.#maintenance?.dispose()
         this.#maintenance = null
         this.#index = null
@@ -87,6 +122,7 @@ export class DocumentWorkerService {
           (change) => {
             store.commitCompaction(change)
             this.#index?.adoptStorage(change)
+            this.#model?.adoptStorage(change)
           },
           (error) => this.#fail('replica', error),
         )
@@ -102,8 +138,10 @@ export class DocumentWorkerService {
       if (message.type === 'edit') {
         const prepared = this.#store.prepare(message.operation)
         this.#cancel()
+        this.#cancelMetadata()
         this.#index = null
         this.#store.commit(prepared)
+        this.#model?.apply(prepared)
         this.#maintenance!.changed(
           prepared.operation.changes.reduce(
             (sum, edit) => sum + edit.to - edit.from + edit.insert.length,
@@ -121,6 +159,45 @@ export class DocumentWorkerService {
           if (!this.#index?.state().complete) this.#index = null
         }
         this.#post({ type: 'canceled', epoch: this.#epoch, id: message.id })
+      } else if (message.type === 'cancel-metadata') {
+        if (
+          !Number.isSafeInteger(message.id) ||
+          message.id < 1 ||
+          typeof message.release !== 'boolean'
+        )
+          throw new Error('Invalid document metadata cancellation.')
+        if (
+          this.#metadata?.id === message.id ||
+          (message.release && this.#metadataId === message.id)
+        )
+          this.#cancelMetadata(message.release)
+        this.#post({
+          type: 'metadata-canceled',
+          epoch: this.#epoch,
+          id: message.id,
+          release: message.release,
+        })
+      } else if (message.type === 'metadata') {
+        if (
+          !Number.isSafeInteger(message.id) ||
+          message.id < 1 ||
+          message.version !== this.#store.snapshot().version ||
+          !['commonmark', 'gfm'].includes(message.dialect) ||
+          !Number.isSafeInteger(message.from) ||
+          !Number.isSafeInteger(message.to) ||
+          message.from < 0 ||
+          message.to < message.from ||
+          message.to > this.#store.snapshot().utf16Length ||
+          !Number.isSafeInteger(message.limit) ||
+          message.limit < 1 ||
+          message.limit > 256
+        )
+          throw new Error('Invalid or stale document metadata request.')
+        if (message.id <= this.#metadataId) return
+        this.#metadataId = message.id
+        this.#cancelMetadata()
+        this.#metadata = { ...message }
+        this.#loadMetadata()
       } else if (message.type === 'find') {
         if (
           !Number.isSafeInteger(message.id) ||
@@ -159,10 +236,70 @@ export class DocumentWorkerService {
       } else throw new Error('Unknown document worker request.')
     } catch (error) {
       this.#fail(
-        message?.type === 'find' ? 'find' : 'replica',
+        message?.type === 'find'
+          ? 'find'
+          : message?.type === 'metadata'
+            ? 'metadata'
+            : 'replica',
         error,
-        message?.type === 'find' ? message.id : undefined,
+        message?.type === 'find' || message?.type === 'metadata'
+          ? message.id
+          : undefined,
       )
+    }
+  }
+  #loadMetadata() {
+    if (this.#metadataLoading) return
+    this.#metadataLoading = true
+    void import('./markdown-worker-parser.ts')
+      .then(({ metadataParsers, MarkdownSourceModel }) => {
+        this.#metadataLoading = false
+        const request = this.#metadata
+        if (this.#disposed || !request || !this.#store) return
+        if (!this.#model || this.#model.state().dialect !== request.dialect) {
+          this.#model?.dispose()
+          this.#model = new MarkdownSourceModel(
+            this.#store.snapshot(),
+            metadataParsers[request.dialect],
+            request.dialect,
+          )
+        }
+        this.#scheduleMetadata()
+      })
+      .catch((error) => {
+        this.#metadataLoading = false
+        if (this.#metadata) this.#fail('metadata', error, this.#metadata.id)
+      })
+  }
+  #scheduleMetadata() {
+    if (this.#metadataTimer || !this.#metadata || !this.#model) return
+    this.#metadataTimer = setTimeout(this.#advanceMetadata, 0)
+  }
+  #advanceMetadata = () => {
+    this.#metadataTimer = undefined
+    const request = this.#metadata,
+      model = this.#model
+    if (!request || !model) return
+    // Demanded find gets the first slices, but cannot starve metadata indefinitely.
+    if (this.#work && performance.now() - this.#metadataServiced < 16) {
+      this.#metadataTimer = setTimeout(this.#advanceMetadata, 2)
+      return
+    }
+    this.#metadataServiced = performance.now()
+    try {
+      // Lezer advance is indivisible; isolate it here and retain its measured duration.
+      if (model.advance().complete) {
+        this.#metadata = null
+        this.#post({
+          type: 'metadata',
+          epoch: this.#epoch,
+          id: request.id,
+          version: request.version,
+          page: model.page(request.from, request.to, request.limit),
+        })
+      } else this.#scheduleMetadata()
+    } catch (error) {
+      this.#fail('metadata', error, request.id)
     }
   }
   #schedule() {
@@ -201,6 +338,7 @@ export class DocumentWorkerService {
   dispose() {
     this.#disposed = true
     this.#cancel()
+    this.#cancelMetadata(true)
     this.#maintenance?.dispose()
     this.#maintenance = null
     this.#index = null

@@ -32,6 +32,7 @@ export default defineConfig({
   },
   renderer: {
     plugins: [react(), startupBundle()],
+    worker: { format: 'es' },
     build: { target: 'chrome152', minify: 'esbuild' },
     server: { host: '127.0.0.1' },
   },

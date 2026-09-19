@@ -3,7 +3,9 @@ import type { DocumentSession } from '../../shared/document-session.ts'
 import type {
   DocumentWorkerReply,
   DocumentWorkerRequest,
+  MetadataDialect,
 } from '../../shared/document-worker-protocol.ts'
+import type { SourceOwnerPage } from '../../shared/markdown-source-model.ts'
 import type { SourceSnapshot } from '../../shared/source-buffer.ts'
 import type { SourceOperation } from '../../shared/source-operations.ts'
 import type { SearchLocation } from '../../shared/source-search-index.ts'
@@ -21,6 +23,9 @@ type ClientOptions = {
   pending: () => void
   result: (location: SearchLocation, action: FindAction) => void
   error: (message: string) => void
+  metadataPending?: () => void
+  metadataResult?: (page: SourceOwnerPage) => void
+  metadataError?: (message: string) => void
   worker?: () => Transport
   maximumPendingBytes?: number
   timeoutMs?: number
@@ -51,6 +56,13 @@ export class DocumentWorkerClient {
   #disposed = false
   #failed = false
   #restarts = 0
+  #metadata: Extract<DocumentWorkerRequest, { type: 'metadata' }> | null = null
+  #metadataFlight: number | null = null
+  #metadataCanceling: number | null = null
+  #metadataReleasing = false
+  #sentMetadata = 0
+  #metadataDeadline: ReturnType<typeof setTimeout> | undefined
+  #findDeadline: ReturnType<typeof setTimeout> | undefined
   constructor(session: DocumentSession, options: ClientOptions) {
     this.#session = session
     this.#options = options
@@ -71,6 +83,12 @@ export class DocumentWorkerClient {
             this.#pending.set(operation.contentVersion, bytes)
             this.#bytes += bytes
             this.#flight = this.#canceling = null
+            clearTimeout(this.#findDeadline)
+            this.#findDeadline = undefined
+            this.#metadataFlight = this.#metadataCanceling = null
+            this.#metadataReleasing = false
+            clearTimeout(this.#metadataDeadline)
+            this.#metadataDeadline = undefined
             if (this.#loaded) this.#sendOperation(operation)
             else this.#queued.push(operation)
           }
@@ -88,6 +106,7 @@ export class DocumentWorkerClient {
           this.#failed = false
           this.#restarts = 0
           this.#latest = null
+          this.#metadata = null
           this.#restart()
           options.changed()
         }
@@ -109,6 +128,77 @@ export class DocumentWorkerClient {
     }
     this.#options.pending()
     this.#flushQuery()
+  }
+  metadata(dialect: MetadataDialect, from: number, to: number, limit = 128) {
+    if (this.#disposed || this.#failed) return
+    if (!this.#worker && !this.#startTimer && !this.#bootstrap) this.#restart()
+    this.#metadata = {
+      type: 'metadata',
+      epoch: this.#epoch,
+      id: ++this.#requestId,
+      version: this.#session.snapshot().version,
+      dialect,
+      from,
+      to,
+      limit,
+    }
+    this.#options.metadataPending?.()
+    this.#flushMetadata()
+  }
+  releaseMetadata() {
+    const id =
+      this.#metadataFlight ??
+      this.#metadataCanceling ??
+      (this.#sentMetadata || null)
+    this.#metadata = null
+    this.#sentMetadata = 0
+    if (id === null || this.#metadataReleasing) return
+    this.#metadataCanceling = id
+    this.#metadataReleasing = true
+    this.#post({
+      type: 'cancel-metadata',
+      epoch: this.#epoch,
+      id,
+      release: true,
+    })
+    if (this.#metadataCanceling === id && !this.#metadataDeadline)
+      this.#metadataDeadline = setTimeout(
+        () =>
+          this.#fail(new Error('Document metadata cancellation timed out.')),
+        this.#options.timeoutMs ?? 5000,
+      )
+  }
+  #flushMetadata() {
+    const request = this.#metadata
+    if (
+      !request ||
+      !this.#loaded ||
+      this.#ack !== this.#session.snapshot().version ||
+      this.#metadataCanceling !== null
+    )
+      return
+    if (this.#metadataFlight !== null) {
+      if (this.#metadataFlight !== request.id) {
+        this.#metadataCanceling = this.#metadataFlight
+        this.#post({
+          type: 'cancel-metadata',
+          epoch: this.#epoch,
+          id: this.#metadataFlight,
+          release: false,
+        })
+      }
+      return
+    }
+    if (request.id === this.#sentMetadata || request.version !== this.#ack)
+      return
+    this.#metadataFlight = this.#sentMetadata = request.id
+    this.#post(request)
+    if (this.#metadataFlight === request.id)
+      this.#metadataDeadline = setTimeout(
+        () =>
+          this.#fail(new Error('Document metadata worker stopped responding.')),
+        this.#options.timeoutMs ?? 5000,
+      )
   }
   #post(message: DocumentWorkerRequest) {
     if (!this.#worker) return false
@@ -157,17 +247,20 @@ export class DocumentWorkerClient {
       from: request.from,
       to: request.to,
     })
+    if (this.#flight === request.id)
+      this.#findDeadline = setTimeout(
+        () => this.#fail(new Error('Find worker stopped responding.')),
+        this.#options.timeoutMs ?? 5000,
+      )
     this.#watch()
   }
   #watch() {
-    if (this.#deadline || !this.#worker) return
-    if (
-      !this.#bootstrap &&
-      !this.#pending.size &&
-      this.#flight === null &&
-      this.#canceling === null
-    )
+    if (!this.#bootstrap && !this.#pending.size) {
+      clearTimeout(this.#deadline)
+      this.#deadline = undefined
       return
+    }
+    if (this.#deadline || !this.#worker) return
     this.#deadline = setTimeout(
       () => this.#fail(new Error('Find worker stopped responding.')),
       this.#options.timeoutMs ?? 5000,
@@ -183,6 +276,8 @@ export class DocumentWorkerClient {
         return
       }
       if (reply.version <= this.#ack) return
+      clearTimeout(this.#deadline)
+      this.#deadline = undefined
       this.#ack = reply.version
       if (this.#bootstrap && reply.version >= this.#bootstrap.version)
         this.#bootstrap = null
@@ -194,8 +289,16 @@ export class DocumentWorkerClient {
     } else if (reply.type === 'canceled') {
       if (reply.id !== this.#canceling) return
       this.#flight = this.#canceling = null
+      clearTimeout(this.#findDeadline)
+      this.#findDeadline = undefined
     } else if (reply.type === 'find') {
-      if (reply.id === this.#flight) this.#flight = null
+      if (reply.id === this.#flight) {
+        this.#flight = null
+        if (this.#canceling === null) {
+          clearTimeout(this.#findDeadline)
+          this.#findDeadline = undefined
+        }
+      }
       const request = this.#latest
       if (
         request?.id === reply.id &&
@@ -203,21 +306,68 @@ export class DocumentWorkerClient {
         reply.version === this.#session.snapshot().version
       )
         this.#options.result(reply.location, request.action)
+    } else if (reply.type === 'metadata-canceled') {
+      if (
+        reply.id !== this.#metadataCanceling ||
+        reply.release !== this.#metadataReleasing
+      )
+        return
+      this.#metadataFlight = this.#metadataCanceling = null
+      this.#metadataReleasing = false
+      clearTimeout(this.#metadataDeadline)
+      this.#metadataDeadline = undefined
+    } else if (reply.type === 'metadata') {
+      if (reply.id === this.#metadataFlight) {
+        this.#metadataFlight = null
+        if (this.#metadataCanceling === null) {
+          clearTimeout(this.#metadataDeadline)
+          this.#metadataDeadline = undefined
+        }
+      }
+      const request = this.#metadata
+      if (
+        request?.id === reply.id &&
+        request.version === reply.version &&
+        reply.version === this.#session.snapshot().version
+      )
+        this.#options.metadataResult?.(reply.page)
     } else if (reply.stage === 'replica') {
       this.#fail(new Error(reply.message))
       return
+    } else if (reply.stage === 'metadata') {
+      if (reply.id === this.#metadataFlight) {
+        this.#metadataFlight = null
+        if (this.#metadataCanceling === null) {
+          clearTimeout(this.#metadataDeadline)
+          this.#metadataDeadline = undefined
+        }
+      }
+      if (reply.id === this.#metadata?.id)
+        this.#options.metadataError?.(reply.message)
     } else {
-      if (reply.id === this.#flight) this.#flight = null
+      if (reply.id === this.#flight) {
+        this.#flight = null
+        if (this.#canceling === null) {
+          clearTimeout(this.#findDeadline)
+          this.#findDeadline = undefined
+        }
+      }
       if (reply.id === this.#latest?.id) this.#options.error(reply.message)
     }
-    clearTimeout(this.#deadline)
-    this.#deadline = undefined
     this.#flushQuery()
+    this.#flushMetadata()
     this.#watch()
   }
   #stop() {
     clearTimeout(this.#startTimer)
     clearTimeout(this.#deadline)
+    clearTimeout(this.#findDeadline)
+    this.#findDeadline = undefined
+    clearTimeout(this.#metadataDeadline)
+    this.#metadataDeadline = undefined
+    this.#metadataFlight = this.#metadataCanceling = null
+    this.#metadataReleasing = false
+    this.#sentMetadata = 0
     this.#startTimer = this.#deadline = undefined
     this.#worker?.terminate()
     this.#worker = null
@@ -244,6 +394,13 @@ export class DocumentWorkerClient {
           this.#latest.version === this.#session.snapshot().version
             ? this.#latest.action
             : null,
+      }
+    if (this.#metadata)
+      this.#metadata = {
+        ...this.#metadata,
+        epoch: this.#epoch,
+        id: ++this.#requestId,
+        version: this.#session.snapshot().version,
       }
     const epoch = this.#epoch
     this.#startTimer = setTimeout(() => {
@@ -315,11 +472,15 @@ export class DocumentWorkerClient {
     }
     this.#failed = true
     this.#options.error(error instanceof Error ? error.message : String(error))
+    this.#options.metadataError?.(
+      error instanceof Error ? error.message : String(error),
+    )
   }
   dispose() {
     this.#disposed = true
     this.#stop()
     for (const detach of this.#detach) detach()
     this.#latest = null
+    this.#metadata = null
   }
 }

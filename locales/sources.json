@@ -1045,6 +1045,12 @@
   "f5dd68e8bde8": [
     "src/renderer/src/FormatsSettings.tsx"
   ],
+  "ebe67d68f86c": [
+    "src/renderer/src/document-worker-client.ts"
+  ],
+  "158a1325fa43": [
+    "src/renderer/src/document-worker-client.ts"
+  ],
   "610a1ccb7572": [
     "src/shared/document-journal.ts"
   ],
@@ -1927,6 +1933,9 @@
   "5a2f299940cc": [
     "src/shared/document-journal.ts"
   ],
+  "b387677a73d8": [
+    "src/shared/document-worker-service.ts"
+  ],
   "5f0c6a56de07": [
     "src/shared/document-checkpoint.ts"
   ],
@@ -1963,6 +1972,9 @@
   "e130481e560e": [
     "src/shared/source-projection.ts"
   ],
+  "55fd4183e9eb": [
+    "src/shared/document-worker-service.ts"
+  ],
   "cb0035a4d3ad": [
     "src/shared/source-parser.ts"
   ],
@@ -1992,6 +2004,9 @@
   ],
   "6caabec5b451": [
     "src/shared/source-owners.ts"
+  ],
+  "f871d2fced7d": [
+    "src/shared/markdown-source-model.ts"
   ],
   "9b8b7372c0b5": [
     "src/shared/source-owners.ts"

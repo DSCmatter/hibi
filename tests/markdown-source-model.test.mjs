@@ -66,6 +66,54 @@ test('fence pairing changes expand boundary coverage without quadratic interior 
   assert.deepEqual(rows(state.owners), oracle(store.snapshot(), parser))
   model.dispose()
 })
+
+test('bounded owner pages preserve raw positions, coverage, epochs and continuation across edits', () => {
+  const store = new SourceStore(
+    '# heading\r\n\r\nparagraph\r\n\r\n'.repeat(10000),
+    { tabId: 'pages', revision: 0 },
+  )
+  const model = new MarkdownSourceModel(store.snapshot(), parser, 'commonmark')
+  assert.deepEqual(model.page(0, 50).rows, [])
+  assert.equal(model.page(0, 50).complete, false)
+  finish(model)
+  model.counters(true)
+  const first = model.page(180000, store.snapshot().utf16Length, 3)
+  assert.equal(first.rows.length, 3)
+  assert.equal(first.complete, true)
+  assert.equal(first.version, store.snapshot().version)
+  assert.equal(first.epoch, model.state().owners.epoch)
+  assert.equal(first.next, first.rows.at(-1).to)
+  assert.ok(model.counters().owners.lookupSlotsRead < 1024)
+  const next = model.page(first.next, store.snapshot().utf16Length, 3)
+  assert.equal(next.rows[0].index, first.rows.at(-1).index + 1)
+  assert.equal(next.rows[0].from, first.next)
+  const caret = model.page(first.rows[0].from, first.rows[0].from, 1)
+  assert.equal(caret.rows[0].owner.slot, first.rows[0].owner.slot)
+  assert.equal(caret.next, null)
+  assert.throws(() => {
+    first.rows[0].owner.length = 0
+  }, TypeError)
+  assert.throws(() => first.rows.push(first.rows[0]), TypeError)
+  const tail = model.page(
+    store.snapshot().utf16Length,
+    store.snapshot().utf16Length,
+  )
+  assert.equal(tail.next, null)
+  assert.equal(tail.rows.length, 1)
+  edit(store, model, [{ from: 0, to: 0, insert: 'prefix\n\n' }])
+  assert.equal(model.page(180008, 180020).complete, false)
+  assert.equal(model.page(180008, 180020).version, 1)
+  assert.equal(model.page(180008, 180020).epoch, first.epoch)
+  for (const args of [
+    [-1, 0],
+    [1, 0],
+    [0, Infinity],
+    [0, 1, 0],
+    [0, 1, 257],
+  ])
+    assert.throws(() => model.page(...args), /Invalid/)
+  model.dispose()
+})
 function oracle(source, dialect) {
   const tree = dialect.parse(normalizedSource(source.materialize())),
     result = []
