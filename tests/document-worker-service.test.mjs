@@ -54,6 +54,40 @@ function fixture(t, source = 'one two one') {
   return { worker, messages, next, load, find }
 }
 
+test('metadata batches cheap parser advances while yielding between work slices', async (t) => {
+  const { MarkdownSourceModel } = await import(
+    '../src/shared/markdown-source-model.ts'
+  )
+  const advance = MarkdownSourceModel.prototype.advance
+  let turn = 0,
+    advances = 0
+  const batches = new Map()
+  t.mock.method(MarkdownSourceModel.prototype, 'advance', function () {
+    advances++
+    batches.set(turn, (batches.get(turn) ?? 0) + 1)
+    return advance.call(this)
+  })
+  const timer = setInterval(() => turn++, 0)
+  t.after(() => clearInterval(timer))
+  const f = fixture(t, '# heading\n\nparagraph\n\n'.repeat(2000))
+  f.worker.receive({
+    type: 'metadata',
+    epoch: 'first',
+    id: 1,
+    version: 0,
+    dialect: 'commonmark',
+    from: 0,
+    to: 500,
+    limit: 4,
+  })
+  const reply = await f.next((message) => message.type === 'metadata')
+  assert.equal(reply.page.rows.length, 4)
+  assert.equal(reply.page.complete, true)
+  assert.ok(advances > 2000)
+  assert.ok(batches.size > 1, 'metadata must yield to the worker event loop')
+  assert.ok(Math.max(...batches.values()) > 1, 'cheap blocks share a slice')
+})
+
 test('worker source replication is ordered, atomic, and query replies name the exact accepted version', async (t) => {
   const f = fixture(t)
   assert.deepEqual(f.messages[0], { type: 'ack', epoch: 'first', version: 0 })

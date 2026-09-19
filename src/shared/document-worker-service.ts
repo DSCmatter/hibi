@@ -287,17 +287,22 @@ export class DocumentWorkerService {
     }
     this.#metadataServiced = performance.now()
     try {
-      // Lezer advance is indivisible; isolate it here and retain its measured duration.
-      if (model.advance().complete) {
-        this.#metadata = null
-        this.#post({
-          type: 'metadata',
-          epoch: this.#epoch,
-          id: request.id,
-          version: request.version,
-          page: model.page(request.from, request.to, request.limit),
-        })
-      } else this.#scheduleMetadata()
+      // Each advance is indivisible. Batch cheap blocks within the same slice;
+      // one timer per block otherwise adds seconds before a small page is ready.
+      do {
+        if (model.advance().complete) {
+          this.#metadata = null
+          this.#post({
+            type: 'metadata',
+            epoch: this.#epoch,
+            id: request.id,
+            version: request.version,
+            page: model.page(request.from, request.to, request.limit),
+          })
+          return
+        }
+      } while (performance.now() - this.#metadataServiced < 2)
+      this.#scheduleMetadata()
     } catch (error) {
       this.#fail('metadata', error, request.id)
     }
