@@ -9,6 +9,7 @@ if (!output?.startsWith('/') || resolve(output) === resolve('.'))
   throw new Error('An isolated absolute output directory is required')
 const disabled = process.env.HIBI_O11Y_TEST_MODE === 'off'
 const probe = process.env.HIBI_O11Y_TEST_PROBE === '1'
+const stress = process.env.HIBI_O11Y_TEST_STRESS === '1'
 const stubs = new Map(
   [
     [
@@ -34,6 +35,21 @@ const control = (): Plugin => ({
   enforce: 'pre',
   load(id) {
     return disabled ? stubs.get(id) : undefined
+  },
+  transform(code, id) {
+    if (!stress || id !== resolve('src/main/local-diagnostics/runtime.ts'))
+      return
+    const marker = disabled
+      ? 'export class LocalDiagnostics {'
+      : 'constructor() {'
+    if (code.split(marker).length !== 2)
+      throw new Error('Diagnostic stress fixture no longer matches its owner')
+    return code.replace(
+      marker,
+      disabled
+        ? `${marker} constructor() { globalThis.__hibiDiagnosticStress = this; }`
+        : `${marker} globalThis.__hibiDiagnosticStress = this;`,
+    )
   },
 })
 export default defineConfig({
