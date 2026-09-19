@@ -122,6 +122,49 @@ Object.assign(globalThis, {
         void Promise.reject(new Error('PRIVATE_MAIN_REJECTION'))
       }, 0)
     },
+    async preload() {
+      const window = new BrowserWindow({
+        show: false,
+        focusable: false,
+        webPreferences: {
+          sandbox: true,
+          contextIsolation: true,
+          preload: join(import.meta.dirname, 'preload.cjs'),
+        },
+      })
+      diagnostics.observeWindow(window)
+      const failed = new Promise<void>((resolve) =>
+        window.webContents.once('preload-error', () => resolve()),
+      )
+      await window.loadURL('data:text/html,synthetic preload failure')
+      await failed
+      window.destroy()
+      await sink().flush()
+      return sink().report()
+    },
+    async rendererCrash() {
+      const window = new BrowserWindow({
+        show: false,
+        focusable: false,
+        webPreferences: { sandbox: true, contextIsolation: true },
+      })
+      diagnostics.observeWindow(window)
+      await window.loadURL('data:text/html,synthetic renderer failure')
+      const failed = new Promise<Electron.RenderProcessGoneDetails>((resolve) =>
+        window.webContents.once('render-process-gone', (_event, details) =>
+          resolve(details),
+        ),
+      )
+      window.webContents.forcefullyCrashRenderer()
+      const details = await failed
+      window.destroy()
+      await sink().flush()
+      return {
+        reason: details.reason,
+        exitCode: details.exitCode,
+        report: sink().report(),
+      }
+    },
     async report() {
       await sink().ready
       await sink().flush()

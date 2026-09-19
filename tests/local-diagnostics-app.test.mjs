@@ -100,3 +100,126 @@ test('default diagnostics preserve editing, use the raw bridge and export only s
   assert.ok(!report.includes(sentinel))
   assert.ok(Buffer.byteLength(report) <= 64 * 1024)
 })
+
+test('lost diagnostic credit cannot delay save, canceled close or acknowledged renderer recovery', {
+  timeout: 30000,
+}, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'hibi-log-barriers-'))
+  const profile = join(root, 'profile')
+  const file = join(root, 'saved.md')
+  const app = await electron.launch({
+    args: [resolve('.'), `--user-data-dir=${profile}`],
+  })
+  t.after(async () => {
+    await app
+      .evaluate(({ dialog }) => {
+        dialog.showMessageBox = async () => ({ response: 1 })
+      })
+      .catch(() => {})
+    await app.close().catch(() => {})
+    await rm(root, { recursive: true, force: true })
+  })
+  const page = await app.firstWindow()
+  page.setDefaultTimeout(7000)
+  const editor = page.getByRole('textbox', {
+    name: 'Document editor',
+    exact: true,
+  })
+  await editor.waitFor()
+  await page.evaluate(() => window.hibiDiagnostics.configuration())
+  const invalid = await app.evaluate(
+    async ({ BrowserWindow, ipcMain, dialog }, file) => {
+      const contents = BrowserWindow.getAllWindows()[0].webContents
+      const handler = ipcMain._invokeHandlers.get('hibi:local-diagnostics')
+      const foreign = new BrowserWindow({ show: false, focusable: false })
+      const results = [
+        await handler(
+          {
+            sender: foreign.webContents,
+            senderFrame: foreign.webContents.mainFrame,
+          },
+          'hello',
+        ),
+        await handler(
+          { sender: contents, senderFrame: { url: contents.mainFrame.url } },
+          'hello',
+        ),
+      ]
+      foreign.destroy()
+      globalThis.diagnosticBatches = 0
+      ipcMain.removeHandler('hibi:local-diagnostics')
+      ipcMain.handle('hibi:local-diagnostics', (event, operation, ...args) => {
+        if (operation === 'batch') {
+          globalThis.diagnosticBatches++
+          return new Promise(() => {})
+        }
+        return handler(event, operation, ...args)
+      })
+      dialog.showSaveDialog = async () => ({ canceled: false, filePath: file })
+      return results
+    },
+    file,
+  )
+  assert.deepEqual(invalid, [false, false])
+  await page.evaluate(() => {
+    window.hibiDiagnostics.record(
+      JSON.stringify({ code: 'RENDERER_ERROR', stackStatus: 'unavailable' }),
+    )
+  })
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  const sentinel = 'PRIVATE SAVED TEXT 雪'
+  await editor.fill(sentinel)
+  const saved = await page.evaluate(() => window.hibi.saveDocument(true))
+  assert.equal(saved.markdown, sentinel)
+  assert.equal(await readFile(file, 'utf8'), sentinel)
+  await editor.fill('PRIVATE RECOVERED TEXT 雪')
+  await page.evaluate(() => window.hibi.flushDocumentChanges())
+  const canceled = await app.evaluate(async ({ BrowserWindow, dialog }) => {
+    const window = BrowserWindow.getAllWindows()[0]
+    let prompted
+    const prompt = new Promise((resolve) => {
+      prompted = resolve
+    })
+    dialog.showMessageBox = async () => {
+      prompted()
+      return { response: 2 }
+    }
+    window.close()
+    await prompt
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    return !window.isDestroyed()
+  })
+  assert.equal(canceled, true)
+  const directory = join(profile, 'logs', 'debug')
+  assert.equal(
+    JSON.parse(await readFile(join(directory, 'run-state.txt'), 'utf8')).state,
+    'active',
+  )
+  await app.evaluate(
+    ({ BrowserWindow, dialog }) =>
+      new Promise((resolve) => {
+        const contents = BrowserWindow.getAllWindows()[0].webContents
+        dialog.showMessageBox = async () => ({ response: 0 })
+        contents.once('did-finish-load', resolve)
+        contents.forcefullyCrashRenderer()
+      }),
+  )
+  const recovered = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].webContents.executeJavaScript(
+      `new Promise(resolve => { const poll = () => { if (!document.querySelector('.tiptap[contenteditable="true"]')) { setTimeout(poll, 20); return; } Promise.resolve(window.hibi.getDocument()).then(resolve) }; poll() })`,
+    ),
+  )
+  assert.equal(recovered.markdown, 'PRIVATE RECOVERED TEXT 雪')
+  assert.equal(await app.evaluate(() => globalThis.diagnosticBatches), 1)
+  await new Promise((resolve) => setTimeout(resolve, 350))
+  const logs = (
+    await Promise.all(
+      (
+        await readdir(directory)
+      ).map((name) => readFile(join(directory, name), 'utf8')),
+    )
+  ).join('\n')
+  assert.match(logs, /RENDERER_GONE/)
+  assert.doesNotMatch(logs, /PRIVATE|saved\.md/)
+  assert.ok(!logs.includes(profile))
+})

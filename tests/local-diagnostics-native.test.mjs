@@ -24,6 +24,10 @@ test('pinned Electron exposes exact utility identity and passive JS observation 
     join(root, 'utility.cjs'),
     "process.parentPort.once('message', ({data}) => process.exit(data));",
   )
+  await writeFile(
+    join(root, 'preload.cjs'),
+    "throw new Error('PRIVATE_PRELOAD_MESSAGE')",
+  )
   await build({
     entryPoints: [resolve('tests/fixtures/local-diagnostics-runtime.ts')],
     outfile: join(root, 'index.js'),
@@ -85,4 +89,29 @@ test('pinned Electron exposes exact utility identity and passive JS observation 
   assert.equal(captured.dialogs, 1)
   assert.ok(!captured.text.includes('MAIN_REJECTION'))
   assert.ok(!captured.text.includes('PRIVATE_MAIN_REJECTION'))
+  const preload = await app.evaluate(() =>
+    globalThis.diagnosticFixture.preload(),
+  )
+  assert.match(preload, /PRELOAD_ERROR/)
+  assert.doesNotMatch(preload, /PRIVATE_PRELOAD|preload\.cjs/)
+  const crash = await app.evaluate(() =>
+    globalThis.diagnosticFixture.rendererCrash(),
+  )
+  assert.match(crash.report, /RENDERER_GONE/)
+  assert.ok(crash.report.includes(`"reason":"${crash.reason}"`))
+  assert.ok(crash.report.includes(`"exitCode":${crash.exitCode}`))
+  assert.ok(crash.report.includes('unavailable-native'))
+  app.process().kill('SIGKILL')
+  await new Promise((resolve) => app.process().once('exit', resolve))
+  const restarted = await electron.launch({ args: [root] })
+  try {
+    await restarted.firstWindow()
+    const previous = await restarted.evaluate(() =>
+      globalThis.diagnosticFixture.report(),
+    )
+    assert.match(previous.text, /PREVIOUS_RUN_UNCONFIRMED/)
+    assert.doesNotMatch(previous.text, /PRIVATE_|hibi-diagnostic-/)
+  } finally {
+    await restarted.close()
+  }
 })
