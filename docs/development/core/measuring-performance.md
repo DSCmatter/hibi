@@ -45,6 +45,8 @@ Formatting buttons refresh together before the next frame. Document changes and 
 
 Blank rich-editor startup leaves CodeMirror unloaded. Source view loads its editor on demand, while code fences can load their language parsers independently. Cursor and linked-scroll code use the mounted source view without importing its runtime into the initial renderer bundle.
 
+The rich-editor module starts loading when the active format requires Markdown. Its component is published through ordinary React state, keeping the shell usable during loading and avoiding the first Suspense reveal delay. A late import cannot replace a standalone editor; failed imports use the existing draft-recovery screen. This changes loading presentation, not the editor-ready benchmark predicate. On macOS, `node scripts/benchmark-editor-readiness.mjs /path/to/checkout 8` compares driver readiness with the same predicate stamped by a renderer animation frame across eight window reopens. Use matched production builds and separate profiles; record cold startup and input independently.
+
 Code highlighting maps existing decorations through edits and refreshes the affected block range. Language changes trigger a full refresh. The differential test compares incremental results with full highlighting through text edits, block conversion, deletion, nested blocks, and language changes.
 
 ## Document-engine scale measurements

@@ -89,9 +89,6 @@ import { WorkspaceSidebar } from './WorkspaceSidebar'
 import { type WorkspaceRename, workspaceMenuItems } from './workspace-menu'
 
 startupMark('renderer-entry')
-const MarkdownEditor = lazy(() =>
-  import('./Editor').then((module) => ({ default: module.MarkdownEditor })),
-)
 const SettingsScreen = lazy(() =>
   import('./SettingsScreen').then((module) => ({
     default: module.SettingsScreen,
@@ -189,7 +186,29 @@ function App() {
     : undefined
   const markdownDocument =
     !document || documentFormats.isMarkdown(document.name)
-  const DocumentEditor = markdownDocument ? MarkdownEditor : FormatEditor
+  const [richEditor, setRichEditor] = useState<{
+    Component?: typeof import('./Editor').MarkdownEditor
+    error?: Error
+  }>({})
+  const needsRichEditor = document !== null && markdownDocument
+  useEffect(() => {
+    if (!needsRichEditor || richEditor.Component || richEditor.error) return
+    let active = true
+    // Publish the demanded module as ordinary state: a first Suspense retry can
+    // otherwise hold an already loaded editor behind React's reveal throttle.
+    void import('./Editor').then(
+      ({ MarkdownEditor }) => {
+        if (active) setRichEditor({ Component: MarkdownEditor })
+      },
+      (error: Error) => {
+        if (active) setRichEditor({ error })
+      },
+    )
+    return () => {
+      active = false
+    }
+  }, [needsRichEditor, richEditor])
+  const DocumentEditor = markdownDocument ? richEditor.Component : FormatEditor
   useLayoutEffect(() => {
     editorDocument.publish(document)
   }, [document])
@@ -1317,6 +1336,7 @@ function App() {
   }
 
   if (document) startupMark('document-available')
+  if (markdownDocument && richEditor.error) throw richEditor.error
   if (!document && !failed) return <LoadingScreen full />
   startupMark('shell')
   if (addonHost.ready) {
@@ -1947,8 +1967,8 @@ function App() {
           inert={!addonHost.ready}
           aria-busy={!addonHost.ready}
         >
-          {!editorStarted.current && <LoadingScreen />}
-          {document && editorStarted.current && (
+          {(!editorStarted.current || !DocumentEditor) && <LoadingScreen />}
+          {document && editorStarted.current && DocumentEditor && (
             <Suspense fallback={<LoadingScreen />}>
               <DocumentEditor
                 onOutline={setOutline}
