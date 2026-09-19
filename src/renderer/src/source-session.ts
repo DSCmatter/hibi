@@ -165,6 +165,9 @@ export function createSourceSession(session: DocumentSession) {
     snapshot: () => snapshot,
     dispatch,
     attach(view: Pick<EditorView, 'state' | 'update'>) {
+      if (!session.ownsCurrentSnapshot(snapshot))
+        throw new Error('The source editor is synchronizing.')
+      snapshot = session.snapshot()
       const unregister = registerSourceHistory(view, {
         undo: () => !!session.undo(),
         redo: () => !!session.redo(),
@@ -192,9 +195,15 @@ export function createSourceSession(session: DocumentSession) {
         rememberSourceHistory(transaction.state, session.historyDepth())
         view.update([transaction])
       })
+      const unsubscribeStorage = session.subscribeStorage((change) => {
+        if (snapshot !== change.before)
+          throw new Error('The source replica missed an operation.')
+        snapshot = change.after
+      })
       return () => {
         unregister()
         unsubscribe()
+        unsubscribeStorage()
       }
     },
     undo: () => !!session.undo(),

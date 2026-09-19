@@ -70,12 +70,12 @@ export async function verifyJournalCheckpoint(
     offset += chunk.length
     if (performance.now() - started >= 1) {
       await new Promise<void>((resolve) => setTimeout(resolve, 0))
-      if (read().snapshot() !== snapshot)
+      if (!read().ownsCurrentSnapshot(snapshot))
         throw new Error('The document changed during recovery verification.')
       started = performance.now()
     }
   }
-  if (read().snapshot() !== snapshot)
+  if (!read().ownsCurrentSnapshot(snapshot))
     throw new Error('The document changed during recovery verification.')
   return parseJournalHead(checkpoint)
 }

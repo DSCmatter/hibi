@@ -2,6 +2,7 @@ import type { Parser, Tree } from '@lezer/common'
 import type {
   PreparedSourceOperation,
   SourceSnapshot,
+  SourceStorageChange,
 } from './source-buffer.ts'
 import type { RawEdit } from './source-operations.ts'
 import { type OwnerIndexOptions, SourceOwners } from './source-owners.ts'
@@ -59,6 +60,10 @@ export class MarkdownSourceModel {
     })
   }
   state = () => this.#state
+  adoptStorage(change: SourceStorageChange) {
+    this.#parser.adoptStorage(change)
+    this.#state = Object.freeze({ ...this.#state, source: change.after })
+  }
   counters(reset = false) {
     const result = {
       ...this.#work,

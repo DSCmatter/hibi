@@ -33,6 +33,8 @@ export type SourceBufferCounters = {
   compactionUnits: number
   arenaAllocatedUnits: number
   arenaWrittenUnits: number
+  storageNodesVisited: number
+  storagePiecesVisited: number
 }
 const newCounters = (): SourceBufferCounters => ({
   nodeVisits: 0,
@@ -46,6 +48,8 @@ const newCounters = (): SourceBufferCounters => ({
   compactionUnits: 0,
   arenaAllocatedUnits: 0,
   arenaWrittenUnits: 0,
+  storageNodesVisited: 0,
+  storagePiecesVisited: 0,
 })
 type Piece = Readonly<{
   chunk: SourceChunk
@@ -199,6 +203,86 @@ class PieceTree {
     }
     if (pending) add(pending)
     return this.fromPieces(pieces)
+  }
+  /** Maintenance builds chunks and bounded right-spine paths between yields. */
+  *rebuild(chunks: Iterable<string>): Generator<void, Node | undefined> {
+    let root = this.leaf([]),
+      pending = '',
+      reads = 0
+    let pieces: Piece[] = []
+    const flush = () => {
+      if (!pieces.length) return
+      const joined = this.joinNodes(root, this.leaf(pieces))
+      root = joined.length === 1 ? joined[0]! : this.branch(joined)
+      pieces = []
+    }
+    const add = (text: string) => {
+      const chunk = new SourceChunk(text, this.#scanned)
+      pieces.push(this.piece(chunk, 0, text.length))
+      this.counters.compactionUnits += text.length
+      if (pieces.length === this.config.leafCapacity) flush()
+    }
+    for (const text of chunks) {
+      let from = 0
+      while (from < text.length) {
+        const length = Math.min(
+          this.config.chunkUnits - pending.length,
+          text.length - from,
+        )
+        pending += text.slice(from, from + length)
+        from += length
+        if (pending.length === this.config.chunkUnits) {
+          add(pending)
+          pending = ''
+          reads = 0
+          yield
+        }
+      }
+      // Fragmented input must yield even before it fills an output chunk.
+      if (++reads >= 64) {
+        reads = 0
+        yield
+      }
+    }
+    if (pending) {
+      add(pending)
+      yield
+    }
+    flush()
+    return this.normalize(root)
+  }
+  *storage(
+    root: Node,
+  ): Generator<void, Omit<SourceStorageUsage, 'source'> | undefined> {
+    const chunks = new Set<SourceChunk>(),
+      pending = [root]
+    let allocatedUnits = 0,
+      indexBytes = 0
+    const add = (chunk: SourceChunk) => {
+      if (chunks.has(chunk)) return
+      chunks.add(chunk)
+      allocatedUnits += chunk.allocatedUnits
+      indexBytes += chunk.indexBytes
+    }
+    while (pending.length) {
+      const node = pending.pop()!
+      this.counters.storageNodesVisited++
+      if (node.kind === 'branch') pending.push(...node.entries)
+      else
+        for (const piece of node.entries) {
+          this.counters.storagePiecesVisited++
+          add(piece.chunk)
+        }
+      yield
+    }
+    // Rejected preparations can leave a writer that the visible root does not reference.
+    if (this.#arena) add(this.#arena.chunk)
+    return Object.freeze({
+      allocatedUnits,
+      indexBytes,
+      chunks: chunks.size,
+      pieces: root.pieces,
+    })
   }
   fromPieces(pieces: readonly Piece[]): Node {
     if (!pieces.length) return this.leaf([])
@@ -663,6 +747,26 @@ export type PreparedSourceOperation = Readonly<{
   after: SourceSnapshot
   inverse: readonly RawEdit[]
 }>
+export type SourceStorageChange = Readonly<{
+  before: SourceSnapshot
+  after: SourceSnapshot
+}>
+export type SourceStorageUsage = Readonly<{
+  source: SourceSnapshot
+  /** Unique owned UTF-16 capacity, including the current writer; string storage is an upper estimate. */
+  allocatedUnits: number
+  indexBytes: number
+  chunks: number
+  pieces: number
+}>
+const acceptedStorageChanges = new WeakSet<SourceStorageChange>()
+/** Only committed, kernel-created storage changes can authorize reader rebasing. */
+export const acceptedStorageChange = (
+  value: unknown,
+): value is SourceStorageChange =>
+  !!value &&
+  typeof value === 'object' &&
+  acceptedStorageChanges.has(value as SourceStorageChange)
 
 // An edit can create a new CRLF/surrogate seam. Its inverse must own that whole
 // boundary, restoring the unchanged neighbor as well as the removed content.
@@ -708,6 +812,8 @@ export class SourceStore {
   #current: SourceSnapshot
   #rootId = 0
   readonly #prepared = new WeakSet<PreparedSourceOperation>()
+  readonly #compactions = new WeakSet<SourceStorageChange>()
+  readonly #accepted = new WeakSet<SourceSnapshot>()
 
   constructor(
     source: string | Iterable<string>,
@@ -740,9 +846,20 @@ export class SourceStore {
       0,
       this.#rootId,
     )
+    this.#accepted.add(this.#current)
   }
   snapshot() {
     return this.#current
+  }
+  /** Owned published snapshots of this exact text generation survive storage swaps. */
+  ownsCurrentSnapshot(snapshot: SourceSnapshot) {
+    const current = this.#current
+    return (
+      this.#accepted.has(snapshot) &&
+      snapshot.version === current.version &&
+      snapshot.document.tabId === current.document.tabId &&
+      snapshot.document.revision === current.document.revision
+    )
   }
   /** A tab/replacement identity change does not copy text or rewind its content version. */
   reidentify(document: DocumentKey) {
@@ -771,6 +888,7 @@ export class SourceStore {
       before.storageEpoch,
       this.#rootId,
     )
+    this.#accepted.add(this.#current)
     return this.#current
   }
   counters(reset = false): SourceBufferCounters {
@@ -840,27 +958,90 @@ export class SourceStore {
         'Source preparation is forged, stale, or already consumed.',
       )
     this.#current = prepared.after
+    this.#accepted.add(this.#current)
     this.#tree.counters.publishedRoots++
     return this.#current
   }
   abort(prepared: PreparedSourceOperation) {
     this.#prepared.delete(prepared)
   }
-  compact() {
+  inspectStorage(): Generator<void, SourceStorageUsage | undefined> {
+    const source = this.#current,
+      work = this.#tree.storage(roots.get(source)!),
+      store = this
+    return (function* () {
+      try {
+        for (;;) {
+          if (store.#current !== source)
+            throw new Error('Source storage inspection is stale.')
+          const next = work.next()
+          if (next.done)
+            return next.value
+              ? Object.freeze({ source, ...next.value })
+              : undefined
+          yield
+        }
+      } finally {
+        work.return(undefined)
+      }
+    })()
+  }
+  prepareCompaction(): Generator<void, SourceStorageChange | undefined> {
     const before = this.#current,
-      root = this.#tree.build(before.chunks())
+      work = this.#tree.rebuild(before.chunks()),
+      store = this
+    return (function* () {
+      try {
+        for (;;) {
+          if (store.#current !== before)
+            throw new Error('Source compaction is stale.')
+          const next = work.next()
+          if (next.done) {
+            if (!next.value) return
+            store.#rootId = increment(store.#rootId)
+            const after = new SourceSnapshot(
+              store.#tree,
+              next.value,
+              before.document,
+              before.version,
+              increment(before.storageEpoch),
+              store.#rootId,
+            )
+            const change = Object.freeze({ before, after })
+            store.#compactions.add(change)
+            return change
+          }
+          yield
+        }
+      } finally {
+        work.return(undefined)
+      }
+    })()
+  }
+  commitCompaction(change: SourceStorageChange): SourceSnapshot {
+    if (!this.#compactions.delete(change) || change.before !== this.#current)
+      throw new Error(
+        'Source compaction is forged, stale, or already consumed.',
+      )
     this.#tree.sealArena()
-    this.#rootId = increment(this.#rootId)
-    this.#tree.counters.compactionUnits += before.utf16Length
-    this.#current = new SourceSnapshot(
-      this.#tree,
-      root,
-      before.document,
-      before.version,
-      increment(before.storageEpoch),
-      this.#rootId,
-    )
+    this.#current = change.after
+    this.#accepted.add(this.#current)
+    acceptedStorageChanges.add(change)
     return this.#current
+  }
+  abortCompaction(change: SourceStorageChange) {
+    this.#compactions.delete(change)
+  }
+  /** Explicit synchronous compatibility helper; production drives prepareCompaction in slices. */
+  compact() {
+    const work = this.prepareCompaction()
+    for (;;) {
+      const next = work.next()
+      if (next.done) {
+        if (!next.value) throw new Error('Source compaction was canceled.')
+        return this.commitCompaction(next.value)
+      }
+    }
   }
 
   /** Explicit test/diagnostic traversal, never part of an accepted input commit. */

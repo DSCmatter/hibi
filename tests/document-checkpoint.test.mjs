@@ -71,3 +71,21 @@ test('checkpoint comparison cannot acknowledge a replaced source root', async ()
     /changed during recovery/,
   )
 })
+
+test('checkpoint comparison accepts an owned storage swap without accepting another source generation', async () => {
+  const store = new SourceStore('same', { tabId: 'a', revision: 0 })
+  let reads = 0
+  const checkpoint = { ...journalHead(store), source: 'same' }
+  assert.deepEqual(
+    await verifyJournalCheckpoint(
+      () => {
+        if (++reads === 2) store.compact()
+        return store
+      },
+      checkpoint,
+      10,
+    ),
+    journalHead(store),
+  )
+  assert.equal(reads, 2)
+})

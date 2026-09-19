@@ -133,6 +133,16 @@ export class SourceChunk {
   get text() {
     return this.slice(0, this.#length)
   }
+  get allocatedUnits() {
+    return this.#units?.length ?? this.#text.length
+  }
+  get indexBytes() {
+    return (
+      this.#normalized.byteLength +
+      this.#bytes.byteLength +
+      this.#breaks.byteLength
+    )
+  }
   slice(from: number, to: number) {
     this.#range(from, to)
     return this.#units

@@ -67,7 +67,7 @@ export const richSourceSession = Extension.create<{
         candidate.event = update
         if (echo) {
           if (
-            echo !== documentRuntime.session()?.snapshot() ||
+            !documentRuntime.session()?.ownsCurrentSnapshot(echo) ||
             !update.nextState.doc.eq(transaction.doc)
           )
             throw new Error(

@@ -225,12 +225,12 @@ test('reentrant edits and observer failures cannot corrupt committed source', ()
 test('saved-content verification retains one scheduled job and resolves canceled waiters', async () => {
   const schedule = globalThis.setTimeout,
     cancel = globalThis.clearTimeout
-  const pending = new Set(),
+  const pending = new Map(),
     waiters = []
   let next = 0
-  globalThis.setTimeout = () => {
+  globalThis.setTimeout = (_callback, delay) => {
     const id = ++next
-    pending.add(id)
+    pending.set(id, delay)
     return id
   }
   globalThis.clearTimeout = (id) => {
@@ -245,7 +245,14 @@ test('saved-content verification retains one scheduled job and resolves canceled
         `group-${index}`,
       )
       waiters.push(session.settled())
-      assert.equal(pending.size, 1)
+      assert.equal(
+        [...pending.values()].filter((delay) => delay === 0).length,
+        1,
+      )
+      assert.equal(
+        [...pending.values()].filter((delay) => delay === 500).length,
+        Number(index >= 255),
+      )
     }
     session.dispose()
     assert.equal(pending.size, 0)

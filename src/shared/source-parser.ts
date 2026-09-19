@@ -5,9 +5,11 @@ import {
   type Tree,
   TreeFragment,
 } from '@lezer/common'
-import type {
-  PreparedSourceOperation,
-  SourceSnapshot,
+import {
+  acceptedStorageChange,
+  type PreparedSourceOperation,
+  type SourceSnapshot,
+  type SourceStorageChange,
 } from './source-buffer.ts'
 import {
   editorChangesFromSource,
@@ -98,6 +100,15 @@ export class SourceParserSession {
     })
   }
   state = () => this.#state
+  adoptStorage(change: SourceStorageChange) {
+    if (
+      this.#disposed ||
+      !acceptedStorageChange(change) ||
+      change.before !== this.#state.source
+    )
+      throw new Error('Parser storage change is stale or untrusted.')
+    this.#state = Object.freeze({ ...this.#state, source: change.after })
+  }
   counters(reset = false) {
     const result = { ...this.#work, fragments: this.#fragments.length }
     if (reset) Object.assign(this.#work, emptyWork())

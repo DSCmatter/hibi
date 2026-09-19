@@ -27,6 +27,7 @@ import type {
 import { MAX_DOCUMENT_BYTES } from '../shared/desktop'
 import { HISTORY_CHANNELS } from '../shared/history'
 import { type SourceSnapshot, SourceStore } from '../shared/source-buffer'
+import { SourceMaintenance } from '../shared/source-maintenance'
 import { documentExtensions, isDocumentName } from './document-types'
 import {
   readMarkdown,
@@ -48,9 +49,20 @@ const materialized = new WeakMap<SourceSnapshot, string>()
 const equalSaved = new WeakMap<SourceSnapshot, SourceSnapshot>()
 let dirtyTimer: ReturnType<typeof setTimeout> | undefined
 let dirtyGeneration = 0
+let maintenance: SourceMaintenance | null = null
+let maintenanceSource: SourceStore | null = null
+let maintenanceVersion = -1
+let maintenanceLength = 0
+let maintenanceWritten = 0
 let source = makeSource('')
 let saved = source.snapshot()
+function releaseMaintenance() {
+  maintenance?.dispose()
+  maintenance = null
+  maintenanceSource = null
+}
 function makeSource(text: string, tabId = activeTab, version = 0) {
+  releaseMaintenance()
   const store = new SourceStore(text, { tabId, revision }, version, {
     maximumBytes: MAX_DOCUMENT_BYTES,
   })
@@ -67,7 +79,11 @@ function textOf(snapshot: SourceSnapshot) {
 }
 function dirty(store: SourceStore, baseline: SourceSnapshot) {
   const current = store.snapshot()
-  if (current.sharesRoot(baseline) || equalSaved.get(current) === baseline)
+  if (
+    current.sharesRoot(baseline) ||
+    store.ownsCurrentSnapshot(baseline) ||
+    equalSaved.get(current) === baseline
+  )
     return false
   const a = materialized.get(current),
     b = materialized.get(baseline)
@@ -85,6 +101,39 @@ export function getDocumentSource() {
 }
 /** Update the native dirty indicator without scanning source on the incoming-edit stack. */
 export function updateDocumentEdited(window: BrowserWindow) {
+  if (maintenanceSource !== source) {
+    maintenance?.dispose()
+    maintenanceSource = source
+    maintenanceVersion = -1
+    maintenanceLength = source.snapshot().utf16Length
+    maintenanceWritten = 0
+    const store = source
+    maintenance = new SourceMaintenance(
+      store,
+      (change) => {
+        if (source !== store || window.isDestroyed()) return
+        const clean = !dirty(store, saved)
+        store.commitCompaction(change)
+        if (saved === change.before) saved = change.after
+        if (clean) equalSaved.set(change.after, saved)
+        updateDocumentEdited(window)
+      },
+      (error) => console.error('Source storage maintenance failed:', error),
+    )
+  }
+  const currentSource = source.snapshot(),
+    written = source.counters().arenaWrittenUnits
+  if (maintenanceVersion !== currentSource.version) {
+    const editedUnits =
+      maintenanceVersion < 0
+        ? 256 * 1024
+        : Math.max(0, written - maintenanceWritten) +
+          Math.max(0, maintenanceLength - currentSource.utf16Length)
+    maintenanceVersion = currentSource.version
+    maintenanceLength = currentSource.utf16Length
+    maintenanceWritten = written
+    maintenance!.changed(editedUnits)
+  }
   window.setDocumentEdited(hasUnsavedDocuments())
   clearTimeout(dirtyTimer)
   const generation = ++dirtyGeneration,
@@ -108,7 +157,7 @@ export function updateDocumentEdited(window: BrowserWindow) {
           equalSaved.set(current, baseline)
           if (
             activeTab === tabId &&
-            source.snapshot().sharesRoot(current) &&
+            source.ownsCurrentSnapshot(current) &&
             saved === baseline
           ) {
             equalSaved.set(source.snapshot(), baseline)
@@ -168,6 +217,7 @@ function storeTab() {
 function activateTab(id: string) {
   const draft = tabs.get(id)
   if (!draft) throw new Error('This tab is no longer open.')
+  if (draft.source !== source) releaseMaintenance()
   activeTab = id
   ;({ source, saved, path, pendingPath, untitledName, draftId } = draft)
 }
@@ -240,7 +290,7 @@ export async function selectDocumentTab(
   // Refresh clean files on return; dirty tabs keep their saved baseline for conflict checks.
   if (draft.path && !dirty(draft.source, draft.saved)) {
     const content = await readMarkdown(draft.path)
-    if (!source.snapshot().sharesRoot(current))
+    if (!source.ownsCurrentSnapshot(current))
       throw new Error('The document changed while switching tabs. Try again.')
     const version =
       draft.source.snapshot().version +
@@ -727,7 +777,7 @@ export async function loadDocument(
   const existing = getOpenDocuments().find((draft) => draft.file === chosen)
   if (existing) return selectDocumentTab(window, existing.tabId, remember, true)
   const content = await readMarkdown(chosen)
-  if (!source.snapshot().sharesRoot(current))
+  if (!source.ownsCurrentSnapshot(current))
     throw new Error(
       'The document changed while opening another file. Try again.',
     )

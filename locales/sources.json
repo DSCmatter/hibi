@@ -1063,6 +1063,9 @@
   "4ba14479a49a": [
     "src/addons/_shared/format-native.ts"
   ],
+  "fb2b00194df9": [
+    "src/shared/document-session.ts"
+  ],
   "9fc46f2f4ed7": [
     "src/shared/document-session.ts"
   ],
@@ -2686,6 +2689,9 @@
   "43bee021ac06": [
     "src/shared/source-parser.ts"
   ],
+  "2c329b81557d": [
+    "src/shared/source-parser.ts"
+  ],
   "e7cf3ef4f17c": [
     "src/addons/documentation/ExportDialog.tsx",
     "src/site/bootstrap.tsx"
@@ -3295,6 +3301,15 @@
   "aa0061415476": [
     "src/shared/source-buffer.ts"
   ],
+  "f072e679279d": [
+    "src/shared/source-buffer.ts"
+  ],
+  "35b5097608c7": [
+    "src/shared/source-buffer.ts"
+  ],
+  "11f5953c47d9": [
+    "src/shared/source-buffer.ts"
+  ],
   "0a2ccf3286b2": [
     "src/renderer/src/source-session.ts"
   ],
@@ -3356,6 +3371,9 @@
     "src/shared/source-selection.ts"
   ],
   "af0187b95408": [
+    "src/shared/source-buffer.ts"
+  ],
+  "41c7db5a5a4d": [
     "src/shared/source-buffer.ts"
   ],
   "2c8f1ce6d59f": [

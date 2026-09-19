@@ -118,6 +118,11 @@ export class DocumentRuntime {
           this.#changes = prepared.operation.changes
         }),
         session.subscribe(this.#publish),
+        session.subscribeStorage(() => {
+          this.#cached = null
+          this.#cachedState = null
+          this.#savedText = null
+        }),
       ]
       const open = new Set([
         document.tabId,

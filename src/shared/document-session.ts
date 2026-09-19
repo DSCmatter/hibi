@@ -2,8 +2,10 @@ import {
   type PreparedSourceOperation,
   type SourceBufferOptions,
   type SourceSnapshot,
+  type SourceStorageChange,
   SourceStore,
 } from './source-buffer.ts'
+import { SourceMaintenance } from './source-maintenance.ts'
 import {
   composeSourceChanges,
   type DocumentKey,
@@ -62,6 +64,8 @@ export class DocumentSession {
     (operation: PreparedSourceOperation) => void
   >()
   readonly #selectionListeners = new Set<() => void>()
+  readonly #storageListeners = new Set<(change: SourceStorageChange) => void>()
+  readonly #maintenance: SourceMaintenance
   readonly #identities = new WeakMap<SourceSnapshot, object>()
   #undo: HistoryGroup[] = []
   #redo: HistoryGroup[] = []
@@ -94,9 +98,47 @@ export class DocumentSession {
       canUndo: false,
       canRedo: false,
     })
+    this.#maintenance = new SourceMaintenance(
+      this.#store,
+      this.#adoptStorage,
+      options.onError,
+    )
   }
   snapshot = () => this.#store.snapshot()
   savedSnapshot = () => this.#saved
+  ownsCurrentSnapshot = (snapshot: SourceSnapshot) =>
+    !this.#disposed && this.#store.ownsCurrentSnapshot(snapshot)
+  subscribeStorage = (listener: (change: SourceStorageChange) => void) => {
+    this.#storageListeners.add(listener)
+    return () => {
+      this.#storageListeners.delete(listener)
+    }
+  }
+  maintainStorage() {
+    if (this.#dispatching)
+      throw new Error('Document session is dispatching another operation.')
+    return this.#maintenance.request()
+  }
+  #adoptStorage = (change: SourceStorageChange) => {
+    if (this.#disposed || this.#dispatching)
+      throw new Error('Document session is disposed or busy.')
+    this.#dispatching = true
+    try {
+      this.#store.commitCompaction(change)
+      this.#identities.set(change.after, this.#contentIdentity)
+      if (this.#saved === change.before) this.#saved = change.after
+      for (const listener of [...this.#storageListeners]) {
+        try {
+          listener(change)
+        } catch (error) {
+          this.#options.onError(error)
+        }
+      }
+    } finally {
+      this.#dispatching = false
+      this.#verifySaved()
+    }
+  }
   state = () => this.#state
   subscribe = (listener: () => void) => {
     this.#listeners.add(listener)
@@ -134,6 +176,7 @@ export class DocumentSession {
   reidentify(document: DocumentKey) {
     if (this.#disposed || this.#dispatching)
       throw new Error('Document session is disposed or busy.')
+    this.#maintenance.cancel()
     const current = this.#store.reidentify(document)
     this.#identities.set(current, this.#contentIdentity)
     this.#publish()
@@ -295,6 +338,7 @@ export class DocumentSession {
         'Document session is disposed or dispatching another operation.',
       )
     this.#dispatching = true
+    this.#maintenance.cancel()
     let prepared: PreparedSourceOperation | undefined
     try {
       prepared = this.#store.prepare(operation)
@@ -340,6 +384,12 @@ export class DocumentSession {
           } finally {
             this.#dispatching = false
             this.#verifySaved()
+            this.#maintenance.changed(
+              accepted.operation.changes.reduce(
+                (sum, edit) => sum + edit.to - edit.from + edit.insert.length,
+                0,
+              ),
+            )
           }
         },
       })
@@ -427,10 +477,13 @@ export class DocumentSession {
     )
   }
   markSaved(snapshot: SourceSnapshot) {
-    const identity = this.#identities.get(snapshot)
+    const current = this.#store.ownsCurrentSnapshot(snapshot)
+    const identity = current
+      ? this.#contentIdentity
+      : this.#identities.get(snapshot)
     if (!identity)
       throw new Error('Saved snapshot does not belong to this session.')
-    this.#saved = snapshot
+    this.#saved = current ? this.snapshot() : snapshot
     this.#savedIdentity = identity
     this.#publish()
     this.#verifySaved()
@@ -499,6 +552,7 @@ export class DocumentSession {
   }
   dispose() {
     this.#disposed = true
+    this.#maintenance.dispose()
     this.#verification++
     clearTimeout(this.#verificationTimer)
     this.#cancelVerification?.()
@@ -507,6 +561,7 @@ export class DocumentSession {
     this.#listeners.clear()
     this.#operationListeners.clear()
     this.#selectionListeners.clear()
+    this.#storageListeners.clear()
     this.#undo = []
     this.#redo = []
   }
