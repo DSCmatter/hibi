@@ -450,6 +450,78 @@ export class SourceSnapshot {
   get metrics(): TextMetrics {
     return roots.get(this)!.metrics
   }
+  sharesRoot(other: SourceSnapshot) {
+    return roots.get(this) === roots.get(other)
+  }
+  /** Cooperative exact equality skips shared subtrees and chunk ranges. */
+  *compare(other: SourceSnapshot): Generator<void, boolean> {
+    if (!roots.has(other)) throw new Error('Invalid source snapshot.')
+    if (
+      this.utf16Length !== other.utf16Length ||
+      this.utf8Bytes !== other.utf8Bytes
+    )
+      return false
+    if (this.utf16Length === 0) return true
+    type Part = { item: Node | Piece; from: number; to: number }
+    const left: Part[] = [
+      { item: roots.get(this)!, from: 0, to: this.utf16Length },
+    ]
+    const right: Part[] = [
+      { item: roots.get(other)!, from: 0, to: other.utf16Length },
+    ]
+    const expand = (stack: Part[]) => {
+      const part = stack.pop()!
+      const node = part.item as Node
+      let offset = 0
+      const children: Part[] = []
+      for (const entry of node.entries) {
+        const end = offset + entry.metrics.rawUnits
+        if (end > part.from && offset < part.to)
+          children.push({
+            item: entry,
+            from: Math.max(0, part.from - offset),
+            to: Math.min(entry.metrics.rawUnits, part.to - offset),
+          })
+        offset = end
+      }
+      stack.push(...children.reverse())
+    }
+    while (left.length && right.length) {
+      this.#tree.counters.nodeVisits++
+      const a = left.at(-1)!,
+        b = right.at(-1)!
+      if (a.item === b.item && a.from === b.from && a.to === b.to) {
+        left.pop()
+        right.pop()
+      } else if (
+        'kind' in a.item &&
+        (!('kind' in b.item) || a.item.height >= b.item.height)
+      )
+        expand(left)
+      else if ('kind' in b.item) expand(right)
+      else {
+        const x = a.item as Piece,
+          y = b.item as Piece
+        const length = Math.min(a.to - a.from, b.to - b.from)
+        const fromA = x.from + a.from,
+          fromB = y.from + b.from
+        if (x.chunk !== y.chunk || fromA !== fromB) {
+          this.#tree.counters.sourceUnitsRead += length * 2
+          if (
+            x.chunk.text.slice(fromA, fromA + length) !==
+            y.chunk.text.slice(fromB, fromB + length)
+          )
+            return false
+        }
+        a.from += length
+        b.from += length
+        if (a.from === a.to) left.pop()
+        if (b.from === b.to) right.pop()
+      }
+      yield
+    }
+    return left.length === 0 && right.length === 0
+  }
 
   #range(from: number, to: number) {
     if (
@@ -621,13 +693,37 @@ export class SourceStore {
     this.#current = new SourceSnapshot(
       this.#tree,
       root,
-      Object.freeze({ ...document }),
+      Object.freeze({ tabId: document.tabId, revision: document.revision }),
       version,
       0,
       this.#rootId,
     )
   }
   snapshot() {
+    return this.#current
+  }
+  /** A tab/replacement identity change does not copy text or rewind its content version. */
+  reidentify(document: DocumentKey) {
+    if (
+      !safePosition(document.revision) ||
+      !/^[\w.:-]{1,128}$/.test(document.tabId)
+    )
+      throw new Error('Invalid source session identity.')
+    const before = this.#current
+    if (
+      before.document.tabId === document.tabId &&
+      before.document.revision === document.revision
+    )
+      return before
+    this.#rootId = increment(this.#rootId)
+    this.#current = new SourceSnapshot(
+      this.#tree,
+      roots.get(before)!,
+      Object.freeze({ tabId: document.tabId, revision: document.revision }),
+      before.version,
+      before.storageEpoch,
+      this.#rootId,
+    )
     return this.#current
   }
   counters(reset = false): SourceBufferCounters {
@@ -664,6 +760,10 @@ export class SourceStore {
       shift += edit.insert.length - (edit.to - edit.from)
     }
     if (!changed) throw new Error('Source operation is empty.')
+    // Every encoded UTF-16 unit needs at least one byte. Reject definitely
+    // oversized bulk input before allocating its chunk indexes and tree paths.
+    if (before.utf16Length + shift > this.#tree.config.maximumBytes)
+      throw new Error('Edited source exceeds the document size limit.')
     let root = roots.get(before)!
     for (let index = operation.changes.length - 1; index >= 0; index--)
       root = this.#tree.replace(root, operation.changes[index]!)

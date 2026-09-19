@@ -313,12 +313,7 @@ export class DocumentSession {
       return
     this.#settled = new Promise((resolve) => {
       this.#cancelVerification = resolve
-      const left = current.chunks()[Symbol.iterator](),
-        right = saved.chunks()[Symbol.iterator]()
-      let a = '',
-        b = '',
-        aDone = false,
-        bDone = false
+      const comparison = current.compare(saved)
       const step = () => {
         if (this.#disposed || generation !== this.#verification) {
           resolve()
@@ -326,18 +321,9 @@ export class DocumentSession {
         }
         const start = performance.now()
         do {
-          if (!a && !aDone) {
-            const next = left.next()
-            a = next.value ?? ''
-            aDone = !!next.done
-          }
-          if (!b && !bDone) {
-            const next = right.next()
-            b = next.value ?? ''
-            bDone = !!next.done
-          }
-          if (aDone || bDone) {
-            if (aDone && bDone) {
+          const next = comparison.next()
+          if (next.done) {
+            if (next.value) {
               this.#contentIdentity = this.#savedIdentity
               this.#identities.set(current, this.#savedIdentity)
               this.#publish()
@@ -345,13 +331,6 @@ export class DocumentSession {
             resolve()
             return
           }
-          const length = Math.min(a.length, b.length)
-          if (a.slice(0, length) !== b.slice(0, length)) {
-            resolve()
-            return
-          }
-          a = a.slice(length)
-          b = b.slice(length)
         } while (performance.now() - start < 1)
         this.#verificationTimer = setTimeout(step, 0)
       }

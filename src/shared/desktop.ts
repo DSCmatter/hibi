@@ -183,6 +183,9 @@ export type DesktopApi = {
   appendDocumentChange: (
     change: import('./document-journal').DocumentChange,
   ) => Promise<import('./document-journal').DocumentAcknowledgment>
+  appendSourceOperation: (
+    operation: import('./source-operations').SourceOperation,
+  ) => Promise<import('./document-journal').DocumentAcknowledgment>
   flushDocumentChanges: () => Promise<void>
   openDocument: () => Promise<DocumentState | null>
   openExternalDocuments: () => Promise<{

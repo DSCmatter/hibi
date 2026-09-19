@@ -68,6 +68,7 @@ test('desktop launch, isolation, offline reload, and recovery', {
         'analyzeDocument',
         'cancelAnalysis',
         'appendDocumentChange',
+        'appendSourceOperation',
         'flushDocumentChanges',
         'bootstrap',
         'getAddonDocumentation',

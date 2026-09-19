@@ -24,7 +24,9 @@ import type {
   DocumentState,
   DocumentTab,
 } from '../shared/desktop'
+import { MAX_DOCUMENT_BYTES } from '../shared/desktop'
 import { HISTORY_CHANNELS } from '../shared/history'
+import { type SourceSnapshot, SourceStore } from '../shared/source-buffer'
 import { documentExtensions, isDocumentName } from './document-types'
 import {
   readMarkdown,
@@ -34,17 +36,92 @@ import {
 } from './files'
 import { recordVersion } from './history'
 
-let markdown = ''
-let saved = ''
 let path: string | null = null
 let pendingPath: string | null = null
 let revision = 0
-let contentVersion = 0
 let untitledName = 'untitled.md'
 let draftId = randomUUID()
 let back: string[] = []
 let forward: string[] = []
 let activeTab: string = randomUUID()
+const materialized = new WeakMap<SourceSnapshot, string>()
+const equalSaved = new WeakMap<SourceSnapshot, SourceSnapshot>()
+let dirtyTimer: ReturnType<typeof setTimeout> | undefined
+let dirtyGeneration = 0
+let source = makeSource('')
+let saved = source.snapshot()
+function makeSource(text: string, tabId = activeTab, version = 0) {
+  const store = new SourceStore(text, { tabId, revision }, version, {
+    maximumBytes: MAX_DOCUMENT_BYTES,
+  })
+  materialized.set(store.snapshot(), text)
+  return store
+}
+function textOf(snapshot: SourceSnapshot) {
+  let text = materialized.get(snapshot)
+  if (text === undefined) {
+    text = snapshot.materialize()
+    materialized.set(snapshot, text)
+  }
+  return text
+}
+function dirty(store: SourceStore, baseline: SourceSnapshot) {
+  const current = store.snapshot()
+  if (current.sharesRoot(baseline) || equalSaved.get(current) === baseline)
+    return false
+  const a = materialized.get(current),
+    b = materialized.get(baseline)
+  return a === undefined || b === undefined || a !== b
+}
+/** Internal source authority; never exposed to renderer or addon IPC. */
+export function getDocumentSource() {
+  const before = source.snapshot(),
+    text = materialized.get(before)
+  const current = source.reidentify({ tabId: activeTab, revision })
+  if (current !== before && text !== undefined) materialized.set(current, text)
+  if (current !== before && equalSaved.get(before) === saved)
+    equalSaved.set(current, saved)
+  return source
+}
+/** Update the native dirty indicator without scanning source on the incoming-edit stack. */
+export function updateDocumentEdited(window: BrowserWindow) {
+  window.setDocumentEdited(hasUnsavedDocuments())
+  clearTimeout(dirtyTimer)
+  const generation = ++dirtyGeneration,
+    current = source.snapshot(),
+    baseline = saved,
+    tabId = activeTab
+  if (
+    !dirty(source, baseline) ||
+    current.utf16Length !== baseline.utf16Length ||
+    current.utf8Bytes !== baseline.utf8Bytes
+  )
+    return
+  const comparison = current.compare(baseline)
+  const step = () => {
+    if (generation !== dirtyGeneration || window.isDestroyed()) return
+    const start = performance.now()
+    do {
+      const next = comparison.next()
+      if (next.done) {
+        if (next.value) {
+          equalSaved.set(current, baseline)
+          if (
+            activeTab === tabId &&
+            source.snapshot().sharesRoot(current) &&
+            saved === baseline
+          ) {
+            equalSaved.set(source.snapshot(), baseline)
+            window.setDocumentEdited(hasUnsavedDocuments())
+          }
+        }
+        return
+      }
+    } while (performance.now() - start < 1)
+    dirtyTimer = setTimeout(step, 0)
+  }
+  dirtyTimer = setTimeout(step, 0)
+}
 const tabs = new Map<string, ReturnType<typeof snapshot>>()
 let tabsEnabled = true
 const tabsPreferencePath = () =>
@@ -77,13 +154,12 @@ export async function setTabsEnabled(window: BrowserWindow, enabled: unknown) {
 
 function snapshot() {
   return {
-    markdown,
+    source,
     saved,
     path,
     pendingPath,
     untitledName,
     draftId,
-    contentVersion,
   }
 }
 function storeTab() {
@@ -93,15 +169,7 @@ function activateTab(id: string) {
   const draft = tabs.get(id)
   if (!draft) throw new Error('This tab is no longer open.')
   activeTab = id
-  ;({
-    markdown,
-    saved,
-    path,
-    pendingPath,
-    untitledName,
-    draftId,
-    contentVersion,
-  } = draft)
+  ;({ source, saved, path, pendingPath, untitledName, draftId } = draft)
 }
 async function startTab(window: BrowserWindow, reuseEmpty = false) {
   if (!tabsEnabled) {
@@ -118,26 +186,44 @@ async function startTab(window: BrowserWindow, reuseEmpty = false) {
   return true
 }
 function isEmptyTab() {
-  return !path && !pendingPath && !markdown && untitledName === 'untitled.md'
+  return (
+    !path &&
+    !pendingPath &&
+    !source.snapshot().utf16Length &&
+    untitledName === 'untitled.md'
+  )
 }
 export function getOpenDocuments() {
   storeTab()
   return [...tabs].map(([id, draft]) => ({
-    ...draft,
+    markdown: textOf(draft.source.snapshot()),
+    saved: textOf(draft.saved),
+    path: draft.path,
+    pendingPath: draft.pendingPath,
+    untitledName: draft.untitledName,
+    draftId: draft.draftId,
+    contentVersion: draft.source.snapshot().version,
     tabId: id,
     file: draft.path ?? draft.pendingPath,
-    dirty: draft.markdown !== draft.saved || !!draft.pendingPath,
+    dirty: dirty(draft.source, draft.saved) || !!draft.pendingPath,
   }))
 }
 export function getDocumentTabs(): DocumentTab[] {
-  return getOpenDocuments().map((draft) => ({
-    id: draft.tabId,
-    name: draft.file ? basename(draft.file) : draft.untitledName,
-    dirty: draft.dirty,
+  storeTab()
+  return [...tabs].map(([id, draft]) => ({
+    id,
+    name:
+      draft.path || draft.pendingPath
+        ? basename((draft.path ?? draft.pendingPath)!)
+        : draft.untitledName,
+    dirty: dirty(draft.source, draft.saved) || !!draft.pendingPath,
   }))
 }
 export function hasUnsavedDocuments() {
-  return getOpenDocuments().some((draft) => draft.dirty)
+  storeTab()
+  return [...tabs.values()].some(
+    (draft) => dirty(draft.source, draft.saved) || !!draft.pendingPath,
+  )
 }
 export async function selectDocumentTab(
   window: BrowserWindow,
@@ -150,14 +236,17 @@ export async function selectDocumentTab(
     throw new Error('This tab is no longer open.')
   if (id === activeTab && !refresh) return getDocument()
   const draft = tabs.get(id)!
-  const current = markdown
+  const current = source.snapshot()
   // Refresh clean files on return; dirty tabs keep their saved baseline for conflict checks.
-  if (draft.path && draft.markdown === draft.saved) {
+  if (draft.path && !dirty(draft.source, draft.saved)) {
     const content = await readMarkdown(draft.path)
-    if (markdown !== current)
+    if (!source.snapshot().sharesRoot(current))
       throw new Error('The document changed while switching tabs. Try again.')
-    if (draft.markdown !== content) draft.contentVersion++
-    draft.markdown = draft.saved = content
+    const version =
+      draft.source.snapshot().version +
+      Number(textOf(draft.source.snapshot()) !== content)
+    draft.source = makeSource(content, id, version)
+    draft.saved = draft.source.snapshot()
   }
   if (remember && id !== activeTab) rememberLocation()
   activateTab(id)
@@ -304,6 +393,9 @@ export function getDocumentPath(): string | null {
 
 export function getDocument(): DocumentState {
   const currentPath = getDocumentPath()
+  const current = getDocumentSource().snapshot()
+  const markdown = textOf(current),
+    savedMarkdown = textOf(saved)
   return {
     tabId: activeTab,
     tabs: getDocumentTabs(),
@@ -312,21 +404,23 @@ export function getDocument(): DocumentState {
       ? createHash('sha256').update(currentPath).digest('hex')
       : draftId,
     markdown,
-    savedMarkdown: saved,
+    savedMarkdown,
     name: currentPath ? basename(currentPath) : untitledName,
-    dirty: markdown !== saved || !!pendingPath,
+    dirty: markdown !== savedMarkdown || !!pendingPath,
     ephemeral: !!pendingPath,
     revision,
-    contentVersion,
+    contentVersion: current.version,
     canAutosave: path !== null,
   }
 }
 
 export function discardChanges(): void {
   storeTab()
-  for (const draft of tabs.values()) {
-    if (draft.markdown !== draft.saved) draft.contentVersion++
-    draft.markdown = draft.saved
+  for (const [id, draft] of tabs) {
+    const version =
+      draft.source.snapshot().version + Number(dirty(draft.source, draft.saved))
+    draft.source = makeSource(textOf(draft.saved), id, version)
+    draft.saved = draft.source.snapshot()
     draft.pendingPath = null
   }
   activateTab(activeTab)
@@ -335,8 +429,9 @@ export function discardChanges(): void {
 
 export function updateDocument(value: unknown): void {
   validateMarkdown(value)
-  if (markdown !== value) contentVersion++
-  markdown = value
+  const current = source.snapshot()
+  if (textOf(current) !== value)
+    source = makeSource(value, activeTab, current.version + 1)
 }
 
 export async function saveDocument(
@@ -347,7 +442,8 @@ export async function saveDocument(
 ): Promise<DocumentState | null> {
   let destination = path ?? pendingPath
   const exclusive = !!pendingPath && !saveAs
-  const content = markdown
+  const saving = source.snapshot(),
+    content = textOf(saving)
   if (!destination || saveAs) {
     if (automatic) return null
     const result = await dialog.showSaveDialog(window, {
@@ -391,7 +487,7 @@ export async function saveDocument(
       },
     )
     previous = disk
-    if (disk !== saved) {
+    if (disk !== textOf(saved)) {
       if (automatic) return null
       const choice = await dialog.showMessageBox(window, {
         type: 'warning',
@@ -407,7 +503,7 @@ export async function saveDocument(
   await writeMarkdown(destination, content, exclusive)
   path = destination
   pendingPath = null
-  saved = content
+  saved = saving
   window.setDocumentEdited(hasUnsavedDocuments())
   try {
     if (previous !== null) await recordVersion(destination, previous)
@@ -444,7 +540,7 @@ export function restoreDocument(
 }
 
 export async function confirmDiscard(window: BrowserWindow): Promise<boolean> {
-  if (markdown === saved && !pendingPath) return true
+  if (textOf(source.snapshot()) === textOf(saved) && !pendingPath) return true
   const result = await dialog.showMessageBox(window, {
     type: 'warning',
     message: `Save changes to ${getDocument().name}?`,
@@ -455,7 +551,10 @@ export async function confirmDiscard(window: BrowserWindow): Promise<boolean> {
   })
   if (result.response === 2) return false
   if (result.response === 1) return true
-  return Boolean(await saveDocument(window)) && markdown === saved
+  return (
+    Boolean(await saveDocument(window)) &&
+    textOf(source.snapshot()) === textOf(saved)
+  )
 }
 
 export async function newDocument(
@@ -471,8 +570,8 @@ export function clearDocument(
   remember = true,
 ): DocumentState {
   if (remember) rememberLocation()
-  markdown = saved = ''
-  contentVersion = 0
+  source = makeSource('')
+  saved = source.snapshot()
   draftId = randomUUID()
   path = null
   pendingPath = null
@@ -607,7 +706,7 @@ export async function renameDocument(value: unknown): Promise<DocumentState> {
 export async function openDocument(
   window: BrowserWindow,
 ): Promise<DocumentState | null> {
-  const current = markdown
+  const current = source.snapshot()
   const result = await dialog.showOpenDialog(window, {
     properties: ['openFile'],
     filters: [{ name: 'Documents', extensions: documentExtensions() }],
@@ -621,14 +720,14 @@ export async function openDocument(
 export async function loadDocument(
   window: BrowserWindow,
   chosen: string,
-  current = markdown,
+  current = source.snapshot(),
   remember = true,
 ): Promise<DocumentState | null> {
   chosen = await realpath(chosen)
   const existing = getOpenDocuments().find((draft) => draft.file === chosen)
   if (existing) return selectDocumentTab(window, existing.tabId, remember, true)
   const content = await readMarkdown(chosen)
-  if (markdown !== current)
+  if (!source.snapshot().sharesRoot(current))
     throw new Error(
       'The document changed while opening another file. Try again.',
     )
@@ -636,8 +735,8 @@ export async function loadDocument(
   if (!(await startTab(window, true))) return null
   path = chosen
   pendingPath = null
-  markdown = saved = content
-  contentVersion = 0
+  source = makeSource(content)
+  saved = source.snapshot()
   revision += 1
   window.setDocumentEdited(hasUnsavedDocuments())
   return getDocument()

@@ -67,6 +67,7 @@ if (process.isMainFrame) {
     cancelAnalysis: (owner) =>
       ipcRenderer.invoke(ANALYSIS_CHANNELS.cancel, owner),
     appendDocumentChange: journal.append,
+    appendSourceOperation: journal.appendOperation,
     flushDocumentChanges: journal.flush,
     bootstrap: {
       document: () => startupDocument,

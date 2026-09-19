@@ -16,7 +16,7 @@ Snapshots remain readable after edits and compaction. Compaction changes the sto
 
 History retains at most 128 groups and 8 MiB of operation payload by default. Grouped operations have separate count/size bounds. Saved snapshots refer to a specific version, so finishing an older save cannot clean newer changes. Undo uses known content identities; returning to saved text through another edit path runs a cancellable, chunked equality check after input. Dirty state stays conservative until that exact comparison finishes.
 
-The buffer is currently a migration building block exercised by differential tests and benchmarks. Its existence does not mean the desktop editors, native recovery, visual adapters or all legacy snapshot consumers have completed migration. Existing desktop size and execution guards remain in force.
+Native recovery now uses the buffer for both legacy replacements and atomic operations. Desktop editor production, visual adapters and all legacy snapshot consumers have not yet completed migration. Existing desktop size and execution guards remain in force. The shared source-projection helpers map accepted CodeMirror changes into raw operations and project external changes back without rebuilding a global EOL map; their installed-CodeMirror differential tests include filters, sequential transformations and new CRLF seams.
 
 ## Verification and measurement
 

@@ -164,11 +164,19 @@ async function run(fixture, mode, run) {
     page.setDefaultTimeout(12_000)
     report.environment.electron = await app.evaluate(() => process.versions)
     await app.evaluate(({ dialog }, file) => {
+      globalThis.__engineBenchmarkDialogs = []
       dialog.showOpenDialog = async () => ({
         canceled: false,
         filePaths: [file],
       })
-      dialog.showMessageBox = async () => ({ response: 1 })
+      dialog.showMessageBox = async (...args) => {
+        const options = args.at(-1)
+        globalThis.__engineBenchmarkDialogs.push({
+          message: options.message,
+          detail: options.detail,
+        })
+        return { response: 1 }
+      }
     }, file)
     if (foreground) {
       await app.evaluate(({ BrowserWindow }) => {
@@ -180,6 +188,19 @@ async function run(fixture, mode, run) {
       await page.waitForFunction(() => document.hasFocus())
     }
     await page.waitForFunction(() => window.__engineBenchmark?.ack)
+    await page.evaluate(() => {
+      const probe = window.__engineBenchmark
+      probe.errors = []
+      const observer = new MutationObserver(() => {
+        for (const node of document.querySelectorAll('[role="alert"]')) {
+          const text = node.textContent?.slice(0, 2000)
+          if (text && !probe.errors.includes(text) && probe.errors.length < 16)
+            probe.errors.push(text)
+        }
+      })
+      observer.observe(document.body, { childList: true, subtree: true })
+      probe.stopErrorCapture = () => observer.disconnect()
+    })
     const openStart = performance.now()
     await clickMenu(app, 'Open…')
     try {
@@ -196,7 +217,15 @@ async function run(fixture, mode, run) {
         .innerText({ timeout: 1000 })
         .catch(() => 'renderer unavailable')
       sample.notice = sample.notice.slice(-2000)
-      if (/2 MiB|too large|size limit/i.test(sample.notice))
+      sample.dialogs = await app.evaluate(
+        () => globalThis.__engineBenchmarkDialogs,
+      )
+      sample.errors = await page.evaluate(() => window.__engineBenchmark.errors)
+      if (
+        /2 MiB|too large|size limit/i.test(
+          JSON.stringify([sample.notice, sample.dialogs, sample.errors]),
+        )
+      )
         sample.status = 'cap-rejected'
       return
     }
@@ -236,6 +265,7 @@ async function run(fixture, mode, run) {
       selector,
     )
     sample.firstEditableMs = performance.now() - openStart
+    await page.evaluate(() => window.__engineBenchmark.stopErrorCapture())
     // These engine handles are used only by this measurement driver. No runtime
     // addon imports are added merely to get a clock around accepted dispatch.
     await page.evaluate(

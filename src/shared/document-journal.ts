@@ -1,5 +1,9 @@
 import type { DocumentState } from './desktop'
-import { exceedsUtf8Limit } from './text-size.ts'
+import type { SourceStore } from './source-buffer'
+import {
+  parseSourceOperation,
+  type SourceOperation,
+} from './source-operations.ts'
 
 /** One ordered UTF-16 replacement. The next content version is its sequence number. */
 export type DocumentChange = {
@@ -14,7 +18,8 @@ export type DocumentChange = {
 export type DocumentAcknowledgment = Pick<
   DocumentState,
   'tabId' | 'revision' | 'contentVersion'
->
+> & { operationId?: string }
+export type JournalMessage = DocumentChange | SourceOperation
 
 export function sourceChange(before: string, after: string) {
   if (before === after) return null
@@ -80,27 +85,28 @@ export function parseDocumentChange(value: unknown): DocumentChange {
     insert: change.insert,
   }
 }
-const key = (change: DocumentChange) =>
-  `${change.tabId}:${change.revision}:${change.contentVersion}`
-const samePayload = (a: DocumentChange, b: DocumentChange) =>
-  a.from === b.from && a.to === b.to && a.insert === b.insert
+const parseMessage = (value: unknown): JournalMessage =>
+  value && typeof value === 'object' && 'document' in value
+    ? parseSourceOperation(value)
+    : parseDocumentChange(value)
+const identity = (change: JournalMessage) =>
+  'document' in change ? change.document : change
+const key = (change: JournalMessage) => {
+  const document = identity(change)
+  return `${document.tabId}:${document.revision}:${change.contentVersion}`
+}
+const samePayload = (a: JournalMessage, b: JournalMessage) =>
+  JSON.stringify(a) === JSON.stringify(b)
 
-/** Accepted changes are immediately folded into the main-process recovery snapshot. */
-export function createJournalReceiver(
-  read: () => Pick<
-    DocumentState,
-    'tabId' | 'revision' | 'contentVersion' | 'markdown'
-  >,
-  write: (source: string) => void,
-  maximumBytes: number,
-) {
+/** Both legacy replacements and atomic batches commit to one persistent recovery replica. */
+export function createJournalReceiver(read: () => SourceStore) {
   const receipts = new Map<
     string,
-    { change: DocumentChange; ack: DocumentAcknowledgment }
+    { change: JournalMessage; ack: DocumentAcknowledgment; bytes: number }
   >()
   let receiptSize = 0
   return (value: unknown): DocumentAcknowledgment => {
-    const change = parseDocumentChange(value)
+    const change = parseMessage(value)
     const previous = receipts.get(key(change))
     if (previous) {
       if (!samePayload(previous.change, change))
@@ -109,40 +115,62 @@ export function createJournalReceiver(
         )
       return previous.ack
     }
-    const current = read()
+    const store = read(),
+      current = store.snapshot(),
+      document = identity(change)
     if (
-      current.tabId !== change.tabId ||
-      current.revision !== change.revision ||
-      current.contentVersion !== change.baseVersion
+      current.document.tabId !== document.tabId ||
+      current.document.revision !== document.revision ||
+      current.version !== change.baseVersion
     )
       throw new Error(
         'The document changed before these edits could be kept. Copy your unsaved text before reloading.',
       )
-    if (
-      change.to > current.markdown.length ||
-      splitsSurrogate(current.markdown, change.from) ||
-      splitsSurrogate(current.markdown, change.to)
-    )
-      throw new Error(
-        'The document change is outside the text or splits a Unicode character.',
-      )
-    const source =
-      current.markdown.slice(0, change.from) +
-      change.insert +
-      current.markdown.slice(change.to)
-    if (source === current.markdown || exceedsUtf8Limit(source, maximumBytes))
-      throw new Error('The document change is empty or exceeds the size limit.')
-    write(source)
-    const ack = {
-      tabId: change.tabId,
-      revision: change.revision,
-      contentVersion: change.contentVersion,
+    let operation: SourceOperation
+    if ('document' in change) operation = change
+    else {
+      // The legacy protocol allowed raw CRLF boundaries. Preserve that meaning
+      // while giving the exact-operation kernel complete line-ending ownership.
+      let { from, to, insert } = change
+      if (
+        from > 0 &&
+        current.sliceRaw(from - 1, Math.min(current.utf16Length, from + 1)) ===
+          '\r\n'
+      ) {
+        from--
+        insert = `\r${insert}`
+      }
+      if (
+        to > 0 &&
+        to < current.utf16Length &&
+        current.sliceRaw(to - 1, to + 1) === '\r\n'
+      ) {
+        to++
+        insert += '\n'
+      }
+      operation = {
+        document: { tabId: change.tabId, revision: change.revision },
+        operationId: `legacy:${change.contentVersion}`,
+        baseVersion: change.baseVersion,
+        contentVersion: change.contentVersion,
+        origin: 'source',
+        historyGroup: 'legacy',
+        changes: [{ from, to, insert }],
+      }
     }
-    receipts.set(key(change), { change, ack })
-    receiptSize += change.insert.length + 128
-    while (receipts.size > 128 || receiptSize > 4 * 1024 * 1024) {
+    store.commit(store.prepare(operation))
+    const ack = {
+      tabId: document.tabId,
+      revision: document.revision,
+      contentVersion: change.contentVersion,
+      ...('document' in change ? { operationId: change.operationId } : {}),
+    }
+    const bytes = JSON.stringify(change).length * 2 + 128
+    receipts.set(key(change), { change, ack, bytes })
+    receiptSize += bytes
+    while (receipts.size > 128 || receiptSize > 8 * 1024 * 1024) {
       const first = receipts.keys().next().value!
-      receiptSize -= receipts.get(first)!.change.insert.length + 128
+      receiptSize -= receipts.get(first)!.bytes
       receipts.delete(first)
     }
     return ack
@@ -151,18 +179,24 @@ export function createJournalReceiver(
 
 /** Send immediately for crash recovery. Barriers retry unacknowledged changes in order. */
 export function createDocumentJournal(
-  send: (change: DocumentChange) => Promise<DocumentAcknowledgment>,
+  send: (change: JournalMessage) => Promise<DocumentAcknowledgment>,
 ) {
-  const pending = new Map<
-    string,
-    {
-      change: DocumentChange
-      promise: Promise<DocumentAcknowledgment>
-      failed: boolean
-    }
-  >()
-  const append = (value: DocumentChange) => {
-    const change = parseDocumentChange(value)
+  type PendingChange = {
+    change: JournalMessage
+    promise: Promise<DocumentAcknowledgment>
+    failed: boolean
+    bytes: number
+  }
+  const pending = new Map<string, PendingChange>()
+  let pendingBytes = 0
+  const forget = (id: string, entry: PendingChange) => {
+    if (pending.get(id) !== entry) return
+    pending.delete(id)
+    pendingBytes -= entry.bytes
+  }
+  const append = (value: JournalMessage) => {
+    const change = parseMessage(value),
+      document = identity(change)
     const existing = pending.get(key(change))
     if (existing) {
       if (!samePayload(existing.change, change))
@@ -175,30 +209,41 @@ export function createDocumentJournal(
       change,
       promise: null as unknown as Promise<DocumentAcknowledgment>,
       failed: false,
+      bytes: JSON.stringify(change).length * 2 + 128,
     }
-    entry.promise = send(change)
+    pending.set(key(change), entry)
+    pendingBytes += entry.bytes
+    let delivery: Promise<DocumentAcknowledgment>
+    try {
+      delivery = send(change)
+    } catch (error) {
+      delivery = Promise.reject(error)
+    }
+    entry.promise = delivery
       .then((ack) => {
         if (
-          ack.tabId !== change.tabId ||
-          ack.revision !== change.revision ||
-          ack.contentVersion !== change.contentVersion
+          ack.tabId !== document.tabId ||
+          ack.revision !== document.revision ||
+          ack.contentVersion !== change.contentVersion ||
+          ('document' in change && ack.operationId !== change.operationId)
         )
           throw new Error('Could not confirm the latest document changes.')
-        pending.delete(key(change))
+        forget(key(change), entry)
         return ack
       })
       .catch((error) => {
         entry.failed = true
         throw error
       })
-    pending.set(key(change), entry)
     void entry.promise.catch(() => {})
     return entry.promise
   }
   let flushing: Promise<void> | undefined
   return {
     append,
+    appendOperation: (operation: SourceOperation) => append(operation),
     hasPending: () => pending.size > 0,
+    pendingBytes: () => pendingBytes,
     flush() {
       const barrier = (flushing ?? Promise.resolve())
         .catch(() => {})
@@ -209,7 +254,7 @@ export function createDocumentJournal(
             )
             for (const [id, entry] of pending) {
               if (!entry.failed) continue
-              pending.delete(id)
+              forget(id, entry)
               await append(entry.change)
             }
           }

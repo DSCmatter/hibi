@@ -314,3 +314,57 @@ test('ENG24: one prefix edit visits bounded tree paths without source materializ
   assert.deepEqual(store.inspect().problems, [])
   assert.equal(old.sliceRaw(0, 20), source.slice(0, 20))
 })
+
+test('exact equality skips shared regions and survives different piece partitions', () => {
+  const source = 'abcdefgh\n'.repeat(100_000)
+  const store = new SourceStore(source, key)
+  const original = store.snapshot()
+  const run = (iterator) => {
+    let result
+    do {
+      result = iterator.next()
+    } while (!result.done)
+    return result.value
+  }
+  assert.equal(
+    run(
+      new SourceStore('', key)
+        .snapshot()
+        .compare(new SourceStore('', key).snapshot()),
+    ),
+    true,
+  )
+  assert.throws(
+    () =>
+      run(
+        original.compare({
+          utf16Length: source.length,
+          utf8Bytes: original.utf8Bytes,
+        }),
+      ),
+    /snapshot/,
+  )
+  apply(store, [
+    { from: source.length - 2, to: source.length - 1, insert: 'X' },
+  ])
+  store.counters(true)
+  assert.equal(run(store.snapshot().compare(original)), false)
+  assert.ok(store.counters().sourceUnitsRead < 100)
+  apply(store, [
+    { from: source.length - 2, to: source.length - 1, insert: 'h' },
+  ])
+  store.counters(true)
+  assert.equal(run(store.snapshot().compare(original)), true)
+  assert.ok(store.counters().sourceUnitsRead < 100)
+  assert.equal(store.counters().materializations, 0)
+  store.compact()
+  assert.equal(run(store.snapshot().compare(original)), true)
+  const prepared = store.prepare(
+    operation(store, [{ from: 0, to: 0, insert: 'x' }]),
+  )
+  const before = store.snapshot()
+  store.reidentify({ tabId: 'test', revision: 1 })
+  assert.equal(store.snapshot().version, before.version)
+  assert.equal(store.snapshot().sharesRoot(before), true)
+  assert.throws(() => store.commit(prepared), /stale/)
+})

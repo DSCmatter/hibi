@@ -1174,6 +1174,9 @@
     "src/renderer/src/Editor.tsx",
     "src/renderer/src/SourceEditor.tsx"
   ],
+  "5bdda38a810d": [
+    "src/shared/source-projection.ts"
+  ],
   "2d65a6a59c86": [
     "src/renderer/src/addons.ts"
   ],
@@ -1865,6 +1868,9 @@
   "a095dd491ae0": [
     "src/shared/source-buffer.ts"
   ],
+  "e130481e560e": [
+    "src/shared/source-projection.ts"
+  ],
   "965a8cfa61e5": [
     "src/renderer/src/addon-views.ts"
   ],
@@ -1887,6 +1893,9 @@
     "src/shared/source-operations.ts"
   ],
   "5fa0d9e5b348": [
+    "src/shared/source-buffer.ts"
+  ],
+  "33df073b564f": [
     "src/shared/source-buffer.ts"
   ],
   "6917f99d1cef": [
@@ -3148,6 +3157,12 @@
   "a32661e46b7d": [
     "src/shared/source-buffer.ts"
   ],
+  "dc016de29e6e": [
+    "src/shared/source-projection.ts"
+  ],
+  "bd9111f1bf0a": [
+    "src/shared/source-projection.ts"
+  ],
   "ffdc867a4313": [
     "src/shared/source-buffer.ts"
   ],
@@ -3393,12 +3408,6 @@
   ],
   "32c1f3399caa": [
     "src/addons/documentation/ExportDialog.tsx"
-  ],
-  "67f711ac6cb8": [
-    "src/shared/document-journal.ts"
-  ],
-  "f515fa45ca50": [
-    "src/shared/document-journal.ts"
   ],
   "d32e2bd6bb09": [
     "src/main/analysis.ts",

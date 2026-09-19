@@ -26,7 +26,6 @@ import {
   type AppInfo,
   BOOTSTRAP_CHANNELS,
   DOCUMENT_CHANNELS,
-  MAX_DOCUMENT_BYTES,
 } from '../shared/desktop'
 import { createJournalReceiver } from '../shared/document-journal'
 import { ASSOCIATION_CHANNELS } from '../shared/file-associations'
@@ -64,7 +63,7 @@ import {
   discardChanges,
   getDocument,
   getDocumentPath,
-  hasUnsavedDocuments,
+  getDocumentSource,
   loadDocument,
   loadDocumentPreferences,
   moveDocumentTab,
@@ -77,6 +76,7 @@ import {
   selectDocumentTab,
   setTabsEnabled,
   updateDocument,
+  updateDocumentEdited,
 } from './document'
 import { isDocumentName } from './document-types'
 import { externalFileArguments } from './external-files'
@@ -285,11 +285,7 @@ async function serveAsset(request: Request): Promise<Response> {
 }
 
 let windowSetupReady = false
-const appendDocumentChange = createJournalReceiver(
-  getDocument,
-  updateDocument,
-  MAX_DOCUMENT_BYTES,
-)
+const appendDocumentChange = createJournalReceiver(getDocumentSource)
 function createWindow(): void {
   if (!windowSetupReady) return
   startupMark('window-start')
@@ -1021,12 +1017,12 @@ if (!app.requestSingleInstanceLock()) {
       handle(DOCUMENT_CHANNELS.update, (event, value: unknown) => {
         const window = trustedWindow(event)
         updateDocument(value)
-        window.setDocumentEdited(hasUnsavedDocuments())
+        updateDocumentEdited(window)
       })
       handle(DOCUMENT_CHANNELS.append, (event, change: unknown) => {
         const window = trustedWindow(event)
         const ack = appendDocumentChange(change)
-        window.setDocumentEdited(hasUnsavedDocuments())
+        updateDocumentEdited(window)
         return ack
       })
       handle(DOCUMENT_CHANNELS.open, (event) =>
