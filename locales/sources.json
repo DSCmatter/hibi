@@ -3057,6 +3057,9 @@
     "src/renderer/src/SettingsScreen.tsx",
     "src/renderer/src/main.tsx"
   ],
+  "0c776ceb4592": [
+    "src/renderer/src/SourceEditor.tsx"
+  ],
   "aff0766a5290": [
     "src/addons/review/index.tsx",
     "src/addons/review/manifest.ts"

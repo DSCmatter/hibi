@@ -20,7 +20,7 @@ const apply = (
   }
 }
 
-test('native source highlighting recognizes the syntax written by its toolbar', () => {
+test('native source highlighting recognizes the syntax written by its toolbar', async () => {
   const highlighter = tagHighlighter([
     { tag: tags.strong, class: 'bold' },
     { tag: tags.emphasis, class: 'italic' },
@@ -34,7 +34,7 @@ test('native source highlighting recognizes the syntax written by its toolbar', 
     'creole',
     'djot',
   ]) {
-    const language = formatLanguage({ reader }, () => null)
+    const language = await formatLanguage({ reader }, () => null)
     for (const action of ['bold', 'italic', 'inline-code']) {
       const { source } = apply(formatToolbar(reader), action, 'word')
       const spans = []

@@ -6,7 +6,7 @@ export default {
   id: 'math',
   name: 'LaTeX',
   kind: 'extension',
-  version: '1.1.2',
+  version: '1.1.3',
   dependencies: [tectonicDependency],
   settings: { category: 'editing', icon: 'sigma' },
   apiVersion: 2,

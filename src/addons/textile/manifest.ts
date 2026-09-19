@@ -6,7 +6,7 @@ export default {
   id: 'textile',
   name: 'Textile',
   apiVersion: 2,
-  version: '1.0.1',
+  version: '1.0.2',
   dependencies: [pandocDependency],
   kind: 'extension',
   description: 'Edit, preview, and export Textile documents.',

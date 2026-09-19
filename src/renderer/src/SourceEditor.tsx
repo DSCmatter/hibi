@@ -31,6 +31,7 @@ import {
   editorChangesFromSource,
   normalizedSource as normalizeSource,
 } from '../../shared/source-projection'
+import { Button } from '../../ui/Controls'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { codeHighlighter, codeLanguages } from './code-languages'
 import { documentEdits } from './document-edits'
@@ -692,7 +693,13 @@ export function SourceEditor({
               : 'Editor addon unavailable'
           }
           message={inputError || extensionError || languageError}
-        />
+        >
+          {!inputError && !extensionError && languageError && codeLanguage && (
+            <Button onClick={() => void codeLanguages.retry(codeLanguage)}>
+              Retry language
+            </Button>
+          )}
+        </DocumentNotice>
       )}
       <div className="source-editor" ref={host} />
     </>

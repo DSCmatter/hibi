@@ -1,20 +1,26 @@
-import { html } from '@codemirror/lang-html'
-import { markdown } from '@codemirror/lang-markdown'
-import { type Language, StreamLanguage } from '@codemirror/language'
-import { stex } from '@codemirror/legacy-modes/mode/stex'
-import { textile } from '@codemirror/legacy-modes/mode/textile'
+import type { Language } from '@codemirror/language'
 import type { FormatSpec } from './format-specs'
 import { formatMarks } from './format-toolbar.ts'
 
-export function formatLanguage(
+export async function formatLanguage(
   format: FormatSpec,
   resolve: (name: string) => Language | null,
 ) {
-  if (format.reader === 'html') return html().language
-  if (format.reader === 'latex') return StreamLanguage.define(stex)
-  if (format.reader === 'textile') return StreamLanguage.define(textile)
+  if (format.reader === 'html')
+    return (await import('@codemirror/lang-html')).html().language
   if (['mdx', 'mdsvex', 'markdoc', 'markdown'].includes(format.reader))
-    return markdown({ codeLanguages: resolve }).language
+    return (await import('@codemirror/lang-markdown')).markdown({
+      codeLanguages: resolve,
+    }).language
+  const { StreamLanguage } = await import('@codemirror/language')
+  if (format.reader === 'latex')
+    return StreamLanguage.define(
+      (await import('@codemirror/legacy-modes/mode/stex')).stex,
+    )
+  if (format.reader === 'textile')
+    return StreamLanguage.define(
+      (await import('@codemirror/legacy-modes/mode/textile')).textile,
+    )
   const headings: Record<string, RegExp> = {
     rst: /^(?:[=~`^#*+-]{3,})\s*$/,
     asciidoc: /^={1,6}\s.+/,

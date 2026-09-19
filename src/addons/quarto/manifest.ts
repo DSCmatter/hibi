@@ -9,7 +9,7 @@ export default {
   id: 'quarto',
   name: 'Quarto Markdown',
   apiVersion: 2,
-  version: '1.0.2',
+  version: '1.0.3',
   dependencies: [pandocDependency, quartoDependency],
   kind: 'extension',
   description: 'Edit and preview Quarto; run embedded code when you choose.',

@@ -57,6 +57,30 @@ test('production entry keeps rich and source editor implementations behind deman
   )
 })
 
+test('shared format registration does not statically load source parsers', async () => {
+  const chunks = JSON.parse(
+    await readFile('out/renderer/startup-bundle.json', 'utf8'),
+  )
+  const byFile = new Map(chunks.map((chunk) => [chunk.file, chunk]))
+  const reached = new Set()
+  const visit = (file) => {
+    if (reached.has(file)) return
+    reached.add(file)
+    for (const dependency of byFile.get(file)?.imports ?? []) visit(dependency)
+  }
+  const entry = chunks.find((chunk) =>
+    chunk.modules.includes('src/addons/_shared/format-renderer.tsx'),
+  )
+  assert.ok(entry)
+  visit(entry.file)
+  const modules = chunks
+    .filter((chunk) => reached.has(chunk.file))
+    .flatMap((chunk) => chunk.modules)
+    .join('\n')
+  assert.doesNotMatch(modules, /node_modules\/@codemirror\//)
+  assert.doesNotMatch(modules, /src\/addons\/_shared\/format-language\.ts/)
+})
+
 test('blank startup leaves disabled runtimes and closed settings unloaded and source unmounted', {
   timeout: 30000,
 }, async (t) => {
@@ -169,9 +193,12 @@ test('blank startup leaves disabled runtimes and closed settings unloaded and so
   )
 })
 
-test('unrelated enabled format engines start after the initial document is editable', async (t) => {
+test('unrelated enabled formats defer source parsers until first source use', async (t) => {
   const profile = await mkdtemp(join(tmpdir(), 'hibi-startup-formats-'))
-  await writeFile(join(profile, 'addons.json'), JSON.stringify({ rst: true }))
+  await writeFile(
+    join(profile, 'addons.json'),
+    JSON.stringify({ rst: true, html: true }),
+  )
   const app = await electron.launch({
     args: [resolve('.'), `--user-data-dir=${profile}`],
   })
@@ -193,4 +220,48 @@ test('unrelated enabled format engines start after the initial document is edita
   }))
   assert.equal(order.editable, true)
   assert.ok(order.format >= order.ready, JSON.stringify(order))
+  await page.waitForFunction(
+    () => performance.getEntriesByName('hibi:addon:html').length,
+  )
+  const chunks = JSON.parse(
+    await readFile('out/renderer/startup-bundle.json', 'utf8'),
+  )
+  const session = await page.context().newCDPSession(page)
+  const files = new Set()
+  session.on('Debugger.scriptParsed', ({ url }) => {
+    if (url.startsWith('app://hibi/')) files.add(new URL(url).pathname.slice(1))
+  })
+  await session.send('Debugger.enable')
+  const modules = () =>
+    chunks
+      .filter((chunk) => files.has(chunk.file))
+      .flatMap((chunk) => chunk.modules)
+      .join('\n')
+  assert.doesNotMatch(
+    modules(),
+    /src\/addons\/_shared\/format-language\.ts|@codemirror\//,
+  )
+  const file = join(profile, 'note.html')
+  await writeFile(file, '<h1>hello</h1>\r\n')
+  await app.evaluate(({ dialog }, file) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] })
+  }, file)
+  await pressShortcut(
+    app,
+    process.platform === 'darwin' ? 'Meta+o' : 'Control+o',
+  )
+  await page
+    .getByRole('textbox', { name: 'HTML editor', exact: true })
+    .waitFor()
+  await page.locator('.source-pane .hibi-token-type').first().waitFor()
+  assert.match(modules(), /src\/addons\/_shared\/format-language\.ts/)
+  assert.match(modules(), /node_modules\/@codemirror\/lang-html\//)
+  assert.doesNotMatch(
+    modules(),
+    /node_modules\/@codemirror\/legacy-modes\/mode\/(?:stex|textile|r)\./,
+  )
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    '<h1>hello</h1>\r\n',
+  )
 })

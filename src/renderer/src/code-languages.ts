@@ -273,6 +273,16 @@ export const codeLanguages = {
   async settle() {
     await Promise.all(pending.values())
   },
+  retry(info: string) {
+    const id =
+      aliases.get(info.trim().split(/\s+/)[0]?.toLowerCase() ?? '') ?? ''
+    const definition = definitions.get(id)
+    if (!definition || disabled.has(id)) return Promise.resolve(null)
+    failed.delete(definition)
+    const loading = codeLanguages.ensure(id)
+    publish()
+    return loading
+  },
   subscribe(listener: () => void) {
     listeners.add(listener)
     return () => {

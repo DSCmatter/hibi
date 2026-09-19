@@ -108,6 +108,8 @@ Rich view effects must tolerate an editor instance whose view has not mounted ye
 
 This is a standalone-format boundary. Markdown source view still owns the existing rich controller for semantic consumers, and enabled addons may explicitly request whole-source compatibility reads. Full source-only Markdown loading, semantic consumers and bounded preview publication remain separate gates. `tests/source-format-lifecycle.test.mjs` checks rich attachment, preview lifetime, source view identity, exact CRLF edits, undo/redo, find and saving across pane changes.
 
+Shared format addons register source-language loaders without constructing parsers. HTML, Markdown, LaTeX, Textile and R implementations load only when their registered language is requested by an editor or highlighter. Aliases share an in-flight load; a revoked registration cannot replace its successor when it finishes. Failed loads remain stopped until an explicit **Retry language** action, which keeps the existing source view and canonical history. This uses the existing `CodeLanguage.load` API; it does not make rich schema, preview or compiler activation fully lazy.
+
 ## Bounded metadata service
 
 The same derived replica supports a separately requested CommonMark/GFM metadata lane. Its parser module loads only on metadata demand. Renderer workers use ES-module output so this module remains a separate production chunk. An operation updates the existing parser/owner model; a storage-only swap preserves its owner identities. The service publishes only completed parse results. It rejects unknown dialects, stale versions and invalid raw ranges before starting work. This parser scope is not a claim of complete Hibi flavor, syntax-preference or third-party addon parity.

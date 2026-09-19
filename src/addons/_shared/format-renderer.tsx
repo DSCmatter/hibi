@@ -1,5 +1,3 @@
-import { StreamLanguage } from '@codemirror/language'
-import { r } from '@codemirror/legacy-modes/mode/r'
 import DOMPurify from 'dompurify'
 import { FileDown, Play } from 'lucide-react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
@@ -16,7 +14,6 @@ import {
   type RenderedMarkdown,
 } from '../api'
 import { embedFormatImages } from './format-images'
-import { formatLanguage } from './format-language'
 import { type FormatResult, type FormatSpec, formatSpec } from './format-specs'
 import css from './format-style.css?inline'
 import { formatToolbar } from './format-toolbar'
@@ -85,18 +82,27 @@ function HtmlPreview({ html }: { html: string }) {
 }
 
 export function startFormat(context: AddonContext, spec: FormatSpec) {
-  const language = formatLanguage(spec, context.editor.resolveCodeLanguage)
   const formatting = formatToolbar(spec.reader)
   if (spec.engine === 'rmarkdown' || spec.engine === 'quarto')
     context.editor.registerCodeLanguage({
       id: 'r',
-      language: StreamLanguage.define(r),
+      load: async () => {
+        const [{ StreamLanguage }, { r }] = await Promise.all([
+          import('@codemirror/language'),
+          import('@codemirror/legacy-modes/mode/r'),
+        ])
+        return StreamLanguage.define(r)
+      },
     })
   context.styles.register('document-preview', css)
   context.editor.registerCodeLanguage({
     id: spec.reader === 'markdown' ? spec.id : spec.reader,
     aliases: spec.extensions,
-    language,
+    load: async () =>
+      (await import('./format-language')).formatLanguage(
+        spec,
+        context.editor.resolveCodeLanguage,
+      ),
   })
   context.editor.registerDocumentSyntax({
     id: 'preview',
@@ -325,7 +331,6 @@ export function startFormat(context: AddonContext, spec: FormatSpec) {
               .join('\n\n'),
         }
       : {}),
-    language,
     codeLanguage: spec.reader === 'markdown' ? spec.id : spec.reader,
     Preview,
     render,

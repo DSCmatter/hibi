@@ -6,7 +6,7 @@ export default {
   id: 'rmarkdown',
   name: 'R Markdown',
   apiVersion: 2,
-  version: '1.0.2',
+  version: '1.0.3',
   dependencies: [pandocDependency, rDependency],
   kind: 'extension',
   description:
