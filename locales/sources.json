@@ -163,6 +163,9 @@
   "e270403d21f1": [
     "src/main/import-files.ts"
   ],
+  "8a1ac2cf470c": [
+    "src/shared/source-parser.ts"
+  ],
   "480347cad7e2": [
     "src/main/sideload.ts"
   ],
@@ -1722,6 +1725,9 @@
   "03fd87186af7": [
     "src/renderer/src/markdown-syntax.ts"
   ],
+  "38d6dd9e30d9": [
+    "src/shared/source-owners.ts"
+  ],
   "e92b2152da0d": [
     "src/shared/source-buffer.ts"
   ],
@@ -1874,8 +1880,17 @@
   "e130481e560e": [
     "src/shared/source-projection.ts"
   ],
+  "cb0035a4d3ad": [
+    "src/shared/source-parser.ts"
+  ],
+  "bcf712e5ce93": [
+    "src/shared/source-parser.ts"
+  ],
   "965a8cfa61e5": [
     "src/renderer/src/addon-views.ts"
+  ],
+  "5ce161d0f70e": [
+    "src/shared/source-metrics.ts"
   ],
   "2544cee575f1": [
     "src/shared/source-buffer.ts"
@@ -1891,6 +1906,12 @@
   ],
   "51145fcc3e43": [
     "src/shared/source-operations.ts"
+  ],
+  "6caabec5b451": [
+    "src/shared/source-owners.ts"
+  ],
+  "9b8b7372c0b5": [
+    "src/shared/source-owners.ts"
   ],
   "917482c852ef": [
     "src/shared/source-operations.ts"
@@ -2549,6 +2570,18 @@
   "c3b03dd28595": [
     "src/renderer/src/FormattingToolbar.tsx"
   ],
+  "7210e2c9cfdd": [
+    "src/shared/source-parser.ts"
+  ],
+  "79e412e0dc93": [
+    "src/shared/source-parser.ts"
+  ],
+  "7530f5cf3786": [
+    "src/shared/source-parser.ts"
+  ],
+  "43bee021ac06": [
+    "src/shared/source-parser.ts"
+  ],
   "e7cf3ef4f17c": [
     "src/addons/documentation/ExportDialog.tsx",
     "src/site/bootstrap.tsx"
@@ -3139,6 +3172,9 @@
   "0e570ca6fabe": [
     "src/renderer/src/ImportDialog.tsx"
   ],
+  "aa3b053da39c": [
+    "src/shared/source-metrics.ts"
+  ],
   "8a2bc7e0aed9": [
     "src/shared/source-buffer.ts"
   ],
@@ -3165,6 +3201,18 @@
   ],
   "5b10c7a4c309": [
     "src/shared/source-operations.ts"
+  ],
+  "93f17300838f": [
+    "src/shared/source-owners.ts"
+  ],
+  "85d854e2ed5c": [
+    "src/shared/source-owners.ts"
+  ],
+  "e4978139d696": [
+    "src/shared/source-owners.ts"
+  ],
+  "7d0eb83d421f": [
+    "src/shared/source-owners.ts"
   ],
   "a32661e46b7d": [
     "src/shared/source-buffer.ts"

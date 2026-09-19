@@ -10,13 +10,15 @@ import { documentEngineFixture } from './document-engine-fixtures.mjs'
 const output = process.argv[2]
 const iterations = Number(process.env.HIBI_KERNEL_EDITS ?? 2000)
 const runs = Number(process.env.HIBI_KERNEL_RUNS ?? 3)
+const pattern = process.env.HIBI_KERNEL_PATTERN ?? 'rotating'
 if (
   !Number.isInteger(iterations) ||
   iterations < 1 ||
   iterations > 100_000 ||
   !Number.isInteger(runs) ||
   runs < 1 ||
-  runs > 20
+  runs > 20 ||
+  !['rotating', 'typing'].includes(pattern)
 )
   throw new Error('Invalid kernel benchmark sample count.')
 const percentile = (values, p) =>
@@ -36,6 +38,7 @@ const report = {
   },
   scope:
     'source storage microbenchmark; no editor, journaling, visual echo or production selection claim',
+  pattern,
   samples: [],
 }
 for (const lines of [1000, 10_000, 100_000]) {
@@ -59,7 +62,8 @@ for (const lines of [1000, 10_000, 100_000]) {
   for (const config of configurations) {
     for (let run = 0; run < runs; run++) {
       global.gc?.()
-      const heapBefore = process.memoryUsage().heapUsed
+      const memoryBefore = process.memoryUsage(),
+        heapBefore = memoryBefore.heapUsed
       const store =
         config.engine === 'piece-bplus'
           ? new SourceStore(
@@ -77,7 +81,13 @@ for (const lines of [1000, 10_000, 100_000]) {
       for (let edit = 0; edit < iterations; edit++) {
         const length = fixture.source.length + edit
         const from =
-          edit % 3 === 0 ? 0 : edit % 3 === 1 ? Math.floor(length / 2) : length
+          pattern === 'typing'
+            ? Math.floor(fixture.source.length / 2) + edit
+            : edit % 3 === 0
+              ? 0
+              : edit % 3 === 1
+                ? Math.floor(length / 2)
+                : length
         positions.push(from)
         const start = performance.now()
         if (store) {
@@ -100,7 +110,8 @@ for (const lines of [1000, 10_000, 100_000]) {
         times.push(performance.now() - start)
       }
       const counters = store?.counters()
-      const heapAfter = process.memoryUsage().heapUsed
+      const memoryAfter = process.memoryUsage(),
+        heapAfter = memoryAfter.heapUsed
       let expected = Text.of(fixture.source.split('\n'))
       for (const from of positions)
         expected = expected.replace(from, from, Text.of(['x']))
@@ -121,6 +132,8 @@ for (const lines of [1000, 10_000, 100_000]) {
         maximum: Math.max(...times),
         heapBefore,
         heapAfter,
+        memoryBefore,
+        memoryAfter,
         retainedRoots: retained.length,
         counters,
         shape: shape && {

@@ -41,17 +41,20 @@ const encodedUnitBytes = (unit: number, previous: number) =>
         ? 1
         : 3
 
-/** Immutable original chunk plus sparse local prefix indexes, shared by split pieces. */
+/** Private storage; published pieces freeze their readable [from, to) extent. */
 export class SourceChunk {
-  readonly text: string
+  readonly #text: string
+  #units: Uint16Array | null = null
+  #length: number
   readonly #stride = 32
-  readonly #normalized: Float64Array
-  readonly #bytes: Float64Array
-  readonly #breaks: Float64Array
+  #normalized: Float64Array
+  #bytes: Float64Array
+  #breaks: Float64Array
   readonly #scanned: (units: number) => void
 
   constructor(text: string, scanned: (units: number) => void) {
-    this.text = text
+    this.#text = text
+    this.#length = text.length
     this.#scanned = scanned
     const count = Math.floor(text.length / this.#stride) + 1
     this.#normalized = new Float64Array(count)
@@ -79,15 +82,81 @@ export class SourceChunk {
     Object.freeze(this)
   }
 
+  /** Only the owning source store keeps this writer. No mutable buffer escapes. */
+  static appendable(capacity: number, scanned: (units: number) => void) {
+    if (!Number.isSafeInteger(capacity) || capacity < 1 || capacity > 65536)
+      throw new Error('Invalid source arena capacity.')
+    const chunk = new SourceChunk('', scanned)
+    chunk.#units = new Uint16Array(capacity)
+    const count = Math.floor(capacity / chunk.#stride) + 1
+    chunk.#normalized = new Float64Array(count)
+    chunk.#bytes = new Float64Array(count)
+    chunk.#breaks = new Float64Array(count)
+    let normalized = 0,
+      bytes = 0,
+      breaks = 0
+    return Object.freeze({
+      chunk,
+      remaining: () => capacity - chunk.#length,
+      append(text: string) {
+        const from = chunk.#length,
+          to = from + text.length
+        if (to > capacity) throw new Error('Source arena capacity exceeded.')
+        let previous = chunk.#unit(from - 1)
+        for (let at = from; at < to; at++) {
+          const unit = text.charCodeAt(at - from),
+            crlf = previous === 13 && unit === 10
+          chunk.#units![at] = unit
+          normalized += Number(!crlf)
+          breaks += Number(unit === 13 || (unit === 10 && !crlf))
+          bytes += encodedUnitBytes(unit, previous)
+          previous = unit
+          if ((at + 1) % chunk.#stride === 0) {
+            const index = (at + 1) / chunk.#stride
+            chunk.#normalized[index] = normalized
+            chunk.#bytes[index] = bytes
+            chunk.#breaks[index] = breaks
+          }
+        }
+        chunk.#length = to
+        scanned(text.length)
+        return Object.freeze({ from, to })
+      },
+    })
+  }
+  #unit(at: number) {
+    if (at < 0 || at >= this.#length) return NaN
+    return this.#units ? this.#units[at]! : this.#text.charCodeAt(at)
+  }
+  get text() {
+    return this.slice(0, this.#length)
+  }
+  slice(from: number, to: number) {
+    this.#range(from, to)
+    return this.#units
+      ? String.fromCharCode(...this.#units.subarray(from, to))
+      : this.#text.slice(from, to)
+  }
+  #range(from: number, to: number) {
+    if (
+      !Number.isSafeInteger(from) ||
+      !Number.isSafeInteger(to) ||
+      from < 0 ||
+      to < from ||
+      to > this.#length
+    )
+      throw new Error('Invalid source chunk range.')
+  }
+
   #prefix(to: number) {
     const index = Math.floor(to / this.#stride),
       start = index * this.#stride
     let normalized = this.#normalized[index]!,
       bytes = this.#bytes[index]!,
       breaks = this.#breaks[index]!
-    let previous = this.text.charCodeAt(start - 1)
+    let previous = this.#unit(start - 1)
     for (let at = start; at < to; at++) {
-      const unit = this.text.charCodeAt(at),
+      const unit = this.#unit(at),
         crlf = previous === 13 && unit === 10
       normalized += Number(!crlf)
       breaks += Number(unit === 13 || (unit === 10 && !crlf))
@@ -99,19 +168,12 @@ export class SourceChunk {
   }
 
   metrics(from: number, to: number): TextMetrics {
-    if (
-      !Number.isSafeInteger(from) ||
-      !Number.isSafeInteger(to) ||
-      from < 0 ||
-      to < from ||
-      to > this.text.length
-    )
-      throw new Error('Invalid source chunk range.')
+    this.#range(from, to)
     if (from === to) return emptyMetrics
     const a = this.#prefix(from),
       b = this.#prefix(to)
-    const firstUnit = this.text.charCodeAt(from),
-      previous = this.text.charCodeAt(from - 1)
+    const firstUnit = this.#unit(from),
+      previous = this.#unit(from - 1)
     const crlf = Number(previous === 13 && firstUnit === 10)
     return {
       rawUnits: to - from,
@@ -122,7 +184,7 @@ export class SourceChunk {
         2 * Number(highSurrogate(previous) && lowSurrogate(firstUnit)),
       breaks: b.breaks - a.breaks + crlf,
       firstUnit,
-      lastUnit: this.text.charCodeAt(to - 1),
+      lastUnit: this.#unit(to - 1),
     }
   }
 }

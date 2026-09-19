@@ -297,6 +297,61 @@ test('tree fragmentation and bulk deletion retain balanced height and old snapsh
     assert.equal(snapshot.materialize(), previous)
 })
 
+test('ENG05/ENG07: append-only arenas preserve published extents and sparse prefix seams', () => {
+  for (const first of ['a'.repeat(31) + '\r', 'a'.repeat(31) + '\ud83d']) {
+    const arena = SourceChunk.appendable(64, () => {})
+    const original = arena.append(first)
+    const metrics = arena.chunk.metrics(original.from, original.to)
+    const next = first.endsWith('\r') ? '\nsecond' : '\ude00second'
+    arena.append(next)
+    assert.equal(arena.chunk.slice(original.from, original.to), first)
+    assert.deepEqual(arena.chunk.metrics(original.from, original.to), metrics)
+    assert.deepEqual(
+      arena.chunk.metrics(0, first.length + next.length),
+      new SourceChunk(first + next, () => {}).metrics(
+        0,
+        first.length + next.length,
+      ),
+    )
+    assert.equal(Object.isFrozen(original), true)
+    assert.equal(
+      Object.values(arena.chunk).some((value) => ArrayBuffer.isView(value)),
+      false,
+    )
+    assert.throws(() => arena.append('x'.repeat(65)), /capacity/)
+    assert.equal(arena.chunk.slice(0, original.to), first)
+  }
+})
+
+test('ENG07/ENG23: typing coalesces arena ranges while aborted preparations and compaction preserve history roots', () => {
+  const store = new SourceStore('left|right', key)
+  const retained = []
+  store.counters(true)
+  for (let index = 0; index < 2000; index++) {
+    if (index % 100 === 0)
+      retained.push([store.snapshot(), `left${'x'.repeat(index)}|right`])
+    apply(store, [{ from: 4 + index, to: 4 + index, insert: 'x' }])
+  }
+  assert.equal(store.inspect().pieceCount, 3)
+  assert.equal(store.counters().arenaWrittenUnits, 2000)
+  assert.equal(store.counters().arenaAllocatedUnits, 4096)
+  assert.equal(store.counters().materializations, 0)
+  const aborted = store.prepare(
+    operation(store, [{ from: 0, to: 0, insert: 'unused' }]),
+  )
+  const abortedSource = aborted.after.materialize()
+  store.abort(aborted)
+  apply(store, [{ from: 0, to: 0, insert: 'kept' }])
+  const beforeCompact = store.snapshot()
+  store.compact()
+  apply(store, [{ from: 0, to: 0, insert: 'later' }])
+  assert.equal(aborted.after.materialize(), abortedSource)
+  assert.equal(beforeCompact.materialize(), `keptleft${'x'.repeat(2000)}|right`)
+  for (const [snapshot, text] of retained)
+    assert.equal(snapshot.materialize(), text)
+  assert.deepEqual(store.inspect().problems, [])
+})
+
 test('ENG24: one prefix edit visits bounded tree paths without source materialization', () => {
   const source = 'a paragraph with words and unicode 中 😀.\r\n'.repeat(100_000)
   const store = new SourceStore(source, key, 0, {

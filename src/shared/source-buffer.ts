@@ -30,6 +30,8 @@ export type SourceBufferCounters = {
   materializedUnits: number
   publishedRoots: number
   compactionUnits: number
+  arenaAllocatedUnits: number
+  arenaWrittenUnits: number
 }
 const newCounters = (): SourceBufferCounters => ({
   nodeVisits: 0,
@@ -41,6 +43,8 @@ const newCounters = (): SourceBufferCounters => ({
   materializedUnits: 0,
   publishedRoots: 0,
   compactionUnits: 0,
+  arenaAllocatedUnits: 0,
+  arenaWrittenUnits: 0,
 })
 type Piece = Readonly<{
   chunk: SourceChunk
@@ -75,6 +79,7 @@ const increment = (value: number) => {
 class PieceTree {
   readonly config: Config
   readonly counters = newCounters()
+  #arena: ReturnType<typeof SourceChunk.appendable> | null = null
 
   constructor(options: SourceBufferOptions) {
     this.config = Object.freeze({
@@ -189,6 +194,9 @@ class PieceTree {
       }
     }
     if (pending) add(pending)
+    return this.fromPieces(pieces)
+  }
+  fromPieces(pieces: readonly Piece[]): Node {
     if (!pieces.length) return this.leaf([])
     let nodes = this.groups(pieces, this.config.leafCapacity).map((group) =>
       this.leaf(group),
@@ -198,6 +206,31 @@ class PieceTree {
         this.branch(group),
       )
     return nodes[0]!
+  }
+
+  insert(text: string): Node {
+    const pieces: Piece[] = []
+    let from = 0
+    while (from < text.length) {
+      if (!this.#arena?.remaining()) {
+        this.#arena = SourceChunk.appendable(
+          this.config.chunkUnits,
+          (units) => {
+            this.counters.unitsScanned += units
+          },
+        )
+        this.counters.arenaAllocatedUnits += this.config.chunkUnits
+      }
+      const length = Math.min(this.#arena.remaining(), text.length - from)
+      const range = this.#arena.append(text.slice(from, from + length))
+      this.counters.arenaWrittenUnits += length
+      pieces.push(this.piece(this.#arena.chunk, range.from, range.to))
+      from += length
+    }
+    return this.fromPieces(pieces)
+  }
+  sealArena() {
+    this.#arena = null
   }
 
   normalize(root: Node): Node {
@@ -321,7 +354,7 @@ class PieceTree {
     const [before, tail] = this.split(root, edit.from)
     const after = tail ? this.split(tail, edit.to - edit.from)[1] : null
     return this.join(
-      this.join(before, edit.insert ? this.build([edit.insert]) : null),
+      this.join(before, edit.insert ? this.insert(edit.insert) : null),
       after,
     )
   }
@@ -401,7 +434,7 @@ class PieceTree {
         if (node.kind === 'leaf') {
           const piece = entry as Piece
           this.counters.sourceUnitsRead += b - a
-          yield piece.chunk.text.slice(piece.from + a, piece.from + b)
+          yield piece.chunk.slice(piece.from + a, piece.from + b)
         } else yield* this.chunks(entry as Node, a, b)
       }
       if (end >= to) break
@@ -508,8 +541,8 @@ export class SourceSnapshot {
         if (x.chunk !== y.chunk || fromA !== fromB) {
           this.#tree.counters.sourceUnitsRead += length * 2
           if (
-            x.chunk.text.slice(fromA, fromA + length) !==
-            y.chunk.text.slice(fromB, fromB + length)
+            x.chunk.slice(fromA, fromA + length) !==
+            y.chunk.slice(fromB, fromB + length)
           )
             return false
         }
@@ -802,6 +835,7 @@ export class SourceStore {
   compact() {
     const before = this.#current,
       root = this.#tree.build(before.chunks())
+    this.#tree.sealArena()
     this.#rootId = increment(this.#rootId)
     this.#tree.counters.compactionUnits += before.utf16Length
     this.#current = new SourceSnapshot(
