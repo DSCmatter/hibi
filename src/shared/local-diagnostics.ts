@@ -349,6 +349,16 @@ export function projectStack(
 const nativeError = (
   Error as ErrorConstructor & { isError?: (value: unknown) => boolean }
 ).isError
+const errorNames = new Map<object, string>([
+  [Error.prototype, 'Error'],
+  [TypeError.prototype, 'TypeError'],
+  [RangeError.prototype, 'RangeError'],
+  [SyntaxError.prototype, 'SyntaxError'],
+  [ReferenceError.prototype, 'ReferenceError'],
+  [URIError.prototype, 'URIError'],
+  [EvalError.prototype, 'EvalError'],
+  [AggregateError.prototype, 'AggregateError'],
+])
 // V8's lazy stack getter can invoke arbitrary formatting. Only inert, already
 // materialized own stack data is supported here. Browser ErrorEvent locations
 // provide a separate original first-frame source without formatting an Error.
@@ -361,13 +371,43 @@ export function projectError(
   const stack = Object.getOwnPropertyDescriptor(error, 'stack')
   const code = Object.getOwnPropertyDescriptor(error, 'code')
   const errorCode =
-    code && 'value' in code && safeErrorCodes.includes(code.value)
-      ? (code.value as SafeErrorCode)
+    code && 'value' in code
+      ? safeErrorCodes.find((value) => value === code.value)
       : undefined
+  let detail: Pick<SafeDiagnostic, 'frames' | 'stackStatus'> = {
+    stackStatus: 'omitted-untrusted',
+  }
+  if (stack && 'value' in stack && typeof stack.value === 'string') {
+    if (stack.value.length > diagnosticLimits.stackUnits)
+      detail = { stackStatus: 'truncated' }
+    else {
+      // A multiline message/name can impersonate a frame. Strip the complete
+      // inert header before parsing. Never call their getters or walk prototypes.
+      const name = Object.getOwnPropertyDescriptor(error, 'name')
+      const message = Object.getOwnPropertyDescriptor(error, 'message')
+      const label = name
+        ? 'value' in name
+          ? name.value
+          : null
+        : errorNames.get(Object.getPrototypeOf(error))
+      const text = message ? ('value' in message ? message.value : null) : ''
+      if (
+        typeof label === 'string' &&
+        typeof text === 'string' &&
+        label.length + text.length + 2 <= diagnosticLimits.stackUnits
+      ) {
+        const header = label && text ? `${label}: ${text}` : label || text
+        if (stack.value.startsWith(`${header}\n`))
+          detail = projectStack(
+            stack.value.slice(header.length + 1),
+            catalog,
+            profile,
+          )
+      }
+    }
+  }
   return {
-    ...(stack && 'value' in stack
-      ? projectStack(stack.value, catalog, profile)
-      : { stackStatus: 'omitted-untrusted' as const }),
+    ...detail,
     ...(errorCode ? { errorCode } : {}),
   }
 }

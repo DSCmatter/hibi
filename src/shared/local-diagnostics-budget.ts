@@ -71,14 +71,15 @@ export class DiagnosticQueue {
       this.lane === 'main' ? policy.mainRecords : policy.producerRecords
     // One maximum-sized host incident is reserved within, not above, the cap.
     const reserve = this.lane === 'main' && !critical ? policy.recordBytes : 0
+    const owned = JSON.stringify(record)
     if (
-      this.bytes + wire.length > capacity - reserve ||
+      owned.length > policy.recordBytes ||
+      this.bytes + owned.length > capacity - reserve ||
       this.records.length >= count - (reserve ? 1 : 0)
     ) {
       this.dropped = incrementDiagnosticCount(this.dropped)
       return false
     }
-    const owned = JSON.stringify(record)
     this.records.push(owned)
     this.bytes += owned.length
     return true

@@ -27,6 +27,67 @@ const encode = (extra = {}) =>
   })
 
 for (const profile of ['release', 'debug']) {
+  test(`${profile}: canonical number expansion cannot exceed queue byte caps`, () => {
+    for (let count = 1; count <= diagnosticPolicies[profile].frames; count++) {
+      const queue = new DiagnosticQueue(profile, 'main')
+      const wire = encode({
+        stackStatus: 'captured',
+        frames: Array.from({ length: count }, () => [1, 100000000, 100000000]),
+      }).replaceAll('100000000', '1e8')
+      while (queue.push(wire, true))
+        assert.ok(queue.size.bytes <= diagnosticPolicies[profile].mainBytes)
+      assert.ok(queue.size.records <= diagnosticPolicies[profile].mainRecords)
+    }
+  })
+  test(`${profile}: multiline error headers cannot impersonate trusted frames, and header getters stay inert`, () => {
+    const message = 'PRIVATE_MESSAGE\n at /owned/build/main/index.js:71:81'
+    const name = 'PRIVATE_NAME\n at /owned/build/main/index.js:61:62'
+    const error = new Error(message)
+    Object.defineProperty(error, 'name', { value: name, configurable: true })
+    Object.defineProperty(error, 'stack', {
+      value: `${name}: ${message}\n at /owned/build/main/index.js:9:2`,
+    })
+    assert.deepEqual(projectError(error, catalog, profile), {
+      frames: [[2, 9, 2]],
+      stackStatus: 'captured',
+    })
+    let touched = 0
+    Object.defineProperty(error, 'name', {
+      get() {
+        touched++
+        throw 1
+      },
+    })
+    assert.equal(
+      projectError(error, catalog, profile).stackStatus,
+      'omitted-untrusted',
+    )
+    const foreign = new Error('private')
+    Object.defineProperty(foreign, 'stack', {
+      value: 'Error: private\n at /owned/build/main/index.js:9:2',
+    })
+    Object.setPrototypeOf(
+      foreign,
+      new Proxy(
+        {},
+        {
+          get() {
+            touched++
+            throw 1
+          },
+          getPrototypeOf() {
+            touched++
+            throw 1
+          },
+        },
+      ),
+    )
+    assert.equal(
+      projectError(foreign, catalog, profile).stackStatus,
+      'omitted-untrusted',
+    )
+    assert.equal(touched, 0)
+  })
   test(`${profile}: projection preserves original app coordinates and drops names, messages, URLs and eval`, () => {
     const stack = `Error: ${secret}\n    at ${secret} (/owned/build/main/index.js:12:3)\n    at innocent (app://hibi/assets/app.js:45:6)\n    at query (app://hibi/assets/app.js?${secret}:7:8)\n    at eval at injected (/owned/build/main/index.js:20:9)\n    at /workspace/${secret}.js:8:2\n    at https://remote.example/${secret}:4:5`
     const safe = projectStack(stack, catalog, profile)

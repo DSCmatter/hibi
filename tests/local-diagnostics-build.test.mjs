@@ -7,6 +7,10 @@ import {
 } from '../scripts/local-diagnostics-build.ts'
 
 test('built catalog retains the actual renderer entry and lazy workers; exported site has no diagnostic bridge', () => {
+  assert.doesNotMatch(
+    readFileSync('out/main/index.js', 'utf8'),
+    /__hibiDiagnosticStress|benchmark-result\.json|diagnosticFixture/,
+  )
   const catalog = JSON.parse(
     readFileSync('out/renderer/diagnostic-artifacts.json', 'utf8'),
   )

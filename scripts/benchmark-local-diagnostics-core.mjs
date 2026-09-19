@@ -90,7 +90,7 @@ for (const profile of selected ? [selected] : ['release', 'debug']) {
     await sink.flush()
     const catalog = new Map([['app://hibi/assets/app.js', 100]])
     const stack =
-      'PRIVATE_MESSAGE\n' +
+      'Error: PRIVATE_MESSAGE\n' +
       '    at PRIVATE_NAME (app://hibi/assets/app.js:123:456)\n'.repeat(
         diagnosticPolicies[profile].frames,
       )

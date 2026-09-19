@@ -27,7 +27,7 @@ try {
       })
       await editor.fill('PRIVATE STRESS DOCUMENT 雪')
       await page.evaluate(() => window.hibi.flushDocumentChanges())
-      for (const phase of ['hung', 'rotation']) {
+      for (const phase of ['normal', 'hung', 'rotation']) {
         await app.evaluate(async (_electron, phase) => {
           const sink = globalThis.__hibiDiagnosticStress?.sink
           if (sink) {
@@ -61,12 +61,15 @@ try {
                 stress.release = () => original(...args).then(resolve, reject)
               })
           }
-          stress.timer = setInterval(() => {
-            for (let n = 0; n < 64; n++) {
-              stress.attempted++
-              if (sink?.enqueue(record)) stress.accepted++
-            }
-          }, 50)
+          stress.timer =
+            phase === 'normal'
+              ? undefined
+              : setInterval(() => {
+                  for (let n = 0; n < 64; n++) {
+                    stress.attempted++
+                    if (sink?.enqueue(record)) stress.accepted++
+                  }
+                }, 50)
           globalThis.diagnosticStressPhase = stress
         }, phase)
         await page.evaluate((check) => {
@@ -100,7 +103,13 @@ try {
         }, check)
         const deadline =
           Date.now() +
-          (phase === 'hung' ? (check ? 1500 : 60000) : check ? 10000 : 15000)
+          (phase === 'rotation'
+            ? check
+              ? 10000
+              : 15000
+            : check
+              ? 1500
+              : 60000)
         let edits = 0
         while (Date.now() < deadline) {
           await editor.press('a')
@@ -136,7 +145,15 @@ try {
               (variant.profile === 'debug' ? 512 : 256),
           )
           assert.ok(status.pressured.inFlightBytes <= 16 * 1024)
-          if (phase === 'hung') assert.ok(status.accepted < status.attempted)
+          if (phase === 'normal') {
+            assert.equal(status.attempted, 0)
+            assert.equal(status.final.queued.records, 0)
+            assert.equal(
+              status.final.retainedBytes,
+              status.initial.retainedBytes,
+            )
+          } else if (phase === 'hung')
+            assert.ok(status.accepted < status.attempted)
           else assert.ok(status.final.rotations > status.initial.rotations)
         }
         samples.push({ profile: variant.profile, phase, edits, input, status })
