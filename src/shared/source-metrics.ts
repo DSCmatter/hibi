@@ -1,3 +1,5 @@
+import { ownSourceText } from './source-text.ts'
+
 /** Metrics for the UTF-8 encoding of a JavaScript string, with replacement for lone surrogates. */
 export type TextMetrics = Readonly<{
   rawUnits: number
@@ -53,7 +55,7 @@ export class SourceChunk {
   readonly #scanned: (units: number) => void
 
   constructor(text: string, scanned: (units: number) => void) {
-    this.#text = text
+    this.#text = ownSourceText(text)
     this.#length = text.length
     this.#scanned = scanned
     const count = Math.floor(text.length / this.#stride) + 1

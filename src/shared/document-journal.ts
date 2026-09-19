@@ -10,6 +10,7 @@ import {
   parseSourceOperation,
   type SourceOperation,
 } from './source-operations.ts'
+import { ownSourceText } from './source-text.ts'
 
 /** One ordered UTF-16 replacement. The next content version is its sequence number. */
 export type DocumentChange = {
@@ -59,9 +60,11 @@ function splitsSurrogate(source: string, position: number) {
     /[\uDC00-\uDFFF]/.test(source.charAt(position))
   )
 }
+const parsedChanges = new WeakSet<DocumentChange>()
 export function parseDocumentChange(value: unknown): DocumentChange {
   if (!value || typeof value !== 'object')
     throw new Error('Invalid document change.')
+  if (parsedChanges.has(value as DocumentChange)) return value as DocumentChange
   const change = value as DocumentChange
   if (
     typeof change.tabId !== 'string' ||
@@ -81,15 +84,17 @@ export function parseDocumentChange(value: unknown): DocumentChange {
     /[\uD800-\uDFFF]/u.test(change.insert)
   )
     throw new Error('Invalid document change.')
-  return {
-    tabId: change.tabId,
+  const parsed = Object.freeze({
+    tabId: ownSourceText(change.tabId),
     revision: change.revision,
     baseVersion: change.baseVersion,
     contentVersion: change.contentVersion,
     from: change.from,
     to: change.to,
-    insert: change.insert,
-  }
+    insert: ownSourceText(change.insert),
+  })
+  parsedChanges.add(parsed)
+  return parsed
 }
 const parseMessage = (value: unknown): JournalMessage =>
   value && typeof value === 'object' && 'document' in value

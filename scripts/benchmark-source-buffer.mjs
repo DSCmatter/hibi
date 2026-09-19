@@ -64,6 +64,7 @@ for (const lines of [1000, 10_000, 100_000]) {
       global.gc?.()
       const memoryBefore = process.memoryUsage(),
         heapBefore = memoryBefore.heapUsed
+      const coldStart = performance.now()
       const store =
         config.engine === 'piece-bplus'
           ? new SourceStore(
@@ -74,6 +75,7 @@ for (const lines of [1000, 10_000, 100_000]) {
             )
           : null
       let cm = store ? null : Text.of(fixture.source.split('\n'))
+      const coldMs = performance.now() - coldStart
       const times = [],
         retained = [],
         positions = []
@@ -124,6 +126,7 @@ for (const lines of [1000, 10_000, 100_000]) {
       report.samples.push({
         fixture: fixture.metadata,
         ...config,
+        coldMs,
         run,
         edits: iterations,
         p50: percentile(times, 0.5),

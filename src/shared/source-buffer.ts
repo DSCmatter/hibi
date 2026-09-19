@@ -13,6 +13,7 @@ import {
   type SourceOperation,
   safePosition,
 } from './source-operations.ts'
+import { ownSourceText } from './source-text.ts'
 
 export type SourceBufferOptions = Readonly<{
   fanout?: number
@@ -79,6 +80,9 @@ const increment = (value: number) => {
 class PieceTree {
   readonly config: Config
   readonly counters = newCounters()
+  readonly #scanned = (units: number) => {
+    this.counters.unitsScanned += units
+  }
   #arena: ReturnType<typeof SourceChunk.appendable> | null = null
 
   constructor(options: SourceBufferOptions) {
@@ -173,9 +177,7 @@ class PieceTree {
     const pieces: Piece[] = []
     let pending = ''
     const add = (text: string) => {
-      const chunk = new SourceChunk(text, (units) => {
-        this.counters.unitsScanned += units
-      })
+      const chunk = new SourceChunk(text, this.#scanned)
       pieces.push(this.piece(chunk, 0, text.length))
     }
     for (const text of chunks) {
@@ -217,9 +219,7 @@ class PieceTree {
       if (!this.#arena?.remaining()) {
         this.#arena = SourceChunk.appendable(
           this.config.chunkUnits,
-          (units) => {
-            this.counters.unitsScanned += units
-          },
+          this.#scanned,
         )
         this.counters.arenaAllocatedUnits += this.config.chunkUnits
       }
@@ -716,6 +716,8 @@ export class SourceStore {
     options: SourceBufferOptions = {},
   ) {
     if (
+      !document ||
+      typeof document.tabId !== 'string' ||
       !safePosition(version) ||
       !safePosition(document.revision) ||
       !/^[\w.:-]{1,128}$/.test(document.tabId)
@@ -730,7 +732,10 @@ export class SourceStore {
     this.#current = new SourceSnapshot(
       this.#tree,
       root,
-      Object.freeze({ tabId: document.tabId, revision: document.revision }),
+      Object.freeze({
+        tabId: ownSourceText(document.tabId),
+        revision: document.revision,
+      }),
       version,
       0,
       this.#rootId,
@@ -742,6 +747,8 @@ export class SourceStore {
   /** A tab/replacement identity change does not copy text or rewind its content version. */
   reidentify(document: DocumentKey) {
     if (
+      !document ||
+      typeof document.tabId !== 'string' ||
       !safePosition(document.revision) ||
       !/^[\w.:-]{1,128}$/.test(document.tabId)
     )
@@ -756,7 +763,10 @@ export class SourceStore {
     this.#current = new SourceSnapshot(
       this.#tree,
       roots.get(before)!,
-      Object.freeze({ tabId: document.tabId, revision: document.revision }),
+      Object.freeze({
+        tabId: ownSourceText(document.tabId),
+        revision: document.revision,
+      }),
       before.version,
       before.storageEpoch,
       this.#rootId,
@@ -791,7 +801,7 @@ export class SourceStore {
         Object.freeze({
           from: edit.from + shift,
           to: edit.from + shift + edit.insert.length,
-          insert: removed,
+          insert: ownSourceText(removed),
         }),
       )
       shift += edit.insert.length - (edit.to - edit.from)

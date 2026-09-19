@@ -1,3 +1,5 @@
+import { ownSourceText } from './source-text.ts'
+
 /** Coordinates are raw UTF-16 offsets in one immutable pre-state. */
 export type RawEdit = Readonly<{ from: number; to: number; insert: string }>
 export type DocumentKey = Readonly<{ tabId: string; revision: number }>
@@ -19,12 +21,24 @@ const identity = (value: unknown): value is string =>
   typeof value === 'string' && /^[\w.:-]{1,128}$/.test(value)
 export const safePosition = (value: unknown): value is number =>
   Number.isSafeInteger(value) && (value as number) >= 0
+const parsedOperations = new WeakSet<SourceOperation>()
+const origins = [
+  'source',
+  'visual',
+  'composition',
+  'addon',
+  'undo',
+  'redo',
+] as const
 
-/** Copy untrusted payloads before validation/publication; no caller-owned arrays escape. */
+/** Publish owned, immutable payloads; private brands avoid copying validated messages again. */
 export function parseSourceOperation(value: unknown): SourceOperation {
   if (!value || typeof value !== 'object')
     throw new Error('Invalid source operation.')
+  if (parsedOperations.has(value as SourceOperation))
+    return value as SourceOperation
   const input = value as Partial<SourceOperation>
+  const origin = origins.find((origin) => origin === input.origin)
   if (
     !input.document ||
     !identity(input.document.tabId) ||
@@ -34,9 +48,7 @@ export function parseSourceOperation(value: unknown): SourceOperation {
     !safePosition(input.baseVersion) ||
     !safePosition(input.contentVersion) ||
     input.contentVersion !== input.baseVersion + 1 ||
-    !['source', 'visual', 'composition', 'addon', 'undo', 'redo'].includes(
-      input.origin ?? '',
-    ) ||
+    !origin ||
     !Array.isArray(input.changes) ||
     input.changes.length === 0 ||
     input.changes.length > sourceOperationLimits.changes
@@ -72,21 +84,23 @@ export function parseSourceOperation(value: unknown): SourceOperation {
     return Object.freeze({
       from: change.from,
       to: change.to,
-      insert: change.insert,
+      insert: ownSourceText(change.insert),
     })
   })
-  return Object.freeze({
+  const parsed = Object.freeze({
     document: Object.freeze({
-      tabId: input.document.tabId,
+      tabId: ownSourceText(input.document.tabId),
       revision: input.document.revision,
     }),
-    operationId: input.operationId,
+    operationId: ownSourceText(input.operationId),
     baseVersion: input.baseVersion,
     contentVersion: input.contentVersion,
-    origin: input.origin!,
-    historyGroup: input.historyGroup,
+    origin,
+    historyGroup: ownSourceText(input.historyGroup),
     changes: Object.freeze(changes),
   })
+  parsedOperations.add(parsed)
+  return parsed
 }
 
 /** Map a boundary through an atomic operation; association chooses its insertion side. */
@@ -180,13 +194,23 @@ export function composeSourceChanges(
     else {
       if (segment.from > original || insert)
         changes.push(
-          Object.freeze({ from: original, to: segment.from, insert }),
+          Object.freeze({
+            from: original,
+            to: segment.from,
+            insert: ownSourceText(insert),
+          }),
         )
       original = segment.to
       insert = ''
     }
   }
   if (original < originalLength || insert)
-    changes.push(Object.freeze({ from: original, to: originalLength, insert }))
+    changes.push(
+      Object.freeze({
+        from: original,
+        to: originalLength,
+        insert: ownSourceText(insert),
+      }),
+    )
   return Object.freeze(changes)
 }
