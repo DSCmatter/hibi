@@ -92,7 +92,7 @@ export class DiagnosticQueue {
     let size = 0
     while (this.records.length && batch.length < maxRecords) {
       const record = this.records[0]
-      if (size + record.length > maxBytes) break
+      if (record === undefined || size + record.length > maxBytes) break
       this.records.shift()
       this.bytes -= record.length
       size += record.length

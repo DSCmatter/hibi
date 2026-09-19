@@ -138,6 +138,47 @@ export type SafeDiagnostic = Readonly<{
   exitCode?: number
 }>
 export type ArtifactCatalog = ReadonlyMap<string, number>
+export type DiagnosticSession = {
+  token: string
+  profile: DiagnosticProfile
+  artifacts: [string, number][]
+}
+
+export function decodeDiagnosticSession(
+  wire: unknown,
+): DiagnosticSession | null {
+  if (typeof wire !== 'string' || wire.length > 64 * 1024) return null
+  try {
+    const data = JSON.parse(wire)
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      Object.keys(data).length !== 3 ||
+      typeof data.token !== 'string' ||
+      !/^[a-f0-9-]{36}$/.test(data.token) ||
+      !['release', 'debug'].includes(data.profile) ||
+      !Array.isArray(data.artifacts) ||
+      data.artifacts.length > 256
+    )
+      return null
+    if (
+      data.artifacts.some(
+        (entry: unknown) =>
+          !Array.isArray(entry) ||
+          entry.length !== 2 ||
+          typeof entry[0] !== 'string' ||
+          entry[0].length > 1024 ||
+          !Number.isInteger(entry[1]) ||
+          entry[1] < 1 ||
+          entry[1] > 4096,
+      )
+    )
+      return null
+    return data
+  } catch {
+    return null
+  }
+}
 
 export function diagnosticCode(value: unknown): value is DiagnosticCode {
   return typeof value === 'string' && Object.hasOwn(diagnosticEvents, value)
