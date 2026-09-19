@@ -46,7 +46,12 @@ for (const count of sizes) {
       if (step.done) break
     }
     const elapsedMs = performance.now() - started,
-      finalCommitMs = steps.at(-1)
+      finalCommitMs = steps.at(-1),
+      firstStepMs = steps[0],
+      maxStepIndex = steps.reduce(
+        (best, value, index) => (value > steps[best] ? index : best),
+        0,
+      )
     steps.sort((a, b) => a - b)
     return {
       elapsedMs,
@@ -56,6 +61,8 @@ for (const count of sizes) {
       p99StepMs: percentile(steps, 0.99),
       maxStepMs: steps.at(-1),
       finalCommitMs,
+      firstStepMs,
+      maxStepIndex,
       work: reader.counters(true),
     }
   }

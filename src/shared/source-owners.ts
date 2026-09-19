@@ -57,6 +57,30 @@ class OwnerLocator {
   get size() {
     return this.#slots.size
   }
+  *build(root: Node): Generator<void> {
+    this.#root = root
+    const pending: {
+      node: Node
+      parent: Extract<Node, { kind: 'branch' }> | null
+      index: number
+    }[] = [{ node: root, parent: null, index: 0 }]
+    while (pending.length) {
+      const { node, parent, index } = pending.pop()!
+      this.work.nodesVisited++
+      this.#parents.set(node, parent ? { parent, index } : null)
+      this.#live.add(node)
+      if (node.kind === 'page') {
+        for (let at = 0; at < node.entries.length; at++) {
+          this.#slots.set(node.entries[at]!.slot, { page: node, index: at })
+          this.work.rowsWritten++
+        }
+      } else {
+        for (let at = node.entries.length - 1; at >= 0; at--)
+          pending.push({ node: node.entries[at]!, parent: node, index: at })
+      }
+      yield
+    }
+  }
   #connected(node: Node) {
     for (;;) {
       this.work.parentReads++
@@ -160,10 +184,19 @@ class OwnerPages {
     this.#locator?.adopt(root)
   }
   locate(root: Node, slot: number) {
-    // ponytail: cold lookup indexes all owners; add sliced preparation before
-    // relying on it for bounded large-file metadata startup.
+    // Synchronous callers retain the cold fallback; worker readers prepare first.
     this.#locator ??= new OwnerLocator()
     return this.#locator.find(root, slot)
+  }
+  *prepareLocator(root: Node): Generator<void> {
+    if (this.#locator) return
+    const prepared = new OwnerLocator()
+    for (const step of prepared.build(root)) {
+      // A synchronous reader may have initialized the arena between slices.
+      if (this.#locator) return
+      yield step
+    }
+    this.#locator ??= prepared
   }
   changes(before: Node, after: Node): SourceOwnerChanges {
     if (before === after)
@@ -515,6 +548,9 @@ export class SourceOwners {
   bySlot(slot: number) {
     if (!safe(slot) || !slot) return null
     return this.#pages.locate(this.#root, slot)
+  }
+  prepareLookup(): Generator<void> {
+    return this.#pages.prepareLocator(this.#root)
   }
   /** Identity changes only; shifting unchanged owners does not invalidate their payloads. */
   changesSince(previous: SourceOwners): SourceOwnerChanges {

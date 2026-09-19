@@ -25,7 +25,7 @@ test('cooperative reference preparation cancels atomically and protects incomple
   }
   const cold = index.updateWork(owners, read)
   assert.equal(count, 0)
-  assert.equal(cold.next().done, false)
+  while (!count) assert.equal(cold.next().done, false)
   assert.equal(count, 1)
   assert.equal(coldScope.current(), false)
   assert.throws(() => coldScope.links.ref, /not ready/)

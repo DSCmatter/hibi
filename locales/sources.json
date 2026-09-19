@@ -3422,7 +3422,8 @@
     "src/shared/source-owners.ts"
   ],
   "5e48333282d5": [
-    "src/shared/source-owners.ts"
+    "src/shared/source-owners.ts",
+    "src/shared/source-references.ts"
   ],
   "e4978139d696": [
     "src/shared/source-owners.ts"

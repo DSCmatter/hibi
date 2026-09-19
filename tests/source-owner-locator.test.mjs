@@ -2,6 +2,34 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { SourceOwners } from '../src/shared/source-owners.ts'
 
+test('cold owner lookup prepares by page, cancels and tolerates concurrent synchronous demand', () => {
+  const owners = new SourceOwners(
+    Array.from({ length: 100000 }, () => ({ kind: 'paragraph', length: 10 })),
+  )
+  const canceled = owners.prepareLookup()
+  for (let n = 0; n < 10; n++) assert.equal(canceled.next().done, false)
+  assert.equal(owners.counters().locator.retainedRows, 0)
+  canceled.return()
+  assert.equal(owners.counters().locator.retainedRows, 0)
+  let steps = 0
+  for (const _ of owners.prepareLookup()) steps++
+  assert.ok(steps > 100)
+  assert.equal(owners.counters().locator.retainedRows, 100000)
+  const expected = owners.get(99999)
+  owners.counters(true)
+  assert.deepEqual(owners.bySlot(expected.owner.slot), expected)
+  assert.equal(owners.counters().locator.rowsWritten, 0)
+  const fresh = new SourceOwners([{ kind: 'a', length: 3 }])
+  const partial = fresh.prepareLookup()
+  assert.equal(partial.next().done, false)
+  const first = fresh.get(0)
+  assert.deepEqual(fresh.bySlot(first.owner.slot), first)
+  assert.equal(partial.next().done, true)
+  const edited = fresh.splice(0, 0, [{ kind: 'prefix', length: 5 }])
+  assert.deepEqual(edited.bySlot(first.owner.slot), edited.get(1))
+  assert.deepEqual(fresh.bySlot(first.owner.slot), first)
+})
+
 test('owner handles resolve exact current and retained snapshots through edits and removals', () => {
   let seed = 70123
   const random = (max) => {

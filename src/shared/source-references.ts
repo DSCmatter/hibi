@@ -221,8 +221,18 @@ export class SourceReferences {
       throw new Error('Reference index is disposed or already updating.')
     if (owners.invalid())
       throw new Error('Reference definitions require complete source owners.')
-    const previous = this.#owners,
-      delta = owners.changesSince(previous)
+    const previous = this.#owners
+    if (!this.#ready) {
+      if (owners.epoch !== previous.epoch)
+        throw new Error('Source owner snapshots belong to different arenas.')
+      this.#reading = true
+      try {
+        yield* owners.prepareLookup()
+      } finally {
+        this.#reading = false
+      }
+    }
+    const delta = owners.changesSince(previous)
     if (!this.#ready) {
       yield* this.#replace(
         owners,
