@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
 import { pressShortcut } from './keyboard.mjs'
+import { waitForAsync } from './poll.mjs'
 
 test('failed source languages retry in the same view and preserve native input, history and saves', {
   timeout: 30000,
@@ -133,7 +134,8 @@ test('failed source languages retry in the same view and preserve native input, 
     'ab!c\r\n',
   )
   await pressShortcut(app, `${mod}+s`)
-  await page.waitForFunction(
+  await waitForAsync(
+    page,
     async () => !(await window.hibi.getDocument()).dirty,
   )
   assert.equal(await readFile(file, 'utf8'), 'ab!c\r\n')
