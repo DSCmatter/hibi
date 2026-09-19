@@ -133,7 +133,17 @@ test('syntax settings preserve edits, update rich formatting, and discover addon
   await rich
     .locator('.hibi-literal-block')
     .filter({ hasText: /# one/i })
-    .fill('# changed')
+    .evaluate((element) => {
+      const editor = element.closest('.tiptap').editor
+      // A child contenteditable fill only sets a DOM range. Set the model
+      // selection before native input so focus reconciliation cannot replace it.
+      editor.commands.setTextSelection({
+        from: editor.view.posAtDOM(element, 0),
+        to: editor.view.posAtDOM(element, element.childNodes.length),
+      })
+      editor.view.focus()
+    })
+  await page.keyboard.insertText('# changed')
   await waitForAsync(page, async () =>
     (await window.hibi.getDocument()).markdown.includes('# changed'),
   )
