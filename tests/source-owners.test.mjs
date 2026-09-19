@@ -2,6 +2,22 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { SourceOwners } from '../src/shared/source-owners.ts'
 
+test('range iteration accounts for its bounded page and directory reads', () => {
+  const index = new SourceOwners(
+    Array.from({ length: 100000 }, () => ({ kind: 'text', length: 1 })),
+  )
+  index.counters(true)
+  const rows = [...index.records(95000, 95002)]
+  assert.deepEqual(
+    rows.map((row) => row.from),
+    [95000, 95001],
+  )
+  const work = index.counters()
+  assert.ok(work.lookupSlotsRead >= 2)
+  assert.ok(work.lookupSlotsRead < 512, JSON.stringify(work))
+  assert.ok(work.visits > 0 && work.visits < 128, JSON.stringify(work))
+})
+
 const check = (index, expected) => {
   assert.equal(index.count, expected.length)
   assert.equal(

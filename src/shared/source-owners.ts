@@ -293,6 +293,7 @@ export class SourceOwners {
   *records(from = 0, to = this.count) {
     if (!safe(from) || !safe(to) || to < from || to > this.count)
       throw new Error('Source owner range is outside its index.')
+    const work = this.#pages.work
     function* visit(
       node: Node,
       index: number,
@@ -300,9 +301,11 @@ export class SourceOwners {
     ): Generator<
       Readonly<{ owner: SourceOwner; index: number; from: number; to: number }>
     > {
+      work.visits++
       if (index >= to || index + node.count <= from) return
       if (node.kind === 'page') {
         for (const owner of node.entries) {
+          work.lookupSlotsRead++
           if (index >= from && index < to)
             yield Object.freeze({
               owner,
@@ -315,6 +318,7 @@ export class SourceOwners {
         }
       } else
         for (const child of node.entries) {
+          work.lookupSlotsRead++
           yield* visit(child, index, offset)
           index += child.count
           offset += child.length

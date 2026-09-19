@@ -18,6 +18,7 @@ export type MarkdownSourceState = Readonly<{
 }>
 const emptyWork = () => ({
   nodesVisited: 0,
+  boundarySeeks: 0,
   ownersReused: 0,
   regions: 0,
   rowsWritten: 0,
@@ -210,6 +211,24 @@ export class MarkdownSourceModel {
       ? { first, last }
       : null
   }
+  #boundary(tree: Tree, raw: number, side: -1 | 1): Range | null {
+    const position = this.#state.source.rawToEditor(raw)
+    if (position === null)
+      throw new Error('Owner boundary splits a line ending.')
+    this.#work.boundarySeeks++
+    let block = null
+    for (
+      let node = tree.resolve(position, side);
+      node.parent;
+      node = node.parent
+    ) {
+      this.#work.nodesVisited++
+      if (!node.type.isAnonymous) block = node
+    }
+    return block
+      ? { from: this.#raw(block.from), to: this.#raw(block.to) }
+      : null
+  }
   #expand(tree: Tree, range: Range, owners: SourceOwners): Range {
     let { from, to } = range
     for (;;) {
@@ -229,10 +248,16 @@ export class MarkdownSourceModel {
         )
       let nextFrom = start,
         nextTo = end
-      for (const block of this.#blocks(tree, start, end)) {
-        nextFrom = Math.min(nextFrom, block.from)
-        nextTo = Math.max(nextTo, block.to)
-      }
+      // Only boundary blocks can extend coverage. Re-enumerating the growing
+      // interior becomes quadratic when an inserted fence shifts later pairings.
+      for (const block of [
+        this.#boundary(tree, start, 1),
+        this.#boundary(tree, end, -1),
+      ])
+        if (block && block.from < end && block.to > start) {
+          nextFrom = Math.min(nextFrom, block.from)
+          nextTo = Math.max(nextTo, block.to)
+        }
       if (nextFrom === from && nextTo === to) return { from, to }
       from = nextFrom
       to = nextTo

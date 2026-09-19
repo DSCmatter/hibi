@@ -41,6 +41,31 @@ const rows = (owners) =>
       parsed: row.owner.parsed,
     }
   })
+
+test('fence pairing changes expand boundary coverage without quadratic interior walks', () => {
+  const fences = 1024,
+    fence = '`'.repeat(3)
+  const text = Array.from(
+    { length: fences },
+    (_, n) => `${fence}\r\nbody ${n}\r\n`,
+  ).join('')
+  const store = new SourceStore(text, {
+    tabId: 'fence-boundaries',
+    revision: 0,
+  })
+  const model = new MarkdownSourceModel(store.snapshot(), parser, 'commonmark')
+  finish(model)
+  model.counters(true)
+  store.counters(true)
+  edit(store, model, [{ from: 0, to: 0, insert: `${fence}\r\n` }])
+  const state = finish(model)
+  const work = model.counters()
+  assert.ok(work.nodesVisited < fences * 12, JSON.stringify(work))
+  assert.ok(work.boundarySeeks <= fences * 2 + 4)
+  assert.equal(store.counters().materializations, 0)
+  assert.deepEqual(rows(state.owners), oracle(store.snapshot(), parser))
+  model.dispose()
+})
 function oracle(source, dialect) {
   const tree = dialect.parse(normalizedSource(source.materialize())),
     result = []
