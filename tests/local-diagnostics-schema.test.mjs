@@ -168,6 +168,14 @@ for (const profile of ['release', 'debug']) {
     assert.ok(queue.push(parent.slice(-encode().length)))
     assert.equal(queue.take()[0], encode())
     assert.equal(queue.push(encode({ code: 'RENDERER_GONE' })), false)
+    for (const forged of [
+      { role: 'main' },
+      { reason: 'oom' },
+      { exitCode: 9 },
+    ]) {
+      assert.equal(decodeDiagnostic(encode(forged), profile, true), null)
+      assert.equal(queue.push(encode(forged)), false)
+    }
   })
 
   test(`${profile}: pressure has hard byte/count caps and reserved host incident capacity`, () => {

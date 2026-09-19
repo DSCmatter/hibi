@@ -93,6 +93,30 @@ export const stackStatuses = [
   'unavailable-native',
 ] as const
 export type StackStatus = (typeof stackStatuses)[number]
+export const diagnosticRoles = [
+  'main',
+  'renderer',
+  'preload',
+  'document-worker',
+  'word-count',
+  'analysis',
+  'typst',
+  'format',
+  'gpu',
+  'utility',
+  'other',
+] as const
+export const processReasons = [
+  'clean-exit',
+  'abnormal-exit',
+  'killed',
+  'crashed',
+  'oom',
+  'launch-failed',
+  'integrity-failure',
+  'memory-eviction',
+  'unknown',
+] as const
 const safeErrorCodes = [
   'ENOENT',
   'EACCES',
@@ -109,6 +133,9 @@ export type SafeDiagnostic = Readonly<{
   frames?: readonly SafeFrame[]
   errorCode?: SafeErrorCode
   count?: number
+  role?: (typeof diagnosticRoles)[number]
+  reason?: (typeof processReasons)[number]
+  exitCode?: number
 }>
 export type ArtifactCatalog = ReadonlyMap<string, number>
 
@@ -141,20 +168,40 @@ export function decodeDiagnostic(
     if (!data || typeof data !== 'object' || Array.isArray(data)) return null
     const keys = Object.keys(data)
     if (
-      keys.length > 5 ||
+      keys.length > 8 ||
       keys.some(
         (key) =>
-          !['code', 'stackStatus', 'frames', 'errorCode', 'count'].includes(
-            key,
-          ),
+          ![
+            'code',
+            'stackStatus',
+            'frames',
+            'errorCode',
+            'count',
+            'role',
+            'reason',
+            'exitCode',
+          ].includes(key),
       )
     )
       return null
-    const code: unknown = data.code
     if (
-      !diagnosticCode(code) ||
-      (producer && !diagnosticEvents[code].producer)
+      producer &&
+      ['role', 'reason', 'exitCode'].some((key) => Object.hasOwn(data, key))
     )
+      return null
+    if (data.role !== undefined && !diagnosticRoles.includes(data.role))
+      return null
+    if (data.reason !== undefined && !processReasons.includes(data.reason))
+      return null
+    if (
+      data.exitCode !== undefined &&
+      (!Number.isInteger(data.exitCode) ||
+        data.exitCode < -2147483648 ||
+        data.exitCode > 2147483647)
+    )
+      return null
+    const code: unknown = data.code
+    if (!diagnosticCode(code) || (producer && !diagnosticEvents[code].producer))
       return null
     if (!stackStatuses.includes(data.stackStatus)) return null
     if (
