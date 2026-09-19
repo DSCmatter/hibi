@@ -37,7 +37,9 @@ test('native module worker loads metadata lazily, shares find, and releases pars
     .getByRole('textbox', { name: 'Document editor', exact: true })
     .fill('one two')
   await page.getByText('2 words · 7 characters', { exact: true }).waitFor()
+  const header = '---\r\nname: hibi\r\n---\r\n\r\n'
   const result = await page.evaluate(async (asset) => {
+    const header = '---\r\nname: hibi\r\n---\r\n\r\n'
     const worker = new Worker(new URL(`./assets/${asset}`, location.href), {
       type: 'module',
     })
@@ -143,6 +145,31 @@ test('native module worker loads metadata lazily, shares find, and releases pars
         },
         'metadata',
       )
+      const projected = header + '# body\r\n'
+      await request(
+        {
+          type: 'load',
+          epoch: 'frontmatter',
+          document,
+          version: 0,
+          chunks: [projected],
+        },
+        'ack',
+      )
+      const frontmatter = await request(
+        {
+          type: 'metadata',
+          epoch: 'frontmatter',
+          id: 1,
+          version: 0,
+          dialect: 'gfm',
+          frontmatter: true,
+          from: 0,
+          to: projected.length,
+          limit: 2,
+        },
+        'metadata',
+      )
       return {
         first: {
           complete: first.page.complete,
@@ -158,6 +185,12 @@ test('native module worker loads metadata lazily, shares find, and releases pars
         },
         released: canceled.release,
         newOwners: reopened.page.epoch !== second.page.epoch,
+        frontmatter: {
+          dialect: frontmatter.page.dialect,
+          kind: frontmatter.page.rows[0].owner.kind,
+          to: frontmatter.page.rows[0].to,
+          headingFrom: frontmatter.page.rows[1].from,
+        },
       }
     } finally {
       worker.terminate()
@@ -169,5 +202,11 @@ test('native module worker loads metadata lazily, shares find, and releases pars
     second: { version: 1, to: 8, sameOwners: true },
     released: true,
     newOwners: true,
+    frontmatter: {
+      dialect: 'gfm+frontmatter',
+      kind: 'markdown:Frontmatter',
+      to: header.length,
+      headingFrom: header.length,
+    },
   })
 })

@@ -29,6 +29,7 @@ export type DocumentWorkerRequest =
       id: number
       version: number
       dialect: MetadataDialect
+      frontmatter?: boolean
       from: number
       to: number
       limit: number

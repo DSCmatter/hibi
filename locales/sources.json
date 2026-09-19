@@ -1577,6 +1577,12 @@
   "ed16c742ef42": [
     "src/addons/frontmatter/Properties.tsx"
   ],
+  "8c54257b5678": [
+    "src/shared/frontmatter-source-model.ts"
+  ],
+  "105ac19c1136": [
+    "src/shared/frontmatter-parser.ts"
+  ],
   "c7a8f9cd36ee": [
     "src/addons/frontmatter/Properties.tsx"
   ],
@@ -1959,6 +1965,9 @@
   ],
   "c461546e018b": [
     "src/addons/_shared/format-native.ts"
+  ],
+  "69f28a73355e": [
+    "src/shared/frontmatter-parser.ts"
   ],
   "e3957d71c9bf": [
     "src/addons/_shared/format-image-native.ts"

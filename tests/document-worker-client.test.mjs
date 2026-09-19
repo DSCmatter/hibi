@@ -148,6 +148,23 @@ test('metadata deadlines remain finite while the find lane keeps replying', asyn
   assert.deepEqual(f.errors, [])
 })
 
+test('frontmatter metadata configuration survives derived worker restart', async (t) => {
+  const source = '---\ntitle: hello\n---\n\n# body\n',
+    pages = []
+  const f = fixture(t, source, { metadataResult: (page) => pages.push(page) })
+  f.client.metadata('gfm', 0, source.length, 4, true)
+  await wait(() => pages.length === 1)
+  assert.equal(pages[0].dialect, 'gfm+frontmatter')
+  assert.equal(pages[0].rows[0].owner.kind, 'markdown:Frontmatter')
+  f.workers[0].onerror({ preventDefault() {} })
+  await wait(() => pages.length === 2)
+  assert.equal(f.workers.length, 2)
+  assert.equal(pages[1].dialect, pages[0].dialect)
+  assert.equal(pages[1].rows[0].to, source.indexOf('# body'))
+  assert.notEqual(pages[1].epoch, pages[0].epoch)
+  assert.deepEqual(f.errors, [])
+})
+
 test('find deadlines remain finite while the metadata lane keeps replying', async (t) => {
   const pages = []
   const f = fixture(t, '# one\n\ntext', {

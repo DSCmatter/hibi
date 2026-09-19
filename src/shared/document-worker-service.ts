@@ -183,6 +183,8 @@ export class DocumentWorkerService {
           message.id < 1 ||
           message.version !== this.#store.snapshot().version ||
           !['commonmark', 'gfm'].includes(message.dialect) ||
+          (message.frontmatter !== undefined &&
+            typeof message.frontmatter !== 'boolean') ||
           !Number.isSafeInteger(message.from) ||
           !Number.isSafeInteger(message.to) ||
           message.from < 0 ||
@@ -252,20 +254,37 @@ export class DocumentWorkerService {
     if (this.#metadataLoading) return
     this.#metadataLoading = true
     void import('./markdown-worker-parser.ts')
-      .then(({ metadataParsers, MarkdownSourceModel }) => {
-        this.#metadataLoading = false
-        const request = this.#metadata
-        if (this.#disposed || !request || !this.#store) return
-        if (!this.#model || this.#model.state().dialect !== request.dialect) {
-          this.#model?.dispose()
-          this.#model = new MarkdownSourceModel(
-            this.#store.snapshot(),
-            metadataParsers[request.dialect],
-            request.dialect,
-          )
-        }
-        this.#scheduleMetadata()
-      })
+      .then(async (module) => ({
+        ...module,
+        FrontmatterSourceModel: this.#metadata?.frontmatter
+          ? (await import('./frontmatter-source-model.ts'))
+              .FrontmatterSourceModel
+          : undefined,
+      }))
+      .then(
+        ({ metadataParsers, MarkdownSourceModel, FrontmatterSourceModel }) => {
+          this.#metadataLoading = false
+          const request = this.#metadata
+          if (this.#disposed || !request || !this.#store) return
+          if (request.frontmatter && !FrontmatterSourceModel) {
+            this.#loadMetadata()
+            return
+          }
+          const dialect = `${request.dialect}${request.frontmatter ? '+frontmatter' : ''}`
+          if (!this.#model || this.#model.state().dialect !== dialect) {
+            this.#model?.dispose()
+            const Model = request.frontmatter
+              ? FrontmatterSourceModel!
+              : MarkdownSourceModel
+            this.#model = new Model(
+              this.#store.snapshot(),
+              metadataParsers[request.dialect],
+              dialect,
+            )
+          }
+          this.#scheduleMetadata()
+        },
+      )
       .catch((error) => {
         this.#metadataLoading = false
         if (this.#metadata) this.#fail('metadata', error, this.#metadata.id)

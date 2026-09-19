@@ -129,7 +129,13 @@ export class DocumentWorkerClient {
     this.#options.pending()
     this.#flushQuery()
   }
-  metadata(dialect: MetadataDialect, from: number, to: number, limit = 128) {
+  metadata(
+    dialect: MetadataDialect,
+    from: number,
+    to: number,
+    limit = 128,
+    frontmatter = false,
+  ) {
     if (this.#disposed || this.#failed) return
     if (!this.#worker && !this.#startTimer && !this.#bootstrap) this.#restart()
     this.#metadata = {
@@ -138,6 +144,7 @@ export class DocumentWorkerClient {
       id: ++this.#requestId,
       version: this.#session.snapshot().version,
       dialect,
+      frontmatter,
       from,
       to,
       limit,

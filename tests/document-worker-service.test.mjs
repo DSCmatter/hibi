@@ -269,6 +269,7 @@ test('metadata validates bounded dialect requests independently and rejects stal
     { to: 1000 },
     { limit: 257 },
     { dialect: 'custom-code' },
+    { frontmatter: 'yes' },
     { version: 1 },
   ])
     f.worker.receive({ ...request, id: 2, ...change })
@@ -276,7 +277,7 @@ test('metadata validates bounded dialect requests independently and rejects stal
     f.messages.filter(
       (message) => message.type === 'error' && message.stage === 'metadata',
     ).length,
-    5,
+    6,
   )
   f.find(1, 0, 'one')
   assert.equal(
@@ -305,6 +306,55 @@ test('metadata validates bounded dialect requests independently and rejects stal
         message.epoch === 'first' &&
         message.id === 3,
     ),
+    false,
+  )
+})
+
+test('metadata frontmatter opt-in owns only the proven prefix and reconfigures on demand', async (t) => {
+  const source = '---\r\ntitle: one\r\n---\r\n\r\n# body\r\n',
+    prefix = source.indexOf('# body')
+  const f = fixture(t, source)
+  const request = {
+    type: 'metadata',
+    epoch: 'first',
+    id: 1,
+    version: 0,
+    dialect: 'gfm',
+    frontmatter: true,
+    from: 0,
+    to: source.length,
+    limit: 4,
+  }
+  f.worker.receive(request)
+  const projected = await f.next(
+    (reply) => reply.type === 'metadata' && reply.id === 1,
+  )
+  assert.equal(projected.page.dialect, 'gfm+frontmatter')
+  assert.equal(projected.page.rows[0].owner.kind, 'markdown:Frontmatter')
+  assert.equal(projected.page.rows[0].to, prefix)
+  assert.equal(projected.page.rows[1].from, prefix)
+  assert.equal(projected.page.rows[1].owner.kind, 'markdown:ATXHeading1')
+  f.worker.receive({ ...request, id: 2, frontmatter: false })
+  const plain = await f.next(
+    (reply) => reply.type === 'metadata' && reply.id === 2,
+  )
+  assert.equal(plain.page.dialect, 'gfm')
+  assert.equal(plain.page.rows[0].owner.kind, 'markdown:HorizontalRule')
+  assert.notEqual(plain.page.epoch, projected.page.epoch)
+  f.worker.receive({ ...request, id: 3 })
+  f.worker.receive({
+    type: 'cancel-metadata',
+    epoch: 'first',
+    id: 3,
+    release: true,
+  })
+  f.worker.receive({ ...request, id: 4, frontmatter: false })
+  const latest = await f.next(
+    (reply) => reply.type === 'metadata' && reply.id === 4,
+  )
+  assert.equal(latest.page.dialect, 'gfm')
+  assert.equal(
+    f.messages.some((reply) => reply.type === 'metadata' && reply.id === 3),
     false,
   )
 })
