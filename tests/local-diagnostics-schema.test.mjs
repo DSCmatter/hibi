@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import { spawnSync } from 'node:child_process'
+import nativeTest from 'node:test'
+import { fileURLToPath } from 'node:url'
+import electron from 'electron'
 import {
   decodeDiagnostic,
   diagnosticEvents,
@@ -13,6 +16,31 @@ import {
   DiagnosticAdmission,
   DiagnosticQueue,
 } from '../src/shared/local-diagnostics-budget.ts'
+
+// Exercise the shipped V8 privacy contract on every supported shell Node version.
+const test = process.versions.electron ? nativeTest : () => {}
+if (!process.versions.electron)
+  nativeTest(
+    'schema privacy assertions run in the embedded Electron runtime',
+    (t) => {
+      const env = { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
+      // The independent runner must not inherit the parent test IPC context.
+      delete env.NODE_TEST_CONTEXT
+      const result = spawnSync(
+        electron,
+        ['--test', '--test-reporter=tap', fileURLToPath(import.meta.url)],
+        {
+          encoding: 'utf8',
+          env,
+          timeout: 20000,
+        },
+      )
+      assert.equal(result.status, 0, `${result.stderr}\n${result.stdout}`)
+      const count = Number(result.stdout.match(/^# tests (\d+)$/m)?.[1])
+      assert.ok(count > 0, result.stdout)
+      t.diagnostic(`${count} embedded schema tests passed`)
+    },
+  )
 
 const secret = 'PRIVATE_DOCUMENT_雪_\r\n\u001b[31m'
 const catalog = new Map([
