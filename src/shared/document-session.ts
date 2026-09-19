@@ -21,8 +21,7 @@ type HistoryGroup = Readonly<{
   origin: SourceOperation['origin']
   forward: readonly RawEdit[]
   inverse: readonly RawEdit[]
-  before: SourceSnapshot
-  after: SourceSnapshot
+  beforeLength: number
   beforeIdentity: object
   afterIdentity: object
   bytes: number
@@ -228,7 +227,7 @@ export class DocumentSession {
       forward = composeSourceChanges(
         previous.forward,
         forward,
-        previous.before.utf16Length,
+        previous.beforeLength,
       )
       inverse = composeSourceChanges(
         inverse,
@@ -252,8 +251,9 @@ export class DocumentSession {
         origin: operation.origin,
         forward,
         inverse,
-        before: merge ? previous.before : prepared.before,
-        after: prepared.after,
+        beforeLength: merge
+          ? previous.beforeLength
+          : prepared.before.utf16Length,
         beforeIdentity: merge ? previous.beforeIdentity : this.#contentIdentity,
         afterIdentity,
         bytes: editBytes(forward) + editBytes(inverse),
