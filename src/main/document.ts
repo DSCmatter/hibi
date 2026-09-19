@@ -134,7 +134,7 @@ export function updateDocumentEdited(window: BrowserWindow) {
     maintenanceWritten = written
     maintenance!.changed(editedUnits)
   }
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   clearTimeout(dirtyTimer)
   const generation = ++dirtyGeneration,
     current = source.snapshot(),
@@ -161,7 +161,16 @@ export function updateDocumentEdited(window: BrowserWindow) {
             saved === baseline
           ) {
             equalSaved.set(source.snapshot(), baseline)
-            window.setDocumentEdited(hasUnsavedDocuments())
+            refreshDirtyIndicator(window)
+          } else {
+            const draft = tabs.get(tabId)
+            if (
+              draft?.source.ownsCurrentSnapshot(current) &&
+              draft.saved === baseline
+            ) {
+              updateTabDirty(tabId, draft)
+              refreshDirtyIndicator(window)
+            }
           }
         }
         return
@@ -172,6 +181,8 @@ export function updateDocumentEdited(window: BrowserWindow) {
   dirtyTimer = setTimeout(step, 0)
 }
 const tabs = new Map<string, ReturnType<typeof snapshot>>()
+const dirtyTabs = new Set<string>()
+const windowDirty = new WeakMap<BrowserWindow, boolean>()
 let tabsEnabled = true
 const tabsPreferencePath = () =>
   join(app.getPath('userData'), 'document-tabs.json')
@@ -212,7 +223,15 @@ function snapshot() {
   }
 }
 function storeTab() {
-  tabs.set(activeTab, snapshot())
+  const draft = snapshot()
+  tabs.set(activeTab, draft)
+  updateTabDirty(activeTab, draft)
+}
+function updateTabDirty(id: string, draft: ReturnType<typeof snapshot>) {
+  const changed = dirty(draft.source, draft.saved) || !!draft.pendingPath
+  if (changed) dirtyTabs.add(id)
+  else dirtyTabs.delete(id)
+  return changed
 }
 function activateTab(id: string) {
   const draft = tabs.get(id)
@@ -225,6 +244,7 @@ async function startTab(window: BrowserWindow, reuseEmpty = false) {
   if (!tabsEnabled) {
     if (!(await confirmDiscard(window))) return false
     tabs.clear()
+    dirtyTabs.clear()
     back = []
     forward = []
     activeTab = randomUUID()
@@ -255,7 +275,7 @@ export function getOpenDocuments() {
     contentVersion: draft.source.snapshot().version,
     tabId: id,
     file: draft.path ?? draft.pendingPath,
-    dirty: dirty(draft.source, draft.saved) || !!draft.pendingPath,
+    dirty: updateTabDirty(id, draft),
   }))
 }
 export function getDocumentTabs(): DocumentTab[] {
@@ -266,14 +286,18 @@ export function getDocumentTabs(): DocumentTab[] {
       draft.path || draft.pendingPath
         ? basename((draft.path ?? draft.pendingPath)!)
         : draft.untitledName,
-    dirty: dirty(draft.source, draft.saved) || !!draft.pendingPath,
+    dirty: updateTabDirty(id, draft),
   }))
 }
 export function hasUnsavedDocuments() {
   storeTab()
-  return [...tabs.values()].some(
-    (draft) => dirty(draft.source, draft.saved) || !!draft.pendingPath,
-  )
+  return dirtyTabs.size > 0
+}
+function refreshDirtyIndicator(window: BrowserWindow) {
+  const edited = hasUnsavedDocuments()
+  if (windowDirty.get(window) === edited) return
+  window.setDocumentEdited(edited)
+  windowDirty.set(window, edited)
 }
 export async function selectDocumentTab(
   window: BrowserWindow,
@@ -301,7 +325,7 @@ export async function selectDocumentTab(
   if (remember && id !== activeTab) rememberLocation()
   activateTab(id)
   revision++
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   return getDocument()
 }
 
@@ -314,7 +338,7 @@ async function confirmTabDiscard(window: BrowserWindow, id: string) {
   } finally {
     storeTab()
     activateTab(previous)
-    window.setDocumentEdited(hasUnsavedDocuments())
+    refreshDirtyIndicator(window)
   }
 }
 export async function confirmDiscardAll(
@@ -341,7 +365,10 @@ function removeTabs(window: BrowserWindow, ids: Set<string>) {
   storeTab()
   const order = [...tabs.keys()]
   const currentIndex = order.indexOf(activeTab)
-  for (const id of ids) tabs.delete(id)
+  for (const id of ids) {
+    tabs.delete(id)
+    dirtyTabs.delete(id)
+  }
   back = back.filter((id) => !ids.has(id))
   forward = forward.filter((id) => !ids.has(id))
   if (ids.has(activeTab)) {
@@ -356,7 +383,7 @@ function removeTabs(window: BrowserWindow, ids: Set<string>) {
       clearDocument(window, false)
     }
   }
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   return getDocument()
 }
 export async function closeDocumentTab(window: BrowserWindow, id: unknown) {
@@ -433,7 +460,7 @@ export async function importDocument(
   clearDocument(window, false)
   untitledName = name
   updateDocument(content)
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   return getDocument()
 }
 
@@ -473,6 +500,7 @@ export function discardChanges(): void {
     draft.saved = draft.source.snapshot()
     draft.pendingPath = null
   }
+  dirtyTabs.clear()
   activateTab(activeTab)
   revision += 1
 }
@@ -554,7 +582,7 @@ export async function saveDocument(
   path = destination
   pendingPath = null
   saved = saving
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   try {
     if (previous !== null) await recordVersion(destination, previous)
     await recordVersion(destination, content)
@@ -585,7 +613,7 @@ export function restoreDocument(
   validateMarkdown(content)
   updateDocument(content)
   revision += 1
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   return getDocument()
 }
 
@@ -627,7 +655,7 @@ export function clearDocument(
   pendingPath = null
   untitledName = 'untitled.md'
   revision += 1
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   return getDocument()
 }
 
@@ -637,7 +665,7 @@ export async function newPendingDocument(
 ): Promise<DocumentState | null> {
   if (!(await newDocument(window))) return null
   pendingPath = destination
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   return getDocument()
 }
 
@@ -788,6 +816,6 @@ export async function loadDocument(
   source = makeSource(content)
   saved = source.snapshot()
   revision += 1
-  window.setDocumentEdited(hasUnsavedDocuments())
+  refreshDirtyIndicator(window)
   return getDocument()
 }
