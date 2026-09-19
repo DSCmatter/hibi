@@ -1079,7 +1079,8 @@
     "src/shared/document-session.ts"
   ],
   "7259e702cd4d": [
-    "src/renderer/src/Editor.tsx"
+    "src/renderer/src/Editor.tsx",
+    "src/renderer/src/FormatEditor.tsx"
   ],
   "a8c9ae023f1a": [
     "src/renderer/src/document-worker-client.ts"
@@ -1273,7 +1274,7 @@
     "src/addons/frontmatter/Properties.tsx"
   ],
   "5342e09f2729": [
-    "src/renderer/src/Editor.tsx"
+    "src/renderer/src/FormatEditor.tsx"
   ],
   "eca198f59235": [
     "src/renderer/src/FlavorPicker.tsx"
@@ -1559,7 +1560,8 @@
     "src/renderer/src/settings-categories.ts"
   ],
   "ba55f0808d87": [
-    "src/renderer/src/Editor.tsx"
+    "src/renderer/src/Editor.tsx",
+    "src/renderer/src/FormatEditor.tsx"
   ],
   "f1c65e14817e": [
     "src/main/index.ts"
@@ -2150,7 +2152,11 @@
     "src/renderer/src/AddonViewContent.tsx"
   ],
   "a1f7f8733bfc": [
-    "src/renderer/src/Editor.tsx"
+    "src/renderer/src/Editor.tsx",
+    "src/renderer/src/FormatEditor.tsx"
+  ],
+  "3d171d73a47a": [
+    "src/renderer/src/FormatEditor.tsx"
   ],
   "15b61974b270": [
     "src/renderer/src/WorkspaceSettings.tsx"
@@ -2785,7 +2791,7 @@
     "src/addons/typst/syntax.ts"
   ],
   "a25e1bc00de9": [
-    "src/renderer/src/Editor.tsx"
+    "src/renderer/src/FormatEditor.tsx"
   ],
   "97694af2695d": [
     "src/addons/_shared/format-renderer.tsx",
@@ -4447,7 +4453,7 @@
     "src/renderer/src/main.tsx"
   ],
   "d8a4351e1a76": [
-    "src/renderer/src/Editor.tsx"
+    "src/renderer/src/FormatEditor.tsx"
   ],
   "77ebec0d0b40": [
     "src/renderer/src/code-languages.ts"

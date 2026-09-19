@@ -24,6 +24,39 @@ test('language loading deduplicates aliases and respects disabled preferences du
   assert.match(codeHtml('def sample(): return 1', 'py'), /hibi-token-keyword/)
 })
 
+test('production entry keeps rich and source editor implementations behind demand imports', async () => {
+  const chunks = JSON.parse(
+    await readFile('out/renderer/startup-bundle.json', 'utf8'),
+  )
+  const byFile = new Map(chunks.map((chunk) => [chunk.file, chunk]))
+  const reached = new Set()
+  const visit = (file) => {
+    if (reached.has(file)) return
+    reached.add(file)
+    for (const dependency of byFile.get(file)?.imports ?? []) visit(dependency)
+  }
+  for (const chunk of chunks) if (chunk.entry) visit(chunk.file)
+  const initial = chunks
+    .filter((chunk) => reached.has(chunk.file))
+    .flatMap((chunk) => chunk.modules)
+    .join('\n')
+  assert.doesNotMatch(
+    initial,
+    /src\/renderer\/src\/(?:Editor|SourceEditor)\.tsx/,
+  )
+  assert.doesNotMatch(initial, /node_modules\/@tiptap\//)
+  assert.ok(
+    chunks.some((chunk) =>
+      chunk.modules.includes('src/renderer/src/Editor.tsx'),
+    ),
+  )
+  assert.ok(
+    chunks.some((chunk) =>
+      chunk.modules.includes('src/renderer/src/SourceEditor.tsx'),
+    ),
+  )
+})
+
 test('blank startup leaves disabled runtimes and closed settings unloaded and source unmounted', {
   timeout: 30000,
 }, async (t) => {

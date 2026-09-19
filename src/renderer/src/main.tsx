@@ -58,10 +58,11 @@ import { CommandPalette, type PaletteCommand } from './CommandPalette'
 import { colorschemes } from './colorschemes'
 import { documentFormats, editorDocument } from './document-formats'
 import { documentRuntime, observeDocumentErrors } from './document-runtime'
-import { MarkdownEditor, type ViewMode } from './Editor'
+import type { ViewMode } from './Editor'
 import { loadCursor } from './EditorCursor'
 import { EditorToolbar } from './EditorToolbar'
 import { FlavorPicker } from './FlavorPicker'
+import { FormatEditor } from './FormatEditor'
 import {
   automaticFlavor,
   type FlavorChoice,
@@ -71,7 +72,7 @@ import {
   selectedFlavors,
 } from './flavors'
 import { LoadingScreen } from './LoadingScreen'
-import { projectMarkdown } from './markdown'
+import { projectMarkdown } from './markdown-projection'
 import {
   type OutlineHeading,
   type OutlineRequest,
@@ -88,6 +89,9 @@ import { WorkspaceSidebar } from './WorkspaceSidebar'
 import { type WorkspaceRename, workspaceMenuItems } from './workspace-menu'
 
 startupMark('renderer-entry')
+const MarkdownEditor = lazy(() =>
+  import('./Editor').then((module) => ({ default: module.MarkdownEditor })),
+)
 const SettingsScreen = lazy(() =>
   import('./SettingsScreen').then((module) => ({
     default: module.SettingsScreen,
@@ -185,6 +189,7 @@ function App() {
     : undefined
   const markdownDocument =
     !document || documentFormats.isMarkdown(document.name)
+  const DocumentEditor = markdownDocument ? MarkdownEditor : FormatEditor
   useLayoutEffect(() => {
     editorDocument.publish(document)
   }, [document])
@@ -333,7 +338,7 @@ function App() {
   const showWelcome =
     !welcomeDismissed &&
     document?.revision === 0 &&
-    !document.markdown &&
+    documentRuntime.sourceFor(document)?.utf16Length === 0 &&
     !document.dirty &&
     !workspace
   function dismissWelcome() {
@@ -1241,9 +1246,13 @@ function App() {
   )
   const flavorSource = useMemo(
     () =>
-      projectMarkdown(document?.markdown ?? '', addonHost.markdownExtensions)
-        .content,
-    [document?.markdown, addonHost.markdownExtensions],
+      markdownDocument
+        ? projectMarkdown(
+            document?.markdown ?? '',
+            addonHost.markdownExtensions,
+          ).content
+        : '',
+    [document, markdownDocument, addonHost.markdownExtensions],
   )
   const detectedFlavors = useMemo(
     () => knownFlavors.filter((flavor) => flavorMatches(flavor, flavorSource)),
@@ -1251,6 +1260,7 @@ function App() {
   )
   const ownedSource = useMemo(
     () =>
+      markdownDocument &&
       needsOwnedSource(
         document?.markdown ?? '',
         addonHost.catalog.map((addon) => addon.manifest),
@@ -1260,7 +1270,7 @@ function App() {
             .map((state) => state.id),
         ),
       ),
-    [document?.markdown, addonHost.catalog, addonHost.states],
+    [document, markdownDocument, addonHost.catalog, addonHost.states],
   )
   const unsupportedFlavor =
     ownedSource ||
@@ -1939,39 +1949,41 @@ function App() {
         >
           {!editorStarted.current && <LoadingScreen />}
           {document && editorStarted.current && (
-            <MarkdownEditor
-              onOutline={setOutline}
-              outlineActive={
-                !settingsOpen &&
-                !zen &&
-                ((sidebarOpen && sidebarView === 'outline') ||
-                  (rightSidebarOpen && rightSidebarView === 'outline'))
-              }
-              onActiveOutline={setActiveOutline}
-              outlineTarget={outlineTarget}
-              document={document}
-              format={documentFormat}
-              formatName={sourceName}
-              onAttach={attachMedia}
-              onLink={openLink}
-              flavors={editorConfiguration.current.flavors}
-              unsupportedFlavor={unsupportedFlavor || addonHost.sourceOnly}
-              sourceExtensions={addonHost.sourceExtensions}
-              richExtensions={addonHost.richExtensions}
-              documentRevision={document.revision}
-              showLineNumbers={showLineNumbers}
-              spellCheck={spellCheck}
-              showMarkdownMarkers={showMarkdownMarkers}
-              cursorSettings={cursorSettings}
-              markdownExtensions={editorConfiguration.current.projections}
-              key={`${document.revision}-${resetEditor}-${markdownDocument ? 'markdown' : documentExtension(document.name)}`}
-              value={document.markdown}
-              onChange={updateMarkdown}
-              mode={mode}
-              disabled={busy || !addonHost.ready}
-              findOpen={findOpen && !settingsOpen}
-              onCloseFind={() => setFindOpen(false)}
-            />
+            <Suspense fallback={<LoadingScreen />}>
+              <DocumentEditor
+                onOutline={setOutline}
+                outlineActive={
+                  !settingsOpen &&
+                  !zen &&
+                  ((sidebarOpen && sidebarView === 'outline') ||
+                    (rightSidebarOpen && rightSidebarView === 'outline'))
+                }
+                onActiveOutline={setActiveOutline}
+                outlineTarget={outlineTarget}
+                document={document}
+                format={documentFormat}
+                formatName={sourceName}
+                onAttach={attachMedia}
+                onLink={openLink}
+                flavors={editorConfiguration.current.flavors}
+                unsupportedFlavor={unsupportedFlavor || addonHost.sourceOnly}
+                sourceExtensions={addonHost.sourceExtensions}
+                richExtensions={addonHost.richExtensions}
+                documentRevision={document.revision}
+                showLineNumbers={showLineNumbers}
+                spellCheck={spellCheck}
+                showMarkdownMarkers={showMarkdownMarkers}
+                cursorSettings={cursorSettings}
+                markdownExtensions={editorConfiguration.current.projections}
+                key={`${document.revision}-${resetEditor}-${markdownDocument ? 'markdown' : documentExtension(document.name)}`}
+                value={markdownDocument ? document.markdown : ''}
+                onChange={updateMarkdown}
+                mode={mode}
+                disabled={busy || !addonHost.ready}
+                findOpen={findOpen && !settingsOpen}
+                onCloseFind={() => setFindOpen(false)}
+              />
+            </Suspense>
           )}
           {showWelcome && addonHost.ready && (
             <StartupPlaceholder

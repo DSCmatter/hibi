@@ -30,6 +30,8 @@ Enable format addons under **Settings → Addons**, then open **Formats** to con
 
 Plain text uses Source view. Formats without a visual editor offer source and side-by-side preview. The toolbar shows formatting tools supported by the current format, while run, compile, and export buttons appear above its preview.
 
+For these formats, Source view pauses the preview. Switch to Side-by-side to load it again. Your source selection and undo history stay in place while the preview loads.
+
 ## Install required tools
 
 Some formats need tools installed separately. Open **Settings → Dependencies** to check availability, see which addons need each tool, choose an executable, or install a missing tool. **Manage dependencies** in a format's settings opens the same page.

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
-import { clickMenu } from './keyboard.mjs'
+import { clickMenu, pressShortcut } from './keyboard.mjs'
 
 test('scoped views preserve sessions, pin documents, contain lazy failures, and revoke handles', {
   timeout: 40000,
@@ -126,7 +126,19 @@ test('scoped views preserve sessions, pin documents, contain lazy failures, and 
     window.viewsFixture.handles.slow = window.viewsFixture.slow.open()
   })
   await page.getByText('Loading view…', { exact: true }).waitFor()
-  await editor.fill('still editable')
+  // Use native selection so ProseMirror owns the replacement range before input.
+  await editor.click()
+  await pressShortcut(
+    app,
+    `${process.platform === 'darwin' ? 'Meta' : 'Control'}+a`,
+  )
+  await page.waitForFunction(() => {
+    const editor = document.querySelector('.tiptap').editor
+    const { from, to } = editor.state.selection
+    return editor.state.doc.textBetween(from, to) === 'first document'
+  })
+  await page.keyboard.insertText('still editable')
+  assert.equal(await editor.textContent(), 'still editable')
   await page.evaluate(() => window.finishView())
   await page
     .getByRole('region', { name: 'Slow panel' })

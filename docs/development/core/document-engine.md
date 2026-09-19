@@ -100,6 +100,14 @@ SourceEditor delegates complete match counting and next/previous lookup to that 
 
 Run `node --test tests/source-search.test.mjs tests/source-search-index.test.mjs tests/document-worker-service.test.mjs tests/document-worker-client.test.mjs` for Unicode/oracle equivalence, bounded match retention, near-caret lookup, source replication, cancellation, stale generations, backpressure and finite restarts. `tests/find.test.mjs` checks real worker loading, source/rich switching, Unicode matching, offscreen and dense navigation, focus and source preservation in Electron.
 
+## Standalone source views
+
+Standalone formats use a source/preview shell without creating a hidden Tiptap editor or attaching rich extensions. Source view does not mount the format preview or read the full document merely to pass preview/Markdown-flavor props. Switching to split view mounts the preview on demand; returning to source view releases it while keeping the CodeMirror view, selection and host history. Pane focus and transition behavior share the same lifecycle as Markdown. The welcome check uses canonical source length, and projection-only imports no longer pull in the rich editor constructor.
+
+Rich view effects must tolerate an editor instance whose view has not mounted yet. Spellcheck applies on mount and after preference changes; deferred mirror-cursor measurement skips absent views. Lazy preview loading stays inside its own Suspense boundary so it cannot remove the active source surface.
+
+This is a standalone-format boundary. Markdown source view still owns the existing rich controller for semantic consumers, and enabled addons may explicitly request whole-source compatibility reads. Full source-only Markdown loading, semantic consumers and bounded preview publication remain separate gates. `tests/source-format-lifecycle.test.mjs` checks rich attachment, preview lifetime, source view identity, exact CRLF edits, undo/redo, find and saving across pane changes.
+
 ## Bounded metadata service
 
 The same derived replica supports a separately requested CommonMark/GFM metadata lane. Its parser module loads only on metadata demand. Renderer workers use ES-module output so this module remains a separate production chunk. An operation updates the existing parser/owner model; a storage-only swap preserves its owner identities. The service publishes only completed parse results. It rejects unknown dialects, stale versions and invalid raw ranges before starting work. This parser scope is not a claim of complete Hibi flavor, syntax-preference or third-party addon parity.

@@ -42,6 +42,10 @@ export function MirrorCursor({
     } | null = null
     const measure = () => {
       frame = 0
+      if (editor.isDestroyed) {
+        setPosition(null)
+        return
+      }
       const focused = document.activeElement
       const sourceElement =
         root.current?.querySelector<HTMLElement>('.cm-content')

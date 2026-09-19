@@ -71,6 +71,7 @@ import {
 import { exactRichRange } from './rich-text-range'
 import { revealSourcePosition, sourcePosition, sourceView } from './source-view'
 import { textProjection } from './text-projection'
+import { useEditorPanes } from './use-editor-panes'
 
 const SourceEditor = lazy(() =>
   import('./SourceEditor').then((module) => ({ default: module.SourceEditor })),
@@ -198,7 +199,16 @@ export function MarkdownEditor({
     direction: 'next',
   })
   const handledFindMove = useRef(0)
-  const [focusedPane, setFocusedPane] = useState<'rich' | 'source'>('rich')
+  const {
+    content,
+    paneMode,
+    focusedPane,
+    setFocusedPane,
+    sourceMounted,
+    sourceReady,
+    setSourceReady,
+    setSourceSettled,
+  } = useEditorPanes(mode, markdownDocument)
   const findTarget = !markdownDocument
     ? 'source'
     : mode === 'normal'
@@ -206,63 +216,8 @@ export function MarkdownEditor({
       : mode === 'markdown'
         ? 'source'
         : focusedPane
-  const [sourceMounted, setSourceMounted] = useState(mode !== 'normal')
-  const [sourceReady, setSourceReady] = useState(false)
-  const [sourceSettled, setSourceSettled] = useState(false)
-  const [initialMode] = useState(mode)
-  // A new document starts in the selected view. Only a first opening from
-  // normal view waits for source layout before beginning the pane transition.
-  const paneMode = sourceSettled || initialMode !== 'normal' ? mode : 'normal'
-  const content = useRef<HTMLDivElement>(null)
-  const [previewToolbar, setPreviewToolbar] = useState<HTMLDivElement | null>(
-    null,
-  )
   const scrollContent = useRef({ source: value, body: projection.content })
   scrollContent.current = { source: value, body: projection.content }
-  useEffect(() => {
-    if (
-      sourceReady &&
-      (mode === 'markdown' || (!markdownDocument && mode !== 'normal'))
-    ) {
-      if (
-        window.document.activeElement?.closest(
-          '.settings-screen, [role="dialog"], input, textarea, select',
-        )
-      )
-        return
-      setFocusedPane('source')
-      content.current?.querySelector<HTMLElement>('.cm-content')?.focus()
-    }
-  }, [markdownDocument, sourceReady, mode])
-  const previousMode = useRef(paneMode)
-  useLayoutEffect(() => {
-    if (previousMode.current === paneMode) return
-    previousMode.current = paneMode
-    const element = content.current
-    if (!element) return
-    const opacity = Number(getComputedStyle(element).opacity)
-    for (const animation of element.getAnimations()) animation.cancel()
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const duration = getComputedStyle(element)
-      .getPropertyValue('--motion-feedback')
-      .trim()
-    element.animate(
-      [
-        { opacity, offset: 0 },
-        { opacity: 0, offset: 0.25 },
-        { opacity: 0, offset: 0.625 },
-        { opacity: 1, offset: 1 },
-      ],
-      {
-        duration:
-          Number.parseFloat(duration) * (duration.endsWith('ms') ? 1 : 1000) ||
-          160,
-      },
-    )
-  }, [paneMode])
-  useEffect(() => {
-    if (mode !== 'normal') setSourceMounted(true)
-  }, [mode])
   // biome-ignore lint/correctness/useExhaustiveDependencies: capture the initial source stamp only when rebuilding the schema; normal edits synchronize through the source bridge.
   const extensions = useMemo(
     () => [
@@ -747,6 +702,7 @@ export function MarkdownEditor({
       root?.removeEventListener('hibi:source-caret', schedule)
     }
   }, [
+    content,
     editor,
     markdownDocument,
     outlineActive,
@@ -794,7 +750,15 @@ export function MarkdownEditor({
       revealSourcePosition(view, offset + mapped)
       view.focus()
     }
-  }, [editor, outlineTarget, mode, sourceReady, value, projection.content])
+  }, [
+    content,
+    editor,
+    outlineTarget,
+    mode,
+    sourceReady,
+    value,
+    projection.content,
+  ])
   useEffect(() => {
     if (paneMode !== 'side-by-side' || !sourceReady || !editor) return
     const rich = content.current?.querySelector<HTMLElement>('.rich-pane')
@@ -808,7 +772,7 @@ export function MarkdownEditor({
         ? { editor, content: () => scrollContent.current }
         : undefined,
     )
-  }, [paneMode, sourceReady, editor, markdownDocument])
+  }, [content, paneMode, sourceReady, editor, markdownDocument])
   const { attachSource: attachSourceFormatting, attachFiles } =
     useFormattingToolbar(
       editor,
@@ -828,7 +792,16 @@ export function MarkdownEditor({
   }, [editor, sourceOnly, disabled, richExtensionError])
 
   useEffect(() => {
-    editor?.view.dom.setAttribute('spellcheck', String(spellCheck))
+    if (!editor) return
+    const apply = () => {
+      if (!editor.isDestroyed)
+        editor.view.dom.setAttribute('spellcheck', String(spellCheck))
+    }
+    editor.on('mount', apply)
+    apply()
+    return () => {
+      editor.off('mount', apply)
+    }
   }, [editor, spellCheck])
 
   useLayoutEffect(() => {
@@ -992,27 +965,6 @@ export function MarkdownEditor({
             aria-hidden={paneMode === 'markdown'}
             inert={paneMode === 'markdown'}
           >
-            {!markdownDocument && (
-              <div
-                className="preview-toolbar"
-                ref={setPreviewToolbar}
-                role="toolbar"
-                aria-label="Preview actions"
-              />
-            )}
-            {!markdownDocument &&
-              (format ? (
-                <format.Preview
-                  value={value}
-                  document={documentState}
-                  toolbar={previewToolbar}
-                />
-              ) : (
-                <p className="format-unavailable">
-                  Enable {formatName} in Addons to preview this document. You
-                  can still edit it in source view.
-                </p>
-              ))}
             {markdownDocument &&
               markdownExtensions.map(({ id, Editor }) =>
                 Editor ? (
