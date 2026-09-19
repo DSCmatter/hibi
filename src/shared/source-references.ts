@@ -280,18 +280,21 @@ export class SourceReferences {
   scope() {
     const reads = new Map<string, Candidate | undefined>()
     let mixed = false
+    const resolve = (name: string) => {
+      if (!this.#owners) throw new Error('Reference index is disposed.')
+      if (!this.#ready) throw new Error('Reference index is not ready.')
+      this.#work.scopeReads++
+      const current = this.#winners.get(name)
+      if (reads.has(name)) mixed ||= reads.get(name) !== current
+      else reads.set(ownSourceText(name), current)
+      return current
+    }
     const links = new Proxy(
       Object.create(null) as Record<string, ReferenceValue>,
       {
         get: (_target, name) => {
-          if (!this.#owners) throw new Error('Reference index is disposed.')
-          if (!this.#ready) throw new Error('Reference index is not ready.')
           if (typeof name !== 'string') return undefined
-          this.#work.scopeReads++
-          const current = this.#winners.get(name)
-          if (reads.has(name)) mixed ||= reads.get(name) !== current
-          else reads.set(ownSourceText(name), current)
-          return current?.value
+          return resolve(name)?.value
         },
         set: () => {
           throw new Error(
@@ -302,6 +305,7 @@ export class SourceReferences {
     )
     return Object.freeze({
       links,
+      resolve,
       current: () => {
         if (!this.#owners || !this.#ready || mixed) return false
         for (const [name, value] of reads)

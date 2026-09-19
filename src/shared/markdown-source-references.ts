@@ -32,7 +32,7 @@ export class MarkdownSourceReferences {
     this.#owners = owners
   }
   lookup(label: string) {
-    return this.#index?.scope().links[label] ?? null
+    return this.#index?.scope().resolve(label)?.value ?? null
   }
   counters(reset = false) {
     return this.#index?.counters(reset)

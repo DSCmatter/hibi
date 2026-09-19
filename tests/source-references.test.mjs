@@ -49,6 +49,28 @@ test('cooperative reference preparation cancels atomically and protects incomple
   index.dispose()
 })
 
+test('reference provenance reads track first declarations even when values remain equal', () => {
+  let owners = new SourceOwners([
+    { kind: 'first', length: 5 },
+    { kind: 'later', length: 5 },
+  ])
+  const read = () => ({ ref: { href: '/same' } })
+  const index = new SourceReferences(owners, read)
+  const scope = index.scope(),
+    winner = scope.resolve('ref')
+  assert.equal(winner.owner, owners.get(0).owner)
+  assert.equal(winner.value, scope.links.ref)
+  assert.ok(Object.isFrozen(winner))
+  assert.equal(scope.resolve('missing'), undefined)
+  owners = owners.splice(0, 1, [])
+  index.update(owners, read)
+  assert.equal(scope.current(), false)
+  assert.equal(index.scope().resolve('ref').owner, owners.get(0).owner)
+  assert.deepEqual(index.scope().resolve('ref').value, winner.value)
+  index.dispose()
+  assert.throws(() => scope.resolve('ref'), /disposed/)
+})
+
 test('reference winners, misses, mixed reads and disposal retain exact dependency meaning', () => {
   let owners = new SourceOwners([
     { kind: 'first', length: 5 },
