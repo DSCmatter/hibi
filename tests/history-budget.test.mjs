@@ -72,8 +72,15 @@ test('combined history pressure preserves inactive drafts and active source undo
   const page = await app.firstWindow()
   page.setDefaultTimeout(6000)
   await page.waitForFunction(() => !!window.historyFixture)
+  await page
+    .getByRole('textbox', { name: 'Document editor', exact: true })
+    .waitFor()
   const mod = process.platform === 'darwin' ? 'Meta' : 'Control'
   const open = async (index) => {
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.app')?.getAttribute('aria-busy') === 'false',
+    )
     await app.evaluate(({ dialog }, file) => {
       dialog.showOpenDialog = async () => ({
         canceled: false,
@@ -88,6 +95,10 @@ test('combined history pressure preserves inactive drafts and active source undo
         view.contentDOM.isContentEditable
       )
     }, `note ${index}`)
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.app')?.getAttribute('aria-busy') === 'false',
+    )
   }
   for (let index = 0; index < files.length; index++) {
     await open(index)
@@ -126,11 +137,21 @@ test('combined history pressure preserves inactive drafts and active source undo
   assert.equal(await readFile(files[0], 'utf8'), `note 0\r\n${'x'.repeat(128)}`)
   await open(4)
   await pressShortcut(app, `${mod}+z`)
+  await waitForAsync(
+    page,
+    async (expected) => (await window.hibi.getDocument()).markdown === expected,
+    `note 4\r\n${'x'.repeat(127)}`,
+  )
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     `note 4\r\n${'x'.repeat(127)}`,
   )
   await pressShortcut(app, `${mod}+Shift+z`)
+  await waitForAsync(
+    page,
+    async (expected) => (await window.hibi.getDocument()).markdown === expected,
+    `note 4\r\n${'x'.repeat(128)}`,
+  )
   await pressShortcut(app, `${mod}+s`)
   await waitForAsync(page, async () => !(await window.hibi.getDocument()).dirty)
   assert.equal(await readFile(files[4], 'utf8'), `note 4\r\n${'x'.repeat(128)}`)
