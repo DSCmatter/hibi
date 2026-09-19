@@ -19,7 +19,6 @@ import type {
   DocumentState,
 } from '../../shared/desktop'
 import { MAX_DOCUMENT_BYTES } from '../../shared/desktop'
-import { sourceChange } from '../../shared/document-journal'
 import {
   type AppCommand,
   actions,
@@ -58,6 +57,7 @@ import { useAutosave } from './autosave'
 import { CommandPalette, type PaletteCommand } from './CommandPalette'
 import { colorschemes } from './colorschemes'
 import { documentFormats, editorDocument } from './document-formats'
+import { documentRuntime, observeDocumentErrors } from './document-runtime'
 import { MarkdownEditor, type ViewMode } from './Editor'
 import { loadCursor } from './EditorCursor'
 import { EditorToolbar } from './EditorToolbar'
@@ -189,7 +189,27 @@ function App() {
     editorDocument.publish(document)
   }, [document])
   const currentDocument = useRef(document)
-  currentDocument.current = document
+  currentDocument.current = documentRuntime.get() ?? document
+  useLayoutEffect(
+    () =>
+      documentRuntime.subscribe((next, changes) => {
+        if (changes) {
+          setWelcomeDismissed(true)
+          sessionStorage.setItem('hibi:welcome-dismissed', 'true')
+        }
+        currentDocument.current = next
+        setDocument(next)
+        editorDocument.publish(next, changes)
+      }),
+    [],
+  )
+  useEffect(
+    () =>
+      observeDocumentErrors((error) =>
+        setError(error instanceof Error ? error.message : String(error)),
+      ),
+    [setError],
+  )
   const acceptDocument = useCallback((next: DocumentState) => {
     const previous = currentDocument.current
     if (previous?.revision !== next.revision) setOutlineTarget(null)
@@ -201,8 +221,9 @@ function App() {
       const choice = localStorage.getItem(`hibi:flavor:${previous.id}`)
       if (choice) localStorage.setItem(`hibi:flavor:${next.id}`, choice)
     }
-    currentDocument.current = next
-    setDocument(next)
+    const active = documentRuntime.activate(next)
+    currentDocument.current = active
+    setDocument(active)
   }, [])
   const availableFlavors = useSyncExternalStore(
     flavors.subscribe,
@@ -230,22 +251,10 @@ function App() {
     [flavorIds, availableFlavors],
   )
   const [resetEditor, setResetEditor] = useState(0)
-  const savedText = useRef('')
   const busyRef = useRef(false)
   const [busy, setBusy] = useState(false)
   const acknowledgeSave = useCallback((saved: DocumentState) => {
-    const current = currentDocument.current
-    if (current?.id !== saved.id || current.revision !== saved.revision) return
-    savedText.current = saved.savedMarkdown
-    setDocument((latest) =>
-      latest?.id === saved.id && latest.revision === saved.revision
-        ? {
-            ...latest,
-            savedMarkdown: saved.savedMarkdown,
-            dirty: latest.markdown !== saved.savedMarkdown || latest.ephemeral,
-          }
-        : latest,
-    )
+    documentRuntime.acknowledgeSave(saved)
   }, [])
   const autosaveStatus = useAutosave(document, busy, acknowledgeSave)
   const [defaultView, setDefaultView] = useState<ViewMode>(() => {
@@ -535,7 +544,6 @@ function App() {
           const next = await window.hibi.getDocument()
           if (next.revision !== document?.revision) {
             acceptDocument(next)
-            savedText.current = next.savedMarkdown
           }
           setWorkspace(await window.hibi.getWorkspace())
           return result
@@ -723,7 +731,6 @@ function App() {
           setInfo(info)
           acceptDocument(document)
           setHotkeys(hotkeys)
-          savedText.current = document.savedMarkdown
         }
       })
       .catch(() => {
@@ -755,7 +762,6 @@ function App() {
         const result = await window.hibi.openExternalDocuments()
         if (result.document) {
           acceptDocument(result.document)
-          savedText.current = result.document.savedMarkdown
           setSettingsOpen(false)
           setWorkspace(await window.hibi.getWorkspace())
         }
@@ -786,6 +792,8 @@ function App() {
   const runCommand = useCallback(
     async (command: DocumentCommand) => {
       if (busyRef.current || dialogs.isOpen()) return false
+      if (command === 'undo' || command === 'redo')
+        return Boolean(documentRuntime.session()?.[command]())
       busyRef.current = true
       setBusy(true)
       setError('')
@@ -797,7 +805,6 @@ function App() {
             : window.hibi.saveDocument(command === 'saveAs'))
         if (next) {
           acceptDocument(next)
-          savedText.current = next.savedMarkdown
           if (command === 'new' || command === 'open') setSettingsOpen(false)
           setWorkspace(await window.hibi.refreshWorkspace())
         }
@@ -856,7 +863,6 @@ function App() {
       const next = await window.hibi.openWorkspaceFile(path)
       if (next) {
         acceptDocument(next)
-        savedText.current = next.savedMarkdown
         setSettingsOpen(false)
         setWorkspace(await window.hibi.getWorkspace())
         if (sidebarResize.overlay) setSidebarOpen(false)
@@ -912,7 +918,7 @@ function App() {
 
   useEffect(() => window.hibi.onNotice(setNotice), [setNotice])
 
-  function updateMarkdown(markdown: string) {
+  function updateMarkdown(markdown: string, historyGroup?: string) {
     if (!welcomeDismissed) dismissWelcome()
     if (exceedsUtf8Limit(markdown, MAX_DOCUMENT_BYTES)) {
       setError(
@@ -921,36 +927,11 @@ function App() {
       setResetEditor((value) => value + 1)
       return
     }
-    const current = currentDocument.current
-    if (!current || current.markdown === markdown) return
-    const change = sourceChange(current.markdown, markdown)!
-    // Enqueue the ordered delta before observers can request a save or tab change.
-    void window.hibi
-      .appendDocumentChange({
-        ...change,
-        tabId: current.tabId,
-        revision: current.revision,
-        baseVersion: current.contentVersion,
-        contentVersion: current.contentVersion + 1,
-      })
-      .catch((error: unknown) =>
-        setError(
-          error instanceof Error
-            ? error.message
-            : 'Could not keep your latest changes.',
-        ),
-      )
-    if (current) {
-      const next = {
-        ...current,
-        markdown,
-        contentVersion:
-          current.contentVersion + Number(current.markdown !== markdown),
-        dirty: markdown !== savedText.current || current.ephemeral,
-      }
-      currentDocument.current = next
-      setDocument(next)
-      editorDocument.publish(next, change)
+    try {
+      documentRuntime.replace(markdown, 'visual', historyGroup)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error))
+      setResetEditor((value) => value + 1)
     }
   }
 
@@ -965,7 +946,6 @@ function App() {
       if (result) {
         setWorkspace(result.workspace)
         acceptDocument(result.document)
-        savedText.current = result.document.savedMarkdown
         if (action.action === 'new-file') setSettingsOpen(false)
         if (action.action === 'new-file' || action.action === 'new-folder') {
           selectSidebarView('workspace')
@@ -992,7 +972,6 @@ function App() {
       const result = await window.hibi.attachMedia(files, document.revision)
       if (!result) return null
       acceptDocument(result.document)
-      savedText.current = result.document.savedMarkdown
       setWorkspace(await window.hibi.getWorkspace())
       return result.attachments
     } finally {
@@ -1010,7 +989,6 @@ function App() {
       const result = await window.hibi.openDroppedFile(file)
       if (result?.document) {
         acceptDocument(result.document)
-        savedText.current = result.document.savedMarkdown
         setWorkspace(await window.hibi.getWorkspace())
         if ('workspace' in result) selectSidebarView('workspace')
         setSettingsOpen(false)
@@ -1038,7 +1016,6 @@ function App() {
       const next = await operation()
       if (!next) return
       acceptDocument(next)
-      savedText.current = next.savedMarkdown
       setWorkspace(await window.hibi.getWorkspace())
       if (revealDocument) {
         setSettingsOpen(false)
@@ -1154,7 +1131,6 @@ function App() {
               const next = await window.hibi.restoreVersion(id)
               if (!next) return
               acceptDocument(next)
-              savedText.current = next.savedMarkdown
               setSettingsOpen(false)
             } catch (error) {
               setError(String(error))

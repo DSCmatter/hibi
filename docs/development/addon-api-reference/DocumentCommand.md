@@ -5,5 +5,11 @@
 Type alias · [Source](https://github.com/schmayterling/hibi/blob/main/src/shared/desktop.ts#L56)
 
 ```typescript
-type DocumentCommand = 'new' | 'open' | 'save' | 'saveAs'
+type DocumentCommand =
+  | 'new'
+  | 'open'
+  | 'save'
+  | 'saveAs'
+  | 'undo'
+  | 'redo'
 ```

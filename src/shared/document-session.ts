@@ -10,6 +10,11 @@ import {
   type RawEdit,
   type SourceOperation,
 } from './source-operations.ts'
+import {
+  mapSourceSelection,
+  type SourceSelection,
+  sourceSelection,
+} from './source-selection.ts'
 
 type HistoryGroup = Readonly<{
   id: string
@@ -22,6 +27,8 @@ type HistoryGroup = Readonly<{
   afterIdentity: object
   bytes: number
   operations: number
+  beforeSelection: SourceSelection | null
+  afterSelection: SourceSelection | null
 }>
 export type SessionState = Readonly<{
   document: DocumentKey
@@ -45,6 +52,10 @@ export class DocumentSession {
   readonly #store: SourceStore
   readonly #options: SessionOptions
   readonly #listeners = new Set<() => void>()
+  readonly #operationListeners = new Set<
+    (operation: PreparedSourceOperation) => void
+  >()
+  readonly #selectionListeners = new Set<() => void>()
   readonly #identities = new WeakMap<SourceSnapshot, object>()
   #undo: HistoryGroup[] = []
   #redo: HistoryGroup[] = []
@@ -58,6 +69,7 @@ export class DocumentSession {
   #verificationTimer: ReturnType<typeof setTimeout> | undefined
   #cancelVerification: (() => void) | undefined
   #settled: Promise<void> = Promise.resolve()
+  #selection: SourceSelection | null = null
 
   constructor(
     source: string,
@@ -78,12 +90,47 @@ export class DocumentSession {
     })
   }
   snapshot = () => this.#store.snapshot()
+  savedSnapshot = () => this.#saved
   state = () => this.#state
   subscribe = (listener: () => void) => {
     this.#listeners.add(listener)
     return () => {
       this.#listeners.delete(listener)
     }
+  }
+  subscribeOperations = (
+    listener: (operation: PreparedSourceOperation) => void,
+  ) => {
+    this.#operationListeners.add(listener)
+    return () => {
+      this.#operationListeners.delete(listener)
+    }
+  }
+  selection = () => this.#selection
+  subscribeSelection = (listener: () => void) => {
+    this.#selectionListeners.add(listener)
+    return () => {
+      this.#selectionListeners.delete(listener)
+    }
+  }
+  select(selection: SourceSelection, version = this.snapshot().version) {
+    if (
+      this.#disposed ||
+      this.#dispatching ||
+      version !== this.snapshot().version
+    )
+      throw new Error('Source selection is stale or the session is busy.')
+    const next = sourceSelection(this.snapshot(), selection)
+    if (JSON.stringify(next) === JSON.stringify(this.#selection)) return
+    this.#selection = next
+    this.#notifySelection()
+  }
+  reidentify(document: DocumentKey) {
+    if (this.#disposed || this.#dispatching)
+      throw new Error('Document session is disposed or busy.')
+    const current = this.#store.reidentify(document)
+    this.#identities.set(current, this.#contentIdentity)
+    this.#publish()
   }
   counters(reset = false) {
     return this.#store.counters(reset)
@@ -96,6 +143,9 @@ export class DocumentSession {
         0,
       ),
     }
+  }
+  historyDepth() {
+    return { undo: this.#undo.length, redo: this.#redo.length }
   }
 
   #publish(notify = true) {
@@ -128,6 +178,15 @@ export class DocumentSession {
       }
     }
   }
+  #notifySelection() {
+    for (const listener of [...this.#selectionListeners]) {
+      try {
+        listener()
+      } catch (error) {
+        this.#options.onError(error)
+      }
+    }
+  }
   #trim() {
     let bytes = this.historySize().bytes
     const maximumBytes = this.#options.historyBytes ?? 8 * 1024 * 1024
@@ -144,7 +203,10 @@ export class DocumentSession {
     )
       bytes -= this.#redo.shift()!.bytes
   }
-  #record(prepared: PreparedSourceOperation) {
+  #record(
+    prepared: PreparedSourceOperation,
+    beforeSelection: SourceSelection | null,
+  ) {
     const previous = this.#undo.at(-1),
       operation = prepared.operation
     const afterIdentity = {}
@@ -189,6 +251,8 @@ export class DocumentSession {
         afterIdentity,
         bytes: editBytes(forward) + editBytes(inverse),
         operations: merge ? previous.operations + 1 : 1,
+        beforeSelection: merge ? previous.beforeSelection : beforeSelection,
+        afterSelection: this.#selection,
       }),
     )
     this.#contentIdentity = afterIdentity
@@ -213,18 +277,34 @@ export class DocumentSession {
   }
   #accept(
     operation: SourceOperation,
-    history: (prepared: PreparedSourceOperation) => void,
+    history: (
+      prepared: PreparedSourceOperation,
+      beforeSelection: SourceSelection | null,
+    ) => void,
     reconcile?: (prepared: PreparedSourceOperation) => void,
+    selection?: (prepared: PreparedSourceOperation) => SourceSelection | null,
   ) {
     if (this.#disposed || this.#dispatching)
       throw new Error(
         'Document session is disposed or dispatching another operation.',
       )
     const prepared = this.#store.prepare(operation)
+    const beforeSelection = this.#selection
+    let afterSelection: SourceSelection | null
+    try {
+      const requested = selection?.(prepared)
+      afterSelection = requested
+        ? sourceSelection(prepared.after, requested)
+        : mapSourceSelection(prepared.after, beforeSelection, operation.changes)
+    } catch (error) {
+      this.#store.abort(prepared)
+      throw error
+    }
     this.#dispatching = true
     try {
       this.#store.commit(prepared)
-      history(prepared)
+      this.#selection = afterSelection
+      history(prepared, beforeSelection)
       this.#identities.set(prepared.after, this.#contentIdentity)
       const changed = this.#publish(false)
       // Source is already savable when enqueue/reconcile or an observer runs.
@@ -239,7 +319,15 @@ export class DocumentSession {
       } catch (error) {
         this.#options.onError(error)
       }
+      for (const listener of [...this.#operationListeners]) {
+        try {
+          listener(prepared)
+        } catch (error) {
+          this.#options.onError(error)
+        }
+      }
       if (changed) this.#notify()
+      if (beforeSelection !== afterSelection) this.#notifySelection()
     } finally {
       this.#dispatching = false
     }
@@ -251,13 +339,15 @@ export class DocumentSession {
     origin: SourceOperation['origin'],
     historyGroup: string,
     reconcile?: (prepared: PreparedSourceOperation) => void,
+    selection?: (prepared: PreparedSourceOperation) => SourceSelection | null,
   ) {
     if (origin === 'undo' || origin === 'redo')
       throw new Error('Use session history for undo and redo.')
     return this.#accept(
       this.#operation(changes, origin, historyGroup),
-      (prepared) => this.#record(prepared),
+      (prepared, beforeSelection) => this.#record(prepared, beforeSelection),
       reconcile,
+      selection,
     )
   }
   undo(reconcile?: (prepared: PreparedSourceOperation) => void) {
@@ -271,6 +361,7 @@ export class DocumentSession {
         this.#contentIdentity = group.beforeIdentity
       },
       reconcile,
+      () => group.beforeSelection,
     )
   }
   redo(reconcile?: (prepared: PreparedSourceOperation) => void) {
@@ -284,6 +375,7 @@ export class DocumentSession {
         this.#contentIdentity = group.afterIdentity
       },
       reconcile,
+      () => group.afterSelection,
     )
   }
   markSaved(snapshot: SourceSnapshot) {
@@ -292,6 +384,23 @@ export class DocumentSession {
       throw new Error('Saved snapshot does not belong to this session.')
     this.#saved = snapshot
     this.#savedIdentity = identity
+    this.#publish()
+    this.#verifySaved()
+  }
+  /** Explicit native save/bootstrap boundary, never called for ordinary input. */
+  importSaved(source: string) {
+    const current = this.snapshot()
+    if (current.materialize() === source) {
+      this.markSaved(current)
+      return
+    }
+    this.#saved = new SourceStore(
+      source,
+      current.document,
+      0,
+      this.#options,
+    ).snapshot()
+    this.#savedIdentity = {}
     this.#publish()
     this.#verifySaved()
   }
@@ -348,6 +457,8 @@ export class DocumentSession {
     this.#verificationTimer = undefined
     this.#cancelVerification = undefined
     this.#listeners.clear()
+    this.#operationListeners.clear()
+    this.#selectionListeners.clear()
     this.#undo = []
     this.#redo = []
   }

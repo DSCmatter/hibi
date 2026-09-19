@@ -53,7 +53,13 @@ export type AutosaveResult = {
   status: 'saved' | 'skipped' | 'conflict'
   document: DocumentState | null
 }
-export type DocumentCommand = 'new' | 'open' | 'save' | 'saveAs'
+export type DocumentCommand =
+  | 'new'
+  | 'open'
+  | 'save'
+  | 'saveAs'
+  | 'undo'
+  | 'redo'
 
 export type AppInfo = {
   version: string

@@ -17,7 +17,7 @@ const listeners = new Set<() => void>()
 const publish = () => {
   for (const listener of listeners) listener()
 }
-editorDocument.subscribeChanges((document, change) => {
+editorDocument.subscribeChanges((document, changes) => {
   if (!owners.size) return
   for (const [owner, entries] of owners) {
     const kept = entries.flatMap((entry) => {
@@ -28,13 +28,18 @@ editorDocument.subscribeChanges((document, change) => {
       )
         return []
       if (entry.contentVersion === document.contentVersion) return [entry]
-      if (!change || entry.contentVersion + 1 !== document.contentVersion)
+      if (!changes || entry.contentVersion + 1 !== document.contentVersion)
         return []
-      const shift = change.insert.length - (change.to - change.from)
-      if (entry.from < change.to && entry.to > change.from) return []
-      const from = entry.from + (entry.from >= change.to ? shift : 0)
-      const to = entry.to + (entry.from >= change.to ? shift : 0)
-      if (document.markdown.slice(from, to) !== entry.expectedText) return []
+      let shift = 0
+      for (const change of changes) {
+        if (entry.from < change.to && entry.to > change.from) return []
+        if (entry.from >= change.to)
+          shift += change.insert.length - (change.to - change.from)
+      }
+      const from = entry.from + shift,
+        to = entry.to + shift
+      if (editorDocument.readRange(document, from, to) !== entry.expectedText)
+        return []
       return [{ ...entry, from, to, contentVersion: document.contentVersion }]
     })
     if (kept.length) owners.set(owner, kept)
@@ -105,7 +110,11 @@ export const editorAnnotations = {
             tabId: document.tabId,
             revision: document.revision,
             contentVersion: document.contentVersion,
-            expectedText: document.markdown.slice(range.from, range.to),
+            expectedText: editorDocument.readRange(
+              document,
+              range.from,
+              range.to,
+            ),
           })
         }
         owners.set(owner, entries)

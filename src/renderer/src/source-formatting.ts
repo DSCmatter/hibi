@@ -88,6 +88,11 @@ export function sourceFormatting(
   view: EditorView,
   format: DocumentFormat['formatting'] | null = 'markdown',
   media = false,
+  history?: {
+    undo: () => boolean
+    redo: () => boolean
+    state: () => { canUndo: boolean; canRedo: boolean }
+  },
 ) {
   const editable = () => !view.state.readOnly
   let lastDocument = view.state.doc,
@@ -151,9 +156,12 @@ export function sourceFormatting(
   const run = (id: string, values?: InsertValues) => {
     if (!editable() || !supported(id)) return false
     if (id === 'undo' || id === 'redo' || id === 'indent' || id === 'outdent') {
-      const done = { undo, redo, indent: indentMore, outdent: indentLess }[id](
-        view,
-      )
+      const done = {
+        undo: history?.undo ?? undo,
+        redo: history?.redo ?? redo,
+        indent: indentMore,
+        outdent: indentLess,
+      }[id](view)
       view.focus()
       return done
     }
@@ -325,9 +333,9 @@ export function sourceFormatting(
           (view.state.selection.ranges.length !== 1 &&
             !['undo', 'redo', 'indent', 'outdent'].includes(id)) ||
           (id === 'undo'
-            ? !undoDepth(view.state)
+            ? !(history ? history.state().canUndo : undoDepth(view.state))
             : id === 'redo'
-              ? !redoDepth(view.state)
+              ? !(history ? history.state().canRedo : redoDepth(view.state))
               : id === 'unlink'
                 ? !/\[[^\]]+\]\(/.test(
                     view.state.sliceDoc(

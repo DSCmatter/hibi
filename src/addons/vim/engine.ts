@@ -1,9 +1,17 @@
 import { drawSelection, EditorView, ViewPlugin } from '@codemirror/view'
-import { getCM, Vim, vim } from '@replit/codemirror-vim'
+import { CodeMirror, getCM, Vim, vim } from '@replit/codemirror-vim'
 import type { AddonContext, StatusHandle } from '../api'
 import { vimPreferences } from './preferences'
 
 const contexts = new WeakMap<object, AddonContext>()
+for (const command of ['undo', 'redo'] as const) {
+  const previous = CodeMirror.commands[command]
+  CodeMirror.commands[command] = (cm) => {
+    const context = contexts.get(cm.cm6)
+    if (context) void context.editor.runCommand(command)
+    else previous(cm)
+  }
+}
 
 function commandArgument(params: { argString?: string }) {
   return (params.argString ?? '').trim()

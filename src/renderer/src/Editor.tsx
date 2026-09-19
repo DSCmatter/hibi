@@ -38,7 +38,9 @@ import { performanceDiagnostics } from '../../ui/diagnostics'
 import { documentImage } from './DocumentImage'
 import { documentEdits } from './document-edits'
 import { editorDocument } from './document-formats'
+import { documentHistory } from './document-history'
 import { documentProjections } from './document-projections'
+import { documentRuntime } from './document-runtime'
 import { type CursorSettings, EditorCursor } from './EditorCursor'
 import { emitEditorKeyEvent } from './editor-events'
 import { FindBar, type FindMove, type FindStatus } from './FindBar'
@@ -99,7 +101,7 @@ export function MarkdownEditor({
   format: DocumentFormat | undefined
   formatName: string
   value: string
-  onChange: (value: string) => void
+  onChange: (value: string, historyGroup?: string) => void
   mode: ViewMode
   disabled: boolean
   findOpen: boolean
@@ -172,7 +174,7 @@ export function MarkdownEditor({
       markdownExtensions,
     ],
   )
-  const [richRevision, setRichRevision] = useState(0)
+  const richHistoryGroup = useRef({ id: '', time: 0 })
   const [richExtensionError, setRichExtensionError] = useState('')
   const [findQuery, setFindQuery] = useState('')
   const [findStatus, setFindStatus] = useState<FindStatus>({
@@ -252,7 +254,7 @@ export function MarkdownEditor({
   // biome-ignore lint/correctness/useExhaustiveDependencies: syntax changes rebuild configured extensions even when the flavor identities stay unchanged.
   const extensions = useMemo(
     () => [
-      ...editorExtensions(flavors),
+      ...editorExtensions(flavors, documentHistory),
       ...(markdownSyntax.enabled('core.images')
         ? [documentImage(documentRevision)]
         : []),
@@ -290,7 +292,10 @@ export function MarkdownEditor({
           'aria-multiline': 'true',
         },
       },
-      onUpdate: ({ editor }) => {
+      onSelectionUpdate: ({ transaction }) => {
+        if (!transaction.docChanged) richHistoryGroup.current.id = ''
+      },
+      onUpdate: ({ editor, transaction }) => {
         let serialize = serializers.current.get(editor)
         if (!serialize) {
           serialize = markdownSerializer(
@@ -318,14 +323,62 @@ export function MarkdownEditor({
           syntaxVersion,
           adapters: markdownExtensions,
         }
+        const typing =
+          !exactSource.current &&
+          transaction.steps.length === 1 &&
+          transaction.steps[0]?.toJSON().stepType === 'replace' &&
+          !transaction.getMeta('uiEvent')
+        const now = performance.now(),
+          previous = richHistoryGroup.current
+        if (!typing || !previous.id || now - previous.time > 500)
+          previous.id = crypto.randomUUID()
         performanceDiagnostics.measure('core', 'document update', () =>
-          onChange(source),
+          onChange(source, previous.id),
         )
-        setRichRevision((revision) => revision + 1)
+        previous.time = now
+        if (!typing) previous.id = ''
       },
     },
     [markdownExtensions, flavors, syntaxVersion],
   )
+  useLayoutEffect(() => {
+    const session = documentRuntime.session()
+    if (!editor || !markdownDocument || !session) return
+    let disposed = false,
+      scheduled = false
+    const sync = () => {
+      scheduled = false
+      if (disposed || editor.isDestroyed) return
+      const source = session.snapshot().materialize()
+      if (generated.current?.source === source) return
+      editor.commands.setContent(
+        projectMarkdown(source, markdownExtensions).content,
+        { contentType: 'markdown', emitUpdate: false },
+      )
+      generated.current = null
+      richHistoryGroup.current.id = ''
+    }
+    const remove = session.subscribeOperations((prepared) => {
+      if (
+        prepared.operation.origin === 'visual' &&
+        generated.current?.source === session.snapshot().materialize()
+      )
+        return
+      if (
+        prepared.operation.origin === 'undo' ||
+        prepared.operation.origin === 'redo'
+      )
+        sync()
+      else if (!scheduled) {
+        scheduled = true
+        queueMicrotask(sync)
+      }
+    })
+    return () => {
+      disposed = true
+      remove()
+    }
+  }, [editor, markdownDocument, markdownExtensions])
   useLayoutEffect(() => {
     if (!editor?.markdown || !markdownDocument) return
     const serialize = markdownSerializer(
@@ -901,7 +954,6 @@ export function MarkdownEditor({
                     disabled={disabled}
                     onChange={(markdown) => {
                       updateFromSource(markdown)
-                      setRichRevision((revision) => revision + 1)
                     }}
                   />
                 ) : null,
@@ -950,14 +1002,10 @@ export function MarkdownEditor({
                   onFormatting={attachSourceFormatting}
                   sourceExtensions={sourceExtensions}
                   showLineNumbers={showLineNumbers}
-                  active={mode !== 'normal'}
                   onReady={(status) => {
                     setSourceReady(status === 'ready')
                     if (status !== 'loading') setSourceSettled(true)
                   }}
-                  value={value}
-                  externalRevision={richRevision}
-                  onChange={updateFromSource}
                   disabled={disabled}
                   findActive={findOpen && findTarget === 'source'}
                   findQuery={findQuery}

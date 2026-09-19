@@ -775,9 +775,6 @@
   "9a19e86ea92a": [
     "src/addons/_shared/local-format-native.ts"
   ],
-  "320f2511259a": [
-    "src/renderer/src/main.tsx"
-  ],
   "349ceed84d07": [
     "src/renderer/src/HibiSettings.tsx"
   ],
@@ -1030,6 +1027,9 @@
   "4ba14479a49a": [
     "src/addons/_shared/format-native.ts"
   ],
+  "9fc46f2f4ed7": [
+    "src/shared/document-session.ts"
+  ],
   "e7a6429af1d4": [
     "src/shared/document-session.ts"
   ],
@@ -1123,6 +1123,9 @@
   ],
   "020bd15463d3": [
     "src/addons/rmarkdown/manifest.ts"
+  ],
+  "14c7bbeb603c": [
+    "src/renderer/src/SourceEditor.tsx"
   ],
   "7bc860ccf5e3": [
     "src/addons/frontmatter/manifest.ts"
@@ -1891,6 +1894,9 @@
   ],
   "917482c852ef": [
     "src/shared/source-operations.ts"
+  ],
+  "2d2f30fe92f8": [
+    "src/shared/source-selection.ts"
   ],
   "5fa0d9e5b348": [
     "src/shared/source-buffer.ts"
@@ -3009,6 +3015,9 @@
   "d67c7a8d7229": [
     "src/addons/tags/Panel.tsx"
   ],
+  "298ea20df97c": [
+    "src/renderer/src/source-session.ts"
+  ],
   "6959b4159575": [
     "src/addons/diagnostics/Settings.tsx"
   ],
@@ -3133,6 +3142,9 @@
   "8a2bc7e0aed9": [
     "src/shared/source-buffer.ts"
   ],
+  "0a2ccf3286b2": [
+    "src/renderer/src/source-session.ts"
+  ],
   "bb4430a2cffb": [
     "src/shared/source-buffer.ts"
   ],
@@ -3166,8 +3178,17 @@
   "ffdc867a4313": [
     "src/shared/source-buffer.ts"
   ],
+  "9b7c8bf07e6b": [
+    "src/shared/document-session.ts"
+  ],
+  "ce9108645879": [
+    "src/shared/source-selection.ts"
+  ],
   "af0187b95408": [
     "src/shared/source-buffer.ts"
+  ],
+  "2c8f1ce6d59f": [
+    "src/renderer/src/source-session.ts"
   ],
   "2bbe3abc3131": [
     "src/renderer/src/SettingsScreen.tsx",
@@ -3508,6 +3529,12 @@
   ],
   "e16af0263168": [
     "src/renderer/src/document-edits.ts"
+  ],
+  "75f8344e99c3": [
+    "src/renderer/src/source-session.ts"
+  ],
+  "995a14b50dbc": [
+    "src/renderer/src/source-session.ts"
   ],
   "bee50784d023": [
     "src/shared/document-edits.ts"

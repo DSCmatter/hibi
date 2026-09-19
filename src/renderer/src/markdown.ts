@@ -14,7 +14,10 @@ import { installSyntaxPreferences } from './syntax-parser'
 export { needsSourceEditing } from './markdown-preservation'
 export { projectMarkdown } from './markdown-projection'
 
-export function editorExtensions(flavors: readonly MarkdownFlavor[]) {
+export function editorExtensions(
+  flavors: readonly MarkdownFlavor[],
+  history?: Extension,
+) {
   const options = Object.assign(
     { gfm: false, breaks: false },
     ...flavors.map((flavor) => flavor.markedOptions),
@@ -38,6 +41,7 @@ export function editorExtensions(flavors: readonly MarkdownFlavor[]) {
       addProseMirrorPlugins: () => [search()],
     }),
     StarterKit.configure({
+      ...(history ? { undoRedo: false as const } : {}),
       strike: false,
       underline: false,
       trailingNode: false,
@@ -53,6 +57,7 @@ export function editorExtensions(flavors: readonly MarkdownFlavor[]) {
       heading: levels.length ? { levels } : false,
       link: enabled('links') ? { openOnClick: false } : false,
     }),
+    ...(history ? [history] : []),
     ...literalMarkdown,
     Markdown.configure({ marked: parser, markedOptions: options }),
     CodeHighlight,

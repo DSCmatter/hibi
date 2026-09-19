@@ -1,10 +1,4 @@
-import {
-  defaultKeymap,
-  history,
-  historyKeymap,
-  isolateHistory,
-  selectAll,
-} from '@codemirror/commands'
+import { defaultKeymap, isolateHistory, selectAll } from '@codemirror/commands'
 import { markdown as markdownLanguage } from '@codemirror/lang-markdown'
 import {
   HighlightStyle,
@@ -23,7 +17,6 @@ import {
   setSearchQuery,
 } from '@codemirror/search'
 import {
-  Annotation,
   Compartment,
   EditorSelection,
   EditorState,
@@ -36,11 +29,17 @@ import { useEffect, useRef, useState } from 'react'
 import type { DocumentFormat, SourceExtension } from '../../addons/api'
 import { type DocumentState, MAX_DOCUMENT_BYTES } from '../../shared/desktop'
 import { editedSource, sourceEditMatches } from '../../shared/document-edits'
+import type { RawEdit } from '../../shared/source-operations'
+import {
+  editorChangesFromSource,
+  normalizedSource as normalizeSource,
+} from '../../shared/source-projection'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { codeHighlighter, codeLanguages } from './code-languages'
 import { documentEdits } from './document-edits'
 import { editorDocument } from './document-formats'
 import { documentProjections } from './document-projections'
+import { documentRuntime } from './document-runtime'
 import type { FindMove, FindStatus } from './FindBar'
 import {
   observeSourceAnnotations,
@@ -51,11 +50,10 @@ import {
   type SourceFormatting,
   sourceFormatting,
 } from './source-formatting'
-import { normalizeSource, sourceText } from './source-text'
+import { createSourceSession, sourceEditorText } from './source-session'
 import { registerSourceView } from './source-view'
 import { textProjection } from './text-projection'
 
-const externalChange = Annotation.define<boolean>()
 const highlighting = HighlightStyle.define([
   { tag: tags.heading, color: 'var(--syntax-heading)', fontWeight: '600' },
   { tag: tags.strong, color: 'var(--syntax-strong)', fontWeight: '600' },
@@ -76,12 +74,8 @@ export function SourceEditor({
   sourceFormat,
   supportsMedia,
   label,
-  active,
   onReady,
-  value,
-  onChange,
   disabled,
-  externalRevision,
   findActive,
   findQuery,
   findMove,
@@ -99,12 +93,8 @@ export function SourceEditor({
   sourceFormat?: DocumentFormat['formatting']
   supportsMedia: boolean
   label: string
-  active: boolean
   onReady: (status: 'loading' | 'ready' | 'failed') => void
-  value: string
-  onChange: (value: string) => void
   disabled: boolean
-  externalRevision: number
   findActive: boolean
   findQuery: string
   findMove: FindMove
@@ -151,34 +141,13 @@ export function SourceEditor({
   const [extensionError, setExtensionError] = useState('')
   const [languageError, setLanguageError] = useState('')
   const [languageReady, setLanguageReady] = useState(!codeLanguage)
+  const [inputError, setInputError] = useState('')
   const inputReady = installedExtensions === sourceExtensions && languageReady
   const editContext = useRef({ document, editTarget, disabled, inputReady })
   editContext.current = { document, editTarget, disabled, inputReady }
-  const change = useRef(onChange)
-  const initialValue = useRef(value)
-  const sourceBuffer = useRef<ReturnType<typeof sourceText> | null>(null)
-  if (!sourceBuffer.current) sourceBuffer.current = sourceText(value)
-  const exactChange = useRef<string | null>(null)
-  const sourceHistory = useRef(new Map<string, string>())
-  const rememberSource = (source: string) => {
-    const next = sourceText(source, sourceBuffer.current?.lineBreak)
-    if (next.nativeLineBreaks || exactChange.current !== null) {
-      sourceHistory.current.set(next.text, source)
-      let size = [...sourceHistory.current].reduce(
-        (size, [text, raw]) => size + text.length + raw.length,
-        0,
-      )
-      while (sourceHistory.current.size > 32 || size > 8 * 1024 * 1024) {
-        const oldest = sourceHistory.current.keys().next().value!
-        size -= oldest.length + sourceHistory.current.get(oldest)!.length
-        sourceHistory.current.delete(oldest)
-      }
-    }
-    sourceBuffer.current = next
-  }
-  const remember = useRef(rememberSource)
-  remember.current = rememberSource
-  const appliedRevision = useRef(externalRevision)
+  const [session] = useState(() => documentRuntime.session()!)
+  const [bridge] = useState(() => createSourceSession(session))
+  const exactChanges = useRef<readonly RawEdit[] | undefined>(undefined)
   const editable = useRef(new Compartment())
   const numbers = useRef(new Compartment())
   const addons = useRef(new Compartment())
@@ -192,7 +161,6 @@ export function SourceEditor({
   reportFormatting.current = onFormatting
   ready.current = onReady
   find.current = { active: findActive, report: onFindStatus }
-  change.current = onChange
 
   useEffect(() => {
     if (!host.current) return
@@ -218,8 +186,17 @@ export function SourceEditor({
     }
     const editor = new EditorView({
       parent: host.current,
+      dispatchTransactions(transactions, editor) {
+        try {
+          bridge.dispatch(transactions, editor, exactChanges.current)
+          setInputError('')
+        } catch (error) {
+          setInputError(error instanceof Error ? error.message : String(error))
+          editor.update([editor.state.update({})])
+        }
+      },
       state: EditorState.create({
-        doc: normalizeSource(initialValue.current),
+        doc: sourceEditorText(bridge.snapshot()),
         extensions: [
           addons.current.of([]),
           search({
@@ -235,9 +212,19 @@ export function SourceEditor({
           ]),
           numbers.current.of([]),
           language.of(markdown()),
-          history(),
           sourceAnnotationExtension,
           EditorView.domEventHandlers({
+            beforeinput(event) {
+              if (
+                event.inputType !== 'historyUndo' &&
+                event.inputType !== 'historyRedo'
+              )
+                return false
+              event.preventDefault()
+              return event.inputType === 'historyUndo'
+                ? bridge.undo()
+                : bridge.redo()
+            },
             blur(_event, view) {
               const selection = view.state.selection
               if (selection.ranges.some((range) => range.empty && range.assoc))
@@ -280,7 +267,8 @@ export function SourceEditor({
           keymap.of([
             { key: 'Ctrl-a', run: selectAll },
             ...defaultKeymap,
-            ...historyKeymap,
+            { key: 'Mod-z', run: bridge.undo, shift: bridge.redo },
+            { key: 'Mod-y', run: bridge.redo },
           ]),
           syntaxHighlighting(highlighting),
           syntaxHighlighting(codeHighlighter),
@@ -323,40 +311,12 @@ export function SourceEditor({
               }
               find.current.report({ current, total })
             }
-            if (
-              update.docChanged &&
-              !update.transactions.some((transaction) =>
-                transaction.annotation(externalChange),
-              )
-            ) {
-              const text = update.state.doc.toString()
-              const changes: { from: number; to: number; insert: string }[] = []
-              if (sourceBuffer.current!.nativeLineBreaks)
-                update.changes.iterChanges(
-                  (from, to, _fromB, _toB, inserted) => {
-                    changes.push({ from, to, insert: inserted.toString() })
-                  },
-                )
-              const undo = update.transactions.some(
-                (transaction) =>
-                  transaction.isUserEvent('undo') ||
-                  transaction.isUserEvent('redo'),
-              )
-              const source =
-                exactChange.current ??
-                (undo ? sourceHistory.current.get(text) : undefined) ??
-                (sourceBuffer.current!.nativeLineBreaks
-                  ? sourceBuffer.current!.apply(changes)
-                  : text)
-              remember.current(source)
-              change.current(source)
-            }
           }),
         ],
       }),
     })
     view.current = editor
-    remember.current(sourceBuffer.current!.source)
+    const detachSession = bridge.attach(editor)
     const removeAnnotations = observeSourceAnnotations(editor)
     const unregisterProjection = documentProjections.register(
       'source',
@@ -370,7 +330,7 @@ export function SourceEditor({
           !current ||
           current.tabId !== context.document.tabId ||
           current.revision !== context.document.revision ||
-          sourceBuffer.current!.source !== current.markdown
+          bridge.snapshot().version !== current.contentVersion
         )
           return null
         return (
@@ -407,40 +367,35 @@ export function SourceEditor({
           status: 'composing',
           message: 'Finish composing text before applying edits.',
         }
-      const source = sourceBuffer.current!.source
-      if (source !== current.markdown)
+      const snapshot = bridge.snapshot()
+      if (snapshot.version !== current.contentVersion)
         return {
           status: 'stale',
           message: 'The editor is synchronizing. Review the edits again.',
         }
       let expected: string
       try {
+        const source = snapshot.materialize()
         expected = editedSource(source, request.changes, MAX_DOCUMENT_BYTES)
         if (expected === source)
           return { status: 'applied', contentVersion: current.contentVersion }
       } catch (error) {
         return { status: 'invalid', message: String(error) }
       }
-      const changes = request.changes.map((change) => ({
-        from: sourceBuffer.current!.toEditor(change.from),
-        to: sourceBuffer.current!.toEditor(change.to),
-        insert: normalizeSource(change.insert),
-      }))
-      if (
-        changes.some((change) => change.from === null || change.to === null) ||
-        normalizeSource(expected) === sourceBuffer.current!.text
-      )
+      if (normalizeSource(expected) === editor.state.doc.toString())
         return {
           status: 'invalid',
           message:
             'Edits must keep line-ending pairs intact. Use a whole-source transform to change only line endings.',
         }
+      let changes: readonly RawEdit[]
+      try {
+        changes = editorChangesFromSource(snapshot, request.changes)
+      } catch (error) {
+        return { status: 'invalid', message: String(error) }
+      }
       const transaction = editor.state.update({
-        changes: changes.map((change) => ({
-          from: change.from!,
-          to: change.to!,
-          insert: change.insert,
-        })),
+        changes,
         annotations: [
           isolateHistory.of('full'),
           Transaction.userEvent.of('input.addon'),
@@ -451,11 +406,11 @@ export function SourceEditor({
           status: 'invalid',
           message: 'An editor extension changed this edit.',
         }
-      exactChange.current = expected
+      exactChanges.current = request.changes
       try {
         editor.dispatch(transaction)
       } finally {
-        exactChange.current = null
+        exactChanges.current = undefined
       }
       return {
         status: 'applied',
@@ -466,7 +421,7 @@ export function SourceEditor({
     const unregister = registerSourceView(
       editor,
       (raw) => {
-        const anchor = sourceBuffer.current!.toEditor(raw)
+        const anchor = bridge.snapshot().rawToEditor(raw)
         if (anchor !== null)
           editor.dispatch({
             selection: { anchor },
@@ -477,8 +432,9 @@ export function SourceEditor({
           })
       },
       {
-        toSource: (position) => sourceBuffer.current!.toSource(position),
-        toEditor: (position) => sourceBuffer.current!.toEditor(position),
+        toSource: (position) =>
+          bridge.snapshot().editorToRaw(position) ?? position,
+        toEditor: (position) => bridge.snapshot().rawToEditor(position),
       },
     )
     configureParser.current = () => {
@@ -510,6 +466,7 @@ export function SourceEditor({
         parserOptions.current.sourceFormat ??
           (parserOptions.current.markdownMode ? 'markdown' : null),
         parserOptions.current.supportsMedia,
+        { undo: bridge.undo, redo: bridge.redo, state: session.state },
       )
       reportFormatting.current(formatting.current)
     }
@@ -533,10 +490,11 @@ export function SourceEditor({
       unregisterEdits()
       unregisterProjection()
       removeAnnotations()
+      detachSession()
       editor.destroy()
       view.current = null
     }
-  }, [])
+  }, [bridge, session])
 
   useEffect(() => {
     let canceled = false
@@ -569,29 +527,6 @@ export function SourceEditor({
           : 'loading',
     )
   }, [inputReady, measured, extensionError, languageError])
-
-  useEffect(() => {
-    // Only reconcile edits from the other pane; never replay our own stale props.
-    if (!active || appliedRevision.current === externalRevision) return
-    appliedRevision.current = externalRevision
-    const editor = view.current
-    if (editor && sourceBuffer.current?.source !== value) {
-      sourceBuffer.current = sourceText(value)
-      sourceHistory.current.clear()
-      remember.current(value)
-      editor.dispatch({
-        changes: {
-          from: 0,
-          to: editor.state.doc.length,
-          insert: normalizeSource(value),
-        },
-        annotations: [
-          externalChange.of(true),
-          Transaction.addToHistory.of(false),
-        ],
-      })
-    }
-  }, [active, value, externalRevision])
 
   useEffect(() => {
     view.current?.dispatch({
@@ -651,10 +586,14 @@ export function SourceEditor({
 
   return (
     <>
-      {(extensionError || languageError) && (
+      {(extensionError || languageError || inputError) && (
         <DocumentNotice
-          title="Editor addon unavailable"
-          message={extensionError || languageError}
+          title={
+            inputError
+              ? 'Edit could not be applied'
+              : 'Editor addon unavailable'
+          }
+          message={inputError || extensionError || languageError}
         />
       )}
       <div className="source-editor" ref={host} />
