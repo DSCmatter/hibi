@@ -688,6 +688,9 @@
   "22a970d2e5b1": [
     "src/addons/diagnostics/Settings.tsx"
   ],
+  "34c65fb85a2d": [
+    "src/shared/source-operations.ts"
+  ],
   "6b2fe25d348e": [
     "src/addons/vim/Settings.tsx"
   ],
@@ -1027,6 +1030,9 @@
   "4ba14479a49a": [
     "src/addons/_shared/format-native.ts"
   ],
+  "e7a6429af1d4": [
+    "src/shared/document-session.ts"
+  ],
   "7259e702cd4d": [
     "src/renderer/src/Editor.tsx"
   ],
@@ -1153,6 +1159,9 @@
   ],
   "1c0c39f95ac6": [
     "src/addons/rst/manifest.ts"
+  ],
+  "51c81d4fcb3d": [
+    "src/shared/source-buffer.ts"
   ],
   "fab4539d26e0": [
     "src/renderer/src/settings-pages.ts"
@@ -1707,6 +1716,9 @@
   "03fd87186af7": [
     "src/renderer/src/markdown-syntax.ts"
   ],
+  "e92b2152da0d": [
+    "src/shared/source-buffer.ts"
+  ],
   "3bfd4f486ebf": [
     "src/site/bootstrap.tsx"
   ],
@@ -1820,6 +1832,9 @@
   "440c06b497b1": [
     "src/main/file-associations.ts"
   ],
+  "78fc79d2cefd": [
+    "src/shared/source-operations.ts"
+  ],
   "9e9f2a70c53e": [
     "src/main/dependencies.ts"
   ],
@@ -1847,8 +1862,32 @@
   "ea7cb8d5da6c": [
     "src/main/ui-case.ts"
   ],
+  "a095dd491ae0": [
+    "src/shared/source-buffer.ts"
+  ],
   "965a8cfa61e5": [
     "src/renderer/src/addon-views.ts"
+  ],
+  "2544cee575f1": [
+    "src/shared/source-buffer.ts"
+  ],
+  "f03b9d6d5379": [
+    "src/shared/source-metrics.ts"
+  ],
+  "592ca11291ac": [
+    "src/shared/source-operations.ts"
+  ],
+  "7ae3892a665f": [
+    "src/shared/source-operations.ts"
+  ],
+  "51145fcc3e43": [
+    "src/shared/source-operations.ts"
+  ],
+  "917482c852ef": [
+    "src/shared/source-operations.ts"
+  ],
+  "5fa0d9e5b348": [
+    "src/shared/source-buffer.ts"
   ],
   "6917f99d1cef": [
     "src/shared/preservation.ts"
@@ -2907,6 +2946,9 @@
   "67fe7834e543": [
     "src/main/workspace-settings.ts"
   ],
+  "d41d8ff626a3": [
+    "src/shared/document-session.ts"
+  ],
   "bddb9129d59e": [
     "src/renderer/src/VersionHistory.tsx"
   ],
@@ -3078,6 +3120,39 @@
   ],
   "0e570ca6fabe": [
     "src/renderer/src/ImportDialog.tsx"
+  ],
+  "8a2bc7e0aed9": [
+    "src/shared/source-buffer.ts"
+  ],
+  "bb4430a2cffb": [
+    "src/shared/source-buffer.ts"
+  ],
+  "f45809bdd48a": [
+    "src/shared/source-buffer.ts"
+  ],
+  "2fc5a26b7c5b": [
+    "src/shared/source-operations.ts"
+  ],
+  "4791e67cbc64": [
+    "src/shared/source-buffer.ts"
+  ],
+  "180c25278220": [
+    "src/shared/source-buffer.ts"
+  ],
+  "a3ec45d2752b": [
+    "src/shared/source-buffer.ts"
+  ],
+  "5b10c7a4c309": [
+    "src/shared/source-operations.ts"
+  ],
+  "a32661e46b7d": [
+    "src/shared/source-buffer.ts"
+  ],
+  "ffdc867a4313": [
+    "src/shared/source-buffer.ts"
+  ],
+  "af0187b95408": [
+    "src/shared/source-buffer.ts"
   ],
   "2bbe3abc3131": [
     "src/renderer/src/SettingsScreen.tsx",
@@ -3887,6 +3962,9 @@
   ],
   "6934ab3f898b": [
     "src/renderer/src/main.tsx"
+  ],
+  "f41501c87350": [
+    "src/shared/document-session.ts"
   ],
   "0e9ce8352f73": [
     "src/renderer/src/SettingsScreen.tsx"
