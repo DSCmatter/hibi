@@ -14,6 +14,11 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 
+if (process.platform !== 'darwin' || process.arch !== 'arm64')
+  throw new Error(
+    'This packaged benchmark currently supports macOS arm64 only.',
+  )
+
 const manifest = JSON.parse(await readFile(process.argv[2], 'utf8'))
 const root = await mkdtemp(join(tmpdir(), 'hibi-log-pack-bench-'))
 async function run(command, args, log, timeout = 180000) {
