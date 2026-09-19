@@ -36,6 +36,8 @@ See [images and attachments](../editing/media-and-navigation.md#attachments) for
 
 Press `Cmd/Ctrl+F` to find text in the document. Enter moves to the next match, Shift+Enter moves back, and Escape closes search. In side-by-side view, search uses the pane you last edited.
 
+In source view, **Searching…** means match counts are still being checked against the current document. Editing or changing the query cancels outdated results. If find becomes unavailable, close and reopen it to retry; document editing and saving stay available.
+
 Press `Cmd/Ctrl+K` to search commands and settings. Use arrow keys and Enter to choose a result, or Escape to close the palette.
 
 ## Save and rename

@@ -826,6 +826,9 @@
   "2ea302167076": [
     "src/addons/vim/Settings.tsx"
   ],
+  "da2df709d46e": [
+    "src/renderer/src/document-worker-client.ts"
+  ],
   "278a4d546369": [
     "src/main/index.ts"
   ],
@@ -867,6 +870,9 @@
   ],
   "6704c0f053f8": [
     "src/renderer/src/HotkeySettings.tsx"
+  ],
+  "f6a61661c1fd": [
+    "src/renderer/src/document-worker-client.ts"
   ],
   "77fbde96f850": [
     "src/main/analysis.ts"
@@ -1065,6 +1071,15 @@
   ],
   "7259e702cd4d": [
     "src/renderer/src/Editor.tsx"
+  ],
+  "a8c9ae023f1a": [
+    "src/renderer/src/document-worker-client.ts"
+  ],
+  "c1c0d88d3fb2": [
+    "src/shared/document-worker-service.ts"
+  ],
+  "14158c871b70": [
+    "src/shared/document-worker-service.ts"
   ],
   "c205924de0fe": [
     "src/site/main.tsx"
@@ -1468,6 +1483,9 @@
   "44e074b6feac": [
     "src/renderer/src/DependencySettings.tsx"
   ],
+  "8b42941bd586": [
+    "src/shared/source-search-index.ts"
+  ],
   "5ed5f8ce994e": [
     "src/main/index.ts",
     "src/renderer/src/FindBar.tsx",
@@ -1476,8 +1494,30 @@
   "0657af78ec64": [
     "src/renderer/src/FindBar.tsx"
   ],
+  "f27468e35ce4": [
+    "src/renderer/src/FindBar.tsx"
+  ],
   "cb86b77b0dde": [
     "src/addons/review/manifest.ts"
+  ],
+  "c7c62a20bbf5": [
+    "src/shared/document-worker-service.ts"
+  ],
+  "15182c44f611": [
+    "src/shared/document-worker-service.ts",
+    "src/shared/source-search-index.ts"
+  ],
+  "5c1d80f74650": [
+    "src/shared/source-search.ts"
+  ],
+  "2cee7495c451": [
+    "src/shared/source-search.ts"
+  ],
+  "17c5a92f32f2": [
+    "src/shared/document-worker-service.ts"
+  ],
+  "9a836ad69f34": [
+    "src/renderer/src/document-worker-client.ts"
   ],
   "954d05631f82": [
     "src/renderer/src/Editor.tsx",
@@ -1886,6 +1926,9 @@
   ],
   "62734d46cb24": [
     "src/shared/document-checkpoint.ts"
+  ],
+  "e24a669abcf1": [
+    "src/shared/document-worker-service.ts"
   ],
   "194c34611a1c": [
     "src/shared/document-edits.ts"
@@ -2387,6 +2430,12 @@
   ],
   "b17ed415b25f": [
     "src/shared/hotkeys.ts"
+  ],
+  "921a1d69a31f": [
+    "src/shared/source-search.ts"
+  ],
+  "496960914c5f": [
+    "src/shared/source-projection.ts"
   ],
   "a17bdb06729a": [
     "src/main/file-associations.ts"
@@ -3243,6 +3292,9 @@
   "8a2bc7e0aed9": [
     "src/shared/source-buffer.ts"
   ],
+  "aa0061415476": [
+    "src/shared/source-buffer.ts"
+  ],
   "0a2ccf3286b2": [
     "src/renderer/src/source-session.ts"
   ],
@@ -4050,6 +4102,9 @@
   ],
   "b0291a853226": [
     "src/main/file-associations.ts"
+  ],
+  "c57bf48df4b4": [
+    "src/shared/document-worker-service.ts"
   ],
   "7521533ff099": [
     "src/main/workspace-settings.ts"

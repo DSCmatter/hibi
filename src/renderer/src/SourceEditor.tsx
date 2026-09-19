@@ -8,9 +8,6 @@ import {
 } from '@codemirror/language'
 import {
   closeSearchPanel,
-  findNext,
-  findPrevious,
-  getSearchQuery,
   openSearchPanel,
   SearchQuery,
   search,
@@ -25,7 +22,7 @@ import {
 import { EditorView, keymap, lineNumbers, placeholder } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 import { marked } from 'marked'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentFormat, SourceExtension } from '../../addons/api'
 import { type DocumentState, MAX_DOCUMENT_BYTES } from '../../shared/desktop'
 import { editedSource, sourceEditMatches } from '../../shared/document-edits'
@@ -40,6 +37,7 @@ import { documentEdits } from './document-edits'
 import { editorDocument } from './document-formats'
 import { documentProjections } from './document-projections'
 import { documentRuntime } from './document-runtime'
+import { DocumentWorkerClient, type FindAction } from './document-worker-client'
 import type { FindMove, FindStatus } from './FindBar'
 import {
   observeSourceAnnotations,
@@ -151,7 +149,16 @@ export function SourceEditor({
   const editable = useRef(new Compartment())
   const numbers = useRef(new Compartment())
   const addons = useRef(new Compartment())
-  const find = useRef({ active: findActive, report: onFindStatus })
+  const find = useRef({
+    active: findActive,
+    query: findQuery,
+    report: onFindStatus,
+  })
+  const sourceFind = useRef<DocumentWorkerClient | null>(null)
+  const findCoverage = useRef({ query: '', version: -1, total: 0 })
+  const findActions = useRef<FindAction[]>([])
+  const navigatingFind = useRef(false)
+  const applyingFind = useRef(false)
   const handledFindMove = useRef(findMove.id)
   const ready = useRef(onReady)
   const formatting = useRef<SourceFormatting | null>(null)
@@ -160,7 +167,81 @@ export function SourceEditor({
   openLink.current = onLink
   reportFormatting.current = onFormatting
   ready.current = onReady
-  find.current = { active: findActive, report: onFindStatus }
+  find.current = { active: findActive, query: findQuery, report: onFindStatus }
+
+  const requestFind = useCallback(
+    function requestFind(action: FindAction = null) {
+      const editor = view.current
+      if (!editor || !find.current.active || !find.current.query) return
+      sourceFind.current ??= new DocumentWorkerClient(session, {
+        changed: () => {
+          findActions.current = []
+          navigatingFind.current = false
+          requestFind()
+        },
+        pending: () => {
+          const known = findCoverage.current
+          const complete =
+            known.query === find.current.query &&
+            known.version === session.snapshot().version
+          find.current.report({
+            current: 0,
+            total: complete ? known.total : 0,
+            pending: !complete,
+          })
+        },
+        error: (message) => {
+          findActions.current = []
+          navigatingFind.current = false
+          find.current.report({ current: 0, total: 0, error: message })
+        },
+        result: (location, action) => {
+          const current = view.current
+          if (!current || !find.current.active) return
+          findCoverage.current = {
+            query: find.current.query,
+            version: session.snapshot().version,
+            total: location.total,
+          }
+          const target =
+            action === 'previous'
+              ? location.previous
+              : action
+                ? location.next
+                : null
+          if (target) {
+            applyingFind.current = true
+            try {
+              current.dispatch({
+                selection: { anchor: target.match.from, head: target.match.to },
+                scrollIntoView: true,
+              })
+            } finally {
+              applyingFind.current = false
+            }
+          }
+          find.current.report({
+            current: target?.rank ?? location.current,
+            total: location.total,
+          })
+          navigatingFind.current = false
+          const next = findActions.current.shift()
+          if (next) {
+            navigatingFind.current = true
+            requestFind(next)
+          }
+        },
+      })
+      const selection = editor.state.selection.main
+      sourceFind.current.find(
+        find.current.query,
+        action === 'first' ? 0 : selection.from,
+        action === 'first' ? 0 : selection.to,
+        action,
+      )
+    },
+    [session],
+  )
 
   useEffect(() => {
     if (!host.current) return
@@ -290,26 +371,14 @@ export function SourceEditor({
               )
             )
               reportFormatting.current(formatting.current)
-            if (find.current.active) {
-              const query = getSearchQuery(update.state)
-              let total = 0
-              let current = 0
-              if (query.valid) {
-                const cursor = query.getCursor(update.state)
-                for (
-                  let match = cursor.next();
-                  !match.done;
-                  match = cursor.next()
-                ) {
-                  total += 1
-                  if (
-                    match.value.from === update.state.selection.main.from &&
-                    match.value.to === update.state.selection.main.to
-                  )
-                    current = total
-                }
-              }
-              find.current.report({ current, total })
+            if (
+              find.current.active &&
+              !applyingFind.current &&
+              (update.docChanged || update.selectionSet)
+            ) {
+              findActions.current = []
+              navigatingFind.current = false
+              requestFind()
             }
           }),
         ],
@@ -487,6 +556,8 @@ export function SourceEditor({
     }
     void window.document.fonts.load('13px "Geist Mono"').then(measure, measure)
     return () => {
+      sourceFind.current?.dispose()
+      sourceFind.current = null
       unsubscribe()
       configureParser.current = () => {}
       disposed = true
@@ -500,7 +571,7 @@ export function SourceEditor({
       editor.destroy()
       view.current = null
     }
-  }, [bridge, session])
+  }, [bridge, session, requestFind])
 
   useEffect(() => {
     let canceled = false
@@ -570,25 +641,44 @@ export function SourceEditor({
     if (!editor) return
     if (!findActive) {
       closeSearchPanel(editor)
+      sourceFind.current?.dispose()
+      sourceFind.current = null
+      findActions.current = []
+      navigatingFind.current = false
       return
     }
     openSearchPanel(editor)
     const query = new SearchQuery({ search: findQuery, literal: true })
     editor.dispatch({ effects: setSearchQuery.of(query) })
-    const first = query.valid ? query.getCursor(editor.state).next() : null
-    if (first && !first.done)
-      editor.dispatch({
-        selection: { anchor: first.value.from, head: first.value.to },
-        scrollIntoView: true,
-      })
-  }, [findActive, findQuery])
+    findActions.current = []
+    navigatingFind.current = query.valid
+    if (query.valid) requestFind('first')
+    else {
+      sourceFind.current?.dispose()
+      sourceFind.current = null
+      find.current.report({ current: 0, total: 0 })
+    }
+  }, [findActive, findQuery, requestFind])
 
   useEffect(() => {
     if (handledFindMove.current === findMove.id) return
     handledFindMove.current = findMove.id
-    if (findActive && view.current && findMove.id)
-      (findMove.direction === 'next' ? findNext : findPrevious)(view.current)
-  }, [findActive, findMove])
+    if (findActive && view.current && findMove.id) {
+      if (findActions.current.length >= 128) {
+        find.current.report({
+          current: 0,
+          total: 0,
+          error: 'Too many pending find commands. Wait for search to finish.',
+        })
+        return
+      }
+      findActions.current.push(findMove.direction)
+      if (!navigatingFind.current) {
+        navigatingFind.current = true
+        requestFind(findActions.current.shift()!)
+      }
+    }
+  }, [findActive, findMove, requestFind])
 
   return (
     <>

@@ -138,6 +138,24 @@ test('find in document searches rich text and offscreen markdown without editing
     .locator('.cm-searchMatch')
     .filter({ hasText: /last needle/i })
     .waitFor()
+  await source.fill(
+    Array.from({ length: 2200 }, (_, index) => `${index} café`).join('\n'),
+  )
+  await input.fill('CAFE')
+  await waitForCount('1/2200')
+  await input.press('Shift+Enter')
+  await waitForCount('2200/2200')
+  await input.press('Enter')
+  await waitForCount('1/2200')
+  // Replacing source invalidates old worker results without moving input focus.
+  await source.fill('last needle')
+  await waitForCount('No results')
+  assert.equal(
+    await source.evaluate((element) => element === document.activeElement),
+    true,
+  )
+  await input.fill('last needle')
+  await waitForCount('1/1')
   await page.getByRole('button', { name: /^close find$/i, exact: true }).click()
   await bar.waitFor({ state: 'hidden' })
   assert.equal(

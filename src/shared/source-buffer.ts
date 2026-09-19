@@ -179,6 +179,8 @@ class PieceTree {
       pieces.push(this.piece(chunk, 0, text.length))
     }
     for (const text of chunks) {
+      if (typeof text !== 'string')
+        throw new Error('Source chunks must be strings.')
       let from = 0
       while (from < text.length) {
         const length = Math.min(
@@ -581,11 +583,11 @@ export class SourceSnapshot {
     return this.sliceRaw(0, this.utf16Length)
   }
   #seam(position: number) {
-    const text = this.sliceRaw(
+    if (position <= 0 || position >= this.utf16Length) return ''
+    return this.sliceRaw(
       Math.max(0, position - 1),
       Math.min(this.utf16Length, position + 1),
     )
-    return position > 0 && position < this.utf16Length ? text : ''
   }
   isEditBoundary(position: number) {
     if (!safePosition(position) || position > this.utf16Length) return false
@@ -708,7 +710,7 @@ export class SourceStore {
   readonly #prepared = new WeakSet<PreparedSourceOperation>()
 
   constructor(
-    source: string,
+    source: string | Iterable<string>,
     document: DocumentKey,
     version = 0,
     options: SourceBufferOptions = {},
@@ -720,7 +722,9 @@ export class SourceStore {
     )
       throw new Error('Invalid source session identity.')
     this.#tree = new PieceTree(options)
-    const root = this.#tree.build([source])
+    const root = this.#tree.build(
+      typeof source === 'string' ? [source] : source,
+    )
     if (root.metrics.utf8Bytes > this.#tree.config.maximumBytes)
       throw new Error('Source exceeds the document size limit.')
     this.#current = new SourceSnapshot(

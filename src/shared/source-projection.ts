@@ -89,9 +89,17 @@ export function editorChangesFromSource(
 }
 
 /** Normalize a snapshot in chunks when initially constructing a native Text replica. */
-export function* normalizedChunks(source: SourceSnapshot): Iterable<string> {
+export function* normalizedChunks(
+  source: SourceSnapshot,
+  from = 0,
+  to = source.utf16Length,
+): Iterable<string> {
+  if (!source.isEditBoundary(from) || !source.isEditBoundary(to) || to < from)
+    throw new Error(
+      'Normalized source range splits a character or line ending.',
+    )
   let carry = ''
-  for (const chunk of source.chunks()) {
+  for (const chunk of source.chunks(from, to)) {
     let value = carry + chunk
     carry = ''
     if (value.endsWith('\r')) {

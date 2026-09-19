@@ -2,7 +2,12 @@ import { ChevronDown, ChevronUp, Search, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { IconButton, TextInput } from '../../ui/Controls'
 
-export type FindStatus = { current: number; total: number }
+export type FindStatus = {
+  current: number
+  total: number
+  pending?: boolean
+  error?: string
+}
 export type FindMove = { id: number; direction: 'next' | 'previous' }
 
 export function FindBar({
@@ -24,9 +29,13 @@ export function FindBar({
   const counter = useRef<HTMLSpanElement>(null)
   const [counterWidth, setCounterWidth] = useState(0)
   const count = query
-    ? status.total
-      ? `${status.current}/${status.total}`
-      : 'No results'
+    ? status.error
+      ? 'Find unavailable'
+      : status.pending
+        ? 'Searching…'
+        : status.total
+          ? `${status.current}/${status.total}`
+          : 'No results'
     : ''
   useLayoutEffect(() => {
     if (!open) return
@@ -66,7 +75,10 @@ export function FindBar({
       </div>
       <output
         aria-live="polite"
-        aria-label="Find matches"
+        aria-label={
+          status.error ? `Find matches: ${status.error}` : 'Find matches'
+        }
+        title={status.error}
         style={{ width: counterWidth }}
       >
         <span className="find-count" ref={counter}>
