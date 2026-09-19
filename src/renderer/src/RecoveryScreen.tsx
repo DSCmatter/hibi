@@ -203,8 +203,14 @@ export class RecoveryBoundary extends Component<
     return { error: error instanceof Error ? error : new Error(String(error)) }
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
-    reportRendererFailure('REACT_RENDER_FAILED', error)
-    console.error('render failed:', error, info.componentStack)
+    const componentStack = info.componentStack
+    reportRendererFailure(
+      'REACT_RENDER_FAILED',
+      error,
+      undefined,
+      componentStack,
+    )
+    console.error('render failed:', error, componentStack)
   }
   render() {
     return this.state.error ? (

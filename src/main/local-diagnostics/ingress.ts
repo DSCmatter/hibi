@@ -23,7 +23,23 @@ export class DiagnosticIngress {
   ) {
     this.profile = profile
     this.admission = new DiagnosticAdmission(profile)
-    this.artifacts = artifacts.slice(0, 256)
+    this.artifacts = []
+    let bytes = 128 // Session keys, profile and UUID, inside the 64 KiB limit.
+    for (const [url, id] of artifacts.slice(0, 256)) {
+      if (
+        typeof url !== 'string' ||
+        url.length > 1024 ||
+        !Number.isInteger(id) ||
+        id < 1 ||
+        id > 4096
+      )
+        continue
+      const entry: [string, number] = [url, id]
+      const size = Buffer.byteLength(JSON.stringify(entry)) + 1
+      if (bytes + size > 60 * 1024) continue
+      this.artifacts.push(entry)
+      bytes += size
+    }
     this.modules = new Set(this.artifacts.map((entry) => entry[1]))
     this.enqueue = enqueue
   }

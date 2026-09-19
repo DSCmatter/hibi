@@ -100,6 +100,10 @@ test('both renderer profiles preserve native error propagation, safe original lo
     await page.getByText('Copy saved.', { exact: true }).waitFor()
     state = await read()
     assert.equal(count(state.records, 'REACT_RENDER_FAILED'), 1)
+    const react = JSON.parse(
+      state.records.find((r) => JSON.parse(r).code === 'REACT_RENDER_FAILED'),
+    )
+    assert.equal(react.frames[0][0], 100)
     assert.equal(state.saves, 1)
     assert.ok(state.reads > 0) // Existing RecoveryScreen owns this source read.
     for (const wire of state.records) {

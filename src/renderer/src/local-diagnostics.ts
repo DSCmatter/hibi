@@ -6,6 +6,7 @@ import {
   diagnosticEvents,
   projectError,
   projectLocation,
+  projectStack,
   type SafeDiagnostic,
 } from '../../shared/local-diagnostics'
 import { DiagnosticAdmission } from '../../shared/local-diagnostics-budget'
@@ -62,6 +63,7 @@ export function installRendererDiagnostics(
       code: DiagnosticCode,
       error?: unknown,
       owner?: object,
+      componentStack?: unknown,
       location?: () => Pick<SafeDiagnostic, 'frames' | 'stackStatus'>,
     ) => {
       if (!alive || !diagnosticCode(code) || !diagnosticEvents[code].producer)
@@ -76,6 +78,15 @@ export function installRendererDiagnostics(
       if (!admission.admit(code, performance.now())) return
       if (object) seen.add(object)
       let detail = projectError(error, catalog, profile)
+      if (
+        code === 'REACT_RENDER_FAILED' &&
+        !detail.frames?.length &&
+        typeof componentStack === 'string'
+      )
+        detail = {
+          ...detail,
+          ...projectStack(componentStack, catalog, profile),
+        }
       if (
         code === 'SOURCE_WORKER_FAILED' ||
         code === 'WORD_COUNT_WORKER_FAILED'
@@ -119,13 +130,18 @@ export function installRendererDiagnostics(
       try {
         // Intrinsic DOM getters reject spoofed objects; never read event targets,
         // error messages, component names, document state or console arguments.
-        report('RENDERER_ERROR', errorProperty?.call(event), undefined, () =>
-          projectLocation(
-            filename?.call(event),
-            line?.call(event),
-            column?.call(event),
-            catalog,
-          ),
+        report(
+          'RENDERER_ERROR',
+          errorProperty?.call(event),
+          undefined,
+          undefined,
+          () =>
+            projectLocation(
+              filename?.call(event),
+              line?.call(event),
+              column?.call(event),
+              catalog,
+            ),
         )
       } catch {
         /* Observation never suppresses native event propagation. */

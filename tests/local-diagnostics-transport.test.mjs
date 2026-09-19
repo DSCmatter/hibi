@@ -16,6 +16,28 @@ const wire = (extra = {}) =>
 const settle = () => new Promise((resolve) => setImmediate(resolve))
 
 for (const profile of ['release', 'debug']) {
+  test(`${profile}: long trusted artifact URLs cannot expand the initial session beyond its wire bound`, () => {
+    const artifacts = Array.from({ length: 256 }, (_, i) => [
+      `app://hibi/${'a'.repeat(900)}/${i}.js`,
+      i + 100,
+    ])
+    const ingress = new DiagnosticIngress(profile, artifacts, () => true)
+    const hello = ingress.receive(true, 'hello')
+    assert.ok(Buffer.byteLength(hello) <= 64 * 1024)
+    const config = JSON.parse(hello)
+    assert.ok(config.artifacts.length > 0 && config.artifacts.length < 256)
+    assert.equal(
+      ingress.receive(
+        true,
+        'batch',
+        config.token,
+        JSON.stringify([
+          wire({ stackStatus: 'captured', frames: [[355, 1, 1]] }),
+        ]),
+      ),
+      false,
+    )
+  })
   test(`${profile}: one raw batch in flight, bounded pressure, no retry or idle polling`, async () => {
     const ingested = [],
       requests = []
