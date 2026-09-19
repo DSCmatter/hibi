@@ -134,9 +134,6 @@ test('failed source languages retry in the same view and preserve native input, 
     'ab!c\r\n',
   )
   await pressShortcut(app, `${mod}+s`)
-  await waitForAsync(
-    page,
-    async () => !(await window.hibi.getDocument()).dirty,
-  )
+  await waitForAsync(page, async () => !(await window.hibi.getDocument()).dirty)
   assert.equal(await readFile(file, 'utf8'), 'ab!c\r\n')
 })
