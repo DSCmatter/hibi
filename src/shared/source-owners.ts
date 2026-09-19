@@ -32,6 +32,102 @@ const add = (a: number, b: number) => {
   return result
 }
 
+/** One root-stamped reverse lookup per owner arena; immutable snapshots stay untouched. */
+class OwnerLocator {
+  #root: Node | null = null
+  #live = new WeakSet<Node>()
+  #parents = new WeakMap<
+    Node,
+    { parent: Extract<Node, { kind: 'branch' }>; index: number } | null
+  >()
+  #slots = new Map<
+    number,
+    { page: Extract<Node, { kind: 'page' }>; index: number }
+  >()
+  readonly work = {
+    nodesVisited: 0,
+    rowsWritten: 0,
+    parentReads: 0,
+    slotsRead: 0,
+  }
+  get size() {
+    return this.#slots.size
+  }
+  #connected(node: Node) {
+    for (;;) {
+      this.work.parentReads++
+      const edge = this.#parents.get(node)
+      if (!edge) return node === this.#root
+      node = edge.parent
+    }
+  }
+  adopt(root: Node) {
+    if (root === this.#root) return
+    const previous = this.#root
+    this.#root = root
+    const visit = (
+      node: Node,
+      parent: Extract<Node, { kind: 'branch' }> | null,
+      index: number,
+    ) => {
+      this.work.nodesVisited++
+      this.#parents.set(node, parent ? { parent, index } : null)
+      if (this.#live.has(node)) return
+      this.#live.add(node)
+      if (node.kind === 'page') {
+        for (let at = 0; at < node.entries.length; at++) {
+          this.#slots.set(node.entries[at]!.slot, { page: node, index: at })
+          this.work.rowsWritten++
+        }
+      } else
+        node.entries.forEach((child, at) => {
+          visit(child, node, at)
+        })
+    }
+    visit(root, null, 0)
+    const retire = (node: Node) => {
+      this.work.nodesVisited++
+      if (this.#connected(node)) return
+      this.#live.delete(node)
+      this.#parents.delete(node)
+      if (node.kind === 'page') {
+        for (const owner of node.entries) {
+          if (this.#slots.get(owner.slot)?.page === node)
+            this.#slots.delete(owner.slot)
+          this.work.rowsWritten++
+        }
+      } else node.entries.forEach(retire)
+    }
+    if (previous) retire(previous)
+  }
+  find(root: Node, slot: number) {
+    this.adopt(root)
+    const found = this.#slots.get(slot)
+    if (!found) return null
+    let from = 0,
+      index = found.index,
+      node: Node = found.page
+    for (let at = 0; at < found.index; at++) {
+      from += found.page.entries[at]!.length
+      this.work.slotsRead++
+    }
+    for (;;) {
+      this.work.parentReads++
+      const edge = this.#parents.get(node)
+      if (!edge) break
+      for (let at = 0; at < edge.index; at++) {
+        const sibling = edge.parent.entries[at]!
+        from += sibling.length
+        index += sibling.count
+        this.work.slotsRead++
+      }
+      node = edge.parent
+    }
+    const owner = found.page.entries[found.index]!
+    return Object.freeze({ owner, index, from, to: from + owner.length })
+  }
+}
+
 class OwnerPages {
   readonly pageSize: number
   readonly fanout: number
@@ -44,6 +140,33 @@ class OwnerPages {
     lookupSlotsRead: 0,
   }
   #nextSlot: number
+  #locator: OwnerLocator | null = null
+  adoptLocator(root: Node) {
+    this.#locator?.adopt(root)
+  }
+  locate(root: Node, slot: number) {
+    // ponytail: cold lookup indexes all owners; add sliced preparation before
+    // relying on it for bounded large-file metadata startup.
+    this.#locator ??= new OwnerLocator()
+    return this.#locator.find(root, slot)
+  }
+  locatorCounters(reset: boolean) {
+    const result = {
+      nodesVisited: this.#locator?.work.nodesVisited ?? 0,
+      rowsWritten: this.#locator?.work.rowsWritten ?? 0,
+      parentReads: this.#locator?.work.parentReads ?? 0,
+      slotsRead: this.#locator?.work.slotsRead ?? 0,
+      retainedRows: this.#locator?.size ?? 0,
+    }
+    if (reset && this.#locator)
+      Object.assign(this.#locator.work, {
+        nodesVisited: 0,
+        rowsWritten: 0,
+        parentReads: 0,
+        slotsRead: 0,
+      })
+    return result
+  }
   constructor(options: OwnerIndexOptions) {
     this.pageSize = options.pageSize ?? 128
     this.fanout = options.fanout ?? 32
@@ -236,6 +359,7 @@ export class SourceOwners {
       internal?.root ??
       this.#pages.build(records.map((record) => this.#pages.record(record)))
     this.epoch = this.#pages.epoch
+    this.#pages.adoptLocator(this.#root)
     Object.freeze(this)
   }
   get count() {
@@ -340,7 +464,10 @@ export class SourceOwners {
     yield* visit(this.#root, 0, 0)
   }
   counters(reset = false) {
-    const result = { ...this.#pages.work }
+    const result = {
+      ...this.#pages.work,
+      locator: this.#pages.locatorCounters(reset),
+    }
     if (reset)
       Object.assign(this.#pages.work, {
         visits: 0,
@@ -350,6 +477,11 @@ export class SourceOwners {
         lookupSlotsRead: 0,
       })
     return result
+  }
+  /** Resolve an arena-local handle in this exact snapshot, including after prefix edits. */
+  bySlot(slot: number) {
+    if (!safe(slot) || !slot) return null
+    return this.#pages.locate(this.#root, slot)
   }
   get(index: number) {
     if (!safe(index) || index >= this.count) return null
