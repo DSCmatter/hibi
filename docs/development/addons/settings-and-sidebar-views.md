@@ -94,6 +94,8 @@ Content mounts only while the view is visible. Keep anything that must survive c
 
 Trees with more than 200 expanded rows mount only the viewport and a small buffer, plus selected, focused, editing and dragged rows. Arrow keys, Home and End reveal their targets; renaming retains focus when scrolled away. Stable item IDs preserve the scroll anchor when items change. Use the shared row and section height tokens rather than overriding individual row heights. The complete item model remains in memory; windowing bounds the DOM, not your addon's data preparation. Settings tab lists keep their existing rendering.
 
+Focus navigation reads the current row geometry before scrolling, so a changed row-height token keeps its target visible even before resize observation runs.
+
 Set `side: 'right'` when registering a view to make addon-triggered opens and its command-palette entry use the right sidebar. The default is `'left'`. Registration alone does not open or select a view; the right sidebar starts collapsed and empty. Users can select addon views in either sidebar's picker. `view.open(input, 'right')` overrides the preferred side for that call.
 
 Hibi displays sidebar views as drawers in narrow windows. For a separate layout built with `Sidebar`, set `overlay` and supply `onDismiss` to use the same backdrop and Escape handling. Keep covered content inert while the drawer is open and return focus to its toggle when dismissing it.

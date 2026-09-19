@@ -42,6 +42,21 @@ test('large sidebar preserves focus, rename, anchors and section geometry with b
     `export default sdk => ({ start(context) {
     const h = sdk.React.createElement;
     const fixture = window.sidebarFixture = { commits: [], moves: [] };
+    const Resize = window.ResizeObserver;
+    window.ResizeObserver = class extends Resize {
+      constructor(callback) {
+        super((entries, observer) => {
+          if (fixture.pauseMeasurements && entries.some(entry => entry.target.matches('.sidebar-metrics > span')))
+            fixture.pendingMeasurement = () => callback(entries, observer);
+          else callback(entries, observer);
+        });
+      }
+    };
+    fixture.flushMeasurements = () => {
+      fixture.pauseMeasurements = false;
+      fixture.pendingMeasurement?.();
+      fixture.pendingMeasurement = null;
+    };
     const rows = count => Array.from({length:count}, (_, index) => ({
       id:'row-'+index, label:'node '+index+'.md',
       ...(index % 100 === 0 ? {section:'section '+index/100} : {}),
@@ -146,9 +161,10 @@ test('large sidebar preserves focus, rename, anchors and section geometry with b
     await scroll.evaluate((element) => element.scrollHeight),
     4436000,
   )
-  await tree.evaluate((element) =>
-    element.style.removeProperty('--sidebar-row-height'),
-  )
+  await tree.evaluate((element) => {
+    window.sidebarFixture.pauseMeasurements = true
+    element.style.removeProperty('--sidebar-row-height')
+  })
   await page.waitForFunction(
     () =>
       document.querySelector('.windowed-fixture .sidebar-row')?.offsetHeight ===
@@ -157,6 +173,8 @@ test('large sidebar preserves focus, rename, anchors and section geometry with b
 
   await page.evaluate(() => window.sidebarFixture.select('row-50000'))
   await row('row-50000').focus()
+  await focus('row-50000')
+  await page.evaluate(() => window.sidebarFixture.flushMeasurements())
   await focus('row-50000')
   const anchorBefore = await row('row-50000').boundingBox()
   await page.evaluate(() => window.sidebarFixture.prepend())

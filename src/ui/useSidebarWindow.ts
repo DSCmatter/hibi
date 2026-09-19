@@ -147,6 +147,8 @@ export function useSidebarWindow(
   const reveal = (index: number) => {
     const element = scroll.current
     if (!enabled || !element || !model.rows[index]) return
+    // A focus event can beat ResizeObserver after a theme or row-height change.
+    refresh(true)
     const { rowHeight, sectionHeight } = layout.current
     const top = sidebarRowTop(model.rows, index, rowHeight, sectionHeight)
     if (top < element.scrollTop) element.scrollTop = top
