@@ -20,6 +20,7 @@ import { createPortal } from 'react-dom'
 import type { DocumentState } from '../../shared/desktop'
 import { Button, IconButton } from '../../ui/Controls'
 import { Modal } from '../../ui/Modal'
+import { reportRendererFailure } from './local-diagnostics'
 import './recovery.css'
 
 export function RecoveryScreen({
@@ -202,7 +203,14 @@ export class RecoveryBoundary extends Component<
     return { error: error instanceof Error ? error : new Error(String(error)) }
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('render failed:', error, info.componentStack)
+    const componentStack = info.componentStack
+    reportRendererFailure(
+      'REACT_RENDER_FAILED',
+      error,
+      undefined,
+      componentStack,
+    )
+    console.error('render failed:', error, componentStack)
   }
   render() {
     return this.state.error ? (

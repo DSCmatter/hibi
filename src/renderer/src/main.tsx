@@ -72,6 +72,7 @@ import {
   selectedFlavors,
 } from './flavors'
 import { LoadingScreen } from './LoadingScreen'
+import { installRendererDiagnostics } from './local-diagnostics'
 import { projectMarkdown } from './markdown-projection'
 import {
   type OutlineHeading,
@@ -88,6 +89,8 @@ import { toolbar } from './toolbar'
 import { WorkspaceSidebar } from './WorkspaceSidebar'
 import { type WorkspaceRename, workspaceMenuItems } from './workspace-menu'
 
+const stopLocalDiagnostics = installRendererDiagnostics(window.hibiDiagnostics)
+import.meta.hot?.dispose(stopLocalDiagnostics)
 startupMark('renderer-entry')
 const SettingsScreen = lazy(() =>
   import('./SettingsScreen').then((module) => ({
