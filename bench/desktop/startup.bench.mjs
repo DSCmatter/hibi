@@ -2,7 +2,6 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { withCodSpeed } from '@codspeed/tinybench-plugin'
-import { Bench } from 'tinybench'
 import {
   benchmarkDocuments,
   launchBenchmarkApp,
@@ -13,6 +12,7 @@ import {
   waitForEditor,
   waitForWorkspaces,
 } from '../../scripts/benchmark-flows.mjs'
+import { AsyncBench } from './async-bench.mjs'
 
 // Native I/O needs walltime; simulation would measure the driver, not Electron.
 if (
@@ -23,7 +23,7 @@ if (
   throw new Error('Run desktop benchmarks with CodSpeed walltime mode.')
 
 const benchmarks = withCodSpeed(
-  new Bench({
+  new AsyncBench({
     time: 0,
     iterations: 5,
     warmupTime: 0,
