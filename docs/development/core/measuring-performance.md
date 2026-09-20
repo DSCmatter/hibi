@@ -35,6 +35,31 @@ Use `npm run bench:input` to measure document-changing ProseMirror transactions 
 
 Set `HIBI_INPUT_ANALYSIS=1` to add a two-second CPU load in an isolated analyzer while measuring typing. The script installs a temporary benchmark-only addon in each disposable profile. Default runs and CodSpeed keep the normal core/default-addon workload.
 
+## Input-to-frame tracing
+
+Use the native trace harness to separate input queue delay, editor updates, deferred parsing and frame work:
+
+```sh
+npm run build
+node scripts/trace-input-paint.mjs --mode all --size all --shape all --position middle --continue-on-error --out /tmp/hibi-input-baseline
+```
+
+The output directory must be new. Character and word fixtures contain exactly 100,000 characters or 100,000 words respectively. Normal paragraphs and one giant wrapped paragraph are separate cases. Source, visual and both split-view input targets are tested in isolated profiles. The recorded addon configuration includes word count, typing speed and the standard Markdown syntax addons; Discord presence stays disabled in these test profiles.
+
+Each case measures a key after two seconds of idle, then sends `s` for 30 seconds at 30 events per second, independently of command acknowledgements or rendering. It repeats the hold for backspace, checks selection and scrolling, and validates exact source after save and undo/redo. The first-key frame measurement precedes its save; hold-tail saves deliberately test immediate persistence and are marked so their overlap can be distinguished. Queue deadlines remain failures. `--continue-on-error` preserves them while allowing later cases to run and still exits unsuccessfully if any case fails.
+
+Use `--quick` only to validate the harness or investigate first-key behavior; it skips the 30-second holds and does not satisfy the sustained-input check. `--mode`, `--size`, `--shape`, `--position` and `--target` select smaller investigations. Run `--help` for the accepted values.
+
+Add `--cpu-profile` for a separate attribution run. It records a renderer V8 profile at a 1 ms sampling interval in `CPUprofile.json`; pass that file to the analyzer with `--profile`. Sampling adds overhead, so compare latency runs with matching instrumentation and keep baseline and attribution runs distinct.
+
+Reports retain emitted key timestamps, renderer observations, native Chromium traces, script/build identity and save/history checks. A matching character range inside the viewport followed by animation frames measures a presentation opportunity, not physical display scanout. Traces expose Paint/DrawFrame events and synchronous function durations separately. Missing observations, timeouts and unfinished save/history checks are not successful latency measurements.
+
+```sh
+node scripts/analyze-input-trace.mjs --trace /tmp/hibi-input-baseline/CASE/trace.json --metrics /tmp/hibi-input-baseline/CASE/result.json --out /tmp/hibi-input-baseline/CASE/analysis
+```
+
+The analyzer writes a concise Markdown report and detailed JSON. Trace durations overlap; do not add inclusive parent and child durations as if they were separate CPU work. Function names help locate candidates, but attribution requires matching actual code and the measured interval. Run analysis after timed capture so parsing a large trace does not compete with the app.
+
 ## Read CI results
 
 The benchmarks workflow publishes results to CodSpeed for pull requests and `main`. It measures core CPU work and desktop elapsed time separately. Shared-runner desktop timings are noisy, so compare repeated results on the same runner configuration.
