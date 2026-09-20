@@ -1161,22 +1161,24 @@ async function runCase(config) {
       hostAfterEpoch: clockAfter,
     }
     finishTrace = createTraceFinalizer(session, join(directory, 'trace.json'))
+    result.traceCategories = [
+      'input',
+      'latencyInfo',
+      'devtools.timeline',
+      'disabled-by-default-devtools.timeline.frame',
+      'blink.user_timing',
+      'v8',
+      'cc',
+      'viz',
+      ...(values['cpu-profile'] ? ['toplevel'] : []),
+      ...(values['trace-screenshots']
+        ? ['disabled-by-default-devtools.screenshot']
+        : []),
+    ]
     await session.send('Tracing.start', {
       transferMode: 'ReturnAsStream',
       streamFormat: 'json',
-      categories: [
-        'input',
-        'latencyInfo',
-        'devtools.timeline',
-        'disabled-by-default-devtools.timeline.frame',
-        'blink.user_timing',
-        'v8',
-        'cc',
-        'viz',
-        ...(values['trace-screenshots']
-          ? ['disabled-by-default-devtools.screenshot']
-          : []),
-      ].join(','),
+      categories: result.traceCategories.join(','),
       screenshotMaxSize: 800,
       screenshotMaxCount: 24,
     })
