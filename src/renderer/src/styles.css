@@ -1247,6 +1247,8 @@ button:disabled {
   outline: none;
   font-size: var(--text-editor);
   line-height: 1.75;
+  /* Chromium can spend seconds laying out long unbroken text with pair kerning. */
+  font-kerning: none;
   overflow-wrap: anywhere;
 }
 .tiptap > :first-child {

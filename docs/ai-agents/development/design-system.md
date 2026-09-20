@@ -40,6 +40,8 @@ The titlebar holds sidebar controls, tabs, and view switches. New, open, and sav
 
 ## Layout and motion
 
+The rich editor disables font pair kerning. In native Chromium measurements, replacing a 240,000-character unbroken word in Geist otherwise spent seconds in selection-triggered layout; disabling kerning kept the same operation in tens of milliseconds. This changes adjacent-letter spacing and may shift line breaks. Wrapping, ligatures, required script shaping, selection, and source content retain their normal behavior. It does not make the complete rich document a viewport-bounded model.
+
 Headers use an opaque page-colored backing so content cannot scroll over controls. App backings move and fade with their editor/settings layer; the exported site's backing sits below its full-height sidebar. Avoid separate scroll listeners or edge animations.
 
 `--titlebar-edge-inset` reserves macOS traffic lights or Windows/Linux caption controls. Titles have a 16 px inset when no action icons precede them. The operating system controls the window's outer shape.
