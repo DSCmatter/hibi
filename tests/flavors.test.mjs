@@ -92,6 +92,8 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
   )
   assert.equal(await page.locator('.tiptap .katex').count(), 0)
   await choose('enable latex')
+  // Enabling a flavor does not parse the hidden rich document in source view.
+  await pressShortcut(app, `${mod}+Shift+[`)
   await page.waitForFunction(
     () => document.querySelectorAll('.tiptap .katex').length === 2,
   )
@@ -114,7 +116,6 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     initial,
   )
-  await pressShortcut(app, `${mod}+Shift+[`)
   await page
     .locator('.rich-pane .hibi-token-keyword')
     .filter({ hasText: /const/i })

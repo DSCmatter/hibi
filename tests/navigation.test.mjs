@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
-import { clickMenu, pressShortcut } from './keyboard.mjs'
+import { clickMenu, pressShortcut, replaceRichText } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 
 test('shift-click links, note/settings history, and file-menu remote imports', {
@@ -92,7 +92,11 @@ test('shift-click links, note/settings history, and file-menu remote imports', {
   await pressShortcut(app, `${mod}+]`)
   await waitName('b.md')
   // History switches tabs without discarding the other note's draft.
-  await rich.fill('unsaved second')
+  await replaceRichText(
+    page,
+    rich.getByRole('heading', { name: 'second', exact: true }),
+    'unsaved second',
+  )
   await app.evaluate(({ dialog }) => {
     dialog.showMessageBox = async () => ({ response: 2 })
   })
