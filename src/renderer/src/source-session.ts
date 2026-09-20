@@ -89,7 +89,9 @@ export function createSourceSession(session: DocumentSession) {
     lastTime = -Infinity
   const dispatch = (
     transactions: readonly Transaction[],
-    view: Pick<EditorView, 'state' | 'update'>,
+    view: Pick<EditorView, 'state' | 'update'> & {
+      readonly composing?: boolean
+    },
     exactChanges?: readonly RawEdit[],
   ) => {
     if (!transactions.length) return
@@ -111,9 +113,12 @@ export function createSourceSession(session: DocumentSession) {
       if (view.state.sliceDoc(from, to) !== insert)
         changes.push({ from, to, insert })
     })
+    const isolated = transactions.some((transaction) =>
+      transaction.annotation(isolateHistory),
+    )
     if (!changes.length) {
       if (transactions.some((transaction) => transaction.selection)) {
-        group = ''
+        if (!view.composing || isolated) group = ''
         session.select(
           rawSelection(snapshot, state.selection),
           snapshot.version,
@@ -126,16 +131,18 @@ export function createSourceSession(session: DocumentSession) {
     const last = transactions.at(-1)!
     const event = last.annotation(Transaction.userEvent) ?? 'input'
     const time = last.annotation(Transaction.time) ?? Date.now()
-    const isolated = transactions.some((transaction) =>
-      transaction.annotation(isolateHistory),
-    )
     const typing = /^(input\.type|delete\.(backward|forward))(\.|$)/.test(event)
+    const compositionStart = event === 'input.type.compose.start'
+    const composing = compositionStart || event === 'input.type.compose'
+    // Candidate changes belong to one composition, even across long pauses.
+    const eventGroup = composing ? 'input.type.compose' : event
     if (
       !group ||
       isolated ||
       !typing ||
-      event !== lastEvent ||
-      time - lastTime > 500
+      compositionStart ||
+      eventGroup !== lastEvent ||
+      (!composing && time - lastTime > 500)
     )
       group = crypto.randomUUID()
     session.select(
@@ -157,7 +164,7 @@ export function createSourceSession(session: DocumentSession) {
       },
       (prepared) => rawSelection(prepared.after, state.selection),
     )
-    lastEvent = event
+    lastEvent = eventGroup
     lastTime = time
     if (isolated || !typing) group = ''
   }

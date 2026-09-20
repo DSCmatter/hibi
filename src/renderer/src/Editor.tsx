@@ -375,7 +375,11 @@ export function MarkdownEditor({
       markdownExtensions,
     ],
   )
-  const richHistoryGroup = useRef({ id: '', time: 0 })
+  const richHistoryGroup = useRef({
+    id: '',
+    time: 0,
+    composition: undefined as number | undefined,
+  })
   const [richInputError, setRichInputError] = useState('')
   const retryRich = useRef(() => {})
   const prepareRichRef = useRef(prepareRich)
@@ -488,7 +492,11 @@ export function MarkdownEditor({
         },
       },
       onSelectionUpdate: ({ transaction }) => {
-        if (!transaction.docChanged) richHistoryGroup.current.id = ''
+        if (
+          !transaction.docChanged &&
+          transaction.getMeta('composition') == null
+        )
+          richHistoryGroup.current.id = ''
       },
     },
     [markdownExtensions, flavors, syntaxVersion],
@@ -562,6 +570,20 @@ export function MarkdownEditor({
       (!step.slice.content.firstChild ||
         step.slice.content.firstChild.isText) &&
       !transaction.getMeta('uiEvent')
+    const nativeComposition = transaction.getMeta('composition')
+    const composition =
+      typeof nativeComposition === 'number' ? nativeComposition : undefined
+    const previous = richHistoryGroup.current
+    const groupAt = (now: number) => {
+      if (
+        !previous.id ||
+        composition !== previous.composition ||
+        (!typing && composition === undefined) ||
+        (composition === undefined && now - previous.time > 500)
+      )
+        previous.id = crypto.randomUUID()
+      previous.composition = composition
+    }
     const direct =
       typing &&
       plainSyncEligible &&
@@ -580,10 +602,8 @@ export function MarkdownEditor({
           )
         : null
     if (direct && session) {
-      const now = performance.now(),
-        previous = richHistoryGroup.current
-      if (!previous.id || now - previous.time > 500)
-        previous.id = crypto.randomUUID()
+      const now = performance.now()
+      groupAt(now)
       const accepted = performanceDiagnostics.measure(
         'core',
         'document update',
@@ -630,10 +650,8 @@ export function MarkdownEditor({
       : projectMarkdown(currentSource, markdownExtensions).serialize(
           serialized.source,
         )
-    const now = performance.now(),
-      previous = richHistoryGroup.current
-    if (!typing || !previous.id || now - previous.time > 500)
-      previous.id = crypto.randomUUID()
+    const now = performance.now()
+    groupAt(now)
     const accepted = performanceDiagnostics.measure(
       'core',
       'document update',
@@ -670,7 +688,7 @@ export function MarkdownEditor({
       adapters: markdownExtensions,
     }
     previous.time = now
-    if (!typing) previous.id = ''
+    if (!typing && composition === undefined) previous.id = ''
     setRichInputError('')
     return accepted
   }

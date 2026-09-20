@@ -12,6 +12,8 @@ Choose your starting view under **Settings → Editor → Layout → Default vie
 
 Switching views preserves your source. Editing formatted text may change Markdown spacing or notation. If Hibi cannot preserve part of a document through visual editing, that pane becomes read-only; use source view to edit it.
 
+When you use an input method, choosing and revising candidates remains one undo step even if you pause between candidates. Each new composition starts a separate undo step in both source and formatted views.
+
 ## Work with tabs
 
 Opening or creating a note adds a tab. Select one to return to its document, drag it to change its position, or press `Cmd/Ctrl+W` to close it. A dot marks unsaved changes. Hibi asks before discarding unsaved work.
