@@ -150,6 +150,10 @@ test('cursor appearance, movement, selection hiding, and persistence in both edi
         .classList.contains('mode-side-by-side') &&
       document.querySelector('.rich-pane').getAnimations().length === 0,
   )
+  // Split preview is read-only; its editable source pane owns the typing caret.
+  assert.equal(await rich.getAttribute('contenteditable'), 'false')
+  await page.getByRole('textbox', { name: /markdown editor/i }).focus()
+  await page.locator('.source-pane .editor-cursor').waitFor()
   assert.ok(
     await page.evaluate(
       () =>
