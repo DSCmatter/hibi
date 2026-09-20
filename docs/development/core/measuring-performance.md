@@ -76,6 +76,8 @@ The analyzer writes a concise Markdown report and detailed JSON. Trace durations
 
 Compare sustained typing and backspace at p50, p95 and p99 in all four cases: source, visual, split-source and split-visual. The analyzer also merges same-thread trace intervals for each keydown-to-next-frame window, subtracting nested rendering from scripting and reporting layout/style, paint and other observed tasks separately. Remaining time is labeled unattributed or waiting: missing native events cannot be counted as proven idle time. Coalesced keys can share a frame, so their overlapping windows must not be summed. Use these measured costs alongside queue and frame waits to choose the next change, rather than treating improvement over an older slow build as sufficient.
 
+Queued-input attribution uses the renderer's event-to-keydown duration aligned to the trace keydown marker. It reports observed main-thread work during that interval separately from work after delivery. Missing or inconsistent event timestamps remain unavailable; this window does not establish physical-keyboard latency or work in the browser process before the supplied timestamp.
+
 V8 profiles can contain samples reported out of timestamp order. The analyzer reconstructs signed timestamps before estimating global sample weights and reports these anomalies. Invalid timelines have unavailable weights; per-phase CPU attribution remains unavailable. These estimates do not establish exact function durations.
 
 ### Engine-only comparisons

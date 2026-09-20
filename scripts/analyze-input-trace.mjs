@@ -557,9 +557,31 @@ function mainThreadWork(complete) {
   }
 }
 
-function correlateInput(events, timing, tasks, work) {
+function summarizeInputWork(inputs, property) {
+  return [...Map.groupBy(inputs, (input) => input.phase)].map(
+    ([phase, entries]) => ({
+      phase,
+      distributions: Object.fromEntries(
+        Object.keys(
+          entries.find((entry) => entry[property])?.[property] ?? {},
+        ).map((name) => [
+          name,
+          distribution(entries.map((entry) => entry[property]?.[name])),
+        ]),
+      ),
+    }),
+  )
+}
+
+function correlateInput(events, timing, tasks, work, metrics) {
   const keys = new Map(),
     spans = []
+  const records = new Map(
+    (metrics?.renderer?.records ?? []).map((record) => [
+      `${record.phase}:${record.id}`,
+      record,
+    ]),
+  )
   for (const event of events) {
     if (!isTiming(event) || !finite(event.ts)) continue
     const match =
@@ -606,12 +628,21 @@ function correlateInput(events, timing, tasks, work) {
         : null
     const paint = first('Paint'),
       draw = first('DrawFrame')
+    const record = records.get(`${key.phase}:${key.id}`)
+    const queueMs =
+      finite(record?.keydownAt) && finite(record?.eventTime)
+        ? record.keydownAt - record.eventTime
+        : null
     spans.push({
       phase: key.phase,
       id: key.id,
       thread: key.thread,
       traceKeydownUs: start,
       observedMainThread: work(key.thread, start, end),
+      queuedMainThread:
+        finite(queueMs) && queueMs >= 0
+          ? work(key.thread, start - queueMs * 1000, start)
+          : null,
       milestonesMs: Object.fromEntries(
         Object.entries(key.points).map(([point, ts]) => [
           point,
@@ -706,7 +737,13 @@ export function analyzeInputTrace(trace, metrics = null, cpuProfile = null) {
     }))
   const profiles = profilesFromTrace(events)
   if (cpuProfile) profiles.push(cpuProfile.profile ?? cpuProfile)
-  const inputs = correlateInput(events, timing, tasks, mainThreadWork(complete))
+  const inputs = correlateInput(
+    events,
+    timing,
+    tasks,
+    mainThreadWork(complete),
+    metrics,
+  )
   return {
     units:
       'milliseconds; trace timestamps and CPU timeDeltas converted from microseconds',
@@ -716,6 +753,7 @@ export function analyzeInputTrace(trace, metrics = null, cpuProfile = null) {
       'frame callbacks are scheduling proxies. missing phases and samples mean unavailable evidence, not zero work.',
       'benchmark DOM and visible-range context is collected outside timed input and is not a latency metric.',
       'main-thread work uses merged trace intervals from keydown through the next-frame proxy. nested rendering is subtracted from scripting; unattributed time may contain unrecorded native work as well as scheduling waits. per-key windows can overlap.',
+      'queued-input work aligns the renderer event-to-keydown interval to its trace keydown marker. it excludes work before the supplied event timestamp and does not identify physical keyboard or browser-process latency.',
     ],
     trace: {
       events: events.length,
@@ -726,22 +764,8 @@ export function analyzeInputTrace(trace, metrics = null, cpuProfile = null) {
     },
     benchmark: { ...metricDistributions(metrics), ...inputMetrics(metrics) },
     inputs,
-    observedMainThread: [...Map.groupBy(inputs, (input) => input.phase)].map(
-      ([phase, entries]) => ({
-        phase,
-        distributions: Object.fromEntries(
-          Object.keys(
-            entries.find((entry) => entry.observedMainThread)
-              ?.observedMainThread ?? {},
-          ).map((name) => [
-            name,
-            distribution(
-              entries.map((entry) => entry.observedMainThread?.[name]),
-            ),
-          ]),
-        ),
-      }),
-    ),
+    observedMainThread: summarizeInputWork(inputs, 'observedMainThread'),
+    queuedMainThread: summarizeInputWork(inputs, 'queuedMainThread'),
     userTiming: Object.fromEntries(
       [...phases].map(([name, values]) => [name, distribution(values)]),
     ),
@@ -805,14 +829,19 @@ function report(summary) {
     lines.push(
       `- ${name}: n=${value.count}, p50=${value.medianMs}, p95=${value.p95Ms}, p99=${value.p99Ms}, max=${value.maxMs} ms`,
     )
-  lines.push('', '## observed main-thread work by input window', '')
-  for (const phase of summary.observedMainThread) {
-    lines.push(`### ${phase.phase}`, '')
-    for (const [name, value] of Object.entries(phase.distributions))
-      lines.push(
-        `- ${name}: n=${value.count}, p50=${value.medianMs}, p95=${value.p95Ms}, p99=${value.p99Ms}, max=${value.maxMs} ms`,
-      )
-    lines.push('')
+  for (const [title, phases] of [
+    ['main-thread work after keydown', summary.observedMainThread],
+    ['main-thread work while input is queued', summary.queuedMainThread],
+  ]) {
+    lines.push('', `## ${title}`, '')
+    for (const phase of phases) {
+      lines.push(`### ${phase.phase}`, '')
+      for (const [name, value] of Object.entries(phase.distributions))
+        lines.push(
+          `- ${name}: n=${value.count}, p50=${value.medianMs}, p95=${value.p95Ms}, p99=${value.p99Ms}, max=${value.maxMs} ms`,
+        )
+      lines.push('')
+    }
   }
   lines.push('', '## longest trace tasks', '')
   for (const task of summary.tasks.longest.slice(0, 8))
@@ -933,6 +962,7 @@ async function main() {
       metrics,
     )
     assert.equal(timingOnly.inputs[0].observedMainThread, null)
+    assert.equal(timingOnly.inputs[0].queuedMainThread, null)
     assert.deepEqual(timingOnly.observedMainThread[0].distributions, {})
     const attributed = analyzeInputTrace(
       {
@@ -971,6 +1001,21 @@ async function main() {
       otherObservedTaskMs: 2,
       unattributedOrWaitingMs: 3.9,
     })
+    assert.deepEqual(attributed.inputs[0].queuedMainThread, {
+      windowMs: 1,
+      scriptExcludingRenderingMs: 0,
+      layoutStyleMs: 0,
+      paintExcludingLayoutMs: 0,
+      otherObservedTaskMs: 1,
+      unattributedOrWaitingMs: 0,
+    })
+    assert.equal(analyzeInputTrace(trace).inputs[0].queuedMainThread, null)
+    const invalidClock = structuredClone(metrics)
+    invalidClock.renderer.records[0].eventTime = 3
+    assert.equal(
+      analyzeInputTrace(trace, invalidClock).inputs[0].queuedMainThread,
+      null,
+    )
     assert.equal(
       attributed.observedMainThread[0].distributions.layoutStyleMs.p99Ms,
       1,
