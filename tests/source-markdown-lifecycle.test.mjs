@@ -152,7 +152,7 @@ test('Markdown source loading and schema recreation leave the hidden rich docume
   await page.waitForFunction(() => {
     const editor = document.querySelector('.tiptap')?.editor
     return (
-      editor?.isEditable &&
+      editor?.isEditable === false &&
       editor.state.doc.lastChild?.textContent === 'untouched content'
     )
   })
@@ -160,6 +160,10 @@ test('Markdown source loading and schema recreation leave the hidden rich docume
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).contentVersion,
     beforeRecreation.contentVersion,
+  )
+  await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
   )
   await rich.evaluate((element) => {
     const editor = element.editor
@@ -178,4 +182,14 @@ test('Markdown source loading and schema recreation leave the hidden rich docume
   await rich.focus()
   await pressShortcut(app, `${mod}+z`)
   await expectSource(other)
+  await page
+    .getByRole('button', { name: /^side-by-side$/i, exact: true })
+    .click()
+  await page.waitForFunction(() => {
+    const editor = document.querySelector('.tiptap')?.editor
+    return (
+      editor?.isEditable === false &&
+      editor.state.doc.lastChild?.textContent === 'untouched content'
+    )
+  })
 })

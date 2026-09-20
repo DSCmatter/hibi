@@ -86,6 +86,9 @@ test('native source IME survives split preview catch-up and keeps one undo group
     exact: true,
   })
   await source.waitFor()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable === false,
+  )
   await page.evaluate(() => {
     const editor = document.querySelector('.tiptap').editor
     editor.commands.setTextSelection(editor.state.doc.content.size - 1)
@@ -280,7 +283,11 @@ test('native source IME survives split preview catch-up and keeps one undo group
   )
   await expectSource(committed)
 
-  // Exercise the rich editor's own native composition path independently.
+  // Exercise native rich composition in normal view; split remains read-only.
+  await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
+  )
   const richFile = join(profile, 'rich-ime.md')
   const richOriginal = 'rich omega'
   await writeFile(richFile, richOriginal)

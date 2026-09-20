@@ -56,6 +56,12 @@ test('empty formatted blocks remain editable and rich editing survives vim and v
   await waitForAsync(page, async () =>
     (await window.hibi.getDocument()).markdown.includes('extra'),
   )
+  assert.equal(await rich.getAttribute('contenteditable'), 'false')
+  await pressShortcut(app, `${mod}+Shift+[`)
+  await source.waitFor({ state: 'hidden' })
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
+  )
   await rich.locator('td').first().click()
   await page.keyboard.type(' rich')
   assert.equal(await rich.getAttribute('contenteditable'), 'true')
@@ -67,8 +73,6 @@ test('empty formatted blocks remain editable and rich editing survives vim and v
       '<br>',
     ),
   )
-  await pressShortcut(app, `${mod}+Shift+[`)
-  await source.waitFor({ state: 'hidden' })
   for (const command of ['code', 'quote', 'h1']) {
     await app.evaluate(({ dialog }) => {
       dialog.showMessageBox = async () => ({ response: 1 })

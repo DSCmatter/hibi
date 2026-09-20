@@ -137,6 +137,11 @@ test('syntax settings preserve edits, update rich formatting, and discover addon
     .click()
   assert.equal(await rich.locator('h2').innerText(), 'two')
   assert.match(await rich.innerText(), /\*\*bold\*\* H~2~O/)
+  assert.equal(await rich.getAttribute('contenteditable'), 'false')
+  await pressShortcut(app, `${mod}+Shift+[`)
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
+  )
   await replaceRichText(
     page,
     rich.locator('.hibi-literal-block').filter({ hasText: /# one/i }),
@@ -148,6 +153,10 @@ test('syntax settings preserve edits, update rich formatting, and discover addon
   const edited = (await page.evaluate(() => window.hibi.getDocument())).markdown
   assert.ok(edited.includes('**bold** H~2~O'))
   assert.ok(edited.includes('> [!WARNING]\n> hello'))
+  await pressShortcut(app, `${mod}+Shift+\\`)
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable === false,
+  )
   await settings()
   for (const name of ['heading 1', 'bold', 'alerts', 'subscript', 'small text'])
     await page
@@ -207,6 +216,10 @@ test('syntax settings preserve edits, update rich formatting, and discover addon
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     edited,
+  )
+  await pressShortcut(app, `${mod}+Shift+[`)
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
   )
   // Keep the detected flavor present while exercising rich input rules.
   // Set the editor selection directly; DOM selection changes are asynchronous.

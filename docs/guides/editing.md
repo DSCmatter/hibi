@@ -4,9 +4,9 @@ Start typing in a blank note, use **File → Open** to choose a document, or sel
 
 ## Choose a view
 
-**Normal** lets you format text without seeing Markdown markers. **Source view** shows the original text with syntax highlighting. **Side-by-side** places them next to each other; Markdown supports editing in either pane, while other formats may offer a preview instead.
+**Normal** lets you format text without seeing Markdown markers. **Source view** shows the original text with syntax highlighting. **Side-by-side** places editable source next to a read-only formatted preview. You can select and copy preview text; switch to **Normal** to edit formatted text.
 
-While you type in the source pane, the formatted pane may catch up shortly after you pause. Your changes are available to saving and undo immediately. Entering the formatted pane brings it up to date before you edit there.
+While you type in the source pane, the formatted pane may catch up shortly after you pause. Your changes are available to saving and undo immediately. Entering the formatted pane brings it up to date for reading and selection.
 
 Choose your starting view under **Settings → Editor → Layout → Default view**. Only views supported by the current [format](../editing/formats.md) are available. You can switch from the toolbar or use a [keyboard shortcut](../editing/typing-and-shortcuts.md).
 
@@ -24,7 +24,7 @@ To keep one file open at a time, turn off **Settings → Editor → Documents �
 
 ## Format text
 
-Select text, then choose a toolbar action. In side-by-side view, actions apply to the pane you last used. The toolbar offers tools for the current format, with extra buttons in the **More** menu. Within a formatted table, additional actions let you add or remove rows and columns.
+Select text, then choose a toolbar action. In side-by-side view, formatting actions are available while the source pane is focused. The toolbar offers tools for the current format, with extra buttons in the **More** menu. Within an editable formatted table, additional actions let you add or remove rows and columns.
 
 In formatted view, the active text block shows subtle Markdown hints for heading levels, bold, italic, strikethrough, and inline code. They follow the cursor and disappear when focus leaves the formatted editor or you select several blocks. Code blocks keep their literal text without extra hints.
 
@@ -38,7 +38,7 @@ See [images and attachments](../editing/media-and-navigation.md#attachments) for
 
 ## Find text and commands
 
-Press `Cmd/Ctrl+F` to find text in the document. Enter moves to the next match, Shift+Enter moves back, and Escape closes search. In side-by-side view, search uses the pane you last edited.
+Press `Cmd/Ctrl+F` to find text in the document. Enter moves to the next match, Shift+Enter moves back, and Escape closes search. In side-by-side view, search uses the pane you last focused.
 
 In source view, **Searching…** means match counts are still being checked against the current document. Editing or changing the query cancels outdated results. If find becomes unavailable, close and reopen it to retry; document editing and saving stay available.
 

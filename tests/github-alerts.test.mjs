@@ -38,7 +38,7 @@ test('github alerts use quote boundaries and leave other markdown alone', () => 
   assert.match(parser.parse('> [!NOTE]'), /data-alert="note"/)
 })
 
-test('github alerts edit in rich/split view, keep markers, and export with theme colors', {
+test('github alerts edit in rich view, preview in split, and export with markers and theme colors', {
   timeout: 45000,
 }, async (t) => {
   const temp = await mkdtemp(join(tmpdir(), 'hibi-alerts-'))
@@ -104,6 +104,14 @@ test('github alerts edit in rich/split view, keep markers, and export with theme
     ),
     '3px',
   )
+  assert.equal(
+    await rich.evaluate((element) => element.editor.isEditable),
+    false,
+  )
+  await pressShortcut(app, `${mod}+Shift+[`)
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
+  )
   await warning.locator('.github-alert-body > p').fill('edited warning')
   await waitForAsync(page, async () =>
     (await window.hibi.getDocument()).markdown.includes('edited warning'),
@@ -111,6 +119,18 @@ test('github alerts edit in rich/split view, keep markers, and export with theme
   const edited = await read()
   for (const type of alertTypes)
     assert.ok(edited.includes(`[!${type.toUpperCase()}]`))
+  await pressShortcut(app, `${mod}+Shift+\\`)
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.tiptap')?.editor?.isEditable === false &&
+      document
+        .querySelector('.cm-content')
+        ?.textContent.includes('edited warning'),
+  )
+  assert.equal(
+    await warning.locator('.github-alert-body > p').innerText(),
+    'edited warning',
+  )
   await app.evaluate(
     ({ dialog }, { root, file, output }) => {
       dialog.showOpenDialog = async () => ({

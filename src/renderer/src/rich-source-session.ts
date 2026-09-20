@@ -1,5 +1,5 @@
 import { type Editor, type EditorEvents, Extension } from '@tiptap/core'
-import { PluginKey } from '@tiptap/pm/state'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
 import type { AcceptedSourceEdit } from '../../shared/document-session'
 import type { SourceSnapshot } from '../../shared/source-buffer'
 import { documentRuntime } from './document-runtime'
@@ -44,6 +44,16 @@ export const richSourceSession = Extension.create<{
   },
   onDestroy() {
     sources.delete(this.editor)
+  },
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        filterTransaction: (transaction) =>
+          !transaction.docChanged ||
+          !!transaction.getMeta(richSourceEcho) ||
+          this.editor.isEditable,
+      }),
+    ]
   },
   dispatchTransaction({ transaction, next }) {
     const editor = this.editor,

@@ -7,7 +7,7 @@ import { electron } from './electron.mjs'
 import { clickMenu, pressShortcut } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 
-test('split preview catch-up preserves immediate save, rich input, selection and unknown rich hooks', {
+test('read-only split preview preserves catch-up, save, selection and normal-view editing', {
   timeout: 50000,
 }, async (t) => {
   const profile = await mkdtemp(join(tmpdir(), 'hibi-split-catchup-'))
@@ -90,7 +90,7 @@ test('split preview catch-up preserves immediate save, rich input, selection and
   await page.waitForFunction(
     () =>
       document.querySelector('.cm-content')?.isContentEditable &&
-      document.querySelector('.tiptap')?.editor?.isEditable,
+      document.querySelector('.tiptap')?.editor?.isEditable === false,
   )
   await rich.evaluate((element) => {
     const editor = element.editor
@@ -219,11 +219,10 @@ test('split preview catch-up preserves immediate save, rich input, selection and
     page,
     () =>
       document.querySelector('.cm-content')?.isContentEditable &&
-      document.querySelector('.tiptap')?.editor?.isEditable,
+      document.querySelector('.tiptap')?.editor?.isEditable === false,
   )
 
-  // Rich focus must flush before its first input; source edits cannot disappear
-  // when the pending preview receives a native rich transaction.
+  // Read-only rich focus still flushes the preview before selection and copy.
   await rich.evaluate((element) => {
     const editor = element.editor
     editor.commands.setTextSelection(editor.state.doc.content.size - 1)
@@ -240,9 +239,69 @@ test('split preview catch-up preserves immediate save, rich input, selection and
     ),
     'omega source later',
   )
+  await selectBookmark()
+  const readOnly = await rich.evaluate((element) => {
+    const editor = element.editor
+    const before = editor.state.doc
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+    let text = walker.nextNode()
+    while (text && !text.textContent.startsWith('omega'))
+      text = walker.nextNode()
+    if (!text) throw new Error('missing preview selection text')
+    const range = document.createRange()
+    range.setStart(text, 1)
+    range.setEnd(text, 4)
+    const selection = window.getSelection()
+    selection.removeAllRanges()
+    selection.addRange(range)
+    const clipboardData = new DataTransfer()
+    element.dispatchEvent(
+      new ClipboardEvent('copy', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData,
+      }),
+    )
+    editor.view.dispatch(editor.state.tr.insertText(' blocked'))
+    return {
+      editable: editor.isEditable,
+      contentEditable: element.isContentEditable,
+      selected: window.getSelection()?.toString(),
+      copied: clipboardData.getData('text/plain'),
+      unchanged: editor.state.doc === before,
+      source: window.splitFixture.context.editor.getDocument().markdown,
+    }
+  })
+  assert.deepEqual(readOnly, {
+    editable: false,
+    contentEditable: false,
+    selected: 'meg',
+    copied: 'meg',
+    unchanged: true,
+    source: sourceBeforeRichKey,
+  })
+  await page.keyboard.insertText(' blocked input')
+  await expectSource(sourceBeforeRichKey)
+  assert.equal(
+    await rich.evaluate(
+      (element) => element.editor.state.doc.lastChild.textContent,
+    ),
+    'omega source later',
+  )
+
+  // Normal view restores native rich input without discarding source edits.
+  await page
+    .getByRole('button', { name: /^normal$/i, exact: true })
+    .evaluate((button) => button.click())
+  await page.clock.runFor(1)
+  await waitForAsync(
+    page,
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
+  )
   await rich.evaluate((element) => {
     const editor = element.editor
     editor.commands.setTextSelection(editor.state.doc.content.size - 1)
+    editor.view.focus()
   })
   await page.keyboard.insertText('!')
   await expectSource(`${sourceBeforeRichKey}!`)
@@ -251,6 +310,16 @@ test('split preview catch-up preserves immediate save, rich input, selection and
     `${process.platform === 'darwin' ? 'Meta' : 'Control'}+z`,
   )
   await expectSource(sourceBeforeRichKey)
+  await page
+    .getByRole('button', { name: /^side-by-side$/i, exact: true })
+    .evaluate((button) => button.click())
+  await page.clock.runFor(1)
+  await waitForAsync(
+    page,
+    () =>
+      document.querySelector('.cm-content')?.isContentEditable &&
+      document.querySelector('.tiptap')?.editor?.isEditable === false,
+  )
 
   // Hiding a pending preview must cancel obsolete work, including cleanup work.
   // Count nonempty parses: clearing a newly hidden rich instance is harmless.
@@ -281,7 +350,9 @@ test('split preview catch-up preserves immediate save, rich input, selection and
     .evaluate((button) => button.click())
   await waitForAsync(
     page,
-    () => document.querySelector('.tiptap')?.editor?.isEditable === false,
+    () =>
+      document.querySelector('.editor-panes.mode-markdown') &&
+      document.querySelector('.tiptap')?.editor?.isEditable === false,
   )
   assert.equal(
     await page.evaluate(() => {
@@ -334,7 +405,7 @@ test('split preview catch-up preserves immediate save, rich input, selection and
     page,
     () =>
       document.querySelector('.cm-content')?.isContentEditable &&
-      document.querySelector('.tiptap')?.editor?.isEditable,
+      document.querySelector('.tiptap')?.editor?.isEditable === false,
   )
 
   // Unknown rich attachments retain their existing immediate synchronization.

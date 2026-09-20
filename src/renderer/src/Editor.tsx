@@ -405,6 +405,9 @@ export function MarkdownEditor({
     setSourceReady,
     setSourceSettled,
   } = useEditorPanes(mode, markdownDocument)
+  // Temporarily disable split visual editing while its typing performance is
+  // unresolved. Keep preview synchronization and the performance work intact.
+  const splitReadOnly = mode === 'side-by-side' || paneMode === 'side-by-side'
   const findTarget = !markdownDocument
     ? 'source'
     : mode === 'normal'
@@ -469,26 +472,33 @@ export function MarkdownEditor({
       injectCSS: false,
       shouldRerenderOnTransaction: false,
       editorProps: {
-        handleKeyDown(view, event) {
-          if (
-            event.ctrlKey &&
-            !event.metaKey &&
-            !event.altKey &&
-            !event.shiftKey &&
-            event.key.toLowerCase() === 'a'
-          ) {
-            event.preventDefault()
-            view.dispatch(
-              view.state.tr.setSelection(new AllSelection(view.state.doc)),
-            )
-            return true
-          }
-          return false
+        handleDOMEvents: {
+          keydown(view, event) {
+            if (
+              ((event.ctrlKey && !event.metaKey) ||
+                (!view.editable && event.metaKey && !event.ctrlKey)) &&
+              !event.altKey &&
+              !event.shiftKey &&
+              event.key.toLowerCase() === 'a'
+            ) {
+              event.preventDefault()
+              if (!view.editable)
+                view.dom.ownerDocument
+                  .getSelection()
+                  ?.selectAllChildren(view.dom)
+              view.dispatch(
+                view.state.tr.setSelection(new AllSelection(view.state.doc)),
+              )
+              return true
+            }
+            return false
+          },
         },
         attributes: {
           'aria-label': 'Document editor',
           role: 'textbox',
           'aria-multiline': 'true',
+          tabindex: '0',
         },
       },
       onSelectionUpdate: ({ transaction }) => {
@@ -1696,7 +1706,8 @@ export function MarkdownEditor({
       focusedPane,
       disabled ||
         mode !== paneMode ||
-        (findTarget === 'rich' && (sourceOnly || !!richExtensionError)),
+        (findTarget === 'rich' &&
+          (splitReadOnly || sourceOnly || !!richExtensionError)),
       onAttach,
       markdownDocument,
       format,
@@ -1706,12 +1717,21 @@ export function MarkdownEditor({
     if (!editor) return
     editor.setEditable(
       paneMode !== 'markdown' &&
+        !splitReadOnly &&
         !sourceOnly &&
         !disabled &&
         !richExtensionError,
       false,
     )
-  }, [editor, paneMode, sourceOnly, disabled, richExtensionError])
+    editor.view.dom.setAttribute('aria-readonly', String(!editor.isEditable))
+  }, [
+    editor,
+    paneMode,
+    splitReadOnly,
+    sourceOnly,
+    disabled,
+    richExtensionError,
+  ])
 
   useEffect(() => {
     if (!editor) return
@@ -1895,9 +1915,9 @@ export function MarkdownEditor({
                   <Editor
                     key={id}
                     value={value}
-                    disabled={disabled}
+                    disabled={disabled || splitReadOnly}
                     onChange={(markdown) => {
-                      updateFromSource(markdown)
+                      if (!splitReadOnly) updateFromSource(markdown)
                     }}
                   />
                 ) : null,

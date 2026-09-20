@@ -165,6 +165,14 @@ test('slash commands work in both editors, preserve undo, and coexist with vim',
   await page
     .getByRole('button', { name: /^side-by-side$/i, exact: true })
     .click()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable === false,
+  )
+  await rich.locator('h2').last().waitFor()
+  await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
+  )
   await rich.locator('h2').last().click()
   await rich.pressSequentially('/quote')
   await menu.waitFor()
@@ -172,6 +180,15 @@ test('slash commands work in both editors, preserve undo, and coexist with vim',
   assert.equal(await rich.locator('blockquote').count(), 1)
   assert.match(await read(), />/)
   await page.mouse.move(400, 18)
+  await page
+    .getByRole('button', { name: /^side-by-side$/i, exact: true })
+    .click()
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.tiptap')?.editor?.isEditable === false &&
+      document.querySelector('.cm-content')?.textContent.includes('>'),
+  )
+  assert.equal(await rich.locator('blockquote').count(), 1)
   await page
     .getByRole('button', { name: /^source view$/i, exact: true })
     .click()
