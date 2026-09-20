@@ -16,6 +16,8 @@ $ sum_(k=1)^n k = (n(n+1))/2 $
 
 Click the block's pencil button to edit it or its PDF button to export it. Markdown's inline `$…$` equations use the separate LaTeX addon.
 
+Automatic flavor detection requires a closed Typst fence. A Typst example inside a longer code fence does not count as a preview block.
+
 ## Files and packages
 
 Local imports must stay inside your workspace, or the current file's folder when no workspace is open. Packages are not downloaded automatically.

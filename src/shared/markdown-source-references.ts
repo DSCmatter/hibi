@@ -1,5 +1,6 @@
 import { Marked } from 'marked'
 import { alertMarkdown } from '../addons/github-markdown/alerts.ts'
+import { mathTokens } from '../addons/math/syntax.ts'
 import { textExtrasMarkdown } from '../addons/text-extras/syntax.ts'
 import type { MarkdownReferenceSyntax } from './document-worker-protocol.ts'
 import type { SourceSnapshot } from './source-buffer.ts'
@@ -14,12 +15,14 @@ export function markdownSourceParser(syntax: MarkdownReferenceSyntax) {
   const parser = new Marked({ gfm: syntax.gfm, breaks: false })
   if (syntax.alerts) parser.use(alertMarkdown)
   if (syntax.textExtras) parser.use(textExtrasMarkdown)
+  if (syntax.math) parser.use(mathTokens)
   return parser
 }
 
 /** Built-in Markdown definition semantics, loaded only on reference demand. */
 export class MarkdownSourceReferences {
   readonly #parser: Marked
+  readonly #math: boolean
   #index: SourceReferences | null = null
   #owners: SourceOwners | null = null
   #epoch: string | null = null
@@ -29,6 +32,7 @@ export class MarkdownSourceReferences {
   #semanticLifetime = {}
   constructor(syntax: MarkdownReferenceSyntax) {
     this.#parser = markdownSourceParser(syntax)
+    this.#math = syntax.math ?? false
   }
   *update(source: SourceSnapshot, owners: SourceOwners): Generator<void> {
     if (owners === this.#owners) return
@@ -57,6 +61,7 @@ export class MarkdownSourceReferences {
       markup.set(
         region.owner.slot,
         text.includes('<') ||
+          (this.#math && text.includes('$$')) ||
           /(?:^|[\r\n])[\t ]*["'(]|\[[^\r\n]*\]:[^\r\n]*["'(]/.test(text) ||
           region.from > source.lineAt(region.contentFrom)!.from ||
           region.to < source.lineAt(region.to)!.to,

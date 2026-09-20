@@ -29,6 +29,7 @@ export function FormatEditor({
   onAttach,
   onLink,
   onOutline,
+  onOutlineUnavailable,
   onActiveOutline,
 }: Parameters<typeof MarkdownEditor>[0]) {
   const {
@@ -64,8 +65,9 @@ export function FormatEditor({
   )
   useEffect(() => {
     onOutline([])
+    onOutlineUnavailable?.(null)
     onActiveOutline(null)
-  }, [onOutline, onActiveOutline])
+  }, [onOutline, onOutlineUnavailable, onActiveOutline])
   // biome-ignore lint/correctness/useExhaustiveDependencies: pane transitions invalidate captured source projections.
   useEffect(() => {
     documentProjections.invalidate()

@@ -41,6 +41,7 @@ export function markdownSerializer(
         source,
         sourceOnly: needsSourceEditing(source),
         rendered: children.length,
+        blocks: null,
       }
     }
     const parent: JSONContent = {
@@ -78,10 +79,10 @@ export function markdownSerializer(
     })
     const joined = parts.map((block) => block.source).join('\n\n')
     // Match the manager's empty-document normalization, including blank paragraphs.
-    const source = joined.replace(/&nbsp;|\u00A0/g, '').trim() ? joined : ''
+    const source = /^(?:\s|&nbsp;)*$/.test(joined) ? '' : joined
     const sourceOnly =
       parts.some((block) => block.sourceOnly) ||
       (/^(?:\uFEFF)?---/.test(source) && needsSourceEditing(source))
-    return { source, sourceOnly, rendered }
+    return { source, sourceOnly, rendered, blocks: parts }
   }
 }

@@ -7,12 +7,24 @@ import { search } from 'prosemirror-search'
 import type { MarkdownFlavor } from '../../addons/api'
 import { BlockExit } from './BlockExit.ts'
 import { CodeHighlight } from './CodeHighlight.ts'
+import { guardNativeInputRules } from './input-rule-guard.ts'
 import { literalMarkdown } from './LiteralMarkdown.ts'
+import { guardNativeListTokenizer } from './list-tokenizer-prefix.ts'
 import { markdownSyntax } from './markdown-syntax.ts'
 import { installSyntaxPreferences } from './syntax-parser.ts'
 
 export { needsSourceEditing } from './markdown-preservation.ts'
 export { projectMarkdown } from './markdown-projection.ts'
+
+const NativeStarterKit = StarterKit.extend({
+  addExtensions() {
+    return (
+      this.parent?.()
+        .map(guardNativeListTokenizer)
+        .map(guardNativeInputRules) ?? []
+    )
+  },
+})
 
 /** Shared declarations for the visual editor and native schema-only conversion. */
 export function markdownConfiguration(
@@ -32,7 +44,7 @@ export function markdownConfiguration(
     enabled(`heading-${level}`),
   )
   const core = [
-    StarterKit.configure({
+    NativeStarterKit.configure({
       ...(history ? { undoRedo: false as const } : {}),
       strike: false,
       underline: false,
@@ -55,6 +67,8 @@ export function markdownConfiguration(
   const addons = flavors
     .flatMap((flavor) => flavor.richExtensions ?? [])
     .filter((extension) => markdownSyntax.extensionEnabled(extension.name))
+    .map(guardNativeListTokenizer)
+    .map(guardNativeInputRules)
   return { parser, options, core, addons }
 }
 

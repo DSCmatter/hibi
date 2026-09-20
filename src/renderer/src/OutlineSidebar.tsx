@@ -16,6 +16,7 @@ const icons = [Heading1, Heading2, Heading3, Heading4, Heading5, Heading6]
 
 export function OutlineSidebar({
   headings,
+  unavailable,
   selected,
   onSelect,
   open,
@@ -25,6 +26,7 @@ export function OutlineSidebar({
   side = 'left',
 }: {
   headings: readonly OutlineHeading[]
+  unavailable?: string | null
   selected: string | null
   onSelect: (id: string) => void
   open: boolean
@@ -63,11 +65,11 @@ export function OutlineSidebar({
       resize={resize}
       label="On this page"
       header={side === 'left' ? <span>On this page</span> : null}
-      items={items}
+      items={unavailable ? [] : items}
       collapsible={false}
       selected={selected}
       onSelect={onSelect}
-      empty="Add headings to this note to see them here."
+      empty={unavailable ?? 'Add headings to this note to see them here.'}
     />
   )
 }

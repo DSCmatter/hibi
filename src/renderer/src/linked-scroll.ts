@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core'
-import { markdownPositions } from './markdown-positions'
+import type { MarkdownPositionLookup } from './markdown-positions'
 import { editorPosition, sourcePosition, sourceView } from './source-view'
 
 /** Markdown follows text positions; other preview formats keep proportional scrolling. */
@@ -10,17 +10,14 @@ export function linkScroll(
   markdown?: {
     editor: Editor
     content: () => { source: string; body: string }
+    positions: MarkdownPositionLookup
   },
 ) {
+  if (markdown?.editor.isDestroyed) return () => {}
   let leader = initial
   let frame = 0
   let refinements = 0
   const sourcePane = second.closest('.source-pane')
-  let cached: {
-    doc: Editor['state']['doc']
-    body: string
-    map: ReturnType<typeof markdownPositions>
-  } | null = null
   function anchoredTop(target: HTMLElement): number | null {
     if (!markdown || markdown.editor.isDestroyed) return null
     const content = second.querySelector<HTMLElement>('.cm-content')
@@ -30,12 +27,7 @@ export function linkScroll(
     const text = markdown.content()
     const offset = text.source.lastIndexOf(text.body)
     if (offset < 0) return null
-    if (!cached || cached.doc !== editor.state.doc || cached.body !== text.body)
-      cached = {
-        doc: editor.state.doc,
-        body: text.body,
-        map: markdownPositions(text.body, editor.state.doc),
-      }
+    const map = markdown.positions(text.body, editor.state.doc)
     const bounds = leader.getBoundingClientRect()
     const visible = (point: { top: number; bottom: number } | null) =>
       point && point.top >= bounds.top && point.bottom <= bounds.bottom
@@ -53,7 +45,7 @@ export function linkScroll(
       }
       position = sourcePosition(view, position)
       if (!point || position < offset) return null
-      const mapped = cached.map(position - offset, 'source')
+      const mapped = map(position - offset, 'source')
       if (mapped === null) return null
       const destination = editor.view.coordsAtPos(mapped)
       return (
@@ -71,7 +63,7 @@ export function linkScroll(
         })?.pos ?? position
       point = editor.view.coordsAtPos(position)
     }
-    const mapped = cached.map(position, 'rich')
+    const mapped = map(position, 'rich')
     if (mapped === null || !point) return null
     const at = editorPosition(view, mapped + offset)
     if (at === null) return null

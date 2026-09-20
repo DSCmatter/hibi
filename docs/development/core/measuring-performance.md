@@ -6,7 +6,9 @@ The optional [Diagnostics addon](../../features/diagnostics.md) shows per-addon 
 
 Preload begins document, addon, and recent-workspace reads before the renderer mounts. These promises remain independent: the recent list does not wait for addon discovery. Blank startup skips the external-file drain; queued files and a configured startup workspace still use it.
 
-The rich editor caches immutable top-level Markdown blocks for compatible serializers. Changed blocks and their context are rechecked; undeclared serializers keep the full-document path. The outline subscribes only while visible. Caret-only outline updates use a binary position lookup and reuse the sidebar item tree. Heading extraction and source mapping still rebuild after document changes; these remain separate migration work. Document changes cross IPC as ordered replacements rather than complete source strings; see [document persistence](document-persistence.md).
+The rich editor caches immutable top-level Markdown blocks for compatible serializers. Changed blocks and their context are rechecked; undeclared serializers keep the full-document path. In source-only mode, typing does not refresh the hidden rich document. Returning to visual or split mode synchronizes it before accepting rich edits. Certified plain paragraphs can update their changed range; unsupported changes keep the full parse fallback.
+
+The outline subscribes only while visible. Source mode derives headings independently after typing pauses, while caret-only updates reuse the sidebar item tree. Position lookup uses certified paragraph offsets when available and compact fallback ranges otherwise. Word counts and flavor detection wait for a typing pause. Canonical edits, recovery and save subscriptions remain synchronous. Document changes cross IPC as ordered replacements rather than complete source strings; see [document persistence](document-persistence.md).
 
 ## Core benchmarks
 
@@ -59,6 +61,8 @@ Add `--cpu-profile` for a separate attribution run. It records a renderer V8 pro
 Reports retain emitted key timestamps, renderer observations, native Chromium traces, script/build identity and save/history checks. A matching character range inside the viewport followed by animation frames measures a presentation opportunity, not physical display scanout. Traces expose Paint/DrawFrame events and synchronous function durations separately. Missing observations, timeouts and unfinished save/history checks are not successful latency measurements.
 
 A `passed` scenario means that integrity checks and measurement collection completed; it does not mean a latency target was achieved. The current investigation targets less than 1 ms, which must be assessed separately for each named timing endpoint. Reports record hashes for both the main-process bundle and renderer entry HTML, plus the renderer entry filename, so renderer-only changes remain distinguishable when the main bundle is unchanged.
+
+Test wrapped paragraphs independently of ordinary multiline notes. CodeMirror uses line gaps to limit mounted text, but a wrapped viewport still includes surrounding text for measurement. A rich paragraph remains one browser layout block. A small DOM element count alone does not prove bounded text layout; inspect rendered character ranges and native Layout events too.
 
 ```sh
 node scripts/analyze-input-trace.mjs --trace /tmp/hibi-input-baseline/CASE/trace.json --metrics /tmp/hibi-input-baseline/CASE/result.json --out /tmp/hibi-input-baseline/CASE/analysis

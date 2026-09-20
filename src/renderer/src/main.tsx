@@ -26,7 +26,6 @@ import {
   type Hotkeys,
 } from '../../shared/hotkeys'
 import { isMediaFile } from '../../shared/media'
-import { needsOwnedSource } from '../../shared/preservation'
 import { startupMark } from '../../shared/startup'
 import { exceedsUtf8Limit } from '../../shared/text-size'
 import { DialogProvider, useDialogs } from '../../ui/DialogProvider'
@@ -49,6 +48,10 @@ import {
   SIDEBAR_OVERLAY_WIDTH,
   useSidebarResize,
 } from '../../ui/useSidebarResize'
+import {
+  ActiveDocumentEditor,
+  type DocumentFlavorStatus,
+} from './ActiveDocumentEditor'
 import { AddonPanel } from './AddonPanel'
 import { AddonSidebar, builtInViews, viewShortcut } from './AddonSidebar'
 import { addonRegistry } from './addon-registry'
@@ -58,6 +61,7 @@ import { CommandPalette, type PaletteCommand } from './CommandPalette'
 import { colorschemes } from './colorschemes'
 import { documentFormats, editorDocument } from './document-formats'
 import { documentRuntime, observeDocumentErrors } from './document-runtime'
+import { sameDocumentShell } from './document-shell'
 import type { ViewMode } from './Editor'
 import { loadCursor } from './EditorCursor'
 import { EditorToolbar } from './EditorToolbar'
@@ -66,7 +70,6 @@ import { FormatEditor } from './FormatEditor'
 import {
   automaticFlavor,
   type FlavorChoice,
-  flavorMatches,
   flavors,
   loadFlavor,
   selectedFlavors,
@@ -213,9 +216,11 @@ function App() {
   }, [needsRichEditor, richEditor])
   const DocumentEditor = markdownDocument ? richEditor.Component : FormatEditor
   useLayoutEffect(() => {
-    editorDocument.publish(document)
+    editorDocument.publish(documentRuntime.get() ?? document)
   }, [document])
   const currentDocument = useRef(document)
+  const shellDocument = useRef(document)
+  shellDocument.current = document
   currentDocument.current = documentRuntime.get() ?? document
   useLayoutEffect(
     () =>
@@ -231,19 +236,23 @@ function App() {
       }),
     [],
   )
-  useLayoutEffect(
-    () =>
-      documentRuntime.subscribe((next, changes) => {
-        if (changes) {
-          setWelcomeDismissed(true)
-          sessionStorage.setItem('hibi:welcome-dismissed', 'true')
-        }
-        currentDocument.current = next
+  useLayoutEffect(() => {
+    let dismissed = sessionStorage.getItem('hibi:welcome-dismissed') === 'true'
+    return documentRuntime.subscribe((next, changes) => {
+      if (changes && !dismissed) {
+        dismissed = true
+        setWelcomeDismissed(true)
+        sessionStorage.setItem('hibi:welcome-dismissed', 'true')
+      }
+      currentDocument.current = next
+      // Save acknowledgments update the baseline even when dirty stays true.
+      if (!changes || !sameDocumentShell(shellDocument.current, next)) {
+        shellDocument.current = next
         setDocument(next)
-        editorDocument.publish(next, changes)
-      }),
-    [],
-  )
+      }
+      editorDocument.publish(next, changes)
+    })
+  }, [])
   useEffect(
     () =>
       observeDocumentErrors((error) =>
@@ -264,6 +273,7 @@ function App() {
     }
     const active = documentRuntime.activate(next)
     currentDocument.current = active
+    shellDocument.current = active
     setDocument(active)
   }, [])
   const availableFlavors = useSyncExternalStore(
@@ -379,6 +389,9 @@ function App() {
   )
   const [rightSidebarInput, setRightSidebarInput] = useState<unknown>()
   const [outline, setOutline] = useState<OutlineHeading[]>([])
+  const [outlineUnavailable, setOutlineUnavailable] = useState<string | null>(
+    null,
+  )
   const [activeOutline, setActiveOutline] = useState<string | null>(null)
   const [outlineTarget, setOutlineTarget] = useState<OutlineRequest | null>(
     null,
@@ -1266,53 +1279,30 @@ function App() {
     ],
     [addonHost.catalog, availableFlavors],
   )
-  const flavorSource = useMemo(
-    () =>
-      markdownDocument
-        ? projectMarkdown(
-            document?.markdown ?? '',
-            addonHost.markdownExtensions,
-          ).content
-        : '',
-    [document, markdownDocument, addonHost.markdownExtensions],
+  const manifests = useMemo(
+    () => addonHost.catalog.map((addon) => addon.manifest),
+    [addonHost.catalog],
   )
-  const detectedFlavors = useMemo(
-    () => knownFlavors.filter((flavor) => flavorMatches(flavor, flavorSource)),
-    [knownFlavors, flavorSource],
-  )
-  const ownedSource = useMemo(
+  const enabledAddons = useMemo(
     () =>
-      markdownDocument &&
-      needsOwnedSource(
-        document?.markdown ?? '',
-        addonHost.catalog.map((addon) => addon.manifest),
-        new Set(
-          addonHost.states
-            .filter((state) => state.enabled)
-            .map((state) => state.id),
-        ),
+      new Set(
+        addonHost.states
+          .filter((state) => state.enabled)
+          .map((state) => state.id),
       ),
-    [document, markdownDocument, addonHost.catalog, addonHost.states],
+    [addonHost.states],
   )
-  const unsupportedFlavor =
-    ownedSource ||
-    detectedFlavors.some(
-      (flavor) =>
-        flavor.preservation?.level === 'verbatim' ||
-        ((flavor.preservation
-          ? flavor.preservation.fallback === 'source'
-          : flavor.readOnlyWhenDisabled !== false) &&
-          !chosenFlavors.some((chosen) => chosen.id === flavor.id)),
+  const [flavorStatus, setFlavorStatus] = useState<DocumentFlavorStatus>({
+    label: 'markdown',
+    unsupported: false,
+  })
+  const updateFlavorStatus = useCallback((next: DocumentFlavorStatus) => {
+    setFlavorStatus((previous) =>
+      previous.label === next.label && previous.unsupported === next.unsupported
+        ? previous
+        : next,
     )
-  const flavorLabel = [
-    (flavorChoice.dialect === 'auto'
-      ? detectedFlavors.find((flavor) => flavor.kind === 'dialect')?.name
-      : chosenFlavors.find((flavor) => flavor.kind === 'dialect')?.name) ??
-      'markdown',
-    ...detectedFlavors
-      .filter((flavor) => flavor.kind === 'syntax')
-      .map((flavor) => flavor.name),
-  ].join(' + ')
+  }, [])
   function changeFlavor(choice: FlavorChoice) {
     if (!document) return
     localStorage.setItem(`hibi:flavor:${document.id}`, JSON.stringify(choice))
@@ -1836,6 +1826,7 @@ function App() {
         open={sidebarOpen && !zen && !settingsOpen && sidebarView === 'outline'}
         resize={documentSidebarResize}
         headings={outline}
+        unavailable={outlineUnavailable}
         selected={activeOutline}
         onSelect={(id) => {
           if (sidebarResize.overlay) setSidebarOpen(false)
@@ -1866,6 +1857,7 @@ function App() {
         }
         resize={documentRightSidebarResize}
         headings={outline}
+        unavailable={outlineUnavailable}
         selected={activeOutline}
         onSelect={(id) => {
           if (rightSidebarResize.overlay) setRightSidebarOpen(false)
@@ -1973,8 +1965,18 @@ function App() {
           {(!editorStarted.current || !DocumentEditor) && <LoadingScreen />}
           {document && editorStarted.current && DocumentEditor && (
             <Suspense fallback={<LoadingScreen />}>
-              <DocumentEditor
+              <ActiveDocumentEditor
+                Component={DocumentEditor}
+                markdown={markdownDocument}
+                knownFlavors={knownFlavors}
+                chosenFlavors={chosenFlavors}
+                flavorChoice={flavorChoice}
+                manifests={manifests}
+                enabledAddons={enabledAddons}
+                sourceOnly={addonHost.sourceOnly}
+                onFlavorStatus={updateFlavorStatus}
                 onOutline={setOutline}
+                onOutlineUnavailable={setOutlineUnavailable}
                 outlineActive={
                   !settingsOpen &&
                   !zen &&
@@ -1989,7 +1991,6 @@ function App() {
                 onAttach={attachMedia}
                 onLink={openLink}
                 flavors={editorConfiguration.current.flavors}
-                unsupportedFlavor={unsupportedFlavor || addonHost.sourceOnly}
                 sourceExtensions={addonHost.sourceExtensions}
                 richExtensions={addonHost.richExtensions}
                 documentRevision={document.revision}
@@ -1999,7 +2000,6 @@ function App() {
                 cursorSettings={cursorSettings}
                 markdownExtensions={editorConfiguration.current.projections}
                 key={`${document.revision}-${resetEditor}-${markdownDocument ? 'markdown' : documentExtension(document.name)}`}
-                value={markdownDocument ? document.markdown : ''}
                 onChange={updateMarkdown}
                 mode={mode}
                 disabled={busy || !addonHost.ready}
@@ -2030,10 +2030,10 @@ function App() {
               items={[
                 {
                   id: 'flavor',
-                  label: markdownDocument ? flavorLabel : sourceName,
+                  label: markdownDocument ? flavorStatus.label : sourceName,
                   tooltip: !markdownDocument
                     ? `${sourceName} document · click for format settings`
-                    : unsupportedFlavor
+                    : flavorStatus.unsupported
                       ? 'Some Markdown features are disabled. Choose a flavor or enable the addon.'
                       : `${flavorChoice.dialect === 'auto' ? 'Detected' : 'Selected'} Markdown flavor · click to change`,
                   onClick: openFlavors,

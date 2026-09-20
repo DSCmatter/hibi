@@ -1,6 +1,6 @@
 import { Marked } from 'marked'
 import type { MarkdownFlavor } from '../api'
-import { alertMarker } from './alerts'
+import { alertMarker } from './alerts.ts'
 
 const parser = new Marked({ gfm: true })
 export const flavorInfo: MarkdownFlavor = {
@@ -11,6 +11,8 @@ export const flavorInfo: MarkdownFlavor = {
   description:
     'Alerts, tables, task lists, strikethrough, and automatic links.',
   detect(source) {
+    // Tables can omit pipes when their delimiter contains an alignment colon.
+    if (!/(?:[|:~@<]|\[|www\.)/i.test(source)) return false
     let found = false
     parser.walkTokens(parser.lexer(source), (token) => {
       if (
@@ -21,6 +23,7 @@ export const flavorInfo: MarkdownFlavor = {
         (token.type === 'link' && !token.raw.startsWith('['))
       )
         found = true
+      return []
     })
     return found
   },

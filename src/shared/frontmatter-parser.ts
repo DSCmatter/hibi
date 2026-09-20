@@ -16,9 +16,13 @@ export class FrontmatterParser extends Parser {
     super()
     if (!Number.isSafeInteger(contentFrom) || contentFrom < 1)
       throw new Error('Invalid frontmatter body boundary.')
-    this.#markdown = markdown.configure({
-      defineNodes: [{ name: 'Frontmatter', block: true }],
-    })
+    this.#markdown = markdown.nodeSet.types.some(
+      (type) => type.name === 'Frontmatter',
+    )
+      ? markdown
+      : markdown.configure({
+          defineNodes: [{ name: 'Frontmatter', block: true }],
+        })
     const type = this.#markdown.nodeSet.types.find(
       (type) => type.name === 'Frontmatter',
     )!

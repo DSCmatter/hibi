@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
-import { clickMenu, pressShortcut } from './keyboard.mjs'
+import { clickMenu, pressShortcut, replaceRichText } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 
 test('overflowing tabs reveal close buttons smoothly and reorder without losing drafts', {
@@ -475,7 +475,7 @@ test('file tabs preserve independent drafts and guard closing, saving, and works
         document.querySelector('.tiptap')?.getAttribute('contenteditable') ===
         'true',
     )
-  await rich.fill('untitled draft')
+  await replaceRichText(page, rich, 'untitled draft')
   const untitled = (await read()).tabId
   await clickMenu(app, 'New')
   await waitForAsync(
@@ -492,7 +492,7 @@ test('file tabs preserve independent drafts and guard closing, saving, and works
   await clickMenu(app, 'Open…')
   await page.getByRole('tab', { name: /^a\.md$/i, exact: true }).waitFor()
   await waitEditable()
-  await rich.fill('draft a')
+  await replaceRichText(page, rich, 'draft a')
   const aTab = (await read()).tabId
   await choose(b)
   await clickMenu(app, 'Open…')
@@ -556,7 +556,16 @@ test('file tabs preserve independent drafts and guard closing, saving, and works
   await clickMenu(app, 'Open…')
   await page.getByRole('tab', { name: /^a\.md$/i, exact: true }).waitFor()
   await waitEditable()
-  await rich.fill('moved draft')
+  await waitForAsync(page, async () => {
+    const current = await window.hibi.getDocument()
+    const editor = document.querySelector('.tiptap')?.editor
+    return (
+      current.name === 'a.md' &&
+      current.markdown === 'draft a' &&
+      editor?.state.doc.textContent === 'draft a'
+    )
+  })
+  await replaceRichText(page, rich, 'moved draft')
   await page.getByRole('tab', { name: /^b\.md$/i, exact: true }).click()
   await choose(notes)
   await page.evaluate(() => window.hibi.openWorkspace())

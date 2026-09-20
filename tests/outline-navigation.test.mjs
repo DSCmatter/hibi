@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
 import { clickMenu } from './keyboard.mjs'
+import { waitForAsync } from './poll.mjs'
 
 test('large outline follows rich and source carets with bounded sidebar rows', {
   timeout: 45000,
@@ -88,4 +89,140 @@ test('large outline follows rich and source carets with bounded sidebar rows', {
     process.platform === 'darwin' ? 'Meta+ArrowUp' : 'Control+Home',
   )
   await expectSelected('top')
+})
+
+test('source outline resolves references through its worker and preserves native syntax and math boundaries', {
+  timeout: 45000,
+}, async (t) => {
+  const profile = await mkdtemp(join(tmpdir(), 'hibi-outline-semantics-')),
+    file = join(profile, 'outline.md'),
+    original =
+      '# **literal** [label][ref]\n\n[ref]: /target\n\n$$\n# hidden math\n$$\n\n# real\n'
+  await writeFile(file, original)
+  await writeFile(join(profile, 'addons.json'), JSON.stringify({ math: true }))
+  const app = await electron.launch({
+    args: [resolve('.'), `--user-data-dir=${profile}`],
+  })
+  const watchdog = setTimeout(() => app.process().kill('SIGKILL'), 40000)
+  t.after(async () => {
+    await app
+      .evaluate(({ dialog }) => {
+        dialog.showMessageBox = async () => ({ response: 1 })
+      })
+      .catch(() => {})
+    await app.close().catch(() => {})
+    clearTimeout(watchdog)
+    await rm(profile, { recursive: true, force: true })
+  })
+  const page = await app.firstWindow()
+  page.setDefaultTimeout(7000)
+  await page
+    .getByRole('textbox', { name: 'Document editor', exact: true })
+    .waitFor()
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'hibi:markdown-syntax-disabled',
+      JSON.stringify(['core.bold']),
+    )
+  })
+  await page.reload()
+  const rich = page.getByRole('textbox', {
+    name: 'Document editor',
+    exact: true,
+  })
+  await rich.waitFor()
+  await app.evaluate(({ dialog }, file) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] })
+  }, file)
+  await clickMenu(app, 'Open…')
+  await page.waitForFunction(() => {
+    const headings = [...document.querySelectorAll('.tiptap h1')].map(
+      (heading) => heading.textContent,
+    )
+    return (
+      JSON.stringify(headings) === JSON.stringify(['**literal** label', 'real'])
+    )
+  })
+  const nativeLabels = await rich.locator('h1').allTextContents()
+  await page.evaluate(() => {
+    window.outlineWorkers = []
+    window.outlineReferenceRequests = []
+    window.Worker = new Proxy(window.Worker, {
+      construct(target, args) {
+        const worker = Reflect.construct(target, args)
+        if (String(args[0]).includes('/document.worker-')) {
+          window.outlineWorkers.push(String(args[0]))
+          const post = worker.postMessage.bind(worker)
+          worker.postMessage = (message, ...rest) => {
+            if (message.type === 'metadata' && message.reference)
+              window.outlineReferenceRequests.push(message.reference.label)
+            return post(message, ...rest)
+          }
+        }
+        return worker
+      },
+    })
+  })
+  await page.getByRole('button', { name: /^source view$/i }).click()
+  const source = page.getByRole('textbox', {
+    name: 'Markdown editor',
+    exact: true,
+  })
+  await source.waitFor()
+  await page.getByRole('button', { name: /^toggle right sidebar$/i }).click()
+  await page.getByRole('button', { name: /^right sidebar views$/i }).click()
+  await page
+    .getByRole('menuitem', { name: 'On this page', exact: true })
+    .click()
+  const outline = page.locator(
+    '.outline-sidebar[data-side="right"][data-open="true"]',
+  )
+  const expectLabels = async (labels) => {
+    await page.waitForFunction((labels) => {
+      const actual = [
+        ...document.querySelectorAll(
+          '.outline-sidebar[data-side="right"] [role="treeitem"][id^="right-outline-source:"] .sidebar-label',
+        ),
+      ].map((node) => node.textContent)
+      return JSON.stringify(actual) === JSON.stringify(labels)
+    }, labels)
+    assert.deepEqual(
+      await outline.locator('.sidebar-label').allTextContents(),
+      labels,
+    )
+  }
+  await expectLabels(nativeLabels)
+  assert.ok(
+    await page.evaluate(() => window.outlineReferenceRequests.includes('ref')),
+  )
+  assert.equal(await page.evaluate(() => window.outlineWorkers.length), 1)
+
+  await source.fill(original.replace('[ref]:', '[gone]:'))
+  await expectLabels(['**literal** [label][ref]', 'real'])
+  await source.fill(original)
+  await expectLabels(nativeLabels)
+  const nested = original.replace(
+    '$$\n# hidden math\n$$',
+    () => '> $$\n> # hidden math\n> $$',
+  )
+  await source.fill(nested)
+  await waitForAsync(
+    page,
+    async (expected) => (await window.hibi.getDocument()).markdown === expected,
+    nested,
+  )
+  assert.equal(
+    (await source.locator('.cm-line').allTextContents()).join('\n'),
+    nested,
+    'CodeMirror retains both dollar signs in the nested math fixture',
+  )
+  const unavailable = outline.getByText(
+    /Source outline could not read this note.*Switch to visual mode/,
+  )
+  await unavailable.waitFor()
+  assert.equal(await outline.locator('.sidebar-label').count(), 0)
+  await source.fill(original)
+  await expectLabels(nativeLabels)
+  assert.equal(await unavailable.count(), 0)
+  assert.equal(await page.evaluate(() => window.outlineWorkers.length), 1)
 })

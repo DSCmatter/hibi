@@ -159,6 +159,7 @@ const registry = new Map<string, Feature & { owner: string }>(
     { ...feature, id: `core.${feature.id}`, owner: 'core' },
   ]),
 )
+const coreIds = new Set(registry.keys())
 const disabled = new Set<string>()
 try {
   const stored: unknown = JSON.parse(
@@ -196,6 +197,7 @@ function savePreferences() {
 }
 export const markdownSyntax = {
   snapshot: () => snapshot,
+  isCore: (id: string) => coreIds.has(id),
   version: () => version,
   enabled: (id: string) => !disabled.has(id),
   extensionEnabled(name: string) {

@@ -9,6 +9,7 @@ export type MarkdownReferenceSyntax = Readonly<{
   gfm: boolean
   alerts: boolean
   textExtras: boolean
+  math?: boolean
 }>
 export type MarkdownReferenceRequest = MarkdownReferenceSyntax & {
   label: string

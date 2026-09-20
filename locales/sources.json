@@ -1583,6 +1583,7 @@
     "src/addons/frontmatter/Properties.tsx"
   ],
   "8c54257b5678": [
+    "src/renderer/src/source-outline.ts",
     "src/shared/frontmatter-source-model.ts"
   ],
   "105ac19c1136": [
@@ -3428,6 +3429,9 @@
   "f45809bdd48a": [
     "src/shared/source-buffer.ts"
   ],
+  "a59c5fc9e739": [
+    "src/renderer/src/source-outline.ts"
+  ],
   "2fc5a26b7c5b": [
     "src/shared/source-operations.ts"
   ],
@@ -3442,6 +3446,18 @@
   ],
   "5b10c7a4c309": [
     "src/shared/source-operations.ts"
+  ],
+  "ba31ca4e77d8": [
+    "src/renderer/src/source-outline.ts"
+  ],
+  "b44730f5bd1a": [
+    "src/renderer/src/Editor.tsx"
+  ],
+  "f98206e187b9": [
+    "src/renderer/src/source-outline.ts"
+  ],
+  "e2412d79f2dc": [
+    "src/renderer/src/source-outline.ts"
   ],
   "93f17300838f": [
     "src/shared/source-owners.ts"
@@ -4579,6 +4595,9 @@
   ],
   "4f166fdeeb59": [
     "src/addons/vim/Settings.tsx"
+  ],
+  "bc18f7068971": [
+    "src/renderer/src/main.tsx"
   ],
   "7d982ed61dc3": [
     "src/ui/colorschemes.ts"

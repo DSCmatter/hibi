@@ -130,6 +130,8 @@ test('word counts and block dragging preserve drafts, formatting, undo, and plug
     exact: true,
   })
   await source.fill('# cafe\u0301 👨‍👩‍👧‍👦\n\n中文')
+  await count('2 words · 12 characters')
+  await pressShortcut(app, `${mod}+Shift+[`)
   await count('2 words · 9 characters')
   await open('plain.txt')
   await count('1 word · 7 characters')

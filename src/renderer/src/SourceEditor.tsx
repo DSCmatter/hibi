@@ -50,7 +50,11 @@ import {
   sourceFormatting,
 } from './source-formatting'
 import { createSourceSession, sourceEditorText } from './source-session'
-import { registerSourceView } from './source-view'
+import {
+  registerSourceView,
+  type SourceReferenceResult,
+  type SourceReferenceSyntax,
+} from './source-view'
 import { textProjection } from './text-projection'
 
 const highlighting = HighlightStyle.define([
@@ -64,12 +68,32 @@ const highlighting = HighlightStyle.define([
   { tag: tags.strikethrough, textDecoration: 'line-through' },
 ])
 
+type ReferenceJob = {
+  version: number
+  syntax: SourceReferenceSyntax
+  label: string
+  link: boolean
+  settle: (result: SourceReferenceResult) => void
+}
+
+const sameReferenceSyntax = (
+  a: SourceReferenceSyntax,
+  b: SourceReferenceSyntax | undefined,
+) =>
+  !!b &&
+  a.gfm === b.gfm &&
+  a.alerts === b.alerts &&
+  a.textExtras === b.textExtras &&
+  !!a.math === !!b.math &&
+  a.frontmatter === b.frontmatter
+
 export function SourceEditor({
   document,
   editTarget,
   markdownMode,
   markdownLanguage,
   referenceSyntax,
+  linksEnabled = true,
   sourceLanguage,
   codeLanguage,
   sourceFormat,
@@ -93,6 +117,7 @@ export function SourceEditor({
   referenceSyntax?:
     | (MarkdownReferenceSyntax & { frontmatter: boolean })
     | undefined
+  linksEnabled?: boolean
   sourceLanguage: Language | undefined
   codeLanguage?: string | undefined
   sourceFormat?: DocumentFormat['formatting']
@@ -113,6 +138,7 @@ export function SourceEditor({
     markdownMode,
     markdownLanguage,
     referenceSyntax,
+    linksEnabled,
     sourceLanguage,
     codeLanguage,
     label,
@@ -123,6 +149,7 @@ export function SourceEditor({
     markdownMode,
     markdownLanguage,
     referenceSyntax,
+    linksEnabled,
     sourceLanguage,
     codeLanguage,
     label,
@@ -168,10 +195,10 @@ export function SourceEditor({
   })
   const sourceFind = useRef<DocumentWorkerClient | null>(null)
   const referenceUsed = useRef(false)
-  const pendingLink = useRef<{
-    version: number
-    syntax: typeof referenceSyntax
-  } | null>(null)
+  const referenceFailed = useRef(false)
+  const referenceQueue = useRef<ReferenceJob[]>([])
+  const activeReference = useRef<ReferenceJob | null>(null)
+  const nextReference = useRef(() => {})
   const repeatFind = useRef<(action?: FindAction) => void>(() => {})
   const findCoverage = useRef({ query: '', version: -1, total: 0 })
   const findActions = useRef<FindAction[]>([])
@@ -187,28 +214,57 @@ export function SourceEditor({
   ready.current = onReady
   find.current = { active: findActive, query: findQuery, report: onFindStatus }
 
+  const clearReferences = useCallback(
+    (status: 'stale' | 'unavailable', release = true) => {
+      const pending = activeReference.current
+      activeReference.current = null
+      const queued = referenceQueue.current.splice(0)
+      pending?.settle({ status })
+      for (const job of queued) job.settle({ status })
+      if (release) sourceFind.current?.releaseMetadata()
+    },
+    [],
+  )
+  const referenceCurrent = useCallback(
+    (job: ReferenceJob) =>
+      !!view.current &&
+      parserOptions.current.markdownMode &&
+      job.version === session.snapshot().version &&
+      sameReferenceSyntax(job.syntax, parserOptions.current.referenceSyntax),
+    [session],
+  )
+
   const getWorker = useCallback(
     function getWorker() {
+      if (referenceFailed.current) {
+        sourceFind.current?.dispose()
+        sourceFind.current = null
+        referenceFailed.current = false
+      }
       sourceFind.current ??= new DocumentWorkerClient(session, {
         changed: () => {
-          pendingLink.current = null
+          // Edits already cancel old-version work in the client. Keep its
+          // reference index available for the next incremental lookup.
+          clearReferences('stale', false)
           findActions.current = []
           navigatingFind.current = false
           repeatFind.current()
         },
         metadataResult: (_page, reference) => {
-          const pending = pendingLink.current
-          pendingLink.current = null
-          if (
-            pending &&
-            pending.version === session.snapshot().version &&
-            pending.syntax === parserOptions.current.referenceSyntax &&
-            reference?.href
-          )
-            openLink.current(reference.href)
+          const pending = activeReference.current
+          activeReference.current = null
+          if (pending)
+            pending.settle(
+              !referenceCurrent(pending)
+                ? { status: 'stale' }
+                : reference === undefined
+                  ? { status: 'unavailable' }
+                  : { status: 'resolved', value: reference },
+            )
+          nextReference.current()
         },
         metadataError: () => {
-          pendingLink.current = null
+          clearReferences('unavailable')
         },
         pending: () => {
           const known = findCoverage.current
@@ -222,6 +278,8 @@ export function SourceEditor({
           })
         },
         error: (message) => {
+          referenceFailed.current = true
+          clearReferences('unavailable', false)
           findActions.current = []
           navigatingFind.current = false
           find.current.report({ current: 0, total: 0, error: message })
@@ -265,8 +323,82 @@ export function SourceEditor({
       })
       return sourceFind.current
     },
-    [session],
+    [session, clearReferences, referenceCurrent],
   )
+  const requestReference = useCallback(() => {
+    if (activeReference.current) return
+    for (;;) {
+      const job = referenceQueue.current.shift()
+      if (!job) return
+      if (!referenceCurrent(job)) {
+        job.settle({ status: 'stale' })
+        continue
+      }
+      activeReference.current = job
+      referenceUsed.current = true
+      getWorker().metadata(
+        job.syntax.gfm ? 'gfm' : 'commonmark',
+        0,
+        0,
+        1,
+        job.syntax.frontmatter,
+        { ...job.syntax, label: job.label },
+      )
+      return
+    }
+  }, [getWorker, referenceCurrent])
+  nextReference.current = requestReference
+  const resolveReference = useCallback(
+    (
+      syntax: SourceReferenceSyntax,
+      label: string,
+      signal?: AbortSignal,
+    ): Promise<SourceReferenceResult> => {
+      if (signal?.aborted) return Promise.resolve({ status: 'stale' })
+      if (
+        label.length > 1000 ||
+        referenceQueue.current.length +
+          Number(!!activeReference.current && !activeReference.current.link) >=
+          128
+      )
+        return Promise.resolve({ status: 'unavailable' })
+      return new Promise((resolve) => {
+        const job: ReferenceJob = {
+          version: session.snapshot().version,
+          syntax: { ...syntax },
+          label,
+          link: false,
+          settle(result) {
+            signal?.removeEventListener('abort', abort)
+            resolve(result)
+          },
+        }
+        const abort = () => {
+          const index = referenceQueue.current.indexOf(job)
+          if (index >= 0) referenceQueue.current.splice(index, 1)
+          if (activeReference.current === job) {
+            activeReference.current = null
+            requestReference()
+            if (!activeReference.current) sourceFind.current?.releaseMetadata()
+          }
+          job.settle({ status: 'stale' })
+        }
+        signal?.addEventListener('abort', abort, { once: true })
+        referenceQueue.current.push(job)
+        requestReference()
+      })
+    },
+    [requestReference, session],
+  )
+  useEffect(() => {
+    const current = (job: ReferenceJob) =>
+      markdownMode && sameReferenceSyntax(job.syntax, referenceSyntax)
+    if (
+      (activeReference.current && !current(activeReference.current)) ||
+      referenceQueue.current.some((job) => !current(job))
+    )
+      clearReferences('stale')
+  }, [referenceSyntax, markdownMode, clearReferences])
   const requestFind = useCallback(
     function requestFind(action: FindAction = null) {
       const editor = view.current
@@ -369,7 +501,11 @@ export function SourceEditor({
                 })
             },
             click(event, view) {
-              if (!event.shiftKey || !parserOptions.current.markdownMode)
+              if (
+                !event.shiftKey ||
+                !parserOptions.current.markdownMode ||
+                !parserOptions.current.linksEnabled
+              )
                 return false
               const position = view.posAtCoords({
                 x: event.clientX,
@@ -388,23 +524,36 @@ export function SourceEditor({
               if ('label' in target) {
                 if (!syntax) return false
                 event.preventDefault()
-                referenceUsed.current = true
-                pendingLink.current = {
+                const pending = activeReference.current
+                activeReference.current = null
+                if (pending?.link) pending.settle({ status: 'stale' })
+                else if (pending) referenceQueue.current.unshift(pending)
+                referenceQueue.current.unshift({
                   version: session.snapshot().version,
-                  syntax,
-                }
-                getWorker().metadata(
-                  syntax.gfm ? 'gfm' : 'commonmark',
-                  0,
-                  0,
-                  1,
-                  syntax.frontmatter,
-                  { ...syntax, label: target.label },
-                )
+                  syntax: { ...syntax },
+                  label: target.label,
+                  link: true,
+                  settle(result) {
+                    if (
+                      parserOptions.current.linksEnabled &&
+                      result.status === 'resolved' &&
+                      result.value?.href
+                    )
+                      openLink.current(result.value.href)
+                  },
+                })
+                requestReference()
                 return true
               }
               if (!target.href) return false
-              pendingLink.current = null
+              if (activeReference.current?.link) {
+                const pending = activeReference.current
+                activeReference.current = null
+                pending.settle({ status: 'stale' })
+                requestReference()
+                if (!activeReference.current)
+                  sourceFind.current?.releaseMetadata()
+              }
               event.preventDefault()
               openLink.current(target.href)
               return true
@@ -576,6 +725,7 @@ export function SourceEditor({
           bridge.snapshot().editorToRaw(position) ?? position,
         toEditor: (position) => bridge.snapshot().rawToEditor(position),
       },
+      resolveReference,
     )
     configureParser.current = () => {
       const id = parserOptions.current.codeLanguage
@@ -621,10 +771,11 @@ export function SourceEditor({
     }
     void window.document.fonts.load('13px "Geist Mono"').then(measure, measure)
     return () => {
+      clearReferences('unavailable', false)
       sourceFind.current?.dispose()
       sourceFind.current = null
       referenceUsed.current = false
-      pendingLink.current = null
+      referenceFailed.current = false
       unsubscribe()
       configureParser.current = () => {}
       disposed = true
@@ -638,7 +789,14 @@ export function SourceEditor({
       editor.destroy()
       view.current = null
     }
-  }, [bridge, session, requestFind, getWorker])
+  }, [
+    bridge,
+    session,
+    requestFind,
+    requestReference,
+    resolveReference,
+    clearReferences,
+  ])
 
   useEffect(() => {
     let canceled = false

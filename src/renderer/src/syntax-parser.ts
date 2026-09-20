@@ -4,12 +4,14 @@ import { markdownSyntax } from './markdown-syntax.ts'
 
 export function preserveDisabled(token: Token) {
   const feature = markdownSyntax.disabledFeature(token)
-  if (!feature) return
+  // Marked concatenates callback results; [] avoids copying growing undefined arrays.
+  if (!feature) return []
   Object.assign(token, {
     type: feature.level === 'block' ? 'hibiLiteralBlock' : 'hibiLiteralInline',
     text: feature.level === 'block' ? token.raw.replace(/\n+$/, '') : token.raw,
     tokens: [],
   })
+  return []
 }
 
 /** Shared by Tiptap's lexer and Marked's exported HTML path. */
@@ -27,7 +29,9 @@ export function installSyntaxPreferences(parser: Marked) {
   }
   parser.Lexer = SyntaxLexer
   parser.use({
-    walkTokens: preserveDisabled,
+    walkTokens(token) {
+      preserveDisabled(token)
+    },
     extensions: [
       {
         name: 'hibiLiteralBlock',

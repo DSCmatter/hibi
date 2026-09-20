@@ -1,5 +1,4 @@
 import { Strike } from '@tiptap/extension-strike'
-import { TableKit } from '@tiptap/extension-table'
 import { TaskItem } from '@tiptap/extension-task-item'
 import { TaskList } from '@tiptap/extension-task-list'
 import { defineAddon, type MarkdownFlavor } from '../api'
@@ -8,6 +7,7 @@ import { alertMarkdown, alertMarker } from './alerts'
 import css from './alerts.css?inline'
 import { flavorInfo } from './flavor-info'
 import manifest from './manifest'
+import { NativeTableKit } from './table-tokenizer'
 
 const flavor: MarkdownFlavor = {
   ...flavorInfo,
@@ -16,7 +16,7 @@ const flavor: MarkdownFlavor = {
   richExtensions: [
     GithubAlert,
     Strike,
-    TableKit.configure({ table: { resizable: false } }),
+    NativeTableKit.configure({ table: { resizable: false } }),
     TaskList,
     TaskItem.configure({ nested: true }),
   ],

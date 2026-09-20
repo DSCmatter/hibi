@@ -25,6 +25,7 @@ const validSyntax = (
   typeof syntax.gfm === 'boolean' &&
   typeof syntax.alerts === 'boolean' &&
   typeof syntax.textExtras === 'boolean' &&
+  (syntax.math === undefined || typeof syntax.math === 'boolean') &&
   syntax.gfm === (dialect === 'gfm')
 
 /** Trusted derived replica. The renderer/native journal remain the source authority. */
@@ -226,10 +227,12 @@ export class DocumentWorkerService {
               !validSyntax(message.reference, message.dialect))) ||
           (message.semantic !== undefined &&
             (!validSyntax(message.semantic, message.dialect) ||
+              message.semantic.math === true ||
               (message.reference &&
                 (message.reference.alerts !== message.semantic.alerts ||
                   message.reference.textExtras !==
-                    message.semantic.textExtras)))) ||
+                    message.semantic.textExtras ||
+                  !!message.reference.math !== !!message.semantic.math)))) ||
           !Number.isSafeInteger(message.from) ||
           !Number.isSafeInteger(message.to) ||
           message.from < 0 ||
@@ -352,8 +355,8 @@ export class DocumentWorkerService {
           }
           const requestedSyntax = request.semantic ?? request.reference
           if (requestedSyntax) {
-            const { gfm, alerts, textExtras } = requestedSyntax
-            const syntax = JSON.stringify([gfm, alerts, textExtras])
+            const { gfm, alerts, textExtras, math = false } = requestedSyntax
+            const syntax = JSON.stringify([gfm, alerts, textExtras, math])
             if (!this.#references || syntax !== this.#referenceSyntax) {
               this.#semantics?.clear()
               this.#semantics = null
@@ -362,6 +365,7 @@ export class DocumentWorkerService {
                 gfm,
                 alerts,
                 textExtras,
+                math,
               })
               this.#referenceSyntax = syntax
             }

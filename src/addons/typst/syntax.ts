@@ -34,9 +34,11 @@ export const typstFlavor: MarkdownFlavor = {
   description: 'Preview Typst code blocks on your computer.',
   readOnlyWhenDisabled: false,
   detect(source) {
+    if (!/(?:`{3}|~{3})typst/i.test(source)) return false
     let found = false
     detector.walkTokens(detector.lexer(source), (token) => {
       if (token.type === 'typstBlock') found = true
+      return []
     })
     return found
   },

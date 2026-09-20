@@ -34,6 +34,8 @@ Older `.hibi.json` and `.hibiignore` files still work. Saving workspace settings
 
 Choose **On this page** to browse the current note's headings. Select a heading to jump to it; the outline highlights the section containing your cursor.
 
+Source view lists Markdown headings, including headings inside quotes and lists. Labels follow your syntax settings and resolve reference links. Confirmed top-level math blocks hide their contents from the outline. Unsupported addon syntax or math inside containers shows an unavailable message; switch to visual mode for those notes. Headings produced by embedded HTML appear in formatted views.
+
 ## Show and resize the sidebar
 
 Press `Cmd/Ctrl+/` or use the sidebar button to show or hide it. Drag its right edge to resize it, drag farther past the minimum to collapse it, or double-click the edge to restore its default width.

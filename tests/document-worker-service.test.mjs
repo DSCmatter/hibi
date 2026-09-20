@@ -54,6 +54,70 @@ function fixture(t, source = 'one two one') {
   return { worker, messages, next, load, find }
 }
 
+test('math reference grammar invalidates cached definitions and hides opaque math contents', async (t) => {
+  const source = '$$\n\n[ref]: /hidden\n\n$$\n\n[ref]: /real\n',
+    f = fixture(t, source)
+  const request = async (id, math, version = 0) => {
+    f.worker.receive({
+      type: 'metadata',
+      epoch: 'first',
+      id,
+      version,
+      dialect: 'gfm',
+      from: 0,
+      to: 0,
+      limit: 1,
+      reference: {
+        label: 'ref',
+        gfm: true,
+        alerts: false,
+        textExtras: false,
+        math,
+      },
+    })
+    return f.next((reply) => reply.type === 'metadata' && reply.id === id)
+  }
+  assert.equal((await request(1, true)).reference.href, '/real')
+  assert.equal((await request(2, false)).reference.href, '/hidden')
+  assert.equal((await request(3, true)).reference.href, '/real')
+  const from = source.indexOf('/real')
+  f.worker.receive({
+    type: 'edit',
+    epoch: 'first',
+    operation: {
+      document: { tabId: 'a', revision: 0 },
+      operationId: 'math-reference-edit',
+      baseVersion: 0,
+      contentVersion: 1,
+      origin: 'source',
+      historyGroup: 'typing',
+      changes: [{ from, to: from + 5, insert: '/updated' }],
+    },
+  })
+  assert.equal((await request(4, true, 1)).reference.href, '/updated')
+  f.worker.receive({
+    type: 'metadata',
+    epoch: 'first',
+    id: 5,
+    version: 1,
+    dialect: 'gfm',
+    from: 0,
+    to: 0,
+    limit: 1,
+    reference: {
+      label: 'ref',
+      gfm: true,
+      alerts: false,
+      textExtras: false,
+      math: 'yes',
+    },
+  })
+  await f.next(
+    (reply) =>
+      reply.type === 'error' && reply.id === 5 && reply.stage === 'metadata',
+  )
+})
+
 test('metadata reference lookup uses exact edits, grammar, first definitions and opaque frontmatter', async (t) => {
   const source =
     '---\nvalue: |\n\n  [ref]: /metadata\n---\n\n[ref]\n\n[REF]: /first\n\n[ref]: /second\n'

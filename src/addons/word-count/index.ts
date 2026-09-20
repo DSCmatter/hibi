@@ -4,6 +4,7 @@ import { reportDiagnosticFailure } from '../../shared/local-diagnostics-observer
 import { defineAddon } from '../api'
 import type { countText } from './count'
 import manifest from './manifest'
+import { scheduleCounts } from './schedule'
 
 let stop: (() => void) | undefined
 export default defineAddon({
@@ -18,43 +19,29 @@ export default defineAddon({
     worker.addEventListener('messageerror', failed)
     const status = context.statusBar.register({ id: 'total', label: '' })
     let editor: Editor | null = null
-    let frame = 0
-    let pending = false
-    let latest = ''
-    let sent: string | undefined
-    const send = () => {
-      pending = true
-      sent = latest
-      worker.postMessage(latest)
-    }
-    worker.onmessage = (event: MessageEvent<ReturnType<typeof countText>>) => {
-      pending = false
-      if (latest !== sent) {
-        send()
-        return
-      }
-      const { words, characters } = event.data
-      status.update({
-        label: `${words.toLocaleString()} ${words === 1 ? 'word' : 'words'} · ${characters.toLocaleString()} ${characters === 1 ? 'character' : 'characters'}`,
-      })
-    }
-    const refresh = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
+    let countsRichText = false
+    const counter = scheduleCounts(
+      () => {
         const document = context.editor.getDocument()
-        if (!document) return
+        if (!document) return null
         const rich =
           isMarkdownDocument(document.name) && editor && !editor.isDestroyed
             ? editor
             : null
-        latest = rich
-          ? rich.getText({ blockSeparator: '\n' })
-          : document.markdown
+        countsRichText = Boolean(rich)
+        return rich ? rich.getText({ blockSeparator: '\n' }) : document.markdown
+      },
+      (text) => worker.postMessage(text),
+      ({ words, characters }) => {
         status.update({
-          tooltip: `${rich ? 'The count excludes Markdown syntax and properties' : 'The count includes formatting syntax'}. Spaces and line breaks count as characters; each emoji counts as one.`,
+          label: `${words.toLocaleString()} ${words === 1 ? 'word' : 'words'} · ${characters.toLocaleString()} ${characters === 1 ? 'character' : 'characters'}`,
+          tooltip: `${countsRichText ? 'The count excludes Markdown syntax and properties' : 'The count includes formatting syntax'}. Spaces and line breaks count as characters; each emoji counts as one.`,
         })
-        if (!pending && latest !== sent) send()
-      })
+      },
+    )
+    const refresh = counter.refresh
+    worker.onmessage = (event: MessageEvent<ReturnType<typeof countText>>) => {
+      counter.receive(event.data)
     }
     context.editor.registerRich({
       id: 'text',
@@ -71,13 +58,16 @@ export default defineAddon({
         refresh()
         return () => {
           instance.off('transaction', transaction)
-          if (editor === instance) editor = null
+          if (editor === instance) {
+            editor = null
+            refresh()
+          }
         }
       },
     })
     context.editor.onDocumentChange(refresh)
     stop = () => {
-      cancelAnimationFrame(frame)
+      counter.stop()
       worker.removeEventListener('error', failed)
       worker.removeEventListener('messageerror', failed)
       worker.terminate()

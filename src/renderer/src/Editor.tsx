@@ -35,19 +35,23 @@ import { editedSource, sourceEditMatches } from '../../shared/document-edits'
 import type { AcceptedSourceEdit } from '../../shared/document-session'
 import type { DocumentView } from '../../shared/document-types'
 import { isMediaFile } from '../../shared/media'
+import type { SourceSnapshot } from '../../shared/source-buffer'
 import { Button } from '../../ui/Controls'
 import { DocumentNotice } from '../../ui/DocumentNotice'
 import { performanceDiagnostics } from '../../ui/diagnostics'
+import { addonRegistry } from './addon-registry'
 import { documentImage } from './DocumentImage'
 import { documentEdits } from './document-edits'
 import { editorDocument } from './document-formats'
 import { documentHistory } from './document-history'
 import { documentProjections } from './document-projections'
 import { documentRuntime } from './document-runtime'
+import { certifyVisualEcho } from './document-shell'
 import { type CursorSettings, EditorCursor } from './EditorCursor'
 import { emitEditorKeyEvent } from './editor-events'
 import { FindBar, type FindMove, type FindStatus } from './FindBar'
 import { useFormattingToolbar } from './FormattingToolbar'
+import { flavors as flavorRegistry } from './flavors'
 import { LoadingScreen } from './LoadingScreen'
 import { linkScroll } from './linked-scroll'
 import { MirrorCursor } from './MirrorCursor'
@@ -57,12 +61,18 @@ import {
   projectMarkdown,
 } from './markdown'
 import { observeMarkdownMarkers } from './markdown-markers'
-import { markdownPositions } from './markdown-positions'
+import {
+  createMarkdownPositionCache,
+  type MarkdownPositionLookup,
+} from './markdown-positions'
 import './markdown-markers.css'
+import type { ReferenceValue } from '../../shared/source-references'
+import { createMarkdownSemantics } from './markdown-semantics'
 import { markdownSerializer } from './markdown-serialization'
 import { markdownSyntax } from './markdown-syntax'
 import type { OutlineHeading, OutlineRequest } from './OutlineSidebar'
 import { outlineHeadingAt } from './outline-position'
+import { createPlainSourceSync } from './plain-source-sync'
 import { observeRichAnnotations } from './rich-annotations'
 import {
   richSourceEcho,
@@ -70,7 +80,13 @@ import {
   richSourceSnapshot,
 } from './rich-source-session'
 import { exactRichRange } from './rich-text-range'
-import { revealSourcePosition, sourcePosition, sourceView } from './source-view'
+import { type SourceOutlineHeading, SourceOutlineModel } from './source-outline'
+import {
+  resolveSourceReference,
+  revealSourcePosition,
+  sourcePosition,
+  sourceView,
+} from './source-view'
 import { textProjection } from './text-projection'
 import { useEditorPanes } from './use-editor-panes'
 
@@ -79,6 +95,11 @@ const SourceEditor = lazy(() =>
     default: module.MarkdownSourceEditor,
   })),
 )
+
+const parseParagraph = (editor: Editor, source: string) =>
+  performanceDiagnostics.measure('core', 'Markdown paragraph parsing', () =>
+    editor.markdown!.parse(source),
+  )
 
 export type ViewMode = DocumentView
 
@@ -105,6 +126,7 @@ export function MarkdownEditor({
   onAttach,
   onLink,
   onOutline,
+  onOutlineUnavailable,
   onActiveOutline,
   outlineTarget,
   outlineActive,
@@ -133,6 +155,7 @@ export function MarkdownEditor({
   ) => Promise<import('../../shared/media').MediaAttachment[] | null>
   onLink: (href: string) => void
   onOutline: (headings: OutlineHeading[]) => void
+  onOutlineUnavailable?: (reason: string | null) => void
   onActiveOutline: (id: string | null) => void
   outlineTarget: OutlineRequest | null
   outlineActive: boolean
@@ -147,6 +170,14 @@ export function MarkdownEditor({
   const serializers = useRef(
     new WeakMap<Editor, ReturnType<typeof markdownSerializer>>(),
   )
+  const plainSync = useRef<ReturnType<typeof createPlainSourceSync>>(null)
+  const pendingPlainSync = useRef<{
+    editor: Editor
+    source: SourceSnapshot
+    document: RichNode
+    certificate: NonNullable<ReturnType<typeof createPlainSourceSync>>
+    deferEcho?: boolean
+  } | null>(null)
   const generated = useRef<{
     source: string
     body: string
@@ -163,14 +194,15 @@ export function MarkdownEditor({
   const referenceSyntax = useMemo(() => {
     // Unknown parser/projection contributions keep their existing link behavior.
     if (
-      !markdownSyntax.enabled('core.links') ||
       flavors.some(
         (flavor) =>
           (flavor.export?.extensions?.length ||
             flavor.richExtensions?.length) &&
-          !['github-markdown.github', 'text-extras.text-extras'].includes(
-            flavor.id,
-          ),
+          ![
+            'github-markdown.github',
+            'text-extras.text-extras',
+            'math.latex',
+          ].includes(flavor.id),
       ) ||
       markdownExtensions.some(
         (extension) => extension.id !== 'frontmatter.metadata',
@@ -186,10 +218,97 @@ export function MarkdownEditor({
       textExtras: flavors.some(
         (flavor) => flavor.id === 'text-extras.text-extras',
       ),
+      math: flavors.some((flavor) => flavor.id === 'math.latex'),
       frontmatter: markdownExtensions.some(
         (extension) => extension.id === 'frontmatter.metadata',
       ),
     }
+  }, [flavors, markdownExtensions, syntaxVersion])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: registry preferences invalidate outline grammar ownership.
+  const outlineSyntax = useMemo(() => {
+    const known = new Map([
+      ['github-markdown.github', 'github-markdown'],
+      ['text-extras.text-extras', 'text-extras'],
+      ['math.latex', 'math'],
+    ])
+    if (
+      flavors.some((flavor) => {
+        const entry = flavorRegistry
+          .snapshot()
+          .find((entry) => entry === flavor)
+        return (
+          !entry ||
+          known.get(entry.id) !== entry.addonId ||
+          addonRegistry.origin(entry.addonId) !== 'built-in'
+        )
+      }) ||
+      markdownExtensions.some(
+        (extension) =>
+          extension.id !== 'frontmatter.metadata' ||
+          !('addonId' in extension) ||
+          extension.addonId !== 'frontmatter' ||
+          addonRegistry.origin('frontmatter') !== 'built-in',
+      ) ||
+      markdownSyntax
+        .snapshot()
+        .some(
+          (feature) =>
+            !markdownSyntax.isCore(feature.id) &&
+            feature.scope !== 'document' &&
+            (![...known.values()].includes(feature.owner) ||
+              addonRegistry.origin(feature.owner) !== 'built-in'),
+        )
+    )
+      return null
+    return {
+      gfm: Object.assign(
+        { gfm: false },
+        ...flavors.map((flavor) => flavor.markedOptions),
+      ).gfm,
+      alerts: flavors.some((flavor) => flavor.id === 'github-markdown.github'),
+      textExtras: flavors.some(
+        (flavor) => flavor.id === 'text-extras.text-extras',
+      ),
+      math: flavors.some((flavor) => flavor.id === 'math.latex'),
+      frontmatter: markdownExtensions.some(
+        (extension) => extension.id === 'frontmatter.metadata',
+      ),
+    }
+  }, [flavors, markdownExtensions, syntaxVersion])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: syntaxVersion invalidates parser contribution compatibility.
+  const plainSyncEligible = useMemo(() => {
+    const knownOwner = (owner: string) =>
+      ['github-markdown', 'text-extras'].includes(owner) &&
+      addonRegistry.origin(owner) === 'built-in'
+    return (
+      flavors.every((flavor) => {
+        const registered = flavorRegistry
+          .snapshot()
+          .find((entry) => entry === flavor)
+        return (
+          registered &&
+          knownOwner(registered.addonId) &&
+          ['github-markdown.github', 'text-extras.text-extras'].includes(
+            registered.id,
+          )
+        )
+      }) &&
+      markdownExtensions.every(
+        (extension) =>
+          extension.id === 'frontmatter.metadata' &&
+          'addonId' in extension &&
+          extension.addonId === 'frontmatter' &&
+          addonRegistry.origin('frontmatter') === 'built-in',
+      ) &&
+      markdownSyntax
+        .snapshot()
+        .every(
+          (feature) =>
+            markdownSyntax.isCore(feature.id) ||
+            feature.scope === 'document' ||
+            knownOwner(feature.owner),
+        )
+    )
   }, [flavors, markdownExtensions, syntaxVersion])
   const projection = useMemo(
     () =>
@@ -267,12 +386,26 @@ export function MarkdownEditor({
         },
         prepare: (event) => prepareRichRef.current(event),
         reject: (error) => {
+          plainSync.current = null
+          pendingPlainSync.current = null
           generated.current = null
           setRichInputError(
             error instanceof Error ? error.message : String(error),
           )
         },
-        reconciled: () => {
+        reconciled: (source) => {
+          const pending = pendingPlainSync.current
+          pendingPlainSync.current = null
+          if (pending) {
+            plainSync.current =
+              source === pending.source &&
+              pending.editor.state.doc === pending.document &&
+              pending.certificate.matches(source, pending.document)
+                ? pending.certificate
+                : null
+            if (plainSync.current && pending.deferEcho)
+              certifyVisualEcho(source)
+          }
           setRichInputError('')
         },
       }),
@@ -319,14 +452,32 @@ export function MarkdownEditor({
     },
     [markdownExtensions, flavors, syntaxVersion],
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: maps belong to this rich editor and syntax generation.
+  const positions = useMemo<MarkdownPositionLookup>(() => {
+    const fallback = createMarkdownPositionCache()
+    return (source, document) => (position, from) => {
+      const snapshot = documentRuntime.session()?.snapshot()
+      const exact =
+        snapshot && markdownSyntax.version() === syntaxVersion
+          ? plainSync.current?.map(snapshot, document, position, from)
+          : null
+      return exact ?? fallback(source, document)(position, from)
+    }
+  }, [editor, syntaxVersion])
+  const sourceOutline = useRef<{
+    version: number
+    headings: readonly SourceOutlineHeading[]
+  } | null>(null)
   function prepareRich({
     editor,
     transaction,
     nextState,
   }: EditorEvents['beforeTransaction']): AcceptedSourceEdit | null {
+    pendingPlainSync.current = null
     if (!markdownDocument) return null
     const known = richSourceSnapshot(editor),
-      current = documentRuntime.session()?.snapshot()
+      session = documentRuntime.session(),
+      current = session?.snapshot()
     if (
       !known ||
       !current ||
@@ -341,6 +492,60 @@ export function MarkdownEditor({
       throw new Error(
         'An editor extension changed this edit. Review the document before continuing.',
       )
+    const step = transaction.steps[0]
+    const typing =
+      !exactSource.current &&
+      transaction.steps.length === 1 &&
+      step instanceof ReplaceStep &&
+      step.slice.content.childCount <= 1 &&
+      (!step.slice.content.firstChild ||
+        step.slice.content.firstChild.isText) &&
+      !transaction.getMeta('uiEvent')
+    const direct =
+      typing &&
+      plainSyncEligible &&
+      !exactHistory.current.get(editor)?.size &&
+      markdownSyntax.version() === syntaxVersion
+        ? plainSync.current?.planVisual(
+            current,
+            editor.state,
+            transaction,
+            nextState.doc,
+            (text) =>
+              editor.markdown!.renderNodeToMarkdown(
+                { type: 'text', text },
+                { type: 'paragraph' },
+              ),
+          )
+        : null
+    if (direct && session) {
+      const now = performance.now(),
+        previous = richHistoryGroup.current
+      if (!previous.id || now - previous.time > 500)
+        previous.id = crypto.randomUUID()
+      const accepted = performanceDiagnostics.measure(
+        'core',
+        'document update',
+        () => session.beginEdit([direct.change], 'visual', previous.id),
+      )
+      try {
+        const certificate = direct.certify(accepted.prepared)
+        if (certificate)
+          pendingPlainSync.current = {
+            editor,
+            source: accepted.prepared.after,
+            document: nextState.doc,
+            certificate,
+            deferEcho: true,
+          }
+      } catch {
+        plainSync.current = null
+      }
+      generated.current = null
+      previous.time = now
+      setRichInputError('')
+      return accepted
+    }
     let serialize = serializers.current.get(editor)
     if (!serialize) {
       serialize = markdownSerializer(
@@ -363,15 +568,6 @@ export function MarkdownEditor({
       : projectMarkdown(currentSource, markdownExtensions).serialize(
           serialized.source,
         )
-    const step = transaction.steps[0]
-    const typing =
-      !exactSource.current &&
-      transaction.steps.length === 1 &&
-      step instanceof ReplaceStep &&
-      step.slice.content.childCount <= 1 &&
-      (!step.slice.content.firstChild ||
-        step.slice.content.firstChild.isText) &&
-      !transaction.getMeta('uiEvent')
     const now = performance.now(),
       previous = richHistoryGroup.current
     if (!typing || !previous.id || now - previous.time > 500)
@@ -381,6 +577,28 @@ export function MarkdownEditor({
       'document update',
       () => documentRuntime.beginReplace(source, previous.id),
     )
+    // Regional proof is optional. Its failure must not strand an accepted source edit.
+    try {
+      const certificate =
+        accepted && markdownSyntax.version() === syntaxVersion
+          ? plainSync.current?.advance(
+              accepted.prepared,
+              editor.state,
+              transaction,
+              nextState.doc,
+              (body) => parseParagraph(editor, body),
+            )
+          : null
+      if (accepted && certificate)
+        pendingPlainSync.current = {
+          editor,
+          source: accepted.prepared.after,
+          document: nextState.doc,
+          certificate,
+        }
+    } catch {
+      plainSync.current = null
+    }
     generated.current = {
       source,
       body: serialized.source,
@@ -396,14 +614,50 @@ export function MarkdownEditor({
   }
   useLayoutEffect(() => {
     const session = documentRuntime.session()
-    if (!editor || !markdownDocument || !session) return
+    if (!editor || !markdownDocument || !session || paneMode === 'markdown')
+      return
+    const identity = session.snapshot().document
+    if (
+      identity.tabId !== documentState.tabId ||
+      identity.revision !== documentState.revision
+    )
+      return
     let disposed = false,
       scheduled = false
+    plainSync.current = null
+    pendingPlainSync.current = null
+    const matches = (snapshot: SourceSnapshot) => {
+      const known = richSourceSnapshot(editor)
+      return (
+        known?.version === snapshot.version &&
+        known.document.tabId === snapshot.document.tabId &&
+        known.document.revision === snapshot.document.revision
+      )
+    }
+    const certify = (snapshot: SourceSnapshot) => {
+      if (
+        !plainSyncEligible ||
+        !editor.markdown ||
+        markdownSyntax.version() !== syntaxVersion
+      )
+        return
+      let serialize = serializers.current.get(editor)
+      if (!serialize) {
+        serialize = markdownSerializer(editor.markdown, true)
+        serializers.current.set(editor, serialize)
+      }
+      plainSync.current = createPlainSourceSync(
+        snapshot,
+        editor.state.doc,
+        serialize(editor.state.doc),
+      )
+    }
     const sync = () => {
       scheduled = false
       if (disposed || editor.isDestroyed) return
-      if (richSourceSnapshot(editor)?.version === session.snapshot().version) {
+      if (matches(session.snapshot())) {
         setRichInputError('')
+        if (!plainSync.current) certify(session.snapshot())
         return
       }
       const snapshot = session.snapshot(),
@@ -421,14 +675,38 @@ export function MarkdownEditor({
         .run()
       generated.current = null
       richHistoryGroup.current.id = ''
+      plainSync.current = null
+      if (matches(snapshot)) certify(snapshot)
     }
     retryRich.current = sync
     const remove = session.subscribeOperations((prepared) => {
-      if (
-        prepared.operation.origin === 'visual' &&
-        richSourceSnapshot(editor)?.version === prepared.after.version
-      )
+      if (prepared.operation.origin === 'visual' && matches(prepared.after)) {
+        if (!plainSync.current?.matches(prepared.after, editor.state.doc))
+          plainSync.current = null
         return
+      }
+      const incremental =
+        markdownSyntax.version() === syntaxVersion
+          ? plainSync.current?.prepare(prepared, editor.state, (source) =>
+              parseParagraph(editor, source),
+            )
+          : null
+      if (incremental) {
+        editor.view.dispatch(
+          incremental.transaction
+            .setMeta(richSourceEcho, prepared.after)
+            .setMeta('preventUpdate', true),
+        )
+        plainSync.current =
+          matches(prepared.after) &&
+          editor.state.doc === incremental.transaction.doc
+            ? incremental.next
+            : null
+        generated.current = null
+        richHistoryGroup.current.id = ''
+        return
+      }
+      plainSync.current = null
       if (
         prepared.operation.origin === 'undo' ||
         prepared.operation.origin === 'redo'
@@ -439,13 +717,33 @@ export function MarkdownEditor({
         queueMicrotask(sync)
       }
     })
+    const removeStorage = session.subscribeStorage((change) => {
+      pendingPlainSync.current = null
+      plainSync.current =
+        markdownSyntax.version() === syntaxVersion
+          ? (plainSync.current?.adoptStorage(change, editor.state.doc) ?? null)
+          : null
+    })
+    // A visible rich pane must match canonical source before paint or rich input.
     sync()
     return () => {
       disposed = true
+      plainSync.current = null
+      pendingPlainSync.current = null
       retryRich.current = () => {}
       remove()
+      removeStorage()
     }
-  }, [editor, markdownDocument, markdownExtensions])
+  }, [
+    editor,
+    markdownDocument,
+    markdownExtensions,
+    paneMode,
+    plainSyncEligible,
+    syntaxVersion,
+    documentState.tabId,
+    documentState.revision,
+  ])
   useLayoutEffect(() => {
     if (!editor?.markdown || !markdownDocument) return
     const serialize = markdownSerializer(
@@ -656,7 +954,200 @@ export function MarkdownEditor({
       editor.off('mount', focus)
     }
   }, [editor])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: parser ownership and syntax preferences change independently of its source snapshot.
   useEffect(() => {
+    if (
+      paneMode !== 'markdown' ||
+      !markdownDocument ||
+      !outlineActive ||
+      !sourceReady
+    )
+      return
+    const session = documentRuntime.session()
+    if (!session) return
+    const semantics =
+      outlineSyntax && createMarkdownSemantics(flavors, documentState.revision)
+    if (!outlineSyntax || !semantics) {
+      sourceOutline.current = null
+      onOutline([])
+      onActiveOutline(null)
+      onOutlineUnavailable?.(
+        'Source outline is unavailable for the active addon syntax. Switch to visual mode to see its headings.',
+      )
+      return
+    }
+    onOutlineUnavailable?.(null)
+    const model = new SourceOutlineModel(session.snapshot(), {
+      ...outlineSyntax,
+      renderLabel: (tokens, level) =>
+        semantics.read(
+          [
+            {
+              type: 'heading',
+              raw: '',
+              text: '',
+              depth: level,
+              tokens: [...tokens],
+            },
+          ],
+          { before: false, after: false },
+        )?.headings[0]?.label ?? null,
+      disabled: markdownSyntax
+        .snapshot()
+        .filter((feature) => !feature.enabled)
+        .map((feature) => feature.id),
+    })
+    let disposed = false,
+      timer: ReturnType<typeof setTimeout> | null = null,
+      idle: number | null = null,
+      work: ReturnType<SourceOutlineModel['read']> | null = null,
+      referenceValue: ReferenceValue | null | undefined,
+      referenceAbort = new AbortController()
+    const root = content.current
+    const reportActive = () => {
+      const current = sourceOutline.current,
+        element = root?.querySelector<HTMLElement>('.cm-content'),
+        view = element && sourceView(element)
+      onActiveOutline(
+        current?.version === session.snapshot().version && view
+          ? (outlineHeadingAt(
+              current.headings,
+              sourcePosition(view, view.state.selection.main.head),
+              (heading) => heading.from,
+            )?.id ?? null)
+          : null,
+      )
+    }
+    const cancel = () => {
+      referenceAbort.abort()
+      referenceAbort = new AbortController()
+      referenceValue = undefined
+      if (timer !== null) clearTimeout(timer)
+      if (idle !== null) cancelIdleCallback(idle)
+      timer = idle = null
+      work?.return([])
+      work = null
+    }
+    const queue = () => {
+      if (typeof requestIdleCallback === 'function')
+        idle = requestIdleCallback(read, { timeout: 500 })
+      else timer = setTimeout(read, 16)
+    }
+    const read = () => {
+      timer = idle = null
+      if (disposed) return
+      work ??= model.read()
+      const started = performance.now(),
+        version = session.snapshot().version
+      try {
+        do {
+          const step = work.next(referenceValue)
+          referenceValue = undefined
+          if (step.done) {
+            work = null
+            if (version !== session.snapshot().version) return
+            const headings = step.value.map((heading) => ({
+              ...heading,
+              id: `${heading.id}:${version}`,
+            }))
+            sourceOutline.current = { version, headings }
+            onOutlineUnavailable?.(null)
+            onOutline(headings)
+            reportActive()
+            return
+          }
+          if (step.value) {
+            const pending = work,
+              element = root?.querySelector<HTMLElement>('.cm-content'),
+              view = element && sourceView(element)
+            if (!view)
+              throw new Error('Source outline reference lookup is unavailable.')
+            void resolveSourceReference(
+              view,
+              outlineSyntax,
+              step.value.reference,
+              referenceAbort.signal,
+            ).then((result) => {
+              if (
+                disposed ||
+                work !== pending ||
+                version !== session.snapshot().version
+              )
+                return
+              if (result.status !== 'resolved') {
+                cancel()
+                if (result.status === 'unavailable')
+                  onOutlineUnavailable?.(
+                    'Source outline could not resolve this note’s references. Reopen the outline to retry.',
+                  )
+                return
+              }
+              referenceValue = result.value
+              queue()
+            })
+            return
+          }
+        } while (performance.now() - started < 2)
+        queue()
+      } catch (error) {
+        work = null
+        sourceOutline.current = null
+        onOutline([])
+        onActiveOutline(null)
+        onOutlineUnavailable?.(
+          'Source outline could not read this note’s syntax. Switch to visual mode to see its headings.',
+        )
+        console.error('Source outline failed:', error)
+      }
+    }
+    const schedule = () => {
+      cancel()
+      timer = setTimeout(queue, 120)
+    }
+    const removeOperations = session.subscribeOperations((prepared) => {
+      cancel()
+      sourceOutline.current = null
+      model.apply(prepared)
+      schedule()
+    })
+    const removeStorage = session.subscribeStorage((change) => {
+      cancel()
+      model.adoptStorage(change)
+      schedule()
+    })
+    sourceOutline.current = null
+    onOutline([])
+    onActiveOutline(null)
+    root?.addEventListener('hibi:source-caret', reportActive)
+    schedule()
+    return () => {
+      disposed = true
+      cancel()
+      sourceOutline.current = null
+      removeOperations()
+      removeStorage()
+      root?.removeEventListener('hibi:source-caret', reportActive)
+      model.dispose()
+    }
+  }, [
+    paneMode,
+    markdownDocument,
+    outlineActive,
+    sourceReady,
+    content,
+    documentState.tabId,
+    documentState.revision,
+    flavors,
+    markdownExtensions,
+    syntaxVersion,
+    outlineSyntax,
+    onOutline,
+    onOutlineUnavailable,
+    onActiveOutline,
+  ])
+  useEffect(() => {
+    if (paneMode === 'markdown') return
+    onOutlineUnavailable?.(null)
     if (!editor || !markdownDocument) {
       onOutline([])
       onActiveOutline(null)
@@ -698,29 +1189,47 @@ export function MarkdownEditor({
           offset >= 0 &&
           sourcePosition(view, view.state.selection.main.head) >= offset
         ) {
-          if (mappedBody !== body) {
-            const map = markdownPositions(body, document)
-            sourceHeadings = headings.flatMap((heading) => {
-              const position = map(Number(heading.id) + 1, 'rich')
-              return position === null
-                ? []
-                : [
-                    {
-                      id: heading.id,
-                      start: body.lastIndexOf('\n', position - 1) + 1,
-                    },
-                  ]
-            })
-            mappedBody = body
+          const rawPosition = sourcePosition(
+            view,
+            view.state.selection.main.head,
+          )
+          const snapshot = documentRuntime.session()?.snapshot()
+          const exact =
+            snapshot && markdownSyntax.version() === syntaxVersion
+              ? plainSync.current?.map(
+                  snapshot,
+                  document,
+                  rawPosition,
+                  'source',
+                )
+              : null
+          if (exact !== null && exact !== undefined)
+            selected =
+              outlineHeadingAt(headings, exact, (heading) => Number(heading.id))
+                ?.id ?? null
+          else {
+            if (mappedBody !== body) {
+              const map = positions(body, document)
+              sourceHeadings = headings.flatMap((heading) => {
+                const position = map(Number(heading.id) + 1, 'rich')
+                return position === null
+                  ? []
+                  : [
+                      {
+                        id: heading.id,
+                        start: body.lastIndexOf('\n', position - 1) + 1,
+                      },
+                    ]
+              })
+              mappedBody = body
+            }
+            selected =
+              outlineHeadingAt(
+                sourceHeadings,
+                rawPosition - offset,
+                (heading) => heading.start,
+              )?.id ?? null
           }
-          const position =
-            sourcePosition(view, view.state.selection.main.head) - offset
-          selected =
-            outlineHeadingAt(
-              sourceHeadings,
-              position,
-              (heading) => heading.start,
-            )?.id ?? null
         }
       } else {
         selected =
@@ -749,7 +1258,11 @@ export function MarkdownEditor({
     findTarget,
     sourceReady,
     onOutline,
+    onOutlineUnavailable,
     onActiveOutline,
+    positions,
+    paneMode,
+    syntaxVersion,
   ])
   const handledOutline = useRef<OutlineRequest | null>(outlineTarget)
   // biome-ignore lint/correctness/useExhaustiveDependencies: these transitions invalidate the exact projection even when text is unchanged.
@@ -760,6 +1273,26 @@ export function MarkdownEditor({
     if (!editor || !outlineTarget || handledOutline.current === outlineTarget)
       return
     if (mode !== 'normal' && !sourceReady) return
+    if (paneMode === 'markdown') {
+      const current = sourceOutline.current,
+        session = documentRuntime.session(),
+        heading = current?.headings.find(
+          (item) => item.id === outlineTarget.id,
+        ),
+        element = content.current?.querySelector<HTMLElement>('.cm-content'),
+        view = element && sourceView(element)
+      if (
+        !session ||
+        current?.version !== session.snapshot().version ||
+        !heading ||
+        !view
+      )
+        return
+      handledOutline.current = outlineTarget
+      revealSourcePosition(view, heading.from)
+      view.focus()
+      return
+    }
     const position = Number(outlineTarget.id)
     if (
       !Number.isInteger(position) ||
@@ -781,7 +1314,7 @@ export function MarkdownEditor({
       const view = element && sourceView(element)
       if (!view) return
       const offset = value.lastIndexOf(projection.content)
-      const mapped = markdownPositions(projection.content, editor.state.doc)(
+      const mapped = positions(projection.content, editor.state.doc)(
         position + 1,
         'rich',
       )
@@ -798,6 +1331,8 @@ export function MarkdownEditor({
     sourceReady,
     value,
     projection.content,
+    positions,
+    paneMode,
   ])
   useEffect(() => {
     if (paneMode !== 'side-by-side' || !sourceReady || !editor) return
@@ -809,10 +1344,10 @@ export function MarkdownEditor({
       source,
       source.contains(window.document.activeElement) ? source : rich,
       markdownDocument
-        ? { editor, content: () => scrollContent.current }
+        ? { editor, content: () => scrollContent.current, positions }
         : undefined,
     )
-  }, [content, paneMode, sourceReady, editor, markdownDocument])
+  }, [content, paneMode, sourceReady, editor, markdownDocument, positions])
   const { attachSource: attachSourceFormatting, attachFiles } =
     useFormattingToolbar(
       editor,
@@ -828,8 +1363,14 @@ export function MarkdownEditor({
 
   useLayoutEffect(() => {
     if (!editor) return
-    editor.setEditable(!sourceOnly && !disabled && !richExtensionError, false)
-  }, [editor, sourceOnly, disabled, richExtensionError])
+    editor.setEditable(
+      paneMode !== 'markdown' &&
+        !sourceOnly &&
+        !disabled &&
+        !richExtensionError,
+      false,
+    )
+  }, [editor, paneMode, sourceOnly, disabled, richExtensionError])
 
   useEffect(() => {
     if (!editor) return
@@ -857,7 +1398,7 @@ export function MarkdownEditor({
   }, [editor, showMarkdownMarkers, markdownDocument, sourceOnly, mode])
 
   useLayoutEffect(() => {
-    if (!editor) return
+    if (!editor || paneMode === 'markdown') return
     let detach: (() => void)[] = []
     const cleanup = () => {
       for (const remove of detach) remove()
@@ -884,7 +1425,7 @@ export function MarkdownEditor({
       editor.off('unmount', cleanup)
       cleanup()
     }
-  }, [editor, richExtensions])
+  }, [editor, richExtensions, paneMode])
 
   useEffect(() => {
     if (!editor || !findOpen || findTarget !== 'rich') return
@@ -988,6 +1529,7 @@ export function MarkdownEditor({
           <EditorCursor root={content} settings={cursorSettings} />
           <MirrorCursor
             editor={editor}
+            positions={positions}
             root={content}
             source={value}
             body={projection.content}
@@ -1066,6 +1608,7 @@ export function MarkdownEditor({
                   editTarget={findTarget === 'source'}
                   markdownMode={markdownDocument}
                   referenceSyntax={referenceSyntax}
+                  linksEnabled={markdownSyntax.enabled('core.links')}
                   sourceLanguage={format?.language}
                   sourceFormat={format?.formatting}
                   supportsMedia={!!format?.insertMedia}

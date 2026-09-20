@@ -57,13 +57,19 @@ export const CodeHighlight = Extension.create({
           apply(transaction, previous) {
             if (transaction.getMeta(key)) return decorate(transaction.doc)
             if (!transaction.docChanged) return previous
-            const from = transaction.before.content.findDiffStart(
-              transaction.doc.content,
-            )
-            if (from === null) return previous
-            const end =
-              transaction.before.content.findDiffEnd(transaction.doc.content)
-                ?.b ?? from
+            let from = transaction.doc.content.size
+            let end = 0
+            for (const [index, map] of transaction.mapping.maps.entries()) {
+              const remaining = transaction.mapping.slice(index + 1)
+              let changed = false
+              map.forEach((_oldFrom, _oldTo, start, finish) => {
+                changed = true
+                from = Math.min(from, remaining.map(start, -1))
+                end = Math.max(end, remaining.map(finish, 1))
+              })
+              // Attribute/mark and custom steps can change syntax without moving positions.
+              if (!changed) return decorate(transaction.doc)
+            }
             return decorate(
               transaction.doc,
               previous.map(transaction.mapping, transaction.doc),

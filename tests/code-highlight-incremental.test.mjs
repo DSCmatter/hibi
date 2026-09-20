@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { Schema } from '@tiptap/pm/model'
+import { Fragment, Schema } from '@tiptap/pm/model'
 import { EditorState } from '@tiptap/pm/state'
 import { CodeHighlight } from '../src/renderer/src/CodeHighlight.ts'
 import {
@@ -8,7 +8,7 @@ import {
   highlightCode,
 } from '../src/renderer/src/code-languages.ts'
 
-test('mapped code decorations match full highlighting through text, block, and language changes', async () => {
+test('mapped code decorations match full highlighting through text, block, and language changes', async (t) => {
   await codeLanguages.ensure('javascript')
   const schema = new Schema({
     nodes: {
@@ -23,6 +23,12 @@ test('mapped code decorations match full highlighting through text, block, and l
       },
     },
   })
+  for (const method of ['findDiffStart', 'findDiffEnd'])
+    t.mock.method(Fragment.prototype, method, () => {
+      assert.fail(
+        'code highlighting must use step maps, not whole-text comparisons',
+      )
+    })
   const [plugin] = CodeHighlight.config.addProseMirrorPlugins()
   const paragraph = (text) =>
     schema.nodes.paragraph.create(null, schema.text(text))
@@ -68,6 +74,15 @@ test('mapped code decorations match full highlighting through text, block, and l
     verify()
   }
   verify()
+  const multiple = state.tr.insertText('abcdefgh', 1)
+  multiple.insertText('return ', multiple.doc.firstChild.nodeSize + 1)
+  multiple.delete(1, 5)
+  apply(multiple)
+  const firstCode = state.doc.firstChild.nodeSize
+  apply(state.tr.setNodeAttribute(firstCode, 'language', 'text'))
+  apply(state.tr.setNodeAttribute(firstCode, 'language', 'javascript'))
+  apply(state.tr.join(firstCode + state.doc.child(1).nodeSize))
+  apply(state.tr.split(firstCode + 4))
   // A transaction can change steps without changing its final document.
   apply(state.tr.insertText('x', 1).delete(1, 2))
   for (let index = 0; index < 120; index++) {

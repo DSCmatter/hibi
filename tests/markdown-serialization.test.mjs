@@ -8,6 +8,7 @@ import { TaskList } from '@tiptap/extension-task-list'
 import { MarkdownManager } from '@tiptap/markdown'
 import { EditorState } from '@tiptap/pm/state'
 import { StarterKit } from '@tiptap/starter-kit'
+import { marked } from 'marked'
 import { needsSourceEditing } from '../src/renderer/src/markdown-preservation.ts'
 import { markdownSerializer } from '../src/renderer/src/markdown-serialization.ts'
 
@@ -22,6 +23,34 @@ const schema = getSchema(extensions)
 const manager = new MarkdownManager({
   extensions,
   markedOptions: { gfm: true },
+})
+
+test('source preservation skips lexical work when neither HTML nor a definition can occur', (t) => {
+  t.mock.method(marked, 'lexer', () => {
+    throw new Error('Ordinary Markdown must not be lexed for preservation.')
+  })
+  for (const source of [
+    'alpha beta '.repeat(50000),
+    '# heading\n\n**bold** and [link](https://example.com)\n\n- item',
+    '```js\nconst value = 1\n```',
+    'text &lt;br&gt; remains text',
+  ])
+    assert.equal(needsSourceEditing(source), false)
+})
+
+test('source preservation still checks real, nested and escaped syntax context', () => {
+  for (const [source, expected] of [
+    ['---\nname: hibi\n---\n\nbody', true],
+    ['> [ref]: /target\n\n[ref]', true],
+    ['[multi\nline]: /target', true],
+    ['paragraph <strong>HTML</strong>', true],
+    ['<br>\n\nbody', false],
+    ['`<strong>literal</strong>`', false],
+    // Keep the existing conservative reference-line check, including code fences.
+    ['~~~\n[ref]: /target\n~~~', true],
+    ['\\[ref]: /target', false],
+  ])
+    assert.equal(needsSourceEditing(source), expected, source)
 })
 
 test('cached serialization matches the full manager through contextual blocks and 160 edits', () => {
@@ -75,6 +104,10 @@ test('empty paragraphs, entities, delimiters, and source preservation match full
     '',
     ' ',
     '&nbsp;\n\n&nbsp;',
+    '\u00a0\n\n\u2003\uFEFF',
+    '&nbsp; text &nbsp;',
+    '&nbsp;&amp;nbsp;',
+    'alpha beta '.repeat(50000),
     '---\n\nkey: value\n\n---',
     '\\*literal\\* &amp; &lt;span&gt;',
     '**a *b* c**',

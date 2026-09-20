@@ -1,7 +1,7 @@
 import type { Editor } from '@tiptap/core'
 import { type RefObject, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { markdownPositions } from './markdown-positions'
+import type { MarkdownPositionLookup } from './markdown-positions'
 import {
   editorPosition,
   sourceView as findSourceView,
@@ -14,12 +14,14 @@ export function MirrorCursor({
   source,
   body,
   active,
+  positions,
 }: {
   editor: Editor | null
   root: RefObject<HTMLDivElement | null>
   source: string
   body: string
   active: boolean
+  positions: MarkdownPositionLookup
 }) {
   const latest = useRef({ source, body })
   latest.current = { source, body }
@@ -35,11 +37,6 @@ export function MirrorCursor({
       return
     }
     let frame = 0
-    let cached: {
-      doc: typeof editor.state.doc
-      source: string
-      map: ReturnType<typeof markdownPositions>
-    } | null = null
     const measure = () => {
       frame = 0
       if (editor.isDestroyed) {
@@ -76,13 +73,8 @@ export function MirrorCursor({
         setPosition(null)
         return
       }
-      if (!cached || cached.doc !== editor.state.doc || cached.source !== body)
-        cached = {
-          doc: editor.state.doc,
-          source: body,
-          map: markdownPositions(body, editor.state.doc),
-        }
-      const target = cached.map(
+      const map = positions(body, editor.state.doc)
+      const target = map(
         richFocus
           ? editor.state.selection.head
           : sourcePosition(sourceView, sourceView.state.selection.main.head) -
@@ -154,7 +146,7 @@ export function MirrorCursor({
       window.removeEventListener('resize', schedule)
       editor.off('transaction', schedule)
     }
-  }, [active, editor, root])
+  }, [active, editor, root, positions])
   return (
     position &&
     createPortal(

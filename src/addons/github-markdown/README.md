@@ -17,6 +17,8 @@ In normal view, type `> `, then `[!WARNING]`, and press Enter to create an alert
 
 Choose which features to use in **Settings → Syntax**.
 
+Automatic flavor detection ignores examples inside code blocks and escaped syntax.
+
 ## Credits
 
 It uses MIT-licensed Tiptap and Marked, listed in Hibi's **Open source licenses**.

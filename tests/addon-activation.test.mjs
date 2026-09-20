@@ -27,7 +27,7 @@ test('capability SDKs defer irrelevant entries, activate command descriptors, an
     ...['zeta', 'alpha'].map((id, i) => ({
       id,
       capabilities: ['rich'],
-      code: `export default () => ({ async start(context) { context.editor.registerMarkdown({ id: 'identity', parse(source) { return { content: source, sourceOffset: 0, serialize: body => body }; } }); await new Promise(resolve => setTimeout(resolve, ${i ? 30 : 110})); context.editor.registerRich({ id: 'observe', attach() { window.richAttachments ??= []; window.richAttachments.push('${id}'); return () => {}; } }); } });`,
+      code: `export default () => ({ async start(context) { context.editor.registerMarkdown({ id: 'identity', parse(source) { return { content: source, sourceOffset: 0, serialize: body => body }; } }); await new Promise(resolve => setTimeout(resolve, ${i ? 30 : 110})); context.editor.registerRich({ id: 'observe', attach() { window.richAttachments ??= []; window.richAttachments.push('${id}'); return () => { window.richDetachments ??= []; window.richDetachments.push('${id}'); }; } }); } });`,
     })),
     {
       id: 'failed-stage',
@@ -124,12 +124,18 @@ test('capability SDKs defer irrelevant entries, activate command descriptors, an
     () => document.querySelector('.cm-content')?.isContentEditable,
   )
   assert.equal(await page.evaluate(() => window.sourceCreates), 1)
+  assert.deepEqual(await page.evaluate(() => window.richDetachments), [
+    'alpha',
+    'zeta',
+  ])
   await page.locator('.cm-content').press('F8')
   assert.equal(await page.evaluate(() => window.sourceKeyHandled), true)
   await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
   await page.waitForFunction(() => window.sourceStops === 1)
   assert.equal(await page.evaluate(() => window.sourceEvaluations), 1)
   assert.deepEqual(await page.evaluate(() => window.richAttachments), [
+    'alpha',
+    'zeta',
     'alpha',
     'zeta',
   ])

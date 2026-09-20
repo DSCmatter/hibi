@@ -16,6 +16,8 @@ Write `$x^2$` for an inline equation or use `$$` delimiters for a block. You can
 
 Choose which math features to use in **Settings → Syntax**.
 
+Automatic flavor detection ignores dollar signs inside code and escaped dollar signs.
+
 ## Credits
 
 This addon uses MIT-licensed [Tiptap Mathematics](https://tiptap.dev/docs/editor/extensions/nodes/mathematics) and [KaTeX](https://katex.org/docs/security), listed in Hibi's **Open source licenses**.

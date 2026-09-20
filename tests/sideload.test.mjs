@@ -226,6 +226,9 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     .filter({ hasText: /^hello addon$/i })
     .waitFor()
   await page
+    .getByRole('button', { name: /^side-by-side$/i, exact: true })
+    .click()
+  await page
     .locator('.rich-pane .hibi-token-keyword')
     .waitFor({ state: 'attached' })
   await page.evaluate(() => {

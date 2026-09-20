@@ -38,10 +38,12 @@ export const mathFlavor: MarkdownFlavor = {
   kind: 'syntax',
   description: 'LaTeX math: $…$ within a line or $$…$$ in a separate block.',
   detect(source) {
+    if (!source.includes('$')) return false
     let found = false
     detector.walkTokens(detector.lexer(source), (token) => {
       if (token.type === 'inlineMath' || token.type === 'blockMath')
         found = true
+      return []
     })
     return found
   },

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { DocumentState } from '../../shared/desktop'
+import { documentRuntime } from './document-runtime'
 
 export const autosaveDelays = [1000, 2000, 5000, 10000, 30000] as const
 type Preferences = { enabled: boolean; delay: number }
@@ -64,42 +65,52 @@ export function useAutosave(
     ],
   )
   useEffect(() => {
-    if (
-      !settings.enabled ||
-      !document?.dirty ||
-      !document.canAutosave ||
-      busy ||
-      inFlight.current ||
-      currentResult?.status === 'conflict' ||
-      currentResult?.status === 'error'
-    )
-      return
-    const timer = setTimeout(async () => {
-      inFlight.current = true
-      const identity = { id: document.id, revision: document.revision }
-      setResult({ ...identity, status: 'saving' })
-      try {
-        const saved = await window.hibi.autosaveDocument(document.revision)
-        if (saved.document) onSaved(saved.document)
-        // Results still acknowledge the saved baseline if typing continues during I/O.
-        setResult({
-          ...identity,
-          status: saved.status === 'skipped' ? 'waiting' : saved.status,
-        })
-      } catch (error) {
-        setResult({
-          ...identity,
-          status: 'error',
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Could not save this file.',
-        })
-      } finally {
-        inFlight.current = false
-      }
-    }, settings.delay)
-    return () => clearTimeout(timer)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const schedule = (next: DocumentState | null) => {
+      clearTimeout(timer)
+      if (
+        !settings.enabled ||
+        !next?.dirty ||
+        !next.canAutosave ||
+        busy ||
+        inFlight.current ||
+        currentResult?.status === 'conflict' ||
+        currentResult?.status === 'error'
+      )
+        return
+      timer = setTimeout(async () => {
+        inFlight.current = true
+        const identity = { id: next.id, revision: next.revision }
+        setResult({ ...identity, status: 'saving' })
+        try {
+          const saved = await window.hibi.autosaveDocument(next.revision)
+          if (saved.document) onSaved(saved.document)
+          // Results still acknowledge the saved baseline if typing continues during I/O.
+          setResult({
+            ...identity,
+            status: saved.status === 'skipped' ? 'waiting' : saved.status,
+          })
+        } catch (error) {
+          setResult({
+            ...identity,
+            status: 'error',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Could not save this file.',
+          })
+        } finally {
+          inFlight.current = false
+        }
+      }, settings.delay)
+    }
+    // Actual edits reset the quiet timer without publishing content to App state.
+    const unsubscribe = documentRuntime.subscribe(schedule)
+    schedule(documentRuntime.get() ?? document)
+    return () => {
+      clearTimeout(timer)
+      unsubscribe()
+    }
   }, [document, busy, settings, currentResult, onSaved])
   const label = !settings.enabled
     ? 'Autosave off'

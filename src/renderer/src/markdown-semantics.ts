@@ -32,9 +32,11 @@ export function createMarkdownSemantics(
   if (
     flavors.some(
       (flavor) =>
-        !['github-markdown.github', 'text-extras.text-extras'].includes(
-          flavor.id,
-        ),
+        ![
+          'github-markdown.github',
+          'text-extras.text-extras',
+          'math.latex',
+        ].includes(flavor.id),
     )
   )
     return null

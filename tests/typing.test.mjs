@@ -43,6 +43,24 @@ test('typing pills, source formatting shortcuts, and sidebar shortcut', {
   await page.getByRole('textbox', { name: /document editor/i }).waitFor()
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: /^addons$/i, exact: true }).click()
+  await page.evaluate(() => {
+    // Keep the session-rate denominator deterministic without changing native
+    // timer delivery. Observe the addon's existing one-second display refresh.
+    globalThis.typingTestClock = { now: 1000, refreshes: 0 }
+    performance.now = () => globalThis.typingTestClock.now
+    const interval = window.setInterval.bind(window)
+    window.setInterval = (callback, delay, ...args) =>
+      interval(
+        delay === 1000 && typeof callback === 'function'
+          ? (...values) => {
+              callback(...values)
+              globalThis.typingTestClock.refreshes++
+            }
+          : callback,
+        delay,
+        ...args,
+      )
+  })
   await page.locator('#addon-typing-speed').click()
   await page.getByRole('button', { name: /^back to app$/i }).click()
   await page
@@ -52,14 +70,11 @@ test('typing pills, source formatting shortcuts, and sidebar shortcut', {
   const wpm = page.locator('[data-status-id="typing-speed.wpm"]')
   await page.waitForFunction(
     () =>
-      Number(
-        document
-          .querySelector('[data-status-id="typing-speed.cpm"]')
-          ?.textContent?.match(/\d+/)?.[0],
-      ) > 5,
+      document.querySelector('[data-status-id="typing-speed.cpm"]')
+        ?.textContent === '≈300 CPM',
   )
   const initialCpm = await cpm.innerText()
-  assert.match(await wpm.innerText(), /^≈\d+ WPM$/)
+  assert.equal(await wpm.innerText(), '≈60 WPM')
   await pressShortcut(app, `${mod}+Shift+]`)
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.press(`${mod}+a`)
@@ -77,9 +92,16 @@ test('typing pills, source formatting shortcuts, and sidebar shortcut', {
     async () => (await window.hibi.getDocument()).markdown === '***hello***',
   )
   await source.press('ArrowRight')
+  await page.evaluate(() => {
+    globalThis.typingTestClock.now = 2000
+  })
   await source.pressSequentially('!')
-  const afterTyping = await cpm.innerText()
-  assert.match(afterTyping, /^≈[1-9]\d* CPM$/)
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[data-status-id="typing-speed.cpm"]')
+        ?.textContent === '≈360 CPM',
+  )
+  assert.equal(await wpm.innerText(), '≈72 WPM')
   const before = await page.locator('.app').getAttribute('data-sidebar')
   await pressShortcut(app, `${mod}+/`)
   await page.waitForFunction(
@@ -88,7 +110,17 @@ test('typing pills, source formatting shortcuts, and sidebar shortcut', {
   )
   await pressShortcut(app, `${mod}+k`)
   await page.getByRole('combobox').fill('typing')
-  assert.equal(await cpm.innerText(), afterTyping)
+  const refreshes = await page.evaluate(
+    () => globalThis.typingTestClock.refreshes,
+  )
+  await page.waitForFunction(
+    (before) => globalThis.typingTestClock.refreshes > before,
+    refreshes,
+  )
+  // Six editor characters, including the source-view key, still determine the
+  // published totals after a refresh. Palette input and formatting add none.
+  assert.equal(await cpm.innerText(), '≈360 CPM')
+  assert.equal(await wpm.innerText(), '≈72 WPM')
   await page.keyboard.press('Escape')
   await page
     .getByRole('dialog', { name: /command palette/i })

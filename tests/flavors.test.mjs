@@ -75,19 +75,21 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   const initial =
     '# math\n\ninline $x^2$\n\n$$\n\\frac{1}{2}\n$$\n\n`$literal$`\n\n```javascript\nconst answer = 42\n```'
+  const hiddenText = await page.locator('.tiptap').textContent()
   await source.fill(initial)
   await page
     .locator('.source-pane .hibi-token-keyword')
     .filter({ hasText: /const/i })
     .waitFor()
   await page
-    .locator('.rich-pane .hibi-token-keyword')
-    .filter({ hasText: /const/i })
-    .waitFor({ state: 'attached' })
-  await page
     .locator('[data-status-id="flavor"]')
     .filter({ hasText: /math/i })
     .waitFor()
+  assert.equal(
+    await page.locator('.tiptap').textContent(),
+    hiddenText,
+    'source typing must not refresh the hidden rich document',
+  )
   assert.equal(await page.locator('.tiptap .katex').count(), 0)
   await choose('enable latex')
   await page.waitForFunction(
@@ -113,6 +115,10 @@ test('flavors auto-detect, persist overrides, render/edit math, and export it of
     initial,
   )
   await pressShortcut(app, `${mod}+Shift+[`)
+  await page
+    .locator('.rich-pane .hibi-token-keyword')
+    .filter({ hasText: /const/i })
+    .waitFor()
   await page.locator('[data-type="inline-math"]').click()
   const dialog = page.getByRole('dialog', { name: /^math$/i, exact: true })
   await dialog.getByLabel(/^latex$/i, { exact: true }).fill('x^3')

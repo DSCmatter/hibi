@@ -88,7 +88,14 @@ test('syntax settings preserve edits, update rich formatting, and discover addon
   const page = await app.firstWindow()
   page.setDefaultTimeout(6500)
   const errors = []
-  page.on('pageerror', (error) => errors.push(error.message))
+  page.on('pageerror', (error) => {
+    errors.push(error.message)
+    console.error('Renderer error:', error.stack)
+  })
+  page.on('console', (message) => {
+    if (message.type() === 'error')
+      console.error('Renderer console:', message.text())
+  })
   const mod = process.platform === 'darwin' ? 'Meta' : 'Control'
   const rich = page.getByRole('textbox', { name: /document editor/i })
   await rich.waitFor()
