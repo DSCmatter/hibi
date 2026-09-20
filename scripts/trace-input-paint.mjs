@@ -26,6 +26,7 @@ import { createTraceFinalizer } from './trace-stream.mjs'
 const { values } = parseArgs({
   options: {
     engine: { type: 'string', default: 'hibi' },
+    'bare-markdown': { type: 'boolean' },
     mode: { type: 'string', default: 'all' },
     file: { type: 'string' },
     size: { type: 'string', default: 'all' },
@@ -52,7 +53,7 @@ const { values } = parseArgs({
 })
 if (values.help) {
   console.log(
-    'node scripts/trace-input-paint.mjs --engine hibi|bare --mode source|visual|split|all [--file PATH | --size chars|words|all --shape paragraphs|giant|all] --position start|middle|end|all --target source|visual|both --out NEW_DIRECTORY [--quick] [--hold-ms 30000] [--rate 30] [--fixed-chrome] [--background] [--trace-screenshots] [--cpu-profile] [--continue-on-error]',
+    'node scripts/trace-input-paint.mjs --engine hibi|bare [--bare-markdown] --mode source|visual|split|all [--file PATH | --size chars|words|all --shape paragraphs|giant|all] --position start|middle|end|all --target source|visual|both --out NEW_DIRECTORY [--quick] [--hold-ms 30000] [--rate 30] [--fixed-chrome] [--background] [--trace-screenshots] [--cpu-profile] [--continue-on-error]',
   )
   process.exit(0)
 }
@@ -72,6 +73,10 @@ const modes = choose(values.mode, ['source', 'visual', 'split']),
   settleMs = Number(values['settle-ms'])
 assert.ok(['hibi', 'bare'].includes(values.engine))
 const bare = values.engine === 'bare'
+assert.ok(
+  bare || !values['bare-markdown'],
+  '--bare-markdown requires --engine bare.',
+)
 assert.ok(
   !bare || !values.file,
   '--engine bare supports generated plain fixtures only; --file requires Hibi source preservation.',
@@ -126,6 +131,7 @@ const summary = {
   output,
   options: values,
   engine: bare ? 'engine-only' : 'hibi',
+  bareMarkdown: bare ? !!values['bare-markdown'] : null,
   windowMode: values.background
     ? 'visible-inactive-focus-emulated'
     : 'foreground',
@@ -168,7 +174,7 @@ const summary = {
     'Source and visual updates may include synchronous DOM work. No artificial debounce, input-rate throttling based on paint, or reduced correctness checks are applied.',
     ...(bare
       ? [
-          'Engine-only uses native CodeMirror Markdown and ProseMirror history with a static, inert split peer. No Hibi runtime, React, addons, canonical journal, or IPC save runs; saved artifacts are engine snapshots written by the benchmark runner.',
+          `Engine-only uses CodeMirror ${values['bare-markdown'] ? 'with native Markdown parsing and highlighting' : 'without a language or highlighting extension'} and ProseMirror history with a static, inert split peer. No Hibi runtime, React, addons, canonical journal, or IPC save runs; saved artifacts are engine snapshots written by the benchmark runner.`,
         ]
       : []),
     ...(values['fixed-chrome']
@@ -863,13 +869,16 @@ async function runCase(config) {
   if (!bare) await installProbe(profile)
   await writeFile(file, source)
   const barePage = join(directory, 'bare.html')
+  let bareConfigurationSha256 = null
   if (bare) {
     const assetUrl = (path) => pathToFileURL(path).href.replaceAll('&', '&amp;')
     const initial = JSON.stringify({
       mode: config.mode,
       target: config.target,
       source,
+      markdownEnabled: !!values['bare-markdown'],
     }).replaceAll('<', '\\u003c')
+    bareConfigurationSha256 = createHash('sha256').update(initial).digest('hex')
     await writeFile(
       barePage,
       `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${assetUrl(bareBundle.replace(/\.js$/, '.css'))}"></head><body><script>window.__bareConfig=${initial}</script><script type="module" src="${assetUrl(bareBundle)}"></script></body></html>`,
@@ -894,6 +903,8 @@ async function runCase(config) {
     name,
     directory,
     engine: bare ? 'engine-only' : 'hibi',
+    bareMarkdown: bare ? !!values['bare-markdown'] : null,
+    bareConfigurationSha256,
     addons: bare ? {} : addons,
     integrityScope: bare
       ? 'native-engine-history-and-runner-written-snapshot'

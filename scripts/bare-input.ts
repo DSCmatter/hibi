@@ -29,6 +29,7 @@ declare global {
       mode: 'source' | 'visual' | 'split'
       target: 'source' | 'visual'
       source: string
+      markdownEnabled: boolean
     }
     __bareInput: {
       sourceView: CodeMirrorView | null
@@ -51,7 +52,7 @@ declare global {
   }
 }
 
-const { mode, target, source } = window.__bareConfig
+const { mode, target, source, markdownEnabled } = window.__bareConfig
 if (mode !== 'split' && mode !== target)
   throw new Error('The target must match the single-pane mode.')
 
@@ -105,11 +106,12 @@ if (mode !== 'visual') {
     state: CodeMirrorState.create({
       doc: source,
       extensions: [
-        markdown(),
+        ...(markdownEnabled
+          ? [markdown(), syntaxHighlighting(defaultHighlightStyle)]
+          : []),
         codeMirrorHistory(),
         codeMirrorKeymap.of([...historyKeymap, ...defaultKeymap]),
         drawSelection(),
-        syntaxHighlighting(defaultHighlightStyle),
         CodeMirrorView.lineWrapping,
         CodeMirrorState.readOnly.of(target !== 'source'),
         CodeMirrorView.editable.of(target === 'source'),
@@ -235,7 +237,11 @@ window.__bareInput = {
     }
   },
   engineMetadata: {
-    source: 'CodeMirror 6 with native markdown(), history and line wrapping',
+    baseline: markdownEnabled ? 'configured-markdown' : 'editing-floor',
+    sourceMarkdownEnabled: mode !== 'visual' && markdownEnabled,
+    source: markdownEnabled
+      ? 'CodeMirror 6 with native markdown(), highlighting, history and line wrapping'
+      : 'CodeMirror 6 with history and line wrapping; no language or highlighting extension',
     visual:
       'ProseMirror with paragraph/text schema, native history and keymaps',
     splitPeer: 'inert initial document; no synchronization',
