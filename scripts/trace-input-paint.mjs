@@ -675,7 +675,7 @@ async function streamTrace(session, path) {
     session.once('Tracing.tracingComplete', done),
   )
   await deadline(session.send('Tracing.end'), 5000, 'trace end command')
-  const { stream } = await deadline(complete, 15000, 'trace completion')
+  const { stream } = await deadline(complete, 45000, 'trace completion')
   assert.ok(stream, 'Trace stream was not returned')
   const file = await open(path, 'wx')
   try {
@@ -1166,7 +1166,7 @@ async function runCase(config) {
     result.renderer = await page.evaluate(() => window.__inputPaint.dump())
     await deadline(
       streamTrace(session, join(directory, 'trace.json')),
-      30000,
+      90000,
       'trace drain',
     )
     tracing = false
@@ -1276,7 +1276,7 @@ async function runCase(config) {
     if (tracing)
       await deadline(
         streamTrace(session, join(directory, 'trace.json')),
-        20000,
+        90000,
         'partial trace',
       ).catch((error) => {
         result.traceError = error.message

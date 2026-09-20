@@ -62,6 +62,8 @@ Add `--cpu-profile` for a separate attribution run. It records a renderer V8 pro
 
 Reports retain emitted key timestamps, renderer observations, native Chromium traces, script/build identity and save/history checks. A matching character range inside the viewport followed by animation frames measures a presentation opportunity, not physical display scanout. Traces expose Paint/DrawFrame events and synchronous function durations separately. Missing observations, timeouts and unfinished save/history checks are not successful latency measurements.
 
+Trace export happens after the timed input phases. Large traces have a separate 45-second completion deadline and 90-second total drain deadline; these limits do not extend input, queue, selection, or save deadlines. An export failure still leaves the case incomplete and requires a rerun, including its final history checks.
+
 A `passed` scenario means that integrity checks and measurement collection completed; it does not mean a latency target was achieved. The current investigation targets less than 1 ms, which must be assessed separately for each named timing endpoint. Reports record hashes for both the main-process bundle and renderer entry HTML, plus the renderer entry filename, so renderer-only changes remain distinguishable when the main bundle is unchanged.
 
 Test wrapped paragraphs independently of ordinary multiline notes. CodeMirror uses line gaps to limit mounted text, but a wrapped viewport still includes surrounding text for measurement. A rich paragraph remains one browser layout block. A small DOM element count alone does not prove bounded text layout; inspect rendered character ranges and native Layout events too.
