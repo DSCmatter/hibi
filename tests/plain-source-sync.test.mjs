@@ -73,11 +73,14 @@ function accept(context, change) {
   const counters = context.store.counters()
   if (context.state.doc.childCount > 1)
     assert.equal(counters.materializations, 0)
-  assert.equal(parsed.length, 1, 'Only the changed paragraph needs parsing.')
-  assert.ok(parsed[0].length <= 16 * 1024)
-  assert.ok(
-    counters.sourceUnitsRead <= parsed[0].length * 2 + change.to - change.from,
-  )
+  assert.ok(parsed.length <= 1, 'At most the changed paragraph needs parsing.')
+  if (parsed.length) {
+    assert.ok(parsed[0].length <= 16 * 1024)
+    assert.ok(
+      counters.sourceUnitsRead <=
+        parsed[0].length * 2 + change.to - change.from,
+    )
+  } else assert.ok(counters.sourceUnitsRead <= change.to - change.from + 32)
   const nextState = context.state.apply(result.transaction)
   assert.deepEqual(
     nextState.doc.toJSON(),
@@ -87,7 +90,7 @@ function accept(context, change) {
   context.store.commit(prepared)
   context.state = nextState
   context.certificate = result.next
-  return { parsed: parsed[0], transaction: result.transaction }
+  return { parsed, transaction: result.transaction }
 }
 
 function reject(source, changes, stateChange) {
@@ -108,18 +111,18 @@ test('plain source sync inserts and deletes text using only the changed paragrap
   const initialFirst = context.state.doc.firstChild
   const initialLast = context.state.doc.lastChild
   const from = 'alpha beta\n\nmiddle'.length
-  assert.ok(
-    accept(context, { from, to: from, insert: ' new' }).parsed.startsWith(
-      'middle new words',
-    ),
+  assert.equal(
+    accept(context, { from, to: from, insert: ' new' }).parsed.length,
+    0,
   )
+  assert.equal(context.state.doc.child(1).textContent, 'middle new words')
   assert.equal(context.state.doc.firstChild, initialFirst)
   assert.equal(context.state.doc.lastChild, initialLast)
-  assert.ok(
-    accept(context, { from, to: from + 4, insert: '' }).parsed.startsWith(
-      'middle words',
-    ),
+  assert.equal(
+    accept(context, { from, to: from + 4, insert: '' }).parsed.length,
+    0,
   )
+  assert.equal(context.state.doc.child(1).textContent, 'middle words')
   assert.equal(
     context.state.doc.textContent,
     'alpha betamiddle wordsomega final',
@@ -153,8 +156,10 @@ test('plain source sync updates distant paragraph offsets after sequential lengt
     const from =
       current.indexOf(` ${index} contains`) + ` ${index} contains`.length
     const result = accept(context, { from, to: from, insert: ' extended' })
-    assert.ok(result.parsed.includes('contains extended'))
-    assert.ok(result.parsed.length < 100)
+    assert.equal(result.parsed.length, 0)
+    assert.ok(
+      context.state.doc.child(index).textContent.includes('contains extended'),
+    )
   }
 })
 
@@ -171,9 +176,15 @@ test('plain source sync keeps Unicode and UTF-16 positions exact', () => {
   const source = '# title\r\n\r\nalpha 😀 é beta\r\n\r\nlast words'
   const context = setup(source)
   const from = source.indexOf('😀') + '😀'.length
-  accept(context, { from, to: from, insert: '水' })
+  assert.equal(
+    accept(context, { from, to: from, insert: '水' }).parsed.length,
+    1,
+  )
   const accent = context.store.snapshot().materialize().indexOf('́')
-  accept(context, { from: accent, to: accent + 1, insert: '' })
+  assert.equal(
+    accept(context, { from: accent, to: accent + 1, insert: '' }).parsed.length,
+    1,
+  )
 })
 
 test('plain source sync edits canonical plain paragraphs beside structural blocks', () => {
@@ -288,10 +299,12 @@ test('plain source sync falls back for structural changes, marks, references and
     reject(source, changes)
 })
 
-test('plain source sync bounds changed paragraph size', () => {
+test('plain source sync bounds parsed paragraphs and changed ASCII spans', () => {
   accept(setup('a'.repeat(16 * 1024)), { from: 5, to: 6, insert: 'b' })
-  reject('a'.repeat(16 * 1024 + 1), [{ from: 5, to: 6, insert: 'b' }])
-  reject('ordinary words', [{ from: 5, to: 5, insert: 'a'.repeat(16 * 1024) }])
+  reject('é'.repeat(16 * 1024 + 1), [{ from: 5, to: 6, insert: 'b' }])
+  reject('ordinary words', [
+    { from: 5, to: 5, insert: 'a'.repeat(16 * 1024 + 1) },
+  ])
 })
 
 test('plain source sync rejects stale source snapshots and changed rich documents', () => {
@@ -323,7 +336,7 @@ test('plain source sync rejects stale source snapshots and changed rich document
 })
 
 test('plain source sync rejects a parser result with changed text or structure', () => {
-  const context = setup('ordinary words')
+  const context = setup('ordinary café words')
   assert.ok(context.certificate)
   const prepared = prepare(context.store, [{ from: 3, to: 4, insert: 'X' }])
   for (const source of [
@@ -847,7 +860,10 @@ test('plain visual plans certify only the matching prepared source operation', (
 
 test('bounded source edits refresh the ASCII proof used by later visual plans', () => {
   const context = setup('plain words\n\nlast words')
-  accept(context, { from: 5, to: 5, insert: '!' })
+  assert.equal(
+    accept(context, { from: 5, to: 5, insert: '!' }).parsed.length,
+    1,
+  )
   const rejected = context.state.tr.insertText('123', 4)
   assert.ok(
     context.certificate.planVisual(
@@ -858,7 +874,7 @@ test('bounded source edits refresh the ASCII proof used by later visual plans', 
       (text) => text,
     ) === null,
   )
-  accept(context, { from: 5, to: 6, insert: '' })
+  assert.equal(accept(context, { from: 5, to: 6, insert: '' }).parsed.length, 1)
   commitVisualPlan(context, context.state.tr.insertText('123', 4), {
     from: 3,
     to: 3,
@@ -914,4 +930,118 @@ test('plain visual trailing-space edits match native parsing with retained line 
       assert.equal(context.store.snapshot().materialize(), original)
     }
   }
+})
+
+test('plain source edits reuse giant ASCII proofs without parsing or full source reads', () => {
+  const prefix = 'prefix words\r\n\r\n'
+  const body = 'word123 '.repeat(12500).trimEnd()
+  const original = `${prefix}${body}\r\n\r\nlast words\n`
+  const context = setup(original)
+  const operations = []
+  let expected = original
+  for (const [offset, removed, insert] of [
+    [50000, 0, '42 '],
+    [80000, 3, ''],
+    [3, 1, '9'],
+  ]) {
+    const from = prefix.length + offset
+    const prepared = prepare(context.store, [
+      { from, to: from + removed, insert },
+    ])
+    context.store.counters(true)
+    const result = context.certificate.prepare(prepared, context.state, () => {
+      throw new Error(
+        'Certified ASCII source edits must not parse the paragraph.',
+      )
+    })
+    assert.ok(result)
+    assert.equal(context.store.counters().materializations, 0)
+    assert.ok(context.store.counters().sourceUnitsRead <= removed + 32)
+    context.store.commit(prepared)
+    context.state = context.state.apply(result.transaction)
+    context.certificate = result.next
+    operations.push(prepared)
+    expected = `${expected.slice(0, from)}${insert}${expected.slice(from + removed)}`
+    assert.equal(
+      context.state.doc.child(1).textContent,
+      expected.slice(prefix.length, expected.indexOf('\r\n\r\nlast words')),
+    )
+    const rich = context.state.doc.firstChild.nodeSize + 1 + offset
+    assert.equal(
+      context.certificate.map(
+        context.store.snapshot(),
+        context.state.doc,
+        from,
+        'source',
+      ),
+      rich,
+    )
+  }
+  assert.deepEqual(
+    context.state.doc.toJSON(),
+    schema.nodeFromJSON(manager.parse(expected)).toJSON(),
+  )
+  const from = prefix.length + 10
+  const richFrom = context.state.doc.firstChild.nodeSize + 11
+  operations.push(
+    commitVisualPlan(context, context.state.tr.insertText('77', richFrom), {
+      from,
+      to: from,
+      insert: '77',
+    }),
+  )
+  for (const operation of operations.toReversed())
+    context.store.commit(prepare(context.store, operation.inverse))
+  assert.equal(context.store.snapshot().materialize(), original)
+})
+
+test('giant ASCII source proofs reject syntax, indentation, empty content and oversized changes', () => {
+  const context = setup('word123 '.repeat(12500).trimEnd())
+  for (const change of [
+    { from: 0, to: 0, insert: ' ' },
+    { from: 50000, to: 50000, insert: '\n' },
+    { from: 50000, to: 50000, insert: '*' },
+    { from: 50000, to: 50000, insert: 'x'.repeat(16385) },
+    { from: 3, to: 16388, insert: '' },
+  ]) {
+    const prepared = prepare(context.store, [change])
+    assert.ok(
+      context.certificate.prepare(prepared, context.state, () => {
+        throw new Error(
+          'Unsupported giant paragraphs must fall back before parsing.',
+        )
+      }) === null,
+    )
+  }
+  const last = setup(`a${' '.repeat(100000)}`)
+  const prepared = prepare(last.store, [{ from: 0, to: 1, insert: '' }])
+  assert.ok(last.certificate)
+  assert.ok(
+    last.certificate.prepare(prepared, last.state, () => {
+      throw new Error(
+        'Removing the final non-space character must not use the ASCII proof.',
+      )
+    }) === null,
+  )
+})
+
+test('generic punctuation edits clear the ASCII proof for subsequent source edits', () => {
+  const context = setup('ordinary words\n\nlast words')
+  assert.equal(
+    accept(context, { from: 3, to: 3, insert: 'X' }).parsed.length,
+    0,
+  )
+  assert.equal(
+    accept(context, { from: 5, to: 5, insert: '!' }).parsed.length,
+    1,
+  )
+  assert.equal(
+    accept(context, { from: 3, to: 4, insert: 'Y' }).parsed.length,
+    1,
+  )
+  assert.equal(accept(context, { from: 5, to: 6, insert: '' }).parsed.length, 1)
+  assert.equal(
+    accept(context, { from: 3, to: 4, insert: 'Z' }).parsed.length,
+    0,
+  )
 })

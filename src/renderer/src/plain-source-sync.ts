@@ -14,6 +14,11 @@ import { normalizeSource } from './source-text.ts'
 
 const maximumParagraphUnits = 16 * 1024
 type AsciiParagraph = Readonly<{ content: number; indent: number }>
+type AsciiEdit = Readonly<{
+  index: number
+  length: number
+  ascii: AsciiParagraph
+}>
 function asciiContent(text: string) {
   let content = 0
   for (let index = 0; index < text.length; index++) {
@@ -91,6 +96,49 @@ class PlainSourceSync {
         )
       : null
   }
+  #asciiEdit({ from, to, insert }: RawEdit): AsciiEdit | null {
+    if (to - from + insert.length > maximumParagraphUnits) return null
+    const row = this.#owners.at(from)
+    if (row?.owner.kind !== 'plain') return null
+    const block = this.#blocks[row.index]!
+    const ascii =
+      row.owner.revision === 0 ? block.ascii : this.#ascii.get(row.owner)
+    if (!ascii || to > row.to - block.suffix || from < row.from + ascii.indent)
+      return null
+    const inserted = asciiContent(insert)
+    if (inserted === null) return null
+    const removed = asciiContent(this.#source.sliceRaw(from, to))
+    if (removed === null || ascii.content - removed + inserted <= 0) return null
+    if (from === row.from + ascii.indent) {
+      const first =
+        insert[0] ??
+        this.#source.sliceRaw(to, Math.min(to + 1, this.#source.utf16Length))
+      if (!first || first === ' ') return null
+    }
+    return {
+      index: row.index,
+      length: row.owner.length + insert.length - (to - from),
+      ascii: {
+        content: ascii.content - removed + inserted,
+        indent: ascii.indent,
+      },
+    }
+  }
+  #withAscii(source: SourceSnapshot, document: Node, edit: AsciiEdit) {
+    const owners = this.#owners.update(edit.index, {
+      kind: 'plain',
+      length: edit.length,
+      parsed: true,
+    })
+    this.#ascii.set(owners.get(edit.index)!.owner, edit.ascii)
+    return new PlainSourceSync(
+      source,
+      document,
+      owners,
+      this.#blocks,
+      this.#ascii,
+    )
+  }
   /** A closed lexical subset: no inline/block markers, URLs, or new lines.
    * Only changed bytes are inspected after the initial paragraph classification. */
   planVisual(
@@ -119,27 +167,13 @@ class PlainSourceSync {
     if (text && (!text.isText || text.marks.length)) return null
     const insert = text?.text ?? ''
     if (step.to - step.from + insert.length > maximumParagraphUnits) return null
-    const inserted = asciiContent(insert)
-    if (inserted === null || step.toJSON().structure) return null
+    if (step.toJSON().structure) return null
     const from = this.map(source, state.doc, step.from, 'rich')
     const to = this.map(source, state.doc, step.to, 'rich')
     if (from === null || to === null) return null
-    const row = this.#owners.at(from)
-    if (row?.owner.kind !== 'plain') return null
-    const block = this.#blocks[row.index]!
-    const ascii =
-      row.owner.revision === 0 ? block.ascii : this.#ascii.get(row.owner)
-    if (!ascii || to > row.to - block.suffix || from < row.from + ascii.indent)
-      return null
-    const removed = asciiContent(source.sliceRaw(from, to))
-    if (removed === null || ascii.content - removed + inserted <= 0) return null
-    if (from === row.from + ascii.indent) {
-      const first =
-        insert[0] ?? source.sliceRaw(to, Math.min(to + 1, source.utf16Length))
-      if (!first || first === ' ') return null
-    }
-    if (encodeText(insert) !== insert) return null
     const change: RawEdit = Object.freeze({ from, to, insert })
+    const ascii = this.#asciiEdit(change)
+    if (!ascii || encodeText(insert) !== insert) return null
     return {
       change,
       certify: (prepared: PreparedSourceOperation) => {
@@ -153,22 +187,7 @@ class PlainSourceSync {
           actual.insert !== insert
         )
           return null
-        const owners = this.#owners.update(row.index, {
-          kind: 'plain',
-          length: row.owner.length + insert.length - (to - from),
-          parsed: true,
-        })
-        this.#ascii.set(owners.get(row.index)!.owner, {
-          content: ascii.content - removed + inserted,
-          indent: ascii.indent,
-        })
-        return new PlainSourceSync(
-          prepared.after,
-          document,
-          owners,
-          this.#blocks,
-          this.#ascii,
-        )
+        return this.#withAscii(prepared.after, document, ascii)
       },
     }
   }
@@ -223,6 +242,22 @@ class PlainSourceSync {
     )
       return null
     const edit = prepared.operation.changes[0]!
+    const ascii = this.#asciiEdit(edit)
+    if (ascii) {
+      const from = this.map(prepared.before, state.doc, edit.from, 'source')
+      const to = this.map(prepared.before, state.doc, edit.to, 'source')
+      if (from !== null && to !== null) {
+        const transaction = state.tr.replaceWith(
+          from,
+          to,
+          edit.insert ? state.schema.text(edit.insert) : [],
+        )
+        return {
+          transaction,
+          next: this.#withAscii(prepared.after, transaction.doc, ascii),
+        }
+      }
+    }
     const row = this.#owners.at(edit.from)
     if (row?.owner.kind !== 'plain') return null
     const block = this.#blocks[row.index]!
@@ -280,8 +315,8 @@ class PlainSourceSync {
       length: row.owner.length + delta,
       parsed: true,
     })
-    const ascii = asciiParagraph(source)
-    if (ascii) this.#ascii.set(owners.get(row.index)!.owner, ascii)
+    const classified = asciiParagraph(source)
+    if (classified) this.#ascii.set(owners.get(row.index)!.owner, classified)
     return {
       transaction,
       next: new PlainSourceSync(
