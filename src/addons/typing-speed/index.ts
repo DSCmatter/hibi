@@ -26,7 +26,6 @@ export default defineAddon({
     }
     context.editor.onInput((event) => {
       speed.add(event.characters, performance.now())
-      refresh()
     })
     const timer = setInterval(refresh, 1000)
     stop = () => clearInterval(timer)
