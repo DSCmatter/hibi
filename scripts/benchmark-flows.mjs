@@ -76,7 +76,21 @@ export async function waitForWorkspaces(page, paths) {
     }, paths)
   } catch (cause) {
     const state = await page
-      .evaluate(() => ({
+      .evaluate(async () => ({
+        recent: await Promise.race([
+          Promise.all(
+            [
+              window.hibi.bootstrap.recentWorkspaces(),
+              window.hibi.getRecentWorkspaces(),
+            ].map((pending) =>
+              pending.then(
+                (items) => ({ items }),
+                (error) => ({ error: String(error) }),
+              ),
+            ),
+          ).then(([bootstrap, live]) => ({ bootstrap, live })),
+          new Promise((resolve) => setTimeout(() => resolve('pending'), 1000)),
+        ]),
         startup: document.querySelector('.editor-page')?.dataset.startup,
         placeholder: !!document.querySelector('.startup-placeholder'),
         welcomeDismissed: sessionStorage.getItem('hibi:welcome-dismissed'),

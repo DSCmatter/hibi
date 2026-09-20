@@ -53,7 +53,33 @@ async function launch(profile) {
   app = await launchBenchmarkApp(profile)
   page = await app.firstWindow()
   await waitForEditor(page)
-  await waitForWorkspaces(page, recentPaths)
+  try {
+    await waitForWorkspaces(page, recentPaths)
+  } catch (cause) {
+    const state = await Promise.race([
+      app
+        .evaluate(async ({ app }, requestedProfile) => {
+          const { readFile } = process.getBuiltinModule('fs/promises')
+          const { join } = process.getBuiltinModule('path')
+          return {
+            requestedProfile,
+            actualProfile: app.getPath('userData'),
+            seededRecent: await readFile(
+              join(requestedProfile, 'recent-workspaces.json'),
+              'utf8',
+            ).then(
+              (contents) => ({ contents }),
+              (error) => ({ error: String(error) }),
+            ),
+          }
+        }, profile)
+        .catch((error) => ({ error: String(error) })),
+      new Promise((resolve) => setTimeout(() => resolve('pending'), 1000)),
+    ])
+    throw new Error(`Benchmark profile state: ${JSON.stringify(state)}`, {
+      cause,
+    })
+  }
 }
 async function cleanup() {
   try {

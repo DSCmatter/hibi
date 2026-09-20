@@ -27,7 +27,7 @@ npm run bench:desktop
 
 Desktop benchmarks launch the built app in isolated profiles. They measure startup through editor and workspace-list readiness, the first visible keystroke, opening larger notes, and switching to source view.
 
-The desktop log names each warmup and measured case. Workspace-readiness failures retain the expected and displayed temporary paths, startup state, and button availability without relaxing the readiness deadline.
+The desktop log names each warmup and measured case. Workspace-readiness failures retain the expected and displayed temporary paths, startup state, and button availability without relaxing the readiness deadline. Timeout diagnostics also compare the requested and actual profile, read the seeded fixture from the main process, and distinguish cached bootstrap results from a fresh workspace-list request. These diagnostics run only after failure and are bounded separately from the measured flow.
 
 Use `npm run bench:startup` for a detailed local launch report. Compare several runs; a single launch can be affected by disk caches or other processes.
 
