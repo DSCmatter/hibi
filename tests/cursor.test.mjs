@@ -6,6 +6,44 @@ import test from 'node:test'
 import { electron } from './electron.mjs'
 import { clickMenu, pressShortcut } from './keyboard.mjs'
 
+async function assertCursorAnimationUnqueried(page, editor, name) {
+  await page.evaluate(() => {
+    const getAnimations = Element.prototype.getAnimations
+    let queries = 0
+    Element.prototype.getAnimations = function (...args) {
+      if (this.classList.contains('editor-cursor')) queries++
+      return getAnimations.apply(this, args)
+    }
+    window.cursorAnimationQueries = () => {
+      Element.prototype.getAnimations = getAnimations
+      delete window.cursorAnimationQueries
+      return queries
+    }
+  })
+  for (const key of ['s', 'Backspace', 'ArrowLeft']) {
+    await editor.press(key)
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    )
+  }
+  assert.equal(
+    await page.evaluate(() => window.cursorAnimationQueries()),
+    0,
+    'caret movement must not query animations',
+  )
+  assert.equal(
+    await page
+      .locator('.editor-cursor')
+      .evaluate(
+        (element) => getComputedStyle(element, '::after').animationName,
+      ),
+    name,
+  )
+}
+
 test('cursor appearance, movement, selection hiding, and persistence in both editors', {
   timeout: 30000,
 }, async (t) => {
@@ -56,6 +94,7 @@ test('cursor appearance, movement, selection hiding, and persistence in both edi
   const cursor = page.locator('.editor-cursor')
   await cursor.waitFor()
   assert.equal(await cursor.getAttribute('data-style'), 'bar')
+  await assertCursorAnimationUnqueried(page, rich, 'cursor-blink')
   await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: /^appearance$/i, exact: true }).click()
   await page
@@ -99,6 +138,7 @@ test('cursor appearance, movement, selection hiding, and persistence in both edi
   assert.equal(motion.duration, '0.6s')
   assert.equal(motion.name, 'cursor-smooth')
   assert.notEqual(motion.border, '0px')
+  await assertCursorAnimationUnqueried(page, rich, 'cursor-smooth')
   await pressShortcut(
     app,
     process.platform === 'darwin' ? 'Meta+Shift+\\' : 'Control+Shift+\\',
@@ -185,6 +225,7 @@ test('cursor appearance, movement, selection hiding, and persistence in both edi
   await cursor.waitFor({ state: 'hidden' })
   await source.press('ArrowRight')
   await cursor.waitFor()
+  await assertCursorAnimationUnqueried(page, source, 'cursor-blink')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   assert.equal(
     await cursor.evaluate(
@@ -192,6 +233,9 @@ test('cursor appearance, movement, selection hiding, and persistence in both edi
     ),
     'none',
   )
+  await assertCursorAnimationUnqueried(page, source, 'none')
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await assertCursorAnimationUnqueried(page, source, 'cursor-blink')
   await Promise.all([
     page.waitForEvent('domcontentloaded'),
     app.evaluate(({ BrowserWindow }) =>

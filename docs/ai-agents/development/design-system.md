@@ -12,6 +12,8 @@ Base tokens use CSS layer `hibi-base`; palettes use `hibi-theme`. Unlayered addo
 
 UI fonts, sizes, spacing, icons, radii, and motion durations use tokens. Durations are milliseconds. The editor's text fade uses `--motion-feedback`. Document typography, pane geometry, and user-selected padding or sidebar width remain separate. Reduced motion overrides animations.
 
+CSS owns the editor caret's blink animation, including reduced motion. Moving the caret must not query or reset animations: animation discovery and state access can flush pending document layout. Keep its position updates immediate while the existing CSS animation continues naturally.
+
 Rectangular controls share the input's 6 px `--radius-control`; popover, panel, pill, shortcut-key, and outer-button tokens alias it. Full-width navigation rows remain square. Switches and range thumbs use `--radius-round`.
 
 ## Focus, fields, and actions

@@ -101,6 +101,15 @@ const parseParagraph = (editor: Editor, source: string) =>
     editor.markdown!.parse(source),
   )
 
+// These built-in attachments observe or dispatch edits without replacing codecs.
+const grammarPreservingRich = new Map([
+  ['word-count.text', 'word-count'],
+  ['block-drag.handle', 'block-drag'],
+  ['math.editing', 'math'],
+  ['slash-commands.menu', 'slash-commands'],
+  ['tags.highlights', 'tags'],
+])
+
 export type ViewMode = DocumentView
 
 export function MarkdownEditor({
@@ -190,6 +199,13 @@ export function MarkdownEditor({
     markdownSyntax.subscribe,
     markdownSyntax.version,
   )
+  const richSyntaxCompatible = richExtensions.every(
+    (extension) =>
+      'addonId' in extension &&
+      typeof extension.addonId === 'string' &&
+      grammarPreservingRich.get(extension.id) === extension.addonId &&
+      addonRegistry.origin(extension.addonId) === 'built-in',
+  )
   // biome-ignore lint/correctness/useExhaustiveDependencies: syntaxVersion invalidates the current registry preferences.
   const referenceSyntax = useMemo(() => {
     // Unknown parser/projection contributions keep their existing link behavior.
@@ -232,6 +248,7 @@ export function MarkdownEditor({
       ['math.latex', 'math'],
     ])
     if (
+      !richSyntaxCompatible ||
       flavors.some((flavor) => {
         const entry = flavorRegistry
           .snapshot()
@@ -274,13 +291,20 @@ export function MarkdownEditor({
         (extension) => extension.id === 'frontmatter.metadata',
       ),
     }
-  }, [flavors, markdownExtensions, syntaxVersion])
+  }, [
+    flavors,
+    markdownExtensions,
+    syntaxVersion,
+    richSyntaxCompatible,
+    richExtensions,
+  ])
   // biome-ignore lint/correctness/useExhaustiveDependencies: syntaxVersion invalidates parser contribution compatibility.
   const plainSyncEligible = useMemo(() => {
     const knownOwner = (owner: string) =>
       ['github-markdown', 'text-extras'].includes(owner) &&
       addonRegistry.origin(owner) === 'built-in'
     return (
+      richSyntaxCompatible &&
       flavors.every((flavor) => {
         const registered = flavorRegistry
           .snapshot()
@@ -309,7 +333,7 @@ export function MarkdownEditor({
             knownOwner(feature.owner),
         )
     )
-  }, [flavors, markdownExtensions, syntaxVersion])
+  }, [flavors, markdownExtensions, syntaxVersion, richSyntaxCompatible])
   const projection = useMemo(
     () =>
       markdownDocument
@@ -372,18 +396,13 @@ export function MarkdownEditor({
         : focusedPane
   const scrollContent = useRef({ source: value, body: projection.content })
   scrollContent.current = { source: value, body: projection.content }
-  // biome-ignore lint/correctness/useExhaustiveDependencies: capture the initial source stamp only when rebuilding the schema; normal edits synchronize through the source bridge.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: syntaxVersion rebuilds preference-dependent schema extensions.
   const extensions = useMemo(
     () => [
       ...editorExtensions(flavors, documentHistory),
       richSourceSession.configure({
-        initialSource: {
-          document: {
-            tabId: documentState.tabId,
-            revision: documentState.revision,
-          },
-          version: documentState.contentVersion,
-        },
+        // Only a completed visible-pane synchronization may claim source ownership.
+        initialSource: null,
         prepare: (event) => prepareRichRef.current(event),
         reject: (error) => {
           plainSync.current = null
@@ -418,7 +437,7 @@ export function MarkdownEditor({
   const editor = useEditor(
     {
       extensions,
-      content: projection.content,
+      content: '',
       contentType: 'markdown',
       autofocus: false,
       injectCSS: false,
@@ -550,7 +569,8 @@ export function MarkdownEditor({
     if (!serialize) {
       serialize = markdownSerializer(
         editor.markdown!,
-        flavors.every((flavor) => flavor.serialization === 'block-local'),
+        richSyntaxCompatible &&
+          flavors.every((flavor) => flavor.serialization === 'block-local'),
       )
       serializers.current.set(editor, serialize)
     }
@@ -612,6 +632,32 @@ export function MarkdownEditor({
     setRichInputError('')
     return accepted
   }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attachment replacements invalidate codecs even when their compatibility flags match.
+  useLayoutEffect(() => {
+    generated.current = null
+    pendingPlainSync.current = null
+    if (!editor?.markdown || !markdownDocument || paneMode === 'markdown')
+      return
+    const serialize = markdownSerializer(
+      editor.markdown,
+      richSyntaxCompatible &&
+        flavors.every((flavor) => flavor.serialization === 'block-local'),
+    )
+    serializers.current.set(editor, serialize)
+    performanceDiagnostics.measure(
+      'core',
+      'Markdown cache initialization',
+      () => serialize(editor.state.doc),
+    )
+  }, [
+    editor,
+    markdownDocument,
+    paneMode,
+    flavors,
+    richSyntaxCompatible,
+    richExtensions,
+  ])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: replacing rich attachments invalidates certificates even when both sets are audited.
   useLayoutEffect(() => {
     const session = documentRuntime.session()
     if (!editor || !markdownDocument || !session || paneMode === 'markdown')
@@ -740,23 +786,11 @@ export function MarkdownEditor({
     markdownExtensions,
     paneMode,
     plainSyncEligible,
+    richExtensions,
     syntaxVersion,
     documentState.tabId,
     documentState.revision,
   ])
-  useLayoutEffect(() => {
-    if (!editor?.markdown || !markdownDocument) return
-    const serialize = markdownSerializer(
-      editor.markdown,
-      flavors.every((flavor) => flavor.serialization === 'block-local'),
-    )
-    serializers.current.set(editor, serialize)
-    performanceDiagnostics.measure(
-      'core',
-      'Markdown cache initialization',
-      () => serialize(editor.state.doc),
-    )
-  }, [editor, markdownDocument, flavors])
   const richEditContext = useRef({
     document: documentState,
     mode,
@@ -1145,7 +1179,23 @@ export function MarkdownEditor({
     onOutlineUnavailable,
     onActiveOutline,
   ])
+  type VisualOutlineHeading = OutlineHeading & {
+    position: number
+    raw: number | null
+  }
+  const visualOutline = useRef<{
+    document: RichNode
+    source: Pick<SourceSnapshot, 'document' | 'version'>
+    generation: number
+    headings: VisualOutlineHeading[]
+    sourceHeadings: { id: string; start: number }[]
+  } | null>(null)
+  const visualOutlineGeneration = useRef(0)
+  const visualCaret = useRef({ findTarget, sourceReady })
+  visualCaret.current = { findTarget, sourceReady }
+  const reportVisualCaret = useRef(() => {})
   useEffect(() => {
+    visualOutline.current = null
     if (paneMode === 'markdown') return
     onOutlineUnavailable?.(null)
     if (!editor || !markdownDocument) {
@@ -1154,99 +1204,177 @@ export function MarkdownEditor({
       return
     }
     if (!outlineActive) return
+    // Rows from the previous view/configuration cannot navigate this new cache.
+    // Remove them during setup; ordinary edits keep the last displayed outline.
+    onOutline([])
+    onActiveOutline(null)
     const root = content.current
-    let frame = 0
-    let document: typeof editor.state.doc | null = null
-    let headings: OutlineHeading[] = []
-    let sourceHeadings: { id: string; start: number }[] = []
-    let mappedBody: string | null = null
-    const report = () => {
+    let frame = 0,
+      timer: ReturnType<typeof setTimeout> | undefined,
+      idle: number | undefined,
+      disposed = false
+    const current = () => {
+      const cached = visualOutline.current,
+        source = documentRuntime.session()?.snapshot()
+      return cached &&
+        source &&
+        cached.document === editor.state.doc &&
+        cached.source.version === source.version &&
+        cached.source.document.tabId === source.document.tabId &&
+        cached.source.document.revision === source.document.revision
+        ? cached
+        : null
+    }
+    const reportSelection = () => {
       frame = 0
       if (editor.isDestroyed) return
-      if (document !== editor.state.doc) {
-        document = editor.state.doc
-        headings = []
-        document.descendants((node, pos) => {
-          if (node.type.name === 'heading')
-            headings.push({
-              id: String(pos),
-              label: node.textContent || 'Untitled heading',
-              level: Number(node.attrs.level),
-            })
-        })
-        mappedBody = null
-        onOutline(headings)
-      }
+      const cached = current()
+      const { findTarget, sourceReady } = visualCaret.current
       let selected: string | null = null
-      if (findTarget === 'source') {
+      if (cached && findTarget === 'source') {
         const element = root?.querySelector<HTMLElement>('.cm-content')
         const view = element && sourceView(element)
-        const { source, body } = scrollContent.current
-        const offset = source.lastIndexOf(body)
-        if (
-          sourceReady &&
-          view &&
-          offset >= 0 &&
-          sourcePosition(view, view.state.selection.main.head) >= offset
-        ) {
+        if (sourceReady && view) {
           const rawPosition = sourcePosition(
             view,
             view.state.selection.main.head,
           )
-          const snapshot = documentRuntime.session()?.snapshot()
-          const exact =
-            snapshot && markdownSyntax.version() === syntaxVersion
-              ? plainSync.current?.map(
-                  snapshot,
-                  document,
-                  rawPosition,
-                  'source',
-                )
-              : null
-          if (exact !== null && exact !== undefined)
-            selected =
-              outlineHeadingAt(headings, exact, (heading) => Number(heading.id))
-                ?.id ?? null
-          else {
-            if (mappedBody !== body) {
-              const map = positions(body, document)
-              sourceHeadings = headings.flatMap((heading) => {
-                const position = map(Number(heading.id) + 1, 'rich')
-                return position === null
-                  ? []
-                  : [
-                      {
-                        id: heading.id,
-                        start: body.lastIndexOf('\n', position - 1) + 1,
-                      },
-                    ]
-              })
-              mappedBody = body
-            }
-            selected =
-              outlineHeadingAt(
-                sourceHeadings,
-                rawPosition - offset,
-                (heading) => heading.start,
-              )?.id ?? null
-          }
+          selected =
+            outlineHeadingAt(
+              cached.sourceHeadings,
+              rawPosition,
+              (heading) => heading.start,
+            )?.id ?? null
         }
-      } else {
+      } else if (cached) {
         selected =
-          outlineHeadingAt(headings, editor.state.selection.head, (heading) =>
-            Number(heading.id),
+          outlineHeadingAt(
+            cached.headings,
+            editor.state.selection.head,
+            (heading) => heading.position,
           )?.id ?? null
       }
       onActiveOutline(selected)
     }
+    const cancelRead = () => {
+      clearTimeout(timer)
+      if (idle !== undefined) cancelIdleCallback(idle)
+      timer = idle = undefined
+    }
+    const read = () => {
+      timer = idle = undefined
+      if (disposed || editor.isDestroyed) return
+      const document = editor.state.doc,
+        source = documentRuntime.session()?.snapshot(),
+        known = richSourceSnapshot(editor)
+      if (
+        !source ||
+        known?.version !== source.version ||
+        known.document.tabId !== source.document.tabId ||
+        known.document.revision !== source.document.revision
+      )
+        return
+      const previous = visualOutline.current
+      const headings: VisualOutlineHeading[] = []
+      document.descendants((node, position) => {
+        if (node.type.name === 'heading')
+          headings.push({
+            id: '',
+            position,
+            raw: null,
+            label: node.textContent || 'Untitled heading',
+            level: Number(node.attrs.level),
+          })
+      })
+      const unchanged =
+        previous !== null &&
+        previous.headings.length === headings.length &&
+        headings.every((heading, index) => {
+          const before = previous.headings[index]
+          return (
+            before !== undefined &&
+            before.position === heading.position &&
+            before.label === heading.label &&
+            before.level === heading.level
+          )
+        })
+      const generation = unchanged
+        ? previous.generation
+        : ++visualOutlineGeneration.current
+      for (const heading of headings)
+        heading.id = `rich:${generation}:${heading.position}`
+      const sourceHeadings: { id: string; start: number }[] = []
+      if (paneMode === 'side-by-side' && headings.length) {
+        const raw = source.materialize(),
+          body = projectMarkdown(raw, markdownExtensions).content,
+          offset = raw.lastIndexOf(body),
+          map = positions(body, document)
+        if (offset >= 0)
+          for (const heading of headings) {
+            const exact = plainSync.current?.map(
+              source,
+              document,
+              heading.position + 1,
+              'rich',
+            )
+            const mapped =
+              exact == null ? map(heading.position + 1, 'rich') : null
+            heading.raw = exact ?? (mapped === null ? null : offset + mapped)
+            if (heading.raw !== null)
+              sourceHeadings.push({
+                id: heading.id,
+                start: raw.lastIndexOf('\n', heading.raw - 1) + 1,
+              })
+          }
+      }
+      const latest = documentRuntime.session()?.snapshot()
+      if (
+        disposed ||
+        editor.state.doc !== document ||
+        latest?.version !== source.version ||
+        latest.document.tabId !== source.document.tabId ||
+        latest.document.revision !== source.document.revision
+      )
+        return
+      visualOutline.current = {
+        document,
+        source: { document: source.document, version: source.version },
+        generation,
+        headings,
+        sourceHeadings,
+      }
+      if (!unchanged) onOutline(headings)
+      reportSelection()
+    }
     const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(report)
+      if (current()) {
+        if (!frame) frame = requestAnimationFrame(reportSelection)
+        return
+      }
+      cancelAnimationFrame(frame)
+      frame = 0
+      onActiveOutline(null)
+      cancelRead()
+      timer = setTimeout(() => {
+        timer = undefined
+        if (typeof requestIdleCallback === 'function')
+          idle = requestIdleCallback(read, { timeout: 500 })
+        else timer = setTimeout(read, 16)
+      }, 120)
     }
     editor.on('transaction', schedule)
     root?.addEventListener('hibi:source-caret', schedule)
-    schedule()
+    reportVisualCaret.current = schedule
+    // View/schema setup is explicit work. Publish its first rows immediately;
+    // subsequent document changes still wait for quiet and idle time.
+    read()
+    if (!current()) schedule()
     return () => {
+      disposed = true
+      cancelRead()
       cancelAnimationFrame(frame)
+      visualOutline.current = null
+      reportVisualCaret.current = () => {}
       editor.off('transaction', schedule)
       root?.removeEventListener('hibi:source-caret', schedule)
     }
@@ -1255,15 +1383,15 @@ export function MarkdownEditor({
     editor,
     markdownDocument,
     outlineActive,
-    findTarget,
-    sourceReady,
     onOutline,
     onOutlineUnavailable,
     onActiveOutline,
     positions,
     paneMode,
-    syntaxVersion,
+    markdownExtensions,
   ])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pane focus/readiness changes refresh selection through the current context ref without rebuilding the outline.
+  useEffect(() => reportVisualCaret.current(), [findTarget, sourceReady])
   const handledOutline = useRef<OutlineRequest | null>(outlineTarget)
   // biome-ignore lint/correctness/useExhaustiveDependencies: these transitions invalidate the exact projection even when text is unchanged.
   useEffect(() => {
@@ -1293,10 +1421,20 @@ export function MarkdownEditor({
       view.focus()
       return
     }
-    const position = Number(outlineTarget.id)
+    handledOutline.current = outlineTarget
+    const cached = visualOutline.current,
+      source = documentRuntime.session()?.snapshot(),
+      heading = cached?.headings.find((item) => item.id === outlineTarget.id)
+    const position = heading?.position
     if (
-      !Number.isInteger(position) ||
-      position < 0 ||
+      !cached ||
+      !source ||
+      !heading ||
+      position === undefined ||
+      cached.document !== editor.state.doc ||
+      cached.source.version !== source.version ||
+      cached.source.document.tabId !== source.document.tabId ||
+      cached.source.document.revision !== source.document.revision ||
       position >= editor.state.doc.content.size ||
       editor.state.doc.nodeAt(position)?.type.name !== 'heading'
     )
@@ -1313,27 +1451,12 @@ export function MarkdownEditor({
       const element = content.current?.querySelector<HTMLElement>('.cm-content')
       const view = element && sourceView(element)
       if (!view) return
-      const offset = value.lastIndexOf(projection.content)
-      const mapped = positions(projection.content, editor.state.doc)(
-        position + 1,
-        'rich',
-      )
-      if (offset < 0 || mapped === null) return
+      if (heading.raw === null) return
       handledOutline.current = outlineTarget
-      revealSourcePosition(view, offset + mapped)
+      revealSourcePosition(view, heading.raw)
       view.focus()
     }
-  }, [
-    content,
-    editor,
-    outlineTarget,
-    mode,
-    sourceReady,
-    value,
-    projection.content,
-    positions,
-    paneMode,
-  ])
+  }, [content, editor, outlineTarget, mode, sourceReady, paneMode])
   useEffect(() => {
     if (paneMode !== 'side-by-side' || !sourceReady || !editor) return
     const rich = content.current?.querySelector<HTMLElement>('.rich-pane')

@@ -24,6 +24,9 @@ test('large outline follows rich and source carets with bounded sidebar rows', {
     args: [resolve('.'), `--user-data-dir=${profile}`],
   })
   t.after(async () => {
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 })
+    })
     await app.close()
     await rm(profile, { recursive: true, force: true })
   })
@@ -74,6 +77,70 @@ test('large outline follows rich and source carets with bounded sidebar rows', {
     }, label)
     await expectSelected(label)
   }
+  await page.evaluate(() => {
+    const pending = new Map()
+    let next = 0
+    const request = window.requestIdleCallback,
+      cancel = window.cancelIdleCallback
+    window.requestIdleCallback = (callback) => {
+      pending.set(++next, callback)
+      return next
+    }
+    window.cancelIdleCallback = (id) => pending.delete(id)
+    window.pendingOutlineReads = pending
+    window.releaseOutlineReads = () => {
+      window.requestIdleCallback = request
+      window.cancelIdleCallback = cancel
+      for (const callback of pending.values())
+        callback({ didTimeout: false, timeRemaining: () => 20 })
+      pending.clear()
+    }
+    const editor = document.querySelector('.tiptap').editor
+    editor.commands.insertContentAt(0, {
+      type: 'heading',
+      attrs: { level: 1 },
+      content: [{ type: 'text', text: 'replacement' }],
+    })
+    editor.commands.setTextSelection(editor.state.doc.content.size - 1)
+    window.outlineSelectionBeforeStaleClick = editor.state.selection.head
+  })
+  await page.waitForFunction(() => window.pendingOutlineReads.size > 0)
+  // The previous top heading was at position zero. A new heading now occupies
+  // that position; an old outline row must never navigate to the replacement.
+  await outline.getByRole('treeitem', { name: 'top', exact: true }).click()
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  )
+  assert.equal(
+    await rich.evaluate((element) => element.editor.state.selection.head),
+    await page.evaluate(() => window.outlineSelectionBeforeStaleClick),
+  )
+  assert.equal(
+    await outline
+      .getByRole('treeitem', { name: 'replacement', exact: true })
+      .count(),
+    0,
+  )
+  await page.evaluate(() => {
+    window.releaseOutlineReads()
+    // Reveal the newly published first rows in the virtualized sidebar.
+    document.querySelector('.tiptap').editor.commands.setTextSelection(1)
+  })
+  await outline
+    .getByRole('treeitem', { name: 'replacement', exact: true })
+    .waitFor()
+  await outline.getByRole('treeitem', { name: 'top', exact: true }).click()
+  assert.equal(
+    await rich.evaluate(
+      (element) => element.editor.state.selection.$from.parent.textContent,
+    ),
+    'top',
+  )
+  await rich.evaluate((element) => element.editor.commands.undo())
+  await waitForAsync(page, async () => !(await window.hibi.getDocument()).dirty)
   await page.getByRole('button', { name: /^source view$/i }).click()
   const source = page.getByRole('textbox', {
     name: 'Markdown editor',
