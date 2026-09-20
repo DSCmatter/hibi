@@ -1,7 +1,11 @@
 import type {
   DocumentWorkerReply,
   DocumentWorkerRequest,
+  MarkdownReferenceSyntax,
+  MarkdownSemanticResult,
+  MarkdownSemanticRow,
 } from './document-worker-protocol.ts'
+import type { MarkdownSemanticCache } from './markdown-semantic-cache.ts'
 import type { MarkdownSourceModel } from './markdown-source-model.ts'
 import type { MarkdownSourceReferences } from './markdown-source-references.ts'
 import { SourceStore } from './source-buffer.ts'
@@ -11,6 +15,17 @@ import { SourceSearchIndex } from './source-search-index.ts'
 
 type FindRequest = Extract<DocumentWorkerRequest, { type: 'find' }>
 type MetadataRequest = Extract<DocumentWorkerRequest, { type: 'metadata' }>
+const semanticBytes = 512 * 1024
+const semanticRows = 32
+const validSyntax = (
+  syntax: MarkdownReferenceSyntax,
+  dialect: MetadataRequest['dialect'],
+) =>
+  syntax &&
+  typeof syntax.gfm === 'boolean' &&
+  typeof syntax.alerts === 'boolean' &&
+  typeof syntax.textExtras === 'boolean' &&
+  syntax.gfm === (dialect === 'gfm')
 
 /** Trusted derived replica. The renderer/native journal remain the source authority. */
 export class DocumentWorkerService {
@@ -35,6 +50,10 @@ export class DocumentWorkerService {
   #references: MarkdownSourceReferences | null = null
   #referenceSyntax = ''
   #referenceWork: Generator<void> | null = null
+  #referencesReady = false
+  #semantics: MarkdownSemanticCache | null = null
+  #semanticWork: Generator<void, MarkdownSemanticResult | undefined> | null =
+    null
   constructor(post: (reply: DocumentWorkerReply) => void) {
     this.#post = post
   }
@@ -50,8 +69,13 @@ export class DocumentWorkerService {
     this.#metadataTimer = undefined
     this.#referenceWork?.return(undefined)
     this.#referenceWork = null
+    this.#referencesReady = false
+    this.#semanticWork?.return(undefined)
+    this.#semanticWork = null
     this.#metadata = null
     if (release) {
+      this.#semantics?.clear()
+      this.#semantics = null
       this.#references?.dispose()
       this.#references = null
       this.#referenceSyntax = ''
@@ -199,10 +223,13 @@ export class DocumentWorkerService {
             (!message.reference ||
               typeof message.reference.label !== 'string' ||
               message.reference.label.length > 1000 ||
-              typeof message.reference.gfm !== 'boolean' ||
-              typeof message.reference.alerts !== 'boolean' ||
-              typeof message.reference.textExtras !== 'boolean' ||
-              message.reference.gfm !== (message.dialect === 'gfm'))) ||
+              !validSyntax(message.reference, message.dialect))) ||
+          (message.semantic !== undefined &&
+            (!validSyntax(message.semantic, message.dialect) ||
+              (message.reference &&
+                (message.reference.alerts !== message.semantic.alerts ||
+                  message.reference.textExtras !==
+                    message.semantic.textExtras)))) ||
           !Number.isSafeInteger(message.from) ||
           !Number.isSafeInteger(message.to) ||
           message.from < 0 ||
@@ -278,9 +305,13 @@ export class DocumentWorkerService {
           ? (await import('./frontmatter-source-model.ts'))
               .FrontmatterSourceModel
           : undefined,
-        MarkdownSourceReferences: this.#metadata?.reference
-          ? (await import('./markdown-source-references.ts'))
-              .MarkdownSourceReferences
+        MarkdownSourceReferences:
+          this.#metadata?.reference || this.#metadata?.semantic
+            ? (await import('./markdown-source-references.ts'))
+                .MarkdownSourceReferences
+            : undefined,
+        MarkdownSemanticCache: this.#metadata?.semantic
+          ? (await import('./markdown-semantic-cache.ts')).MarkdownSemanticCache
           : undefined,
       }))
       .then(
@@ -289,19 +320,24 @@ export class DocumentWorkerService {
           MarkdownSourceModel,
           FrontmatterSourceModel,
           MarkdownSourceReferences,
+          MarkdownSemanticCache,
         }) => {
           this.#metadataLoading = false
           const request = this.#metadata
           if (this.#disposed || !request || !this.#store) return
           if (
             (request.frontmatter && !FrontmatterSourceModel) ||
-            (request.reference && !MarkdownSourceReferences)
+            ((request.reference || request.semantic) &&
+              !MarkdownSourceReferences) ||
+            (request.semantic && !MarkdownSemanticCache)
           ) {
             this.#loadMetadata()
             return
           }
           const dialect = `${request.dialect}${request.frontmatter ? '+frontmatter' : ''}`
           if (!this.#model || this.#model.state().dialect !== dialect) {
+            this.#semantics?.clear()
+            this.#semantics = null
             this.#references?.dispose()
             this.#references = null
             this.#model?.dispose()
@@ -314,10 +350,13 @@ export class DocumentWorkerService {
               dialect,
             )
           }
-          if (request.reference) {
-            const { gfm, alerts, textExtras } = request.reference
+          const requestedSyntax = request.semantic ?? request.reference
+          if (requestedSyntax) {
+            const { gfm, alerts, textExtras } = requestedSyntax
             const syntax = JSON.stringify([gfm, alerts, textExtras])
             if (!this.#references || syntax !== this.#referenceSyntax) {
+              this.#semantics?.clear()
+              this.#semantics = null
               this.#references?.dispose()
               this.#references = new MarkdownSourceReferences!({
                 gfm,
@@ -326,6 +365,8 @@ export class DocumentWorkerService {
               })
               this.#referenceSyntax = syntax
             }
+            if (request.semantic && !this.#semantics)
+              this.#semantics = new MarkdownSemanticCache!(requestedSyntax)
           }
           this.#scheduleMetadata()
         },
@@ -338,6 +379,100 @@ export class DocumentWorkerService {
   #scheduleMetadata() {
     if (this.#metadataTimer || !this.#metadata || !this.#model) return
     this.#metadataTimer = setTimeout(this.#advanceMetadata, 0)
+  }
+  *#readSemantics(
+    request: MetadataRequest,
+    model: MarkdownSourceModel,
+  ): Generator<void, MarkdownSemanticResult | undefined> {
+    if (!this.#references!.semanticsAvailable())
+      return { status: 'unavailable', reason: 'syntax-context' }
+    const { source, owners } = model.state(),
+      first = owners!.at(request.from),
+      rows: MarkdownSemanticRow[] = [],
+      encoder = new TextEncoder()
+    // Reserve the fixed envelope, cursor, commas and byte counter before rows.
+    let bytes = 128,
+      index = first?.index ?? owners!.count,
+      region: ReturnType<MarkdownSemanticCache['region']> = null,
+      next: number | null = null
+    // A requested raw position may belong to a group anchored in an earlier
+    // concrete owner. Probe cooperatively without lexing unrelated regions.
+    for (let probe = index; probe >= 0 && probe < owners!.count; probe--) {
+      const row = owners!.get(probe)!
+      region = this.#semantics!.region(source, owners!, row.owner.slot)
+      yield
+      if (region) {
+        if (region.from <= request.from && request.from < region.to)
+          index = probe
+        else region = null
+        break
+      }
+      if (row.owner.kind === 'markdown:Frontmatter') break
+    }
+    // Indentation can belong to the next region even while the raw position
+    // lies in a trivia owner. Resolve that region before applying the page cap.
+    while (!region && index < owners!.count) {
+      region = this.#semantics!.region(
+        source,
+        owners!,
+        owners!.get(index)!.owner.slot,
+      )
+      yield
+      if (region && region.to > request.from) break
+      region = null
+      index++
+    }
+    const end = Math.min(index + request.limit, owners!.count)
+    while (index < end) {
+      if (rows.length === semanticRows) break
+      region ??= this.#semantics!.region(
+        source,
+        owners!,
+        owners!.get(index)!.owner.slot,
+      )
+      if (region) {
+        if (
+          region.from > request.to ||
+          (request.from !== request.to && region.from === request.to)
+        ) {
+          next = null
+          break
+        }
+        const value = this.#semantics!.read(
+          source,
+          owners!,
+          region.owner.slot,
+          this.#references!,
+        )!
+        const item: MarkdownSemanticRow = {
+          slot: value.region.owner.slot,
+          revision: value.region.owner.revision,
+          from: value.region.from,
+          to: value.region.to,
+          contentFrom: value.region.contentFrom,
+          endIndex: value.region.endIndex,
+          tokens: value.tokens,
+          nonSpace: value.nonSpace,
+        }
+        const size = encoder.encode(JSON.stringify(item)).byteLength + 1
+        if (size + 128 > semanticBytes)
+          return { status: 'unavailable', reason: 'too-large', slot: item.slot }
+        if (bytes + size > semanticBytes) break
+        rows.push(item)
+        bytes += size
+        index = value.region.endIndex + 1
+        next = value.region.to < request.to ? value.region.to : null
+      } else index++
+      region = null
+      yield
+      if (next === null) break
+    }
+    return {
+      status: 'available',
+      rows,
+      next: index < owners!.count ? next : null,
+      bytes,
+    }
   }
   #advanceMetadata = () => {
     this.#metadataTimer = undefined
@@ -356,7 +491,10 @@ export class DocumentWorkerService {
       do {
         if (model.advance().complete) {
           let reference: ReferenceValue | null = null
-          if (request.reference) {
+          if (
+            (request.reference || request.semantic) &&
+            !this.#referencesReady
+          ) {
             const state = model.state()
             this.#referenceWork ??= this.#references!.update(
               state.source,
@@ -364,7 +502,17 @@ export class DocumentWorkerService {
             )
             if (!this.#referenceWork.next().done) continue
             this.#referenceWork = null
+            this.#referencesReady = true
+          }
+          if (request.reference)
             reference = this.#references!.lookup(request.reference.label)
+          let semantic: MarkdownSemanticResult | undefined
+          if (request.semantic) {
+            this.#semanticWork ??= this.#readSemantics(request, model)
+            const step = this.#semanticWork.next()
+            if (!step.done) continue
+            this.#semanticWork = null
+            semantic = step.value
           }
           this.#metadata = null
           this.#post({
@@ -374,6 +522,7 @@ export class DocumentWorkerService {
             version: request.version,
             page: model.page(request.from, request.to, request.limit),
             ...(request.reference ? { reference } : {}),
+            ...(semantic ? { semantic } : {}),
           })
           return
         }

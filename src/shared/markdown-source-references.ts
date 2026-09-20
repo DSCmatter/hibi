@@ -54,7 +54,13 @@ export class MarkdownSourceReferences {
     const read = (region: ReferenceRegion) => {
       if (region.owner.kind === 'markdown:Frontmatter') return {}
       const text = source.sliceRaw(region.from, region.to)
-      markup.set(region.owner.slot, text.includes('<'))
+      markup.set(
+        region.owner.slot,
+        text.includes('<') ||
+          /(?:^|[\r\n])[\t ]*["'(]|\[[^\r\n]*\]:[^\r\n]*["'(]/.test(text) ||
+          region.from > source.lineAt(region.contentFrom)!.from ||
+          region.to < source.lineAt(region.to)!.to,
+      )
       return lex(text).links
     }
     try {
@@ -64,8 +70,8 @@ export class MarkdownSourceReferences {
         count += Number(present) - Number(this.#markup.has(slot))
       let fallback: ReferenceDefinitions | null = null
       if (count) {
-        // Lezer and Marked disagree on raw HTML/container boundaries. Navigation
-        // uses a full lexical read on demand until exact regional HTML is proven.
+        // Lezer and Marked disagree on HTML/container and multiline-title boundaries.
+        // Navigation uses a full lexical read on demand for ambiguous syntax.
         const first = owners.get(0),
           from = first?.owner.kind === 'markdown:Frontmatter' ? first.to : 0
         const text = source.sliceRaw(from, source.utf16Length)
@@ -99,7 +105,7 @@ export class MarkdownSourceReferences {
     if (!this.#index) throw new Error('Reference index is not ready.')
     if (this.#fallback)
       throw new Error(
-        'Regional reference provenance is unavailable for markup.',
+        'Regional reference provenance is unavailable for this syntax.',
       )
     const scope = this.#index.scope(owners),
       lifetime = this.#semanticLifetime

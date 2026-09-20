@@ -4,6 +4,8 @@ import type {
   DocumentWorkerReply,
   DocumentWorkerRequest,
   MarkdownReferenceRequest,
+  MarkdownReferenceSyntax,
+  MarkdownSemanticResult,
   MetadataDialect,
 } from '../../shared/document-worker-protocol.ts'
 import { reportDiagnosticFailure } from '../../shared/local-diagnostics-observer.ts'
@@ -30,6 +32,7 @@ type ClientOptions = {
   metadataResult?: (
     page: SourceOwnerPage,
     reference?: ReferenceValue | null,
+    semantic?: MarkdownSemanticResult,
   ) => void
   metadataError?: (message: string) => void
   worker?: () => Transport
@@ -142,6 +145,7 @@ export class DocumentWorkerClient {
     limit = 128,
     frontmatter = false,
     reference?: MarkdownReferenceRequest,
+    semantic?: MarkdownReferenceSyntax,
   ) {
     if (this.#disposed || this.#failed) return
     if (!this.#worker && !this.#startTimer && !this.#bootstrap) this.#restart()
@@ -153,6 +157,7 @@ export class DocumentWorkerClient {
       dialect,
       frontmatter,
       ...(reference ? { reference: { ...reference } } : {}),
+      ...(semantic ? { semantic: { ...semantic } } : {}),
       from,
       to,
       limit,
@@ -352,7 +357,11 @@ export class DocumentWorkerClient {
         request.version === reply.version &&
         reply.version === this.#session.snapshot().version
       )
-        this.#options.metadataResult?.(reply.page, reply.reference)
+        this.#options.metadataResult?.(
+          reply.page,
+          reply.reference,
+          reply.semantic,
+        )
     } else if (reply.stage === 'replica') {
       this.#fail(new Error(reply.message))
       return

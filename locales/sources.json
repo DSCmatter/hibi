@@ -2001,6 +2001,9 @@
   "e0d30e96afde": [
     "src/shared/source-references.ts"
   ],
+  "46a8d88171b3": [
+    "src/shared/markdown-semantic-cache.ts"
+  ],
   "965a8cfa61e5": [
     "src/renderer/src/addon-views.ts"
   ],
@@ -2446,6 +2449,9 @@
   ],
   "4465977c0af8": [
     "src/addons/git/Panel.tsx"
+  ],
+  "c4d84efbc79b": [
+    "src/renderer/src/markdown-semantics.ts"
   ],
   "0812456184c0": [
     "src/addons/diagnostics/Settings.tsx"
@@ -2976,7 +2982,7 @@
     "src/renderer/src/WorkspaceSidebar.tsx",
     "src/renderer/src/main.tsx"
   ],
-  "77d2af94e276": [
+  "3fb379b5392a": [
     "src/shared/markdown-source-references.ts"
   ],
   "bdc090ec61e3": [
@@ -3250,11 +3256,23 @@
   "298ea20df97c": [
     "src/renderer/src/source-session.ts"
   ],
+  "f692aed3c223": [
+    "src/shared/markdown-semantic-tokens.ts"
+  ],
   "444d43f0e4c3": [
     "src/shared/source-order-points.ts"
   ],
   "9fc8c40caaa6": [
     "src/shared/source-order-points.ts"
+  ],
+  "5d52d7efbc10": [
+    "src/shared/markdown-semantic-tokens.ts"
+  ],
+  "6df7cbad4871": [
+    "src/shared/markdown-semantic-tokens.ts"
+  ],
+  "f7104bb89272": [
+    "src/renderer/src/markdown-semantics.ts"
   ],
   "6959b4159575": [
     "src/addons/diagnostics/Settings.tsx"

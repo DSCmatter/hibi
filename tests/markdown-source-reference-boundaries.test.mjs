@@ -50,30 +50,39 @@ function fixture(t, text, frontmatter = false) {
     if (complete) finish(work)
     return work
   }
-  const check = (expected) => {
+  const oracle = () => {
     const first = model.state().owners.get(0),
       body =
         first?.owner.kind === 'markdown:Frontmatter'
           ? text.slice(first.to)
           : text
-    const markdown = markdownSourceParser(syntax),
-      complete = new markdown.Lexer({
-        ...markdown.defaults,
-        tokenizer: null,
-      }).lex(body)
-    assert.equal(
-      complete.links.ref?.href ?? null,
-      expected,
-      'full Markdown oracle',
-    )
+    const markdown = markdownSourceParser(syntax)
+    return new markdown.Lexer({
+      ...markdown.defaults,
+      tokenizer: null,
+    }).lex(body).links
+  }
+  const check = (expected) => {
+    assert.equal(oracle().ref?.href ?? null, expected, 'full Markdown oracle')
     assert.equal(
       references.lookup('ref')?.href ?? null,
       expected,
       'incremental reference index',
     )
   }
+  const checkDefinitions = (labels) => {
+    const expected = oracle(),
+      value = (entry) =>
+        entry ? { href: entry.href, title: entry.title ?? null } : null
+    for (const label of new Set([...Object.keys(expected), ...labels]))
+      assert.deepEqual(
+        value(references.lookup(label)),
+        value(Object.hasOwn(expected, label) ? expected[label] : null),
+        `definition ${label}`,
+      )
+  }
   settle()
-  return { check, edit, settle, references, model, store }
+  return { check, checkDefinitions, edit, settle, references, model, store }
 }
 
 for (const tag of ['script', 'style', 'pre', 'textarea']) {
@@ -252,4 +261,99 @@ test('pure reference edits do not trigger whole-source fallback reads', (t) => {
   assert.equal(f.references.counters().fullParses, 0)
   assert.equal(f.references.counters().sourceUnits, 0)
   assert.equal(f.references.counters().markupOwners, 0)
+})
+
+for (const [name, open, close] of [
+  ['double-quoted', '"', '"'],
+  ['single-quoted', "'", "'"],
+  ['parenthesized', '(', ')'],
+])
+  for (const [layout, separator] of [
+    ['tab-indented', '\n\t'],
+    ['four-space-indented', '\n    '],
+    ['inline opening', ' '],
+  ])
+    test(`${layout} ${name} multiline reference titles hide declaration-like text`, (t) => {
+      const title = 'title\n[other]: /hidden\nend',
+        text = `[ref]: /x${separator}${open}${title}${close}\n\n[other]\n\n[visible]: /outside "outside title"`,
+        f = fixture(t, text)
+      f.checkDefinitions(['ref', 'other', 'visible', 'missing'])
+      assert.deepEqual(f.references.lookup('ref'), { href: '/x', title })
+      assert.equal(f.references.lookup('other'), null)
+      assert.deepEqual(f.references.lookup('visible'), {
+        href: '/outside',
+        title: 'outside title',
+      })
+    })
+
+test('multiline title lookup preserves proven list and quote continuation cases', (t) => {
+  const cases = [
+    '- [ref]: /x\n\t"title\n[other]: /hidden\nend"\n\n[other]',
+    "- [ref]: /x\n    'title\n[other]: /hidden\nend'\n\n[other]",
+    '1. [ref]: /x\n    (title\n[other]: /hidden\nend)\n\n[other]',
+    '> [ref]: /x\n> \t"title\n> [other]: /hidden\n> end"\n\n[other]',
+    '> - [ref]: /x\n>   \t"title\n>   [other]: /hidden\n>   end"\n\n[other]',
+    '> [ref]: /x\n\t"title\n[other]: /visible\nend"\n\n[other]',
+  ]
+  for (const text of cases)
+    fixture(t, text).checkDefinitions(['ref', 'other', 'missing'])
+})
+
+test('reference lookup follows edits to multiline title closing delimiters', (t) => {
+  const text = '[ref]: /x\n\t"title\n[other]: /inside\nend"\n\n[other]',
+    f = fixture(t, text),
+    close = text.indexOf('end"') + 'end'.length
+  f.checkDefinitions(['ref', 'other'])
+  assert.equal(f.references.lookup('other'), null)
+  f.edit(close, close + 1, '')
+  f.checkDefinitions(['ref', 'other'])
+  assert.equal(f.references.lookup('other').href, '/inside')
+  f.edit(close, close, '"')
+  f.checkDefinitions(['ref', 'other'])
+  assert.equal(f.references.lookup('other'), null)
+  assert.equal(f.references.lookup('ref').title, 'title\n[other]: /inside\nend')
+})
+
+test('an indented multiline title can contain heading, rule, and fence-looking lines', (t) => {
+  for (const line of ['# heading', '***', '~~~']) {
+    const title = `title\n${line}\n[other]: /hidden\nend`,
+      f = fixture(t, `[ref]: /x\n\t"${title}"\n\n[other]`)
+    f.checkDefinitions(['ref', 'other'])
+    assert.deepEqual(f.references.lookup('ref'), { href: '/x', title })
+    assert.equal(f.references.lookup('other'), null)
+  }
+})
+
+test('definitions embedded in long physical lines stay literal across source input chunks', (t) => {
+  for (const type of ['paragraph', 'heading', 'fence'])
+    for (const at of [4094, 4095, 4096, 4097, 8192, 12288]) {
+      const prefix =
+          type === 'heading' ? '# ' : type === 'fence' ? '~~~\n' : '',
+        suffix = type === 'fence' ? '\n~~~' : '',
+        text = `${prefix}${'a'.repeat(at - prefix.length)}[other]: /fake${suffix}\n\n[other]`,
+        f = fixture(t, text)
+      f.checkDefinitions(['other', 'missing'])
+      assert.equal(f.references.lookup('other'), null, `${type} at ${at}`)
+    }
+})
+
+test('a mid-heading definition cannot shadow a real definition after the physical line', (t) => {
+  const text = `# ${'a'.repeat(4094)}[other]: /fake\n\n[other]: /real\n\n[other]`,
+    f = fixture(t, text)
+  f.checkDefinitions(['other'])
+  assert.equal(f.references.lookup('other').href, '/real')
+})
+
+test('a newline edit changes a chunk-boundary literal into a real reference definition', (t) => {
+  const at = 4096,
+    text = `# ${'a'.repeat(at - 2)}[other]: /target\n\n[other]`,
+    f = fixture(t, text)
+  f.checkDefinitions(['other'])
+  assert.equal(f.references.lookup('other'), null)
+  f.edit(at, at, '\n')
+  f.checkDefinitions(['other'])
+  assert.equal(f.references.lookup('other').href, '/target')
+  f.edit(at, at + 1, '')
+  f.checkDefinitions(['other'])
+  assert.equal(f.references.lookup('other'), null)
 })

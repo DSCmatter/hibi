@@ -1,6 +1,6 @@
 import { mergeAttributes, Node } from '@tiptap/core'
 import { TextSelection } from '@tiptap/pm/state'
-import { alertMarker, alertToken, alertType } from './alerts'
+import { alertMarker, alertToken, alertType } from './alerts.ts'
 
 export const GithubAlert = Node.create({
   name: 'githubAlert',

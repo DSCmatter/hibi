@@ -1,5 +1,5 @@
 import { Mark, markInputRule, Node, textblockTypeInputRule } from '@tiptap/core'
-import { subscriptToken, subtextToken } from './syntax'
+import { subscriptToken, subtextToken } from './syntax.ts'
 
 export const Subscript = Mark.create({
   name: 'subscript',

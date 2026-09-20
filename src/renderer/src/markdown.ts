@@ -5,16 +5,17 @@ import { StarterKit } from '@tiptap/starter-kit'
 import { Marked } from 'marked'
 import { search } from 'prosemirror-search'
 import type { MarkdownFlavor } from '../../addons/api'
-import { BlockExit } from './BlockExit'
-import { CodeHighlight } from './CodeHighlight'
-import { literalMarkdown } from './LiteralMarkdown'
-import { markdownSyntax } from './markdown-syntax'
-import { installSyntaxPreferences } from './syntax-parser'
+import { BlockExit } from './BlockExit.ts'
+import { CodeHighlight } from './CodeHighlight.ts'
+import { literalMarkdown } from './LiteralMarkdown.ts'
+import { markdownSyntax } from './markdown-syntax.ts'
+import { installSyntaxPreferences } from './syntax-parser.ts'
 
-export { needsSourceEditing } from './markdown-preservation'
-export { projectMarkdown } from './markdown-projection'
+export { needsSourceEditing } from './markdown-preservation.ts'
+export { projectMarkdown } from './markdown-projection.ts'
 
-export function editorExtensions(
+/** Shared declarations for the visual editor and native schema-only conversion. */
+export function markdownConfiguration(
   flavors: readonly MarkdownFlavor[],
   history?: Extension,
 ) {
@@ -22,24 +23,15 @@ export function editorExtensions(
     { gfm: false, breaks: false },
     ...flavors.map((flavor) => flavor.markedOptions),
   )
-  // Tiptap types this as the callable singleton, but its manager uses the
-  // instance methods. A separate parser prevents disabled syntax leaking in.
-  const configured = installSyntaxPreferences(new Marked(options))
+  const parser = installSyntaxPreferences(new Marked(options))
   for (const flavor of flavors)
     for (const extension of flavor.export?.extensions ?? [])
-      configured.use(extension)
-  const parser = configured as unknown as NonNullable<
-    MarkdownExtensionOptions['marked']
-  >
+      parser.use(extension)
   const enabled = (id: string) => markdownSyntax.enabled(`core.${id}`)
   const levels = ([1, 2, 3, 4, 5, 6] as const).filter((level) =>
     enabled(`heading-${level}`),
   )
-  return [
-    Extension.create({
-      name: 'findInNote',
-      addProseMirrorPlugins: () => [search()],
-    }),
+  const core = [
     StarterKit.configure({
       ...(history ? { undoRedo: false as const } : {}),
       strike: false,
@@ -59,12 +51,37 @@ export function editorExtensions(
     }),
     ...(history ? [history] : []),
     ...literalMarkdown,
-    Markdown.configure({ marked: parser, markedOptions: options }),
+  ]
+  const addons = flavors
+    .flatMap((flavor) => flavor.richExtensions ?? [])
+    .filter((extension) => markdownSyntax.extensionEnabled(extension.name))
+  return { parser, options, core, addons }
+}
+
+export function editorExtensions(
+  flavors: readonly MarkdownFlavor[],
+  history?: Extension,
+) {
+  const { parser, options, core, addons } = markdownConfiguration(
+    flavors,
+    history,
+  )
+  return [
+    Extension.create({
+      name: 'findInNote',
+      addProseMirrorPlugins: () => [search()],
+    }),
+    ...core,
+    Markdown.configure({
+      // Tiptap types this as the callable singleton, but uses instance methods.
+      marked: parser as unknown as NonNullable<
+        MarkdownExtensionOptions['marked']
+      >,
+      markedOptions: options,
+    }),
     CodeHighlight,
     BlockExit,
-    ...flavors
-      .flatMap((flavor) => flavor.richExtensions ?? [])
-      .filter((extension) => markdownSyntax.extensionEnabled(extension.name)),
+    ...addons,
     Placeholder.configure({ placeholder: 'Start typing' }),
   ]
 }

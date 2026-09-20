@@ -1,5 +1,5 @@
 import { Image } from '@tiptap/extension-image'
-import { attachmentMarkdown } from '../../shared/media'
+import { attachmentMarkdown } from '../../shared/media.ts'
 
 /** Resolve display URLs without changing the Markdown stored in image attrs. */
 export function documentImage(revision: number) {
