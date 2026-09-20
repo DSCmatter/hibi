@@ -9,7 +9,7 @@ export function linkScroll(
   initial: HTMLElement,
   markdown?: {
     editor: Editor
-    content: () => { source: string; body: string }
+    content: () => { source: string; body: string } | null
     positions: MarkdownPositionLookup
   },
 ) {
@@ -25,6 +25,7 @@ export function linkScroll(
     if (!view) return null
     const editor = markdown.editor
     const text = markdown.content()
+    if (!text) return null
     const offset = text.source.lastIndexOf(text.body)
     if (offset < 0) return null
     const map = markdown.positions(text.body, editor.state.doc)
@@ -77,12 +78,15 @@ export function linkScroll(
   const sync = () => {
     frame = 0
     const target = leader === first ? second : first
-    const range = leader.scrollHeight - leader.clientHeight
-    const position = range > 0 ? leader.scrollTop / range : 0
-    const top = markdown
-      ? anchoredTop(target)
-      : Math.max(0, Math.min(1, position)) *
+    let top: number | null
+    if (markdown) top = anchoredTop(target)
+    else {
+      const range = leader.scrollHeight - leader.clientHeight
+      const position = range > 0 ? leader.scrollTop / range : 0
+      top =
+        Math.max(0, Math.min(1, position)) *
         Math.max(0, target.scrollHeight - target.clientHeight)
+    }
     if (top === null) return
     const clamped = Math.max(
       0,
@@ -124,6 +128,7 @@ export function linkScroll(
     const sourceContent = second.querySelector('.cm-content')
     if (sourceContent) observer.observe(sourceContent)
     document.addEventListener('selectionchange', selection)
+    document.addEventListener('hibi:rich-content', selection)
     second.addEventListener('hibi:source-caret', selection)
     markdown.editor.on('transaction', selection)
   }
@@ -142,6 +147,7 @@ export function linkScroll(
       pane.removeEventListener('pointerdown', intent)
     }
     document.removeEventListener('selectionchange', selection)
+    document.removeEventListener('hibi:rich-content', selection)
     second.removeEventListener('hibi:source-caret', selection)
     markdown?.editor.off('transaction', selection)
     first.removeEventListener('scroll', scroll)

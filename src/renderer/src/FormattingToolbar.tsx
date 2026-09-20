@@ -49,6 +49,7 @@ import { Button, SettingRow, TextInput } from '../../ui/Controls'
 import { useDialogs } from '../../ui/DialogProvider'
 import { useToasts } from '../../ui/Sonner'
 import type { ViewMode } from './Editor'
+import { flushRich } from './rich-sync'
 import type { InsertValues, SourceFormatting } from './source-formatting'
 import { toolbar } from './toolbar'
 
@@ -366,6 +367,7 @@ export function useFormattingToolbar(
               ? 'rich'
               : focusedPane)) === 'source'
       if (!useSource && !editor?.isEditable) return
+      if (!useSource && editor && !flushRich(editor)) return
       const sourceSelection = useSource ? source.current?.capture(coords) : null
       const document = editor?.state.doc
       const selection = editor?.state.selection
@@ -394,6 +396,7 @@ export function useFormattingToolbar(
           editor &&
           !editor.isDestroyed &&
           editor.isEditable &&
+          flushRich(editor) &&
           editor.state.doc === document &&
           selection
         ) {
@@ -454,6 +457,7 @@ export function useFormattingToolbar(
       const { editor, dialogs, disabled } = latest.current
       if (disabled) return
       const useSource = inSource()
+      if (!useSource && editor && !flushRich(editor)) return
       if (action.id === 'image') {
         await attachFiles(null)
       } else if (action.id === 'link') {
@@ -488,6 +492,7 @@ export function useFormattingToolbar(
           !editor ||
           editor.isDestroyed ||
           !editor.isEditable ||
+          !flushRich(editor) ||
           editor.state.doc !== document ||
           !selection
         )

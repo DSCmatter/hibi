@@ -1,9 +1,9 @@
-import type { Editor } from '@tiptap/core'
 import { isMarkdownDocument } from '../../shared/document-types'
 import { reportDiagnosticFailure } from '../../shared/local-diagnostics-observer'
 import { defineAddon } from '../api'
 import type { countText } from './count'
 import manifest from './manifest'
+import { observeRichCounts } from './rich'
 import { scheduleCounts } from './schedule'
 
 let stop: (() => void) | undefined
@@ -18,18 +18,15 @@ export default defineAddon({
     worker.addEventListener('error', failed)
     worker.addEventListener('messageerror', failed)
     const status = context.statusBar.register({ id: 'total', label: '' })
-    let editor: Editor | null = null
+    let richCounts: ReturnType<typeof observeRichCounts> | null = null
     let countsRichText = false
     const counter = scheduleCounts(
       () => {
         const document = context.editor.getDocument()
         if (!document) return null
-        const rich =
-          isMarkdownDocument(document.name) && editor && !editor.isDestroyed
-            ? editor
-            : null
+        const rich = isMarkdownDocument(document.name) ? richCounts : null
         countsRichText = Boolean(rich)
-        return rich ? rich.getText({ blockSeparator: '\n' }) : document.markdown
+        return rich ? rich.read(document) : document.markdown
       },
       (text) => worker.postMessage(text),
       ({ words, characters }) => {
@@ -46,20 +43,17 @@ export default defineAddon({
     context.editor.registerRich({
       id: 'text',
       attach(instance) {
-        editor = instance
-        const transaction = ({
-          transaction,
-        }: {
-          transaction: { docChanged: boolean }
-        }) => {
-          if (transaction.docChanged) refresh()
-        }
-        instance.on('transaction', transaction)
+        const reader = observeRichCounts(
+          instance,
+          context.editor.getDocument,
+          refresh,
+        )
+        richCounts = reader
         refresh()
         return () => {
-          instance.off('transaction', transaction)
-          if (editor === instance) {
-            editor = null
+          reader.stop()
+          if (richCounts === reader) {
+            richCounts = null
             refresh()
           }
         }

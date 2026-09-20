@@ -6,6 +6,8 @@ Start typing in a blank note, use **File → Open** to choose a document, or sel
 
 **Normal** lets you format text without seeing Markdown markers. **Source view** shows the original text with syntax highlighting. **Side-by-side** places them next to each other; Markdown supports editing in either pane, while other formats may offer a preview instead.
 
+While you type in the source pane, the formatted pane may catch up shortly after you pause. Your changes are available to saving and undo immediately. Entering the formatted pane brings it up to date before you edit there.
+
 Choose your starting view under **Settings → Editor → Layout → Default view**. Only views supported by the current [format](../editing/formats.md) are available. You can switch from the toolbar or use a [keyboard shortcut](../editing/typing-and-shortcuts.md).
 
 Switching views preserves your source. Editing formatted text may change Markdown spacing or notation. If Hibi cannot preserve part of a document through visual editing, that pane becomes read-only; use source view to edit it.

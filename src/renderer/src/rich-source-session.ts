@@ -3,6 +3,9 @@ import { PluginKey } from '@tiptap/pm/state'
 import type { AcceptedSourceEdit } from '../../shared/document-session'
 import type { SourceSnapshot } from '../../shared/source-buffer'
 import { documentRuntime } from './document-runtime'
+import { richSourceSnapshots as sources } from './rich-sync'
+
+export { richSourceSnapshot } from './rich-sync'
 
 export const richSourceEcho = new PluginKey('documentSourceEcho')
 type SourceStamp = Pick<SourceSnapshot, 'document' | 'version'>
@@ -14,9 +17,7 @@ const stamp = (source: SourceStamp): SourceStamp =>
     }),
     version: source.version,
   })
-const sources = new WeakMap<Editor, SourceStamp>()
 const dispatches = new WeakMap<Editor, object>()
-export const richSourceSnapshot = (editor: Editor) => sources.get(editor)
 
 /** Tiptap applies its filters/appended transactions once; source commits before its events. */
 export const richSourceSession = Extension.create<{

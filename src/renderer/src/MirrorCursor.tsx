@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core'
-import { type RefObject, useEffect, useRef, useState } from 'react'
+import { type RefObject, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { MarkdownPositionLookup } from './markdown-positions'
 import {
@@ -11,20 +11,16 @@ import {
 export function MirrorCursor({
   editor,
   root,
-  source,
-  body,
+  content,
   active,
   positions,
 }: {
   editor: Editor | null
   root: RefObject<HTMLDivElement | null>
-  source: string
-  body: string
+  content: () => { source: string; body: string } | null
   active: boolean
   positions: MarkdownPositionLookup
 }) {
-  const latest = useRef({ source, body })
-  latest.current = { source, body }
   const [position, setPosition] = useState<{
     pane: HTMLElement
     x: number
@@ -62,7 +58,12 @@ export function MirrorCursor({
         setPosition(null)
         return
       }
-      const { source, body } = latest.current
+      const text = content()
+      if (!text) {
+        setPosition(null)
+        return
+      }
+      const { source, body } = text
       const bodyOffset = source.lastIndexOf(body)
       if (
         bodyOffset < 0 ||
@@ -105,12 +106,20 @@ export function MirrorCursor({
         setPosition(null)
         return
       }
-      setPosition({
+      const next = {
         pane,
         x: caret.left - bounds.left + pane.scrollLeft,
         y: caret.top - bounds.top + pane.scrollTop,
         height: caret.bottom - caret.top,
-      })
+      }
+      setPosition((previous) =>
+        previous?.pane === next.pane &&
+        previous.x === next.x &&
+        previous.y === next.y &&
+        previous.height === next.height
+          ? previous
+          : next,
+      )
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure)
@@ -124,6 +133,7 @@ export function MirrorCursor({
       'focusout',
       'compositionend',
       'hibi:source-caret',
+      'hibi:rich-content',
     ])
       document.addEventListener(event, schedule)
     document.addEventListener('scroll', schedule, true)
@@ -140,13 +150,14 @@ export function MirrorCursor({
         'focusout',
         'compositionend',
         'hibi:source-caret',
+        'hibi:rich-content',
       ])
         document.removeEventListener(event, schedule)
       document.removeEventListener('scroll', schedule, true)
       window.removeEventListener('resize', schedule)
       editor.off('transaction', schedule)
     }
-  }, [active, editor, root, positions])
+  }, [active, editor, root, positions, content])
   return (
     position &&
     createPortal(
