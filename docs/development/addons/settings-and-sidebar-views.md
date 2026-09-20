@@ -100,6 +100,8 @@ Set `side: 'right'` when registering a view to make addon-triggered opens and it
 
 Hibi displays sidebar views as drawers in narrow windows. For a separate layout built with `Sidebar`, set `overlay` and supply `onDismiss` to use the same backdrop and Escape handling. Keep covered content inert while the drawer is open and return focus to its toggle when dismissing it.
 
+If an asynchronous row refresh removes the focused element, the shared drawer restores focus to its selected or first available control so keyboard navigation and Escape keep working. A newer pointer action, explicit blur, or focus outside the drawer takes precedence.
+
 The shared `Sidebar` also accepts `side: 'right'` to mirror its collapse motion and resize edge. Wide layouts allow both sidebars; narrow layouts display one drawer at a time.
 
 ## Bind a view to a document

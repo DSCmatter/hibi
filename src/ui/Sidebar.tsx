@@ -140,14 +140,46 @@ export function Sidebar({
   onDismiss,
 }: SidebarProps) {
   const container = useRef<HTMLDivElement>(null)
+  const focusedElement = useRef<HTMLElement | null>(null)
+  const wasOverlayOpen = useRef(false)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: row replacement can remove the focused DOM node without changing drawer visibility.
   useLayoutEffect(() => {
-    if (!open || !overlay) return
+    const opening = open && overlay && !wasOverlayOpen.current
+    wasOverlayOpen.current = open && overlay
+    if (!open || !overlay) {
+      focusedElement.current = null
+      return
+    }
+    const previous = focusedElement.current
+    if (
+      !opening &&
+      (!previous ||
+        previous.isConnected ||
+        document.activeElement !== document.body)
+    )
+      return
+    // An async row refresh must not strand drawer keyboard focus on the body.
     const target =
       container.current?.querySelector<HTMLElement>('[aria-selected="true"]') ??
       container.current?.querySelector<HTMLElement>(
         'input, button:not(:disabled):not(.sidebar-scrim)',
       )
     target?.focus({ preventScroll: true })
+  }, [open, overlay, items])
+  useEffect(() => {
+    if (!open || !overlay) return
+    const forgetFocus = () => {
+      focusedElement.current = null
+    }
+    const outsideFocus = (event: FocusEvent) => {
+      if (!container.current?.contains(event.target as Node)) forgetFocus()
+    }
+    document.addEventListener('pointerdown', forgetFocus, true)
+    document.addEventListener('focusin', outsideFocus, true)
+    return () => {
+      document.removeEventListener('pointerdown', forgetFocus, true)
+      document.removeEventListener('focusin', outsideFocus, true)
+    }
   }, [open, overlay])
   const drag = useRef<{ x: number; width: number; pointer: number } | null>(
     null,
@@ -249,6 +281,13 @@ export function Sidebar({
       data-side={side}
       inert={!open}
       aria-hidden={!open}
+      onFocusCapture={(event) => {
+        focusedElement.current = event.target
+      }}
+      onBlurCapture={(event) => {
+        // Explicit blur wins over a later refresh; DOM removal does not.
+        if (event.target.isConnected) focusedElement.current = null
+      }}
       onKeyDown={(event) => {
         if (!overlay || !open || event.defaultPrevented) return
         if (event.key === 'Escape') {

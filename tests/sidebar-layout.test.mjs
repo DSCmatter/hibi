@@ -184,7 +184,24 @@ test('settings collapse independently and narrow sidebars overlay full-width des
     () => document.querySelector('.app').dataset.sidebar === 'false',
   )
   assert.equal((await contentGeometry('.editor-surface')).inert, false)
+  await page.evaluate(() => {
+    window.previousOutlineRow = document.querySelector(
+      '.outline-sidebar[data-side="left"] [role="treeitem"]',
+    )
+  })
   await workspaceToggle.click()
+  await page.waitForFunction(() => {
+    const row = document.querySelector(
+      '.outline-sidebar[data-side="left"] [role="treeitem"]',
+    )
+    return row && row !== window.previousOutlineRow
+  })
+  assert.equal(
+    await page.evaluate(() =>
+      Boolean(document.activeElement?.closest('.outline-sidebar')),
+    ),
+    true,
+  )
   await page.keyboard.press('Escape')
   assert.equal(
     await workspaceToggle.evaluate(
@@ -192,6 +209,85 @@ test('settings collapse independently and narrow sidebars overlay full-width des
     ),
     true,
   )
+
+  // Source outlines replace their cached rows after an asynchronous parser read.
+  // Keyboard ownership must survive that refresh too.
+  await page.setViewportSize({ width: 1000, height: 760 })
+  await page.getByRole('button', { name: /^source view$/i }).click()
+  await page.getByRole('textbox', { name: /^markdown editor$/i }).waitFor()
+  await page.setViewportSize({ width: 480, height: 760 })
+  await workspaceToggle.click()
+  const outlineRow = page.getByRole('treeitem', { name: /^first$/i })
+  await outlineRow.waitFor()
+  await outlineRow.focus()
+  await page.keyboard.press('Escape')
+  await page.evaluate(() => {
+    window.previousOutlineRow = document.querySelector(
+      '.outline-sidebar[data-side="left"] [role="treeitem"]',
+    )
+  })
+  await workspaceToggle.click()
+  await page.waitForFunction(() => {
+    const row = document.querySelector(
+      '.outline-sidebar[data-side="left"] [role="treeitem"]',
+    )
+    return row && row !== window.previousOutlineRow
+  })
+  assert.equal(
+    await outlineRow.evaluate((element) => element === document.activeElement),
+    true,
+  )
+  await page.keyboard.press('Escape')
+
+  // A newer focus or pointer action while rows are absent cancels restoration,
+  // including when the user explicitly leaves focus on the body.
+  for (const intent of ['focus-and-blur', 'pointer']) {
+    await page.evaluate(() => {
+      const pending = new Map()
+      let next = 0
+      const request = window.requestIdleCallback,
+        cancel = window.cancelIdleCallback
+      window.requestIdleCallback = (callback) => {
+        pending.set(++next, callback)
+        return next
+      }
+      window.cancelIdleCallback = (id) => pending.delete(id)
+      window.pendingOutlineReads = pending
+      window.releaseOutlineReads = () => {
+        window.requestIdleCallback = request
+        window.cancelIdleCallback = cancel
+        for (const callback of pending.values())
+          callback({ didTimeout: false, timeRemaining: () => 20 })
+        pending.clear()
+      }
+    })
+    await workspaceToggle.click()
+    await page.waitForFunction(() => window.pendingOutlineReads.size > 0)
+    if (intent === 'focus-and-blur') {
+      await workspaceToggle.focus()
+      await workspaceToggle.evaluate((element) => element.blur())
+    } else {
+      await page.evaluate(() => {
+        const outside = document.createElement('div')
+        outside.id = 'outside-focus-intent'
+        outside.style.cssText =
+          'position:fixed;inset:0 auto auto 0;width:20px;height:20px;z-index:999999'
+        document.body.append(outside)
+      })
+      await page.locator('#outside-focus-intent').click()
+      await page
+        .locator('#outside-focus-intent')
+        .evaluate((element) => element.remove())
+    }
+    await page.evaluate(() => window.releaseOutlineReads())
+    await outlineRow.waitFor()
+    assert.equal(
+      await page.evaluate(() => document.activeElement === document.body),
+      true,
+      intent,
+    )
+    await workspaceToggle.click()
+  }
 
   await page.setViewportSize({ width: 1000, height: 760 })
   await clickMenu(app, 'Settings')

@@ -42,7 +42,7 @@ Press `Cmd/Ctrl+/` or use the sidebar button to show or hide it. Drag its right 
 
 With the resize edge focused, use Left/Right to adjust it, hold Shift for larger steps, and press Enter to reset it. Escape cancels a drag. Workspace and settings sidebars share your chosen width.
 
-In a narrow window, the sidebar opens over the editor. Selecting a file or heading closes it so you can read the full-width note. Press Escape or click outside to dismiss it. Widening the window restores your previous sidebar layout.
+In a narrow window, the sidebar opens over the editor. Selecting a file or heading closes it so you can read the full-width note. Press Escape or click outside to dismiss it. Keyboard focus stays in the sidebar when its rows refresh, unless you move focus elsewhere. Widening the window restores your previous sidebar layout.
 
 ## Use the right sidebar
 
