@@ -23,6 +23,7 @@ import {
 const { values } = parseArgs({
   options: {
     mode: { type: 'string', default: 'all' },
+    file: { type: 'string' },
     size: { type: 'string', default: 'all' },
     shape: { type: 'string', default: 'all' },
     position: { type: 'string', default: 'middle' },
@@ -45,7 +46,7 @@ const { values } = parseArgs({
 })
 if (values.help) {
   console.log(
-    'node scripts/trace-input-paint.mjs --mode source|visual|split|all --size chars|words|all --shape paragraphs|giant|all --position start|middle|end|all --target source|visual|both --out NEW_DIRECTORY [--quick] [--hold-ms 30000] [--rate 30] [--trace-screenshots] [--cpu-profile] [--continue-on-error]',
+    'node scripts/trace-input-paint.mjs --mode source|visual|split|all [--file PATH | --size chars|words|all --shape paragraphs|giant|all] --position start|middle|end|all --target source|visual|both --out NEW_DIRECTORY [--quick] [--hold-ms 30000] [--rate 30] [--trace-screenshots] [--cpu-profile] [--continue-on-error]',
   )
   process.exit(0)
 }
@@ -55,8 +56,10 @@ const choose = (value, choices) => {
   return [value]
 }
 const modes = choose(values.mode, ['source', 'visual', 'split']),
-  sizes = choose(values.size, ['chars', 'words']),
-  shapes = choose(values.shape, ['paragraphs', 'giant']),
+  sizes = values.file ? ['file'] : choose(values.size, ['chars', 'words']),
+  shapes = values.file
+    ? ['original']
+    : choose(values.shape, ['paragraphs', 'giant']),
   positions = choose(values.position, ['start', 'middle', 'end']),
   holdMs = values.quick ? 0 : Number(values['hold-ms']),
   rate = Number(values.rate),
@@ -75,6 +78,21 @@ const addons = Object.fromEntries(
 )
 addons['discord-presence'] = false
 addons['input-paint-probe'] = true
+const sourceBytes = values.file ? await readFile(resolve(values.file)) : null,
+  fileText = sourceBytes?.toString('utf8'),
+  sourceFile = sourceBytes
+    ? {
+        path: resolve(values.file),
+        bytes: sourceBytes.length,
+        chars: fileText.length,
+        sha256: createHash('sha256').update(sourceBytes).digest('hex'),
+      }
+    : null
+if (sourceBytes)
+  assert.ok(
+    Buffer.from(fileText, 'utf8').equals(sourceBytes),
+    '--file must contain valid UTF-8 text.',
+  )
 await access(resolve('out/main/index.js'))
 const output = values.out
   ? resolve(values.out)
@@ -84,6 +102,7 @@ const summary = {
   output,
   options: values,
   addons,
+  sourceFile,
   runtime: process.version,
   platform: process.platform,
   arch: process.arch,
@@ -187,7 +206,7 @@ async function installProbe(profile) {
   )
   await writeFile(join(profile, 'addons.json'), JSON.stringify(addons))
 }
-function instrument({ target, offset }) {
+function instrument({ target, offset, fileVisual, requestedPosition }) {
   const sourceElement = document.querySelector('.cm-content'),
     sourceView = sourceElement
       ? window.__inputPaintSdk.codeMirror.view.EditorView.findFromDOM(
@@ -437,19 +456,60 @@ function instrument({ target, offset }) {
   } else {
     let raw = 0,
       position = null
-    rich.state.doc.forEach((node, pos) => {
-      if (
-        position === null &&
-        offset >= raw &&
-        offset <= raw + node.textContent.length
+    let blockIndex = null,
+      blockCount = null
+    if (fileVisual) {
+      const blocks = []
+      rich.state.doc.descendants((node, pos) => {
+        if (!node.isTextblock || node.isAtom) return
+        blocks.push({ node, pos })
+        return false
+      })
+      if (!blocks.length)
+        throw new Error('The document has no editable textblock.')
+      blockCount = blocks.length
+      blockIndex =
+        requestedPosition === 'start'
+          ? 0
+          : requestedPosition === 'end'
+            ? blocks.length - 1
+            : Math.floor(blocks.length / 2)
+      const block = blocks[blockIndex]
+      let within =
+        requestedPosition === 'start'
+          ? 0
+          : requestedPosition === 'end'
+            ? block.node.content.size
+            : Math.floor(block.node.content.size / 2)
+      const seam = block.node.textBetween(
+        Math.max(0, within - 1),
+        Math.min(block.node.content.size, within + 1),
       )
-        position = pos + 1 + offset - raw
-      raw += node.textContent.length + 2
-    })
+      if (/^[\uD800-\uDBFF][\uDC00-\uDFFF]$/.test(seam)) within++
+      position = block.pos + 1 + within
+    } else
+      rich.state.doc.forEach((node, pos) => {
+        if (
+          position === null &&
+          offset >= raw &&
+          offset <= raw + node.textContent.length
+        )
+          position = pos + 1 + offset - raw
+        raw += node.textContent.length + 2
+      })
     if (position === null)
       throw new Error('Could not map plain fixture offset into visual editor')
     rich.chain().setTextSelection(position).focus().scrollIntoView().run()
+    return {
+      basis: fileVisual ? 'visual-textblock' : 'plain-source-offset',
+      richPosition: position,
+      blockIndex,
+      blockCount,
+      textOffset: rich.state.doc.textBetween(0, position, '').length,
+      baselineText: fileVisual ? rich.state.doc.textContent : null,
+    }
   }
+  return { basis: 'normalized-source-offset', editorOffset: offset }
 }
 async function streamTrace(session, path) {
   const complete = new Promise((done) =>
@@ -516,7 +576,8 @@ async function runCase(config) {
     directory = join(output, name),
     profile = join(directory, 'profile'),
     file = join(directory, 'fixture.md'),
-    source = documentText(config.size, config.shape)
+    source = fileText ?? documentText(config.size, config.shape),
+    fileVisual = sourceFile !== null && config.target === 'visual'
   await mkdir(directory)
   await installProbe(profile)
   await writeFile(file, source)
@@ -527,14 +588,22 @@ async function runCase(config) {
         ? source.length
         : Math.floor(source.length / 2)
   while (source[offset] === '\n') offset++
+  if (
+    /^[\uD800-\uDBFF][\uDC00-\uDFFF]$/.test(
+      source.slice(offset - 1, offset + 1),
+    )
+  )
+    offset++
+  const editorOffset = source.slice(0, offset).replace(/\r\n/g, '\n').length
   const result = {
     ...config,
     name,
     directory,
     addons,
+    sourceFile,
     chars: source.length,
     words: source.match(/\S+/g)?.length ?? 0,
-    offset,
+    offset: fileVisual ? null : offset,
     holdMs,
     idleMs: 2000,
     rate,
@@ -547,6 +616,7 @@ async function runCase(config) {
   const app = await launchBenchmarkApp(profile)
   let page,
     session,
+    placement,
     tracing = false,
     profiling = false
   const watchdog = setTimeout(
@@ -584,11 +654,24 @@ async function runCase(config) {
       source,
       { timeout: 60000 },
     )
-    await page.waitForFunction((target) => {
+    const readiness = await page.waitForFunction((target) => {
       const element = document.querySelector(
         target === 'source' ? '.cm-content' : '.tiptap',
       )
-      return (
+      const notice =
+        target === 'visual'
+          ? document.querySelector(
+              '.rich-editor-host .source-notice .document-notice',
+            )
+          : null
+      if (
+        notice &&
+        !notice.closest('[hidden], [inert], [aria-hidden="true"]') &&
+        notice.getBoundingClientRect().width > 0 &&
+        getComputedStyle(notice).visibility === 'visible'
+      )
+        return { status: 'unavailable', notice: notice.textContent.trim() }
+      if (
         document.hasFocus() &&
         element?.isContentEditable &&
         !element.closest('[inert]') &&
@@ -596,8 +679,48 @@ async function runCase(config) {
         document.querySelector('.app-shell')?.getAttribute('aria-busy') !==
           'true'
       )
+        return { status: 'ready' }
+      return false
     }, config.target)
-    await page.evaluate(instrument, { target: config.target, offset })
+    const ready = await readiness.jsonValue()
+    await readiness.dispose()
+    if (ready.status === 'unavailable') {
+      const screenshot = join(directory, 'preservation-notice.png')
+      result.unavailable = {
+        reason: 'source-preservation',
+        notice: ready.notice,
+        screenshot,
+      }
+      await page.screenshot({ path: screenshot, timeout: 5000 })
+      if (!fileVisual)
+        throw new Error(
+          `Generated visual fixture is unexpectedly protected: ${ready.notice}`,
+        )
+      assert.equal(
+        await page.evaluate(
+          () => window.__inputPaintContext.editor.getDocument().markdown,
+        ),
+        source,
+        'Protected document source changed before input',
+      )
+      assert.equal(
+        await readFile(file, 'utf8'),
+        source,
+        'Protected fixture bytes changed before input',
+      )
+      result.preservation = { canonicalUnchanged: true, diskUnchanged: true }
+      result.status = 'unavailable'
+      process.exitCode = 1
+      return
+    }
+    placement = await page.evaluate(instrument, {
+      target: config.target,
+      offset: config.target === 'source' ? editorOffset : offset,
+      fileVisual,
+      requestedPosition: config.position,
+    })
+    result.selectedPosition = { ...placement }
+    delete result.selectedPosition.baselineText
     const clockBefore = performance.timeOrigin + performance.now(),
       rendererEpoch = await page.evaluate(
         () => performance.timeOrigin + performance.now(),
@@ -703,12 +826,35 @@ async function runCase(config) {
         `${phase}: input dispatch failed`,
       )
     }
-    async function save(expected, stage) {
+    let acceptedSource = source
+    async function save(expected, stage, expectedRichText) {
       const startedEpoch = performance.timeOrigin + performance.now()
       await page.evaluate(
         (stage) => performance.mark(`input-paint:save:${stage}:start`),
         stage,
       )
+      if (expectedRichText !== undefined) {
+        const accepted = await deadline(
+          page.evaluate(() => ({
+            text: document.querySelector('.tiptap').editor.state.doc
+              .textContent,
+            source: window.__inputPaintContext.editor.getDocument().markdown,
+          })),
+          settleMs,
+          `${stage} rich input validation`,
+        )
+        assert.equal(
+          accepted.text,
+          expectedRichText,
+          `${stage}: rich document omitted or changed accepted input`,
+        )
+        assert.notEqual(
+          accepted.source,
+          acceptedSource,
+          `${stage}: rich input was not committed to canonical source`,
+        )
+        expected = accepted.source
+      }
       const saved = await deadline(
         page.evaluate(() => window.hibi.saveDocument(false)),
         settleMs,
@@ -738,6 +884,8 @@ async function runCase(config) {
         startedEpoch,
         finishedEpoch: performance.timeOrigin + performance.now(),
       })
+      acceptedSource = expected
+      return expected
     }
     async function settle(phase, count) {
       await page.waitForFunction(
@@ -757,7 +905,10 @@ async function runCase(config) {
         { timeout: settleMs },
       )
     }
-    const first = `${source.slice(0, offset)}x${source.slice(offset)}`
+    const rawFirst = `${source.slice(0, offset)}x${source.slice(offset)}`,
+      richFirst = fileVisual
+        ? `${placement.baselineText.slice(0, placement.textOffset)}x${placement.baselineText.slice(placement.textOffset)}`
+        : undefined
     await sleep(2000)
     if (values['cpu-profile']) {
       await deadline(
@@ -775,22 +926,28 @@ async function runCase(config) {
     }
     await dispatch('first-after-idle', 'x', 1, 0)
     await settle('first-after-idle', 1)
-    await save(first, 'first-after-visible')
+    const first = await save(rawFirst, 'first-after-visible', richFirst)
+    let final = first
     await page.screenshot({ path: join(directory, 'first-key.png') })
     if (repetitions) {
       await dispatch('hold-s', 's', repetitions, holdMs)
       await save(
         `${source.slice(0, offset)}x${'s'.repeat(repetitions)}${source.slice(offset)}`,
         'hold-immediate',
+        fileVisual
+          ? `${placement.baselineText.slice(0, placement.textOffset)}x${'s'.repeat(repetitions)}${placement.baselineText.slice(placement.textOffset)}`
+          : undefined,
       )
       await settle('hold-s', repetitions)
       await dispatch('hold-backspace', 'Backspace', repetitions, holdMs)
-      await save(first, 'backspace-immediate')
+      final = await save(first, 'backspace-immediate', richFirst)
       await settle('hold-backspace', repetitions)
     }
     await dispatch(
       'selection',
-      offset === source.length ? 'ArrowLeft' : 'ArrowRight',
+      (fileVisual ? config.position === 'end' : offset === source.length)
+        ? 'ArrowLeft'
+        : 'ArrowRight',
       20,
       500,
     )
@@ -804,7 +961,7 @@ async function runCase(config) {
       await page.evaluate(
         () => window.__inputPaintContext.editor.getDocument().markdown,
       ),
-      first,
+      final,
     )
     const scroll = await page.evaluate(() => {
       const state = window.__inputPaint
@@ -841,7 +998,7 @@ async function runCase(config) {
     tracing = false
     const history = await deadline(
       page.evaluate(
-        async ({ source, final, target }) => {
+        async ({ source, final, target, initialRichText, finalRichText }) => {
           const context = window.__inputPaintContext,
             sdk = window.__inputPaintSdk,
             rich = document.querySelector('.tiptap')?.editor,
@@ -870,6 +1027,13 @@ async function runCase(config) {
           }
           if (context.editor.getDocument().markdown !== source)
             throw new Error('Undo did not restore original source exactly')
+          if (
+            initialRichText !== undefined &&
+            rich.state.doc.textContent !== initialRichText
+          )
+            throw new Error(
+              'Undo did not restore original rich document text exactly',
+            )
           for (let index = 0; index < undos; index++) {
             const done =
               target === 'source'
@@ -882,15 +1046,28 @@ async function runCase(config) {
           }
           if (context.editor.getDocument().markdown !== final)
             throw new Error('Redo did not restore all accepted input exactly')
+          if (
+            finalRichText !== undefined &&
+            rich.state.doc.textContent !== finalRichText
+          )
+            throw new Error(
+              'Redo did not restore accepted rich document text exactly',
+            )
           return { undos, restoredOriginal: true, restoredFinal: true }
         },
-        { source, final: first, target: config.target },
+        {
+          source,
+          final,
+          target: config.target,
+          initialRichText: fileVisual ? placement.baselineText : undefined,
+          finalRichText: richFirst,
+        },
       ),
       settleMs,
       'undo/redo validation',
     )
     result.history = history
-    await save(first, 'redo')
+    await save(final, 'redo')
     result.status = 'passed'
   } catch (error) {
     result.status = 'failed'
