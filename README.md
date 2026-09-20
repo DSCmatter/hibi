@@ -1,24 +1,25 @@
-# Hibi
-
+# hibi
 [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/schmayterling/hibi?utm_source=badge)
 
-Hibi is a desktop editor for local notes and documents. Write in Markdown, edit the source, or keep both views side by side. Your files stay in ordinary folders.
+[join the support/developer discord](https://discord.gg/v9r4cABUP2) | [get the latest nightly](https://github.com/schmayterling/hibi/releases)
 
-## Get started
+hibi is a desktop editor for local notes and documents. write in Markdown, edit the source, or keep both views side by side and come build the open source app for everything you write.
 
-Download a build from [Releases](https://github.com/schmayterling/hibi/releases). Back up your notes before using a nightly build.
+<img width="2634" height="1664" alt="CleanShot 2026-09-21 at 1 14 57 AM@2x" src="https://github.com/user-attachments/assets/5f8ef875-0018-4cea-9773-0c16d24bfd2f" />
 
-Start typing, open a file, or open a folder as a workspace. Use `Cmd+K` on macOS or `Ctrl+K` on Windows and Linux to find commands and settings.
 
-Read the [user guide](docs/README.md) for editing, settings, workspaces, and exports.
 
-## Your files
 
-Save your work before quitting. Unsaved drafts can be lost in an app or machine crash; [version history](docs/editing/version-history.md) keeps previous saves.
+## get started
 
-Opening a document does not run its embedded code. Formats that need to execute code have a separate **Run document** action and ask for confirmation.
+download a build from [releases](https://github.com/schmayterling/hibi/releases) and back up your notes before using a nightly build.
 
-## Build from source
+start typing, open a file, or open a folder as a workspace and **use `cmd+K` on macOS or `ctrl+K` on Windows and Linux to find commands and settings**.
+
+read the [user guide](docs/README.md) for editing, settings, workspaces, and exports.
+
+
+## build from source
 
 Use Node 24 LTS (`nvm use`), or Node 22.18 or later:
 
@@ -27,8 +28,16 @@ npm ci
 npm run dev
 ```
 
-For build commands, tests, and addon development, see [developer and agent notes](docs/ai-agents/README.md).
+for build commands, tests, and addon development, see [developer and agent notes](docs/ai-agents/README.md).
 
-## License
+## contributing guidelines
 
-Hibi uses the [GNU Affero General Public License v3.0](LICENSE). Third-party credits and license texts are available in **Settings → Hibi → Open source licenses**.
+see this: [CONTRIBUTING.md](/CONTRIBUTING.md)
+
+## ai contribution policy
+
+allowed, i mean what did u expect but lets try to keep code quality great, hibi is constantly being benchmarked for performance so you will know if your pr is slowing down hibi
+
+## license
+
+hibi uses the [GNU Affero General Public License v3.0](LICENSE). third-party credits and license texts are available in **Settings → Hibi → Open source licenses**.
