@@ -58,21 +58,46 @@ export function waitForEditor(page) {
   })
 }
 
-export function waitForWorkspaces(page, paths) {
-  return page.waitForFunction((paths) => {
-    const buttons = [
-      ...document.querySelectorAll('.startup-placeholder li button'),
-    ]
-    return (
-      buttons.length === paths.length &&
-      buttons.every(
-        (button, index) =>
-          button.textContent === paths[index] &&
-          !button.disabled &&
-          !button.closest('[inert]'),
+export async function waitForWorkspaces(page, paths) {
+  try {
+    return await page.waitForFunction((paths) => {
+      const buttons = [
+        ...document.querySelectorAll('.startup-placeholder li button'),
+      ]
+      return (
+        buttons.length === paths.length &&
+        buttons.every(
+          (button, index) =>
+            button.textContent === paths[index] &&
+            !button.disabled &&
+            !button.closest('[inert]'),
+        )
       )
+    }, paths)
+  } catch (cause) {
+    const state = await page
+      .evaluate(() => ({
+        startup: document.querySelector('.editor-page')?.dataset.startup,
+        placeholder: !!document.querySelector('.startup-placeholder'),
+        welcomeDismissed: sessionStorage.getItem('hibi:welcome-dismissed'),
+        editorTextLength: document.querySelector('.tiptap')?.textContent.length,
+        workspaces: [
+          ...document.querySelectorAll('.startup-placeholder li button'),
+        ].map((button) => ({
+          text: button.textContent,
+          disabled: button.disabled,
+          inert: !!button.closest('[inert]'),
+          visible: button.getBoundingClientRect().width > 0,
+        })),
+        panes: document.querySelector('.editor-panes')?.className,
+        busy: document.querySelector('.editor-page')?.getAttribute('aria-busy'),
+      }))
+      .catch(() => null)
+    throw new Error(
+      `Workspace readiness failed: ${JSON.stringify({ expected: paths, state })}`,
+      { cause },
     )
-  }, paths)
+  }
 }
 
 export async function typeCharacter(page, previousText, character = 'x') {

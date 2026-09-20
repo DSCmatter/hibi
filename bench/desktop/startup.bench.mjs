@@ -31,6 +31,10 @@ const benchmarks = withCodSpeed(
     throws: true,
   }),
 )
+benchmarks.addEventListener('add', ({ task }) => {
+  for (const phase of ['warmup', 'start'])
+    task.addEventListener(phase, () => console.log(`${phase}: ${task.name}`))
+})
 const root = await mkdtemp(join(tmpdir(), 'hibi-codspeed-'))
 const recentPaths = ['notes', 'journal', 'projects'].map((name) =>
   join(root, name),

@@ -27,6 +27,8 @@ npm run bench:desktop
 
 Desktop benchmarks launch the built app in isolated profiles. They measure startup through editor and workspace-list readiness, the first visible keystroke, opening larger notes, and switching to source view.
 
+The desktop log names each warmup and measured case. Workspace-readiness failures retain the expected and displayed temporary paths, startup state, and button availability without relaxing the readiness deadline.
+
 Use `npm run bench:startup` for a detailed local launch report. Compare several runs; a single launch can be affected by disk caches or other processes.
 
 Use `node scripts/benchmark-sidebar.mjs 100000` (also `1000` or `10000`) to inspect the shared tree's rendered row count, DOM size, scroll extent and elapsed time through two animation frames. Each run uses the existing production build and a temporary addon/profile. Item metadata is still prepared eagerly. This exploratory probe does not establish percentile latency or physical presentation; preserve before/after output and use repeated controlled runs for timing claims. `tests/sidebar-window.test.mjs` covers far-row keyboard navigation, rename focus, section/row geometry, scroll anchors and retained drag/menu targets.
