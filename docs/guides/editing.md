@@ -10,7 +10,7 @@ While you type in the source pane, the formatted pane may catch up shortly after
 
 Choose your starting view under **Settings → Editor → Layout → Default view**. Only views supported by the current [format](../editing/formats.md) are available. You can switch from the toolbar or use a [keyboard shortcut](../editing/typing-and-shortcuts.md).
 
-Switching views preserves your source. Editing formatted text may change Markdown spacing or notation. If Hibi cannot preserve part of a document through visual editing, that pane becomes read-only; use source view to edit it.
+Switching views preserves your source. Normal view stays editable regardless of character count, word count, or Markdown syntax. Editing formatted text may normalize Markdown or discard syntax that the visual editor does not support, including raw HTML and reference definitions. Use source view when you need to preserve those constructs exactly.
 
 When you use an input method, choosing and revising candidates remains one undo step even if you pause between candidates. Each new composition starts a separate undo step in both source and formatted views.
 

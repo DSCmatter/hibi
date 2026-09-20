@@ -8,7 +8,22 @@ import { pressShortcut } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 
 async function clickSourceLink(page, editor, text) {
-  const point = await editor.evaluate((element, text) => {
+  await page
+    .locator(
+      '.editor-panes[data-source-ready="true"] .source-pane:not([inert]) [contenteditable="true"]',
+    )
+    .waitFor()
+  const point = await editor.evaluate(async (element, text) => {
+    // Raw mouse coordinates need settled geometry after the pane slides in.
+    await Promise.all(
+      element
+        .closest('.source-pane')
+        .getAnimations()
+        .filter((animation) =>
+          Number.isFinite(animation.effect?.getComputedTiming().endTime),
+        )
+        .map((animation) => animation.finished),
+    )
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
     while (walker.nextNode()) {
       const node = walker.currentNode,

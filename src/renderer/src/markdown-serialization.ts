@@ -1,7 +1,6 @@
 import type { JSONContent } from '@tiptap/core'
 import type { MarkdownManager } from '@tiptap/markdown'
 import type { Node } from '@tiptap/pm/model'
-import { needsSourceEditing } from './markdown-preservation.ts'
 
 /** Block caching is opt-in: arbitrary addon serializers may depend on the whole document. */
 export function markdownSerializer(
@@ -16,7 +15,6 @@ export function markdownSerializer(
       index: number
       attributes: Node['attrs']
       source: string
-      sourceOnly: boolean
     }
   >()
   const asJSON = (node: Node) => {
@@ -39,7 +37,6 @@ export function markdownSerializer(
       const source = manager.serialize(doc.toJSON())
       return {
         source,
-        sourceOnly: needsSourceEditing(source),
         rendered: children.length,
         blocks: null,
       }
@@ -70,7 +67,6 @@ export function markdownSerializer(
           index,
           attributes: doc.attrs,
           source,
-          sourceOnly: needsSourceEditing(source),
         }
         blocks.set(node, cached)
         rendered++
@@ -80,9 +76,6 @@ export function markdownSerializer(
     const joined = parts.map((block) => block.source).join('\n\n')
     // Match the manager's empty-document normalization, including blank paragraphs.
     const source = /^(?:\s|&nbsp;)*$/.test(joined) ? '' : joined
-    const sourceOnly =
-      parts.some((block) => block.sourceOnly) ||
-      (/^(?:\uFEFF)?---/.test(source) && needsSourceEditing(source))
-    return { source, sourceOnly, rendered, blocks: parts }
+    return { source, rendered, blocks: parts }
   }
 }

@@ -151,7 +151,10 @@ test('unsaved custom source survives enabling, rich editing, disabling, saving, 
   })
   const page = await app.firstWindow()
   page.setDefaultTimeout(7000)
-  await page.locator('.source-notice').waitFor()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.isContentEditable,
+  )
+  assert.equal(await page.locator('.source-notice').count(), 0)
   assert.equal(await page.evaluate(() => window.citationsLoaded), undefined)
   await page.getByRole('button', { name: 'Source view', exact: true }).click()
   await page.waitForFunction(
@@ -180,10 +183,25 @@ test('unsaved custom source survives enabling, rich editing, disabling, saving, 
   await clickMenu(app, 'Settings')
   await page.locator('#addon-citations').click()
   await clickMenu(app, 'Settings')
-  await page.locator('.source-notice').waitFor()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.isContentEditable,
+  )
+  assert.equal(await page.locator('.source-notice').count(), 0)
   await page.evaluate(() => window.hibi.saveDocument(false))
   assert.equal(await readFile(file, 'utf8'), `${prefix}Changed body`)
   await page.reload()
-  await page.locator('.source-notice').waitFor()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.isContentEditable,
+  )
+  assert.equal(await page.locator('.source-notice').count(), 0)
   assert.equal(await page.evaluate(() => window.citationsLoaded), undefined)
+  await replaceRichText(
+    page,
+    page.getByRole('textbox', { name: 'Document editor', exact: true }),
+    'Editable without the addon',
+  )
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    'Editable without the addon',
+  )
 })

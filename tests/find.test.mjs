@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { electron } from './electron.mjs'
 import { pressShortcut } from './keyboard.mjs'
+import { waitForAsync } from './poll.mjs'
 
 test('find in document searches rich text and offscreen markdown without editing it', {
   timeout: 45000,
@@ -32,8 +33,25 @@ test('find in document searches rich text and offscreen markdown without editing
     .click()
   const source = page.getByRole('textbox', { name: /markdown editor/i })
   await source.waitFor()
+  const replaceSource = async (text) => {
+    await page
+      .locator(
+        '.editor-panes[data-source-ready="true"] .source-pane:not([inert]) [contenteditable="true"]',
+      )
+      .waitFor()
+    // Select the full editor document, including offscreen text, before input.
+    await source.focus()
+    await source.press('ControlOrMeta+a')
+    await page.keyboard.insertText(text)
+    await waitForAsync(
+      page,
+      async (expected) =>
+        (await window.hibi.getDocument()).markdown === expected,
+      text,
+    )
+  }
   const markdown = '# title\n\nhello **world** and hello world.\n\nHELLO world.'
-  await source.fill(markdown)
+  await replaceSource(markdown)
   await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
   await rich.waitFor()
   const shortcut = process.platform === 'darwin' ? 'Meta+f' : 'Control+f'
@@ -127,7 +145,7 @@ test('find in document searches rich text and offscreen markdown without editing
     markdown,
   )
 
-  await source.fill(
+  await replaceSource(
     `${Array.from({ length: 150 }, (_, index) => `line ${index}`).join('\n')}\nlast needle`,
   )
   await input.fill('last needle')
@@ -138,7 +156,7 @@ test('find in document searches rich text and offscreen markdown without editing
     .locator('.cm-searchMatch')
     .filter({ hasText: /last needle/i })
     .waitFor()
-  await source.fill(
+  await replaceSource(
     Array.from({ length: 2200 }, (_, index) => `${index} café`).join('\n'),
   )
   await input.fill('CAFE')
@@ -148,7 +166,7 @@ test('find in document searches rich text and offscreen markdown without editing
   await input.press('Enter')
   await waitForCount('1/2200')
   // Replacing source invalidates old worker results without moving input focus.
-  await source.fill('last needle')
+  await replaceSource('last needle')
   await waitForCount('No results')
   assert.equal(
     await source.evaluate((element) => element === document.activeElement),

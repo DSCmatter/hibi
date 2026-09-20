@@ -13,7 +13,6 @@ import { guardNativeListTokenizer } from './list-tokenizer-prefix.ts'
 import { markdownSyntax } from './markdown-syntax.ts'
 import { installSyntaxPreferences } from './syntax-parser.ts'
 
-export { needsSourceEditing } from './markdown-preservation.ts'
 export { projectMarkdown } from './markdown-projection.ts'
 
 const NativeStarterKit = StarterKit.extend({

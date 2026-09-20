@@ -1201,9 +1201,6 @@
   "0daa134af314": [
     "src/shared/document-edits.ts"
   ],
-  "41f0dc36eb89": [
-    "src/renderer/src/Editor.tsx"
-  ],
   "c7bf14938074": [
     "src/addons/asciidoc/manifest.ts"
   ],
@@ -3841,6 +3838,9 @@
   ],
   "aab4c81b2baa": [
     "src/shared/document-edits.ts"
+  ],
+  "276db5461a80": [
+    "src/renderer/src/Editor.tsx"
   ],
   "e786eb038293": [
     "src/main/index.ts"

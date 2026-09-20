@@ -37,6 +37,7 @@ test('startup placeholder stays out of documents and reopens persisted recent wo
     await rm(temp, { recursive: true, force: true })
   })
   let page = await launch()
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control'
   const bootstrap = await page.evaluate(() => window.hibi.bootstrap.document())
   assert.equal(bootstrap.externalPending, false)
   assert.equal(bootstrap.document.markdown, '')
@@ -46,6 +47,7 @@ test('startup placeholder stays out of documents and reopens persisted recent wo
     await page.evaluate(async () => ({
       states: await window.hibi.getAddonStates(),
       packages: await window.hibi.getInstalledAddons(),
+      notices: [],
     })),
   )
   const welcome = () => page.getByRole('region', { name: /start writing/i })
@@ -60,14 +62,14 @@ test('startup placeholder stays out of documents and reopens persisted recent wo
     '',
   )
   const rich = page.getByRole('textbox', { name: /document editor/i })
-  await pressShortcut(app, 'Meta+Shift+]')
+  await pressShortcut(app, `${mod}+Shift+]`)
   await welcome().waitFor({ state: 'hidden' })
-  await pressShortcut(app, 'Meta+Shift+[')
+  await pressShortcut(app, `${mod}+Shift+[`)
   await rich.press('a')
   await welcome().waitFor({ state: 'hidden' })
   await rich.fill('')
   assert.equal(await welcome().count(), 0)
-  await pressShortcut(app, 'Meta+n')
+  await pressShortcut(app, `${mod}+n`)
   assert.equal(await welcome().count(), 0)
 
   const folders = []

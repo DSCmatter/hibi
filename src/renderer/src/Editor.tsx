@@ -62,11 +62,7 @@ import { flavors as flavorRegistry } from './flavors'
 import { LoadingScreen } from './LoadingScreen'
 import { linkScroll } from './linked-scroll'
 import { MirrorCursor } from './MirrorCursor'
-import {
-  editorExtensions,
-  needsSourceEditing,
-  projectMarkdown,
-} from './markdown'
+import { editorExtensions, projectMarkdown } from './markdown'
 import { observeMarkdownMarkers } from './markdown-markers'
 import {
   createMarkdownPositionCache,
@@ -139,7 +135,6 @@ export function MarkdownEditor({
   showMarkdownMarkers,
   documentRevision,
   flavors,
-  unsupportedFlavor,
   onAttach,
   onLink,
   onOutline,
@@ -166,7 +161,6 @@ export function MarkdownEditor({
   showMarkdownMarkers: boolean
   documentRevision: number
   flavors: readonly MarkdownFlavor[]
-  unsupportedFlavor: boolean
   onAttach: (
     files: File[] | null,
   ) => Promise<import('../../shared/media').MediaAttachment[] | null>
@@ -200,14 +194,6 @@ export function MarkdownEditor({
     session: DocumentSession
     snapshot: SourceSnapshot
     selection: SourceSelection
-  } | null>(null)
-  const generated = useRef<{
-    source: string
-    body: string
-    sourceOnly: boolean
-    flavors: readonly MarkdownFlavor[]
-    syntaxVersion: number
-    adapters: readonly MarkdownExtension[]
   } | null>(null)
   const syntaxVersion = useSyncExternalStore(
     markdownSyntax.subscribe,
@@ -355,26 +341,7 @@ export function MarkdownEditor({
         : { content: '', serialize: () => value, readOnly: true },
     [value, markdownExtensions, markdownDocument],
   )
-  const sourceOnly = useMemo(
-    () =>
-      unsupportedFlavor ||
-      Boolean(projection.readOnly) ||
-      (generated.current?.source === value &&
-      generated.current.body === projection.content &&
-      generated.current.flavors === flavors &&
-      generated.current.syntaxVersion === syntaxVersion &&
-      generated.current.adapters === markdownExtensions
-        ? generated.current.sourceOnly
-        : needsSourceEditing(projection.content)),
-    [
-      projection,
-      unsupportedFlavor,
-      value,
-      flavors,
-      syntaxVersion,
-      markdownExtensions,
-    ],
-  )
+  const projectionReadOnly = Boolean(projection.readOnly)
   const richHistoryGroup = useRef({
     id: '',
     time: 0,
@@ -436,7 +403,6 @@ export function MarkdownEditor({
         reject: (error) => {
           plainSync.current = null
           pendingPlainSync.current = null
-          generated.current = null
           setRichInputError(
             error instanceof Error ? error.message : String(error),
           )
@@ -632,7 +598,6 @@ export function MarkdownEditor({
       } catch {
         plainSync.current = null
       }
-      generated.current = null
       previous.time = now
       setRichInputError('')
       return accepted
@@ -689,14 +654,6 @@ export function MarkdownEditor({
     } catch {
       plainSync.current = null
     }
-    generated.current = {
-      source,
-      body: serialized.source,
-      sourceOnly: serialized.sourceOnly,
-      flavors,
-      syntaxVersion,
-      adapters: markdownExtensions,
-    }
     previous.time = now
     if (!typing && composition === undefined) previous.id = ''
     setRichInputError('')
@@ -704,7 +661,6 @@ export function MarkdownEditor({
   }
   // biome-ignore lint/correctness/useExhaustiveDependencies: attachment replacements invalidate codecs even when their compatibility flags match.
   useLayoutEffect(() => {
-    generated.current = null
     pendingPlainSync.current = null
     if (!editor?.markdown || !markdownDocument || paneMode === 'markdown')
       return
@@ -758,7 +714,7 @@ export function MarkdownEditor({
     const canWait =
       paneMode === 'side-by-side' &&
       plainSyncEligible &&
-      !sourceOnly &&
+      !projectionReadOnly &&
       !disabled &&
       !richExtensionError &&
       richExtensions.every((extension) =>
@@ -843,7 +799,6 @@ export function MarkdownEditor({
       } finally {
         syncing = false
       }
-      generated.current = null
       richHistoryGroup.current.id = ''
       plainSync.current = null
       if (matches(snapshot)) {
@@ -956,7 +911,6 @@ export function MarkdownEditor({
           editor.state.doc === incremental.transaction.doc
             ? incremental.next
             : null
-        generated.current = null
         richHistoryGroup.current.id = ''
         return
       }
@@ -1000,7 +954,7 @@ export function MarkdownEditor({
     markdownExtensions,
     paneMode,
     plainSyncEligible,
-    sourceOnly,
+    projectionReadOnly,
     disabled,
     richExtensionError,
     richExtensions,
@@ -1015,7 +969,7 @@ export function MarkdownEditor({
     mode,
     findTarget,
     disabled,
-    sourceOnly,
+    projectionReadOnly,
     markdownExtensions,
   })
   richEditContext.current = {
@@ -1023,7 +977,7 @@ export function MarkdownEditor({
     mode,
     findTarget,
     disabled,
-    sourceOnly,
+    projectionReadOnly,
     markdownExtensions,
   }
   useEffect(() => {
@@ -1036,7 +990,7 @@ export function MarkdownEditor({
         context.findTarget !== 'rich' ||
         context.mode === 'markdown' ||
         context.disabled ||
-        context.sourceOnly ||
+        context.projectionReadOnly ||
         !editor.isEditable ||
         !current ||
         current.tabId !== context.document.tabId ||
@@ -1707,7 +1661,7 @@ export function MarkdownEditor({
       disabled ||
         mode !== paneMode ||
         (findTarget === 'rich' &&
-          (splitReadOnly || sourceOnly || !!richExtensionError)),
+          (splitReadOnly || projectionReadOnly || !!richExtensionError)),
       onAttach,
       markdownDocument,
       format,
@@ -1715,10 +1669,12 @@ export function MarkdownEditor({
 
   useLayoutEffect(() => {
     if (!editor) return
+    // why the fuck is this here
+    // Document size and Markdown syntax must never disable visual editing.
     editor.setEditable(
       paneMode !== 'markdown' &&
         !splitReadOnly &&
-        !sourceOnly &&
+        !projectionReadOnly &&
         !disabled &&
         !richExtensionError,
       false,
@@ -1728,7 +1684,7 @@ export function MarkdownEditor({
     editor,
     paneMode,
     splitReadOnly,
-    sourceOnly,
+    projectionReadOnly,
     disabled,
     richExtensionError,
   ])
@@ -1751,12 +1707,12 @@ export function MarkdownEditor({
       !editor ||
       !showMarkdownMarkers ||
       !markdownDocument ||
-      sourceOnly ||
+      projectionReadOnly ||
       mode === 'markdown'
     )
       return
     return observeMarkdownMarkers(editor)
-  }, [editor, showMarkdownMarkers, markdownDocument, sourceOnly, mode])
+  }, [editor, showMarkdownMarkers, markdownDocument, projectionReadOnly, mode])
 
   useLayoutEffect(() => {
     if (!editor || paneMode === 'markdown') return
@@ -1899,7 +1855,7 @@ export function MarkdownEditor({
               paneMode === 'side-by-side' &&
               sourceReady &&
               !disabled &&
-              !sourceOnly
+              !projectionReadOnly
             }
           />
           <section
@@ -1923,18 +1879,14 @@ export function MarkdownEditor({
                 ) : null,
               )}
             <div className="rich-editor-host" hidden={!markdownDocument}>
-              {markdownDocument && sourceOnly && !richExtensionError && (
-                <div className="source-notice">
-                  <DocumentNotice
-                    variant="warning"
-                    title="Edit this document in source view"
-                  />
-                </div>
-              )}
-              {richExtensionError && (
+              {(richExtensionError || projectionReadOnly) && (
                 <DocumentNotice
                   title="Editor addon unavailable"
-                  message={richExtensionError}
+                  message={
+                    projectionReadOnly
+                      ? 'The editor addon could not preserve this document.'
+                      : richExtensionError
+                  }
                 />
               )}
               {richInputError && (

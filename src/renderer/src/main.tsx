@@ -1973,7 +1973,6 @@ function App() {
                 flavorChoice={flavorChoice}
                 manifests={manifests}
                 enabledAddons={enabledAddons}
-                sourceOnly={addonHost.sourceOnly}
                 onFlavorStatus={updateFlavorStatus}
                 onOutline={setOutline}
                 onOutlineUnavailable={setOutlineUnavailable}

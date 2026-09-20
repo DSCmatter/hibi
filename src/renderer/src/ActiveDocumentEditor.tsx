@@ -12,7 +12,7 @@ import { markdownSyntax } from './markdown-syntax'
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
 export type DocumentFlavorStatus = { label: string; unsupported: boolean }
 
-/** Keep live content and its protection checks below the app's metadata boundary. */
+/** Keep live content and flavor detection below the app's metadata boundary. */
 export function ActiveDocumentEditor({
   Component,
   markdown,
@@ -21,10 +21,9 @@ export function ActiveDocumentEditor({
   flavorChoice,
   manifests,
   enabledAddons,
-  sourceOnly,
   onFlavorStatus,
   ...props
-}: Omit<EditorProps, 'value' | 'unsupportedFlavor'> & {
+}: Omit<EditorProps, 'value'> & {
   Component: typeof MarkdownEditor
   markdown: boolean
   knownFlavors: readonly (MarkdownFlavor & { addonId: string })[]
@@ -32,7 +31,6 @@ export function ActiveDocumentEditor({
   flavorChoice: FlavorChoice
   manifests: readonly AddonManifest[]
   enabledAddons: ReadonlySet<string>
-  sourceOnly: boolean
   onFlavorStatus: (status: DocumentFlavorStatus) => void
 }) {
   const protectionFlavors = useMemo(
@@ -115,8 +113,7 @@ export function ActiveDocumentEditor({
   ])
   useEffect(() => {
     if (!markdown) return
-    // Display-only detection can wait for typing to pause. Protection above
-    // always uses this exact source before the rich editor can become editable.
+    // Display-only flavor detection can wait for typing to pause.
     return afterDocumentQuiet(documentRuntime, document, () => {
       const body = projectMarkdown(source, props.markdownExtensions).content
       const detected = knownFlavors.filter((flavor) =>
@@ -144,12 +141,5 @@ export function ActiveDocumentEditor({
     unsupported,
     onFlavorStatus,
   ])
-  return (
-    <Component
-      {...props}
-      document={document}
-      value={source}
-      unsupportedFlavor={unsupported || sourceOnly}
-    />
-  )
+  return <Component {...props} document={document} value={source} />
 }

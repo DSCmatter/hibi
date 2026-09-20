@@ -343,6 +343,13 @@ test('command-palette export opens options and writes a configured static folder
   await page
     .getByRole('combobox', { name: /search commands/i })
     .fill('export workspace to html')
+  // Background addons can register commands after the editor becomes ready.
+  await page
+    .getByRole('option', {
+      name: /^export workspace to html addons$/i,
+      selected: true,
+    })
+    .waitFor()
   await page.getByRole('combobox', { name: /search commands/i }).press('Enter')
   const modal = page.getByRole('dialog', { name: /^export workspace$/i })
   await modal.waitFor()
