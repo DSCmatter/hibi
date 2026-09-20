@@ -1,7 +1,7 @@
 # hibi
 [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/schmayterling/hibi?utm_source=badge)
 
-[join the support/developer discord](https://discord.gg/v9r4cABUP2) | [get the latest nightly](https://github.com/schmayterling/hibi/releases)
+[join the support/developer discord](https://discord.gg/v9r4cABUP2) | [get the latest nightly](https://github.com/schmayterling/hibi/releases) | [read the docs](https://docs.hibi.garden)
 
 hibi is a desktop editor for local notes and documents. write in Markdown, edit the source, or keep both views side by side and come build the open source app for everything you write.
 
