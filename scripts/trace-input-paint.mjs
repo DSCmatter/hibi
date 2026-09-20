@@ -12,16 +12,20 @@ import {
 import { cpus, release, tmpdir, totalmem } from 'node:os'
 import { join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
+import { electron } from '../tests/electron.mjs'
 import { clickMenu, pressShortcut } from '../tests/keyboard.mjs'
 import {
   launchBenchmarkApp,
   switchToSource,
   waitForEditor,
 } from './benchmark-flows.mjs'
+import { createTraceFinalizer } from './trace-stream.mjs'
 
 const { values } = parseArgs({
   options: {
+    engine: { type: 'string', default: 'hibi' },
     mode: { type: 'string', default: 'all' },
     file: { type: 'string' },
     size: { type: 'string', default: 'all' },
@@ -41,12 +45,14 @@ const { values } = parseArgs({
     'continue-on-error': { type: 'boolean' },
     'trace-screenshots': { type: 'boolean' },
     'cpu-profile': { type: 'boolean' },
+    'fixed-chrome': { type: 'boolean' },
+    background: { type: 'boolean' },
     help: { type: 'boolean' },
   },
 })
 if (values.help) {
   console.log(
-    'node scripts/trace-input-paint.mjs --mode source|visual|split|all [--file PATH | --size chars|words|all --shape paragraphs|giant|all] --position start|middle|end|all --target source|visual|both --out NEW_DIRECTORY [--quick] [--hold-ms 30000] [--rate 30] [--trace-screenshots] [--cpu-profile] [--continue-on-error]',
+    'node scripts/trace-input-paint.mjs --engine hibi|bare --mode source|visual|split|all [--file PATH | --size chars|words|all --shape paragraphs|giant|all] --position start|middle|end|all --target source|visual|both --out NEW_DIRECTORY [--quick] [--hold-ms 30000] [--rate 30] [--fixed-chrome] [--background] [--trace-screenshots] [--cpu-profile] [--continue-on-error]',
   )
   process.exit(0)
 }
@@ -64,6 +70,16 @@ const modes = choose(values.mode, ['source', 'visual', 'split']),
   holdMs = values.quick ? 0 : Number(values['hold-ms']),
   rate = Number(values.rate),
   settleMs = Number(values['settle-ms'])
+assert.ok(['hibi', 'bare'].includes(values.engine))
+const bare = values.engine === 'bare'
+assert.ok(
+  !bare || !values.file,
+  '--engine bare supports generated plain fixtures only; --file requires Hibi source preservation.',
+)
+assert.ok(
+  !bare || values['fixed-chrome'],
+  '--engine bare requires --fixed-chrome; use the same flag for the paired Hibi run.',
+)
 assert.ok(['source', 'visual', 'both'].includes(values.target))
 assert.ok(Number.isFinite(holdMs) && holdMs >= 0 && holdMs <= 30000)
 assert.ok(Number.isFinite(rate) && rate >= 1 && rate <= 30)
@@ -93,11 +109,13 @@ if (sourceBytes)
     Buffer.from(fileText, 'utf8').equals(sourceBytes),
     '--file must contain valid UTF-8 text.',
   )
-await access(resolve('out/main/index.js'))
-const rendererIndex = await readFile(resolve('out/renderer/index.html')),
+if (!bare) await access(resolve('out/main/index.js'))
+const rendererIndex = bare
+    ? null
+    : await readFile(resolve('out/renderer/index.html')),
   rendererEntry =
     rendererIndex
-      .toString('utf8')
+      ?.toString('utf8')
       .match(/<script\b[^>]*\bsrc=["']([^"']+)["']/)?.[1] ?? null,
   statusScope = 'integrity-and-measurement-completion-only'
 const output = values.out
@@ -107,7 +125,11 @@ if (values.out) await mkdir(output)
 const summary = {
   output,
   options: values,
-  addons,
+  engine: bare ? 'engine-only' : 'hibi',
+  windowMode: values.background
+    ? 'visible-inactive-focus-emulated'
+    : 'foreground',
+  addons: bare ? {} : addons,
   sourceFile,
   runtime: process.version,
   platform: process.platform,
@@ -120,15 +142,19 @@ const summary = {
   commit: execFileSync('git', ['rev-parse', 'HEAD'], {
     encoding: 'utf8',
   }).trim(),
-  builtMainSha256: createHash('sha256')
-    .update(await readFile(resolve('out/main/index.js')))
-    .digest('hex'),
-  builtRendererIndexSha256: createHash('sha256')
-    .update(rendererIndex)
-    .digest('hex'),
+  builtMainSha256: bare
+    ? null
+    : createHash('sha256')
+        .update(await readFile(resolve('out/main/index.js')))
+        .digest('hex'),
+  builtRendererIndexSha256: bare
+    ? null
+    : createHash('sha256').update(rendererIndex).digest('hex'),
   builtRendererEntry: rendererEntry,
   statusScope,
   latencyTarget: { belowMs: 1, evaluatedByScenarioStatus: false },
+  comparisonGoal:
+    'Active text ready for the next available frame, approaching the matched bare engine; sub-1ms remains an aspiration for the named timing endpoints, not physical scanout.',
   harnessSha256: createHash('sha256')
     .update(await readFile(new URL(import.meta.url)))
     .digest('hex'),
@@ -137,9 +163,59 @@ const summary = {
     'CDP injects browser input, not a physical keyboard or OS autorepeat. Cadence is independent of command acknowledgments and renderer paint.',
     'Generated epoch timestamps, renderer event timestamps, and handler times expose queue delay; cross-process clock conversion is a proxy and is reported separately.',
     'A matching glyph DOM range in the viewport at rAF, followed by another rAF, is a presentation opportunity, not physical scanout. Coalesced edits may share a frame.',
-    'Tracing and benchmark-only addon callbacks add overhead. Screenshots are captured after measured settlement; optional trace screenshots add further overhead.',
+    'Tracing and benchmark-only observer callbacks add overhead. Screenshots are captured after measured settlement; optional trace screenshots add further overhead.',
+    'Source model acceptance is observed after the native CodeMirror view update returns, using the same direct observer for Hibi and the bare engine. The probe registers no editor extension.',
     'Source and visual updates may include synchronous DOM work. No artificial debounce, input-rate throttling based on paint, or reduced correctness checks are applied.',
+    ...(bare
+      ? [
+          'Engine-only uses native CodeMirror Markdown and ProseMirror history with a static, inert split peer. No Hibi runtime, React, addons, canonical journal, or IPC save runs; saved artifacts are engine snapshots written by the benchmark runner.',
+        ]
+      : []),
+    ...(values['fixed-chrome']
+      ? [
+          'Fixed-chrome comparison excludes titlebar and toolbar auto-hide transitions. Default Hibi behavior must be measured separately.',
+        ]
+      : []),
+    ...(values.background
+      ? [
+          'Background capture uses a visible inactive, nonfocusable window, CDP focus emulation and disabled background throttling. Compare only runs with the same mode; this does not replace foreground spot checks.',
+        ]
+      : []),
   ],
+}
+const bareBundle = join(output, '_bare', 'bare-input.js')
+if (bare) {
+  const { build } = await import('esbuild')
+  const bundle = await build({
+    entryPoints: [resolve('scripts/bare-input.ts')],
+    outfile: bareBundle,
+    bundle: true,
+    format: 'esm',
+    platform: 'browser',
+    target: 'chrome152',
+    minify: true,
+    metafile: true,
+    loader: { '.woff2': 'file' },
+    logLevel: 'warning',
+  })
+  const appScripts = Object.keys(bundle.metafile.inputs).filter(
+    (path) => path.startsWith('src/') && !path.endsWith('.css'),
+  )
+  assert.deepEqual(
+    appScripts,
+    [],
+    'Engine-only fixture must not import Hibi application scripts',
+  )
+  summary.bareBundleSha256 = createHash('sha256')
+    .update(await readFile(bareBundle))
+    .digest('hex')
+  summary.bareStylesSha256 = createHash('sha256')
+    .update(await readFile(bareBundle.replace(/\.js$/, '.css')))
+    .digest('hex')
+  summary.bareMainSha256 = createHash('sha256')
+    .update(await readFile(resolve('scripts/bare-input-main.mjs')))
+    .digest('hex')
+  summary.bareApplicationScripts = appScripts
 }
 console.log(output)
 const sleep = (ms) => new Promise((done) => setTimeout(done, Math.max(0, ms)))
@@ -183,6 +259,12 @@ function documentText(size, shape) {
   if (text.endsWith('\n')) text = `${text.slice(0, -1)}z`
   return text
 }
+
+function benchmarkDocument() {
+  return window.__bareInput
+    ? window.__bareInput.getDocument()
+    : window.__inputPaintContext.editor.getDocument()
+}
 async function installProbe(profile) {
   const addon = join(profile, 'installed-addons', 'input-paint-probe')
   await mkdir(addon, { recursive: true })
@@ -212,21 +294,23 @@ async function installProbe(profile) {
     join(addon, 'index.js'),
     `export default sdk => ({start(context) {
     window.__inputPaintSdk = sdk; window.__inputPaintContext = context;
-    context.editor.registerSource({id:'observe', create() { return sdk.codeMirror.view.EditorView.updateListener.of(update => window.__inputPaint?.model('source', update)); }});
   }});`,
   )
   await writeFile(join(profile, 'addons.json'), JSON.stringify(addons))
 }
 function instrument({ target, offset, fileVisual, requestedPosition }) {
-  const sourceElement = document.querySelector('.cm-content'),
-    sourceView = sourceElement
-      ? window.__inputPaintSdk.codeMirror.view.EditorView.findFromDOM(
-          sourceElement,
-        )
-      : null,
+  const bare = window.__bareInput,
+    codeMirror = bare?.codeMirror ?? window.__inputPaintSdk.codeMirror,
+    sourceElement = document.querySelector('.cm-content'),
+    sourceView =
+      bare?.sourceView ??
+      (sourceElement
+        ? codeMirror.view.EditorView.findFromDOM(sourceElement)
+        : null),
     rich = document.querySelector('.tiptap')?.editor,
-    view = target === 'source' ? sourceView : rich.view,
-    element = target === 'source' ? sourceView.contentDOM : rich.view.dom
+    richView = bare?.richView ?? rich?.view,
+    view = target === 'source' ? sourceView : richView,
+    element = target === 'source' ? sourceView.contentDOM : richView.dom
   const measurement = {
     phase: 'setup',
     target,
@@ -243,16 +327,19 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
   }
   const mark = (name) =>
     performance.mark(`input-paint:${measurement.phase}:${name}`)
-  const timed = (object, method, label) => {
+  const timed = (object, method, label, receiver, after) => {
     const original = object?.[method]
     if (typeof original !== 'function') return
     measurement.methods.push(label)
     const wrapped = function (...args) {
+      if (receiver && this !== receiver()) return original.apply(this, args)
       const started = performance.now(),
         phase = measurement.phase,
         keyId = measurement.latest?.id
       try {
-        return original.apply(this, args)
+        const result = original.apply(this, args)
+        after?.(args)
+        return result
       } finally {
         const ended = performance.now()
         if (measurement.spans.length < 20000) {
@@ -291,10 +378,74 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
   // Observe the mounted native editor without registering an addon rich hook:
   // unknown rich hooks intentionally disable audited codec fast paths.
   if (rich && !rich.isDestroyed) measurement.attachRich(rich)
+  if (bare?.richView) measurement.attachRich({ view: bare.richView })
+  if (sourceView) {
+    timed(
+      sourceView,
+      'update',
+      'source.view.update',
+      undefined,
+      ([transactions]) => {
+        measurement.model('source', {
+          docChanged: transactions.some(
+            (transaction) => transaction.docChanged,
+          ),
+          selectionSet: transactions.some(
+            (transaction) => transaction.selection !== undefined,
+          ),
+        })
+      },
+    )
+    timed(
+      Object.getPrototypeOf(sourceView.state),
+      'update',
+      'source.state.update',
+      () => sourceView.state,
+    )
+  }
   const selectionHead = () =>
     target === 'source'
       ? view.state.selection.main.head
       : view.state.selection.head
+  measurement.placement = () => {
+    const head = selectionHead(),
+      caret = view.coordsAtPos(head),
+      scroller =
+        target === 'source' ? view.scrollDOM : element.closest('.rich-pane'),
+      rect = scroller.getBoundingClientRect(),
+      viewport = {
+        left: Math.max(0, rect.left),
+        right: Math.min(innerWidth, rect.right),
+        top: Math.max(0, rect.top),
+        bottom: Math.min(innerHeight, rect.bottom),
+      },
+      focused = target === 'source' ? view.hasFocus : view.hasFocus()
+    return {
+      head,
+      focused,
+      caret: caret
+        ? {
+            left: caret.left,
+            right: caret.right,
+            top: caret.top,
+            bottom: caret.bottom,
+          }
+        : null,
+      viewport,
+      scrollTop: scroller.scrollTop,
+      scrollLeft: scroller.scrollLeft,
+      visible:
+        !!caret &&
+        focused &&
+        [caret.left, caret.right, caret.top, caret.bottom].every(
+          Number.isFinite,
+        ) &&
+        caret.left >= viewport.left - 1 &&
+        caret.right <= viewport.right + 1 &&
+        caret.top >= viewport.top - 1 &&
+        caret.bottom <= viewport.bottom + 1,
+    }
+  }
   measurement.prepareSelection = (key, count) => {
     const current =
         target === 'source' ? view.state.selection.main : view.state.selection,
@@ -307,8 +458,7 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
       for (let index = 0; index < count; index++) {
         const forward =
           direction > 0 ===
-          (view.textDirectionAt(range.head) ===
-            window.__inputPaintSdk.codeMirror.view.Direction.LTR)
+          (view.textDirectionAt(range.head) === codeMirror.view.Direction.LTR)
         range = view.moveByChar(range, forward)
       }
       head = range.head
@@ -603,13 +753,13 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
       selectionSet: transaction.selectionSet,
     }),
   )
+  bare?.onRichTransaction((update) => measurement.model('visual', update))
   if (target === 'source') {
     view.dispatch({
       selection: { anchor: offset },
-      effects: window.__inputPaintSdk.codeMirror.view.EditorView.scrollIntoView(
-        offset,
-        { y: 'center' },
-      ),
+      effects: codeMirror.view.EditorView.scrollIntoView(offset, {
+        y: 'center',
+      }),
     })
     view.focus()
   } else {
@@ -619,7 +769,7 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
       blockCount = null
     if (fileVisual) {
       const blocks = []
-      rich.state.doc.descendants((node, pos) => {
+      richView.state.doc.descendants((node, pos) => {
         if (!node.isTextblock || node.isAtom) return
         blocks.push({ node, pos })
         return false
@@ -647,7 +797,7 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
       if (/^[\uD800-\uDBFF][\uDC00-\uDFFF]$/.test(seam)) within++
       position = block.pos + 1 + within
     } else
-      rich.state.doc.forEach((node, pos) => {
+      richView.state.doc.forEach((node, pos) => {
         if (
           position === null &&
           offset >= raw &&
@@ -658,46 +808,18 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
       })
     if (position === null)
       throw new Error('Could not map plain fixture offset into visual editor')
-    rich.chain().setTextSelection(position).focus().scrollIntoView().run()
+    if (bare) bare.setRichSelection(position)
+    else rich.chain().setTextSelection(position).focus().scrollIntoView().run()
     return {
       basis: fileVisual ? 'visual-textblock' : 'plain-source-offset',
       richPosition: position,
       blockIndex,
       blockCount,
-      textOffset: rich.state.doc.textBetween(0, position, '').length,
-      baselineText: fileVisual ? rich.state.doc.textContent : null,
+      textOffset: richView.state.doc.textBetween(0, position, '').length,
+      baselineText: fileVisual ? richView.state.doc.textContent : null,
     }
   }
   return { basis: 'normalized-source-offset', editorOffset: offset }
-}
-async function streamTrace(session, path) {
-  const complete = new Promise((done) =>
-    session.once('Tracing.tracingComplete', done),
-  )
-  await deadline(session.send('Tracing.end'), 5000, 'trace end command')
-  const { stream } = await deadline(complete, 45000, 'trace completion')
-  assert.ok(stream, 'Trace stream was not returned')
-  const file = await open(path, 'wx')
-  try {
-    for (;;) {
-      const chunk = await deadline(
-        session.send('IO.read', { handle: stream, size: 65536 }),
-        5000,
-        'trace stream read',
-      )
-      await file.write(
-        chunk.base64Encoded ? Buffer.from(chunk.data, 'base64') : chunk.data,
-      )
-      if (chunk.eof) break
-    }
-  } finally {
-    await file.close()
-    await deadline(
-      session.send('IO.close', { handle: stream }),
-      5000,
-      'trace stream close',
-    )
-  }
 }
 async function writeProfile(path, profile) {
   const file = await open(path, 'wx')
@@ -738,8 +860,21 @@ async function runCase(config) {
     source = fileText ?? documentText(config.size, config.shape),
     fileVisual = sourceFile !== null && config.target === 'visual'
   await mkdir(directory)
-  await installProbe(profile)
+  if (!bare) await installProbe(profile)
   await writeFile(file, source)
+  const barePage = join(directory, 'bare.html')
+  if (bare) {
+    const assetUrl = (path) => pathToFileURL(path).href.replaceAll('&', '&amp;')
+    const initial = JSON.stringify({
+      mode: config.mode,
+      target: config.target,
+      source,
+    }).replaceAll('<', '\\u003c')
+    await writeFile(
+      barePage,
+      `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${assetUrl(bareBundle.replace(/\.js$/, '.css'))}"></head><body><script>window.__bareConfig=${initial}</script><script type="module" src="${assetUrl(bareBundle)}"></script></body></html>`,
+    )
+  }
   let offset =
     config.position === 'start'
       ? 0
@@ -758,10 +893,15 @@ async function runCase(config) {
     ...config,
     name,
     directory,
-    addons,
+    engine: bare ? 'engine-only' : 'hibi',
+    addons: bare ? {} : addons,
+    integrityScope: bare
+      ? 'native-engine-history-and-runner-written-snapshot'
+      : 'hibi-canonical-history-and-ipc-disk-save',
     sourceFile,
     chars: source.length,
     words: source.match(/\S+/g)?.length ?? 0,
+    fixtureSha256: createHash('sha256').update(source).digest('hex'),
     offset: fileVisual ? null : offset,
     holdMs,
     idleMs: 2000,
@@ -773,9 +913,30 @@ async function runCase(config) {
     statusScope,
   }
   summary.cases.push(result)
-  const app = await launchBenchmarkApp(profile)
+  let app
+  try {
+    app = bare
+      ? await electron.launch({
+          timeout: 30000,
+          args: [
+            resolve('scripts/bare-input-main.mjs'),
+            `--fixture=${barePage}`,
+            `--user-data-dir=${profile}`,
+          ],
+        })
+      : await launchBenchmarkApp(profile)
+  } catch (error) {
+    result.status = 'failed'
+    result.error = error.stack ?? String(error)
+    await writeFile(
+      join(directory, 'result.json'),
+      JSON.stringify(result, null, 2),
+    )
+    throw error
+  }
   let page,
     session,
+    finishTrace,
     placement,
     tracing = false,
     profiling = false
@@ -787,30 +948,72 @@ async function runCase(config) {
     result.nativeRuntime = await app.evaluate(() => process.versions)
     page = await app.firstWindow()
     page.setDefaultTimeout(30000)
-    await app.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows()[0]
-      win.setFocusable(true)
-      win.show()
-      win.focus()
-    })
-    await waitForEditor(page)
-    await page.waitForFunction(() => !!window.__inputPaintContext)
-    if (config.mode === 'source') await switchToSource(app, page)
-    if (config.mode === 'split')
-      await pressShortcut(
-        app,
-        `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+\\`,
-      )
-    await app.evaluate(({ dialog }, file) => {
-      dialog.showOpenDialog = async () => ({
-        canceled: false,
-        filePaths: [file],
+    if (!bare && values['fixed-chrome']) {
+      await page.evaluate(() => {
+        localStorage.setItem('hide-titlebar', 'false')
+        localStorage.setItem(
+          'hibi:toolbar',
+          JSON.stringify({
+            ...JSON.parse(localStorage.getItem('hibi:toolbar') ?? '{}'),
+            autoHide: false,
+          }),
+        )
       })
-    }, file)
-    await clickMenu(app, 'Open…')
+      await page.reload()
+    }
+    session = await page.context().newCDPSession(page)
+    result.windowMode = await app.evaluate(({ BrowserWindow }, background) => {
+      const win = BrowserWindow.getAllWindows()[0]
+      if (background) {
+        win.setFocusable(false)
+        win.webContents.setBackgroundThrottling(false)
+        win.showInactive()
+      } else {
+        win.setFocusable(true)
+        win.show()
+        win.focus()
+      }
+      return {
+        mode: background ? 'visible-inactive-focus-emulated' : 'foreground',
+        focusEmulation: background,
+        visible: win.isVisible(),
+        focusable: win.isFocusable(),
+        focused: win.isFocused(),
+        backgroundThrottling: win.webContents.getBackgroundThrottling(),
+      }
+    }, !!values.background)
+    if (values.background)
+      await session.send('Emulation.setFocusEmulationEnabled', {
+        enabled: true,
+      })
+    if (bare) {
+      await page.waitForFunction(() => !!window.__bareInput)
+      result.engineConfiguration = await page.evaluate(
+        () => window.__bareInput.engineMetadata,
+      )
+    } else {
+      await waitForEditor(page)
+      await page.waitForFunction(() => !!window.__inputPaintContext)
+      if (config.mode === 'source') await switchToSource(app, page)
+      if (config.mode === 'split')
+        await pressShortcut(
+          app,
+          `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+\\`,
+        )
+      await app.evaluate(({ dialog }, file) => {
+        dialog.showOpenDialog = async () => ({
+          canceled: false,
+          filePaths: [file],
+        })
+      }, file)
+      await clickMenu(app, 'Open…')
+    }
     await page.waitForFunction(
       (text) =>
-        window.__inputPaintContext.editor.getDocument()?.markdown === text,
+        (window.__bareInput
+          ? window.__bareInput.getDocument()
+          : window.__inputPaintContext.editor.getDocument()
+        )?.markdown === text,
       source,
       { timeout: 60000 },
     )
@@ -844,6 +1047,47 @@ async function runCase(config) {
     }, config.target)
     const ready = await readiness.jsonValue()
     await readiness.dispose()
+    await page.evaluate(() => document.fonts.ready.then(() => {}))
+    const measureGeometry = () => {
+      const measure = (selector, textSelector = selector) => {
+        const element = document.querySelector(selector)
+        if (!element) return null
+        const rect = element.getBoundingClientRect(),
+          style = getComputedStyle(
+            document.querySelector(textSelector) ?? element,
+          )
+        return {
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+          scrollTop: element.scrollTop,
+          scrollLeft: element.scrollLeft,
+          scrollHeight: element.scrollHeight,
+          clientHeight: element.clientHeight,
+          fontFamily: style.fontFamily,
+          fontSize: style.fontSize,
+          lineHeight: style.lineHeight,
+          fontKerning: style.fontKerning,
+          fontFeatureSettings: style.fontFeatureSettings,
+          fontVariantLigatures: style.fontVariantLigatures,
+          textRendering: style.textRendering,
+          whiteSpace: style.whiteSpace,
+          overflowWrap: style.overflowWrap,
+          padding: style.padding,
+        }
+      }
+      return {
+        viewport: { width: innerWidth, height: innerHeight, devicePixelRatio },
+        fonts: document.fonts.status,
+        source: measure('.source-pane', '.cm-scroller'),
+        sourceScroller: measure('.cm-scroller'),
+        sourceContent: measure('.cm-content'),
+        visual: measure('.rich-pane', '.tiptap'),
+        visualContent: measure('.tiptap'),
+      }
+    }
+    result.geometry = await page.evaluate(measureGeometry)
     if (ready.status === 'unavailable') {
       const screenshot = join(directory, 'preservation-notice.png')
       result.unavailable = {
@@ -881,6 +1125,20 @@ async function runCase(config) {
     })
     result.selectedPosition = { ...placement }
     delete result.selectedPosition.baselineText
+    await page.evaluate(
+      () =>
+        new Promise((done) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => done()))
+        }),
+    )
+    result.geometryAfterPlacement = await page.evaluate(measureGeometry)
+    result.placementVisibility = await page.evaluate(() =>
+      window.__inputPaint.placement(),
+    )
+    assert.ok(
+      result.placementVisibility.visible,
+      `Initial caret is not focused inside the editor viewport: ${JSON.stringify(result.placementVisibility)}`,
+    )
     const clockBefore = performance.timeOrigin + performance.now(),
       rendererEpoch = await page.evaluate(
         () => performance.timeOrigin + performance.now(),
@@ -891,7 +1149,7 @@ async function runCase(config) {
       rendererEpoch,
       hostAfterEpoch: clockAfter,
     }
-    session = await page.context().newCDPSession(page)
+    finishTrace = createTraceFinalizer(session, join(directory, 'trace.json'))
     await session.send('Tracing.start', {
       transferMode: 'ReturnAsStream',
       streamFormat: 'json',
@@ -1016,14 +1274,17 @@ async function runCase(config) {
         expected = accepted.source
       }
       const saved = await deadline(
-        page.evaluate(() => window.hibi.saveDocument(false)),
+        bare
+          ? page.evaluate(benchmarkDocument)
+          : page.evaluate(() => window.hibi.saveDocument(false)),
         settleMs,
         `${stage} save`,
       )
+      if (bare) await writeFile(file, saved.markdown)
       assert.equal(
         saved.markdown,
         expected,
-        `${stage}: native save omitted or changed input`,
+        `${stage}: ${bare ? 'engine snapshot' : 'native save'} omitted or changed input`,
       )
       assert.equal(
         await readFile(file, 'utf8'),
@@ -1031,14 +1292,13 @@ async function runCase(config) {
         `${stage}: disk differs from accepted input`,
       )
       assert.equal(
-        await page.evaluate(
-          () => window.__inputPaintContext.editor.getDocument().markdown,
-        ),
+        (await page.evaluate(benchmarkDocument)).markdown,
         expected,
         `${stage}: renderer differs from accepted input`,
       )
       result.saves.push({
         stage,
+        method: bare ? 'runner-written-engine-snapshot' : 'hibi-ipc-save',
         chars: expected.length,
         verified: true,
         startedEpoch,
@@ -1131,12 +1391,7 @@ async function runCase(config) {
       result.selectionPlan.expected,
       'Final DOM selection differs from the planned range',
     )
-    assert.equal(
-      await page.evaluate(
-        () => window.__inputPaintContext.editor.getDocument().markdown,
-      ),
-      final,
-    )
+    assert.equal((await page.evaluate(benchmarkDocument)).markdown, final)
     const scroll = await page.evaluate(() => {
       const state = window.__inputPaint
       state.phase = 'scroll'
@@ -1164,33 +1419,32 @@ async function runCase(config) {
       { timeout: settleMs },
     )
     result.renderer = await page.evaluate(() => window.__inputPaint.dump())
-    await deadline(
-      streamTrace(session, join(directory, 'trace.json')),
-      90000,
-      'trace drain',
-    )
+    result.traceCollection = await finishTrace()
     tracing = false
     const history = await deadline(
       page.evaluate(
         async ({ source, final, target, initialRichText, finalRichText }) => {
-          const context = window.__inputPaintContext,
+          const bare = window.__bareInput,
+            context = window.__inputPaintContext,
             sdk = window.__inputPaintSdk,
             rich = document.querySelector('.tiptap')?.editor,
+            richView = bare?.richView ?? rich?.view,
+            getDocument = () =>
+              bare ? bare.getDocument() : context.editor.getDocument(),
             view =
               target === 'source'
-                ? sdk.codeMirror.view.EditorView.findFromDOM(
+                ? (bare?.sourceView ??
+                  sdk.codeMirror.view.EditorView.findFromDOM(
                     document.querySelector('.cm-content'),
-                  )
+                  ))
                 : null
           window.__inputPaint.phase = 'validation'
           window.__inputPaint.latest = null
           let undos = 0
-          while (
-            context.editor.getDocument().markdown !== source &&
-            undos < 128
-          ) {
-            const done =
-              target === 'source'
+          while (getDocument().markdown !== source && undos < 128) {
+            const done = bare
+              ? bare.undo()
+              : target === 'source'
                 ? sdk.codeMirror.commands.undo(view)
                 : rich.commands.undo()
             if (!done)
@@ -1199,18 +1453,19 @@ async function runCase(config) {
               )
             undos++
           }
-          if (context.editor.getDocument().markdown !== source)
+          if (getDocument().markdown !== source)
             throw new Error('Undo did not restore original source exactly')
           if (
             initialRichText !== undefined &&
-            rich.state.doc.textContent !== initialRichText
+            richView.state.doc.textContent !== initialRichText
           )
             throw new Error(
               'Undo did not restore original rich document text exactly',
             )
           for (let index = 0; index < undos; index++) {
-            const done =
-              target === 'source'
+            const done = bare
+              ? bare.redo()
+              : target === 'source'
                 ? sdk.codeMirror.commands.redo(view)
                 : rich.commands.redo()
             if (!done)
@@ -1218,16 +1473,21 @@ async function runCase(config) {
                 'Redo ended before all accepted input was restored',
               )
           }
-          if (context.editor.getDocument().markdown !== final)
+          if (getDocument().markdown !== final)
             throw new Error('Redo did not restore all accepted input exactly')
           if (
             finalRichText !== undefined &&
-            rich.state.doc.textContent !== finalRichText
+            richView.state.doc.textContent !== finalRichText
           )
             throw new Error(
               'Redo did not restore accepted rich document text exactly',
             )
-          return { undos, restoredOriginal: true, restoredFinal: true }
+          return {
+            undos,
+            restoredOriginal: true,
+            restoredFinal: true,
+            method: bare ? 'native-engine-history' : 'hibi-canonical-history',
+          }
         },
         {
           source,
@@ -1274,13 +1534,11 @@ async function runCase(config) {
       }
     }
     if (tracing)
-      await deadline(
-        streamTrace(session, join(directory, 'trace.json')),
-        90000,
-        'partial trace',
-      ).catch((error) => {
+      try {
+        result.traceCollection = await finishTrace()
+      } catch (error) {
         result.traceError = error.message
-      })
+      }
     await writeFile(
       join(directory, 'result.json'),
       JSON.stringify(result, null, 2),

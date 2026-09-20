@@ -48,7 +48,7 @@ node scripts/trace-input-paint.mjs --mode all --size all --shape all --position 
 
 The output directory must be new. Character and word fixtures contain exactly 100,000 characters or 100,000 words respectively. Normal paragraphs and one giant wrapped paragraph are separate cases. Source, visual and both split-view input targets are tested in isolated profiles. The recorded addon configuration includes word count, typing speed and the standard Markdown syntax addons; Discord presence stays disabled in these test profiles.
 
-The probe observes native rich transactions directly after mounting. It does not register a rich addon attachment: unknown rich attachments deliberately disable audited codec fast paths, so registering the measurement callback there would change the path being measured. Source updates still use the benchmark addon's CodeMirror listener. Both forms of instrumentation add overhead.
+The probe observes native rich transactions directly after mounting and source changes immediately after the native CodeMirror view update returns. It registers no rich or source editor extension: unknown attachments can disable audited fast paths, so installing the measurement callback through those APIs would change the path being measured. The temporary addon only exposes the SDK and document context. Both native observers add overhead and use the same endpoints in Hibi and the bare engine.
 
 Each case measures a key after two seconds of idle, then sends `s` for 30 seconds at 30 events per second, independently of command acknowledgements or rendering. It repeats the hold for backspace, checks selection and scrolling, and validates exact source after save and undo/redo. The first-key frame measurement precedes its save; hold-tail saves deliberately test immediate persistence and are marked so their overlap can be distinguished. Queue deadlines remain failures. `--continue-on-error` preserves them while allowing later cases to run and still exits unsuccessfully if any case fails.
 
@@ -64,7 +64,7 @@ Reports retain emitted key timestamps, renderer observations, native Chromium tr
 
 Trace export happens after the timed input phases. Large traces have a separate 45-second completion deadline and 90-second total drain deadline; these limits do not extend input, queue, selection, or save deadlines. An export failure still leaves the case incomplete and requires a rerun, including its final history checks.
 
-A `passed` scenario means that integrity checks and measurement collection completed; it does not mean a latency target was achieved. The current investigation targets less than 1 ms, which must be assessed separately for each named timing endpoint. Reports record hashes for both the main-process bundle and renderer entry HTML, plus the renderer entry filename, so renderer-only changes remain distinguishable when the main bundle is unchanged.
+A `passed` scenario means that integrity checks and measurement collection completed; it does not mean a latency target was achieved. The goal is active-pane text ready for the next available frame, approaching the matched bare editor engine. The requested sub-1 ms aspiration must be assessed separately for each named endpoint; animation frames and microtasks are not after-paint guarantees. Reports record hashes for both the main-process bundle and renderer entry HTML, plus the renderer entry filename, so renderer-only changes remain distinguishable when the main bundle is unchanged.
 
 Test wrapped paragraphs independently of ordinary multiline notes. CodeMirror uses line gaps to limit mounted text, but a wrapped viewport still includes surrounding text for measurement. A rich paragraph remains one browser layout block. A small DOM element count alone does not prove bounded text layout; inspect rendered character ranges and native Layout events too.
 
@@ -74,7 +74,26 @@ node scripts/analyze-input-trace.mjs --trace /tmp/hibi-input-baseline/CASE/trace
 
 The analyzer writes a concise Markdown report and detailed JSON. Trace durations overlap; do not add inclusive parent and child durations as if they were separate CPU work. Function names help locate candidates, but attribution requires matching actual code and the measured interval. Run analysis after timed capture so parsing a large trace does not compete with the app.
 
+Compare sustained typing and backspace at p50, p95 and p99 in all four cases: source, visual, split-source and split-visual. The analyzer also merges same-thread trace intervals for each keydown-to-next-frame window, subtracting nested rendering from scripting and reporting layout/style, paint and other observed tasks separately. Remaining time is labeled unattributed or waiting: missing native events cannot be counted as proven idle time. Coalesced keys can share a frame, so their overlapping windows must not be summed. Use these measured costs alongside queue and frame waits to choose the next change, rather than treating improvement over an older slow build as sufficient.
+
 V8 profiles can contain samples reported out of timestamp order. The analyzer reconstructs signed timestamps before estimating global sample weights and reports these anomalies. Invalid timelines have unavailable weights; per-phase CPU attribution remains unavailable. These estimates do not establish exact function durations.
+
+### Engine-only comparisons
+
+Compare Hibi with the installed editor engines using the same generated document, key cadence, visible-character checks, selection and scrolling probes:
+
+```sh
+node scripts/trace-input-paint.mjs --engine hibi --fixed-chrome --background --mode all --size words --shape all --out /tmp/hibi-words-comparison
+node scripts/trace-input-paint.mjs --engine bare --fixed-chrome --background --mode all --size words --shape all --out /tmp/bare-words-comparison
+```
+
+Both commands cover exactly 100,000 words in ordinary paragraphs and a giant paragraph, with source, visual, split-source and split-visual input. Run them sequentially with matching instrumentation and compare the recorded fixture hashes, viewport rectangles and typography. `--fixed-chrome` keeps the titlebar and toolbar visible throughout each case; it excludes their auto-hide transitions. This flag is required for the bare baseline and leaves default Hibi benchmark behavior unchanged. Measure default Hibi behavior separately before claiming the user-facing problem is fixed.
+
+`--background` keeps the benchmark window visible but inactive and nonfocusable, so the harness does not take keyboard focus from another app. It enables CDP focus emulation for native editor input and disables background throttling. Window state is recorded with each case. Use the same mode for both sides of a comparison and retain foreground spot checks; emulated focus is not the same environment as an active desktop window. Omitting this flag retains the existing foreground behavior.
+
+The bare process loads only CodeMirror's native Markdown language, wrapping, highlighting, history and keymaps, or ProseMirror's paragraph/text schema, history and keymaps. It reuses static Hibi CSS for fonts, padding and pane geometry. A split peer stays mounted and inert with the initial document; no cross-pane synchronization runs. There is no Hibi renderer, React, addon host, document journal or save IPC in this process. This is an engine baseline for plain generated fixtures, not equivalent application functionality. Existing files are rejected with `--engine bare` because that minimal schema does not implement Hibi's Markdown preservation rules.
+
+Bare integrity checks undo and redo through native engine history, then write the engine's current text to a snapshot artifact from the benchmark runner and compare its bytes. Hibi cases retain canonical-history and IPC-save checks. Reports label these different guarantees. The same observer records source `EditorState.update` and view-update spans across immutable state replacements in both processes; these benchmark wrappers add overhead. Report scripting and layout separately from input queue and frame waits, and compare p50, p95 and p99 for each input target instead of combining the four modes.
 
 ## Read CI results
 

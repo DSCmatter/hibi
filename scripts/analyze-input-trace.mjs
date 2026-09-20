@@ -442,7 +442,122 @@ function inputMetrics(metrics) {
   }
 }
 
-function correlateInput(events, timing, tasks) {
+function mergeIntervals(intervals) {
+  const merged = []
+  for (const [start, end] of intervals.sort((a, b) => a[0] - b[0])) {
+    const last = merged.at(-1)
+    if (last && start <= last[1]) last[1] = Math.max(last[1], end)
+    else merged.push([start, end])
+  }
+  return merged
+}
+
+function intersectIntervals(first, second) {
+  const result = []
+  let a = 0,
+    b = 0
+  while (a < first.length && b < second.length) {
+    const start = Math.max(first[a][0], second[b][0]),
+      end = Math.min(first[a][1], second[b][1])
+    if (end > start) result.push([start, end])
+    if (first[a][1] < second[b][1]) a++
+    else b++
+  }
+  return result
+}
+
+function intervalDuration(intervals, start, end) {
+  let low = 0,
+    high = intervals.length,
+    duration = 0
+  while (low < high) {
+    const mid = (low + high) >> 1
+    if (intervals[mid][1] <= start) low = mid + 1
+    else high = mid
+  }
+  for (let i = low; i < intervals.length && intervals[i][0] < end; i++)
+    duration += Math.max(
+      0,
+      Math.min(end, intervals[i][1]) - Math.max(start, intervals[i][0]),
+    )
+  return duration / 1000
+}
+
+function mainThreadWork(complete) {
+  const groups = new Map()
+  for (const event of complete) {
+    const key = thread(event),
+      group = groups.get(key) ?? {
+        script: [],
+        layout: [],
+        paint: [],
+        busy: [],
+      },
+      interval = [event.ts, event.ts + event.dur]
+    let kind
+    if (
+      /^(FunctionCall|EvaluateScript|RunMicrotasks|V8\.Execute)$/.test(
+        event.name,
+      )
+    )
+      kind = 'script'
+    else if (
+      /^(Layout|UpdateLayoutTree|RecalculateStyles|UpdateStyleAndLayout)$/.test(
+        event.name,
+      )
+    )
+      kind = 'layout'
+    else if (
+      /^(PrePaint|Paint|PaintImage|Layerize|UpdateLayerTree|CompositeLayers)$/.test(
+        event.name,
+      )
+    )
+      kind = 'paint'
+    if (kind) group[kind].push(interval)
+    if (
+      kind ||
+      /(?:^|::)RunTask$|^Program$|^EventDispatch$|^FireAnimationFrame$/.test(
+        event.name,
+      )
+    )
+      group.busy.push(interval)
+    groups.set(key, group)
+  }
+  for (const group of groups.values()) {
+    for (const key of Object.keys(group))
+      group[key] = mergeIntervals(group[key])
+    group.render = mergeIntervals(
+      [...group.layout, ...group.paint].map((range) => [...range]),
+    )
+    group.scriptRender = intersectIntervals(group.script, group.render)
+    group.attributed = mergeIntervals(
+      [...group.script, ...group.render].map((range) => [...range]),
+    )
+  }
+  return (key, start, end) => {
+    const group = groups.get(key)
+    if (!group?.busy.length || !finite(end)) return null
+    const duration = (name) => intervalDuration(group[name], start, end),
+      windowMs = (end - start) / 1000,
+      busyMs = duration('busy'),
+      layoutMs = duration('layout')
+    return Object.fromEntries(
+      Object.entries({
+        windowMs,
+        scriptExcludingRenderingMs: Math.max(
+          0,
+          duration('script') - duration('scriptRender'),
+        ),
+        layoutStyleMs: layoutMs,
+        paintExcludingLayoutMs: Math.max(0, duration('render') - layoutMs),
+        otherObservedTaskMs: Math.max(0, busyMs - duration('attributed')),
+        unattributedOrWaitingMs: Math.max(0, windowMs - busyMs),
+      }).map(([name, value]) => [name, round(value)]),
+    )
+  }
+}
+
+function correlateInput(events, timing, tasks, work) {
   const keys = new Map(),
     spans = []
   for (const event of events) {
@@ -496,6 +611,7 @@ function correlateInput(events, timing, tasks) {
       id: key.id,
       thread: key.thread,
       traceKeydownUs: start,
+      observedMainThread: work(key.thread, start, end),
       milestonesMs: Object.fromEntries(
         Object.entries(key.points).map(([point, ts]) => [
           point,
@@ -590,6 +706,7 @@ export function analyzeInputTrace(trace, metrics = null, cpuProfile = null) {
     }))
   const profiles = profilesFromTrace(events)
   if (cpuProfile) profiles.push(cpuProfile.profile ?? cpuProfile)
+  const inputs = correlateInput(events, timing, tasks, mainThreadWork(complete))
   return {
     units:
       'milliseconds; trace timestamps and CPU timeDeltas converted from microseconds',
@@ -598,6 +715,7 @@ export function analyzeInputTrace(trace, metrics = null, cpuProfile = null) {
       'Paint and DrawFrame are trace milestones, not proof of pixel presentation or the edited glyph being visible.',
       'frame callbacks are scheduling proxies. missing phases and samples mean unavailable evidence, not zero work.',
       'benchmark DOM and visible-range context is collected outside timed input and is not a latency metric.',
+      'main-thread work uses merged trace intervals from keydown through the next-frame proxy. nested rendering is subtracted from scripting; unattributed time may contain unrecorded native work as well as scheduling waits. per-key windows can overlap.',
     ],
     trace: {
       events: events.length,
@@ -607,7 +725,23 @@ export function analyzeInputTrace(trace, metrics = null, cpuProfile = null) {
       threads,
     },
     benchmark: { ...metricDistributions(metrics), ...inputMetrics(metrics) },
-    inputs: correlateInput(events, timing, tasks),
+    inputs,
+    observedMainThread: [...Map.groupBy(inputs, (input) => input.phase)].map(
+      ([phase, entries]) => ({
+        phase,
+        distributions: Object.fromEntries(
+          Object.keys(
+            entries.find((entry) => entry.observedMainThread)
+              ?.observedMainThread ?? {},
+          ).map((name) => [
+            name,
+            distribution(
+              entries.map((entry) => entry.observedMainThread?.[name]),
+            ),
+          ]),
+        ),
+      }),
+    ),
     userTiming: Object.fromEntries(
       [...phases].map(([name, values]) => [name, distribution(values)]),
     ),
@@ -660,7 +794,7 @@ function report(summary) {
     )
     for (const [name, value] of Object.entries(phase.endpoints))
       lines.push(
-        `- ${name}: n=${value.count}, median=${value.medianMs === null ? 'unavailable' : round(value.medianMs)}, p95=${value.p95Ms === null ? 'unavailable' : round(value.p95Ms)}, max=${value.maxMs === null ? 'unavailable' : round(value.maxMs)} ms`,
+        `- ${name}: n=${value.count}, p50=${value.medianMs === null ? 'unavailable' : round(value.medianMs)}, p95=${value.p95Ms === null ? 'unavailable' : round(value.p95Ms)}, p99=${value.p99Ms === null ? 'unavailable' : round(value.p99Ms)}, max=${value.maxMs === null ? 'unavailable' : round(value.maxMs)} ms`,
       )
     lines.push('')
   }
@@ -669,8 +803,17 @@ function report(summary) {
     ...summary.userTiming,
   }))
     lines.push(
-      `- ${name}: n=${value.count}, median=${value.medianMs}, p95=${value.p95Ms}, max=${value.maxMs} ms`,
+      `- ${name}: n=${value.count}, p50=${value.medianMs}, p95=${value.p95Ms}, p99=${value.p99Ms}, max=${value.maxMs} ms`,
     )
+  lines.push('', '## observed main-thread work by input window', '')
+  for (const phase of summary.observedMainThread) {
+    lines.push(`### ${phase.phase}`, '')
+    for (const [name, value] of Object.entries(phase.distributions))
+      lines.push(
+        `- ${name}: n=${value.count}, p50=${value.medianMs}, p95=${value.p95Ms}, p99=${value.p99Ms}, max=${value.maxMs} ms`,
+      )
+    lines.push('')
+  }
   lines.push('', '## longest trace tasks', '')
   for (const task of summary.tasks.longest.slice(0, 8))
     lines.push(
@@ -783,6 +926,59 @@ async function main() {
     assert.equal(result.benchmark.phases[0].endpoints.subscriberMs.count, 0)
     assert.equal(result.benchmark.outsideTimedContext[0].value, 10)
     assert.equal(result.cpu.topFunctions[0].sampledMs, 3)
+    const timingOnly = analyzeInputTrace(
+      {
+        traceEvents: trace.traceEvents.filter((entry) => isTiming(entry)),
+      },
+      metrics,
+    )
+    assert.equal(timingOnly.inputs[0].observedMainThread, null)
+    assert.deepEqual(timingOnly.observedMainThread[0].distributions, {})
+    const attributed = analyzeInputTrace(
+      {
+        traceEvents: [
+          ...trace.traceEvents,
+          event('FunctionCall', 2500, {
+            ph: 'X',
+            dur: 5000,
+            cat: 'devtools.timeline',
+          }),
+          event('FunctionCall', 3000, {
+            ph: 'X',
+            dur: 1000,
+            cat: 'devtools.timeline',
+          }),
+          event('Layout', 3500, {
+            ph: 'X',
+            dur: 1000,
+            cat: 'devtools.timeline',
+          }),
+          event('Layout', 2000, {
+            ph: 'X',
+            dur: 9000,
+            tid: 9,
+            cat: 'devtools.timeline',
+          }),
+        ],
+      },
+      metrics,
+    )
+    assert.deepEqual(attributed.inputs[0].observedMainThread, {
+      windowMs: 11,
+      scriptExcludingRenderingMs: 4,
+      layoutStyleMs: 1,
+      paintExcludingLayoutMs: 0.1,
+      otherObservedTaskMs: 2,
+      unattributedOrWaitingMs: 3.9,
+    })
+    assert.equal(
+      attributed.observedMainThread[0].distributions.layoutStyleMs.p99Ms,
+      1,
+    )
+    assert.equal(
+      distribution(Array.from({ length: 100 }, (_, i) => i + 1)).p99Ms,
+      99,
+    )
     const reordered = analyzeInputTrace({ traceEvents: [] }, null, {
       ...profile,
       startTime: 10000,
