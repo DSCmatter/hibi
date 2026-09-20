@@ -166,7 +166,8 @@ export function MarkdownEditor({
       !markdownSyntax.enabled('core.links') ||
       flavors.some(
         (flavor) =>
-          flavor.export?.extensions?.length &&
+          (flavor.export?.extensions?.length ||
+            flavor.richExtensions?.length) &&
           !['github-markdown.github', 'text-extras.text-extras'].includes(
             flavor.id,
           ),

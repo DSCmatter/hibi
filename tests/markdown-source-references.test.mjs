@@ -1,9 +1,43 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { GFM, parser } from '@lezer/markdown'
+import { Lexer } from 'marked'
 import { MarkdownSourceModel } from '../src/shared/markdown-source-model.ts'
 import { MarkdownSourceReferences } from '../src/shared/markdown-source-references.ts'
 import { SourceStore } from '../src/shared/source-buffer.ts'
+
+test('reference parsing does not retain its last lexer through shared parser options', (t) => {
+  const original = Lexer.prototype.lex,
+    options = new WeakSet()
+  let reads = 0
+  t.mock.method(Lexer.prototype, 'lex', function (...args) {
+    assert.equal(options.has(this.options), false)
+    options.add(this.options)
+    reads++
+    return original.apply(this, args)
+  })
+  const store = new SourceStore('[ref]: /one\n\nparagraph\n\nlast', {
+    tabId: 'lexer-lifetime',
+    revision: 0,
+  })
+  const model = new MarkdownSourceModel(
+    store.snapshot(),
+    parser.configure(GFM),
+    'gfm',
+  )
+  while (!model.advance().complete) {}
+  const reader = new MarkdownSourceReferences({
+    gfm: true,
+    alerts: true,
+    textExtras: true,
+  })
+  for (const _ of reader.update(store.snapshot(), model.state().owners)) {
+    /* Complete the cooperative read. */
+  }
+  assert.ok(reads >= 3)
+  reader.dispose()
+  model.dispose()
+})
 
 test('built-in reference reader keeps prefix edits local without materializing source', () => {
   const store = new SourceStore(

@@ -49,6 +49,47 @@ test('cooperative reference preparation cancels atomically and protects incomple
   index.dispose()
 })
 
+test('prefix context reparsing preserves readers of an unchanged definition owner and value', () => {
+  const store = new SourceStore(
+    '[ref]: /target\n\n' + '# [ref]\n\n'.repeat(1000),
+    { tabId: 'prefix-scopes', revision: 0 },
+  )
+  const model = new MarkdownSourceModel(
+    store.snapshot(),
+    parser.configure(GFM),
+    'gfm',
+  )
+  const finish = () => {
+    while (!model.advance().complete) {}
+    return model.state().owners
+  }
+  const markdown = new Marked({ gfm: true }),
+    before = finish()
+  const read = (region) =>
+    markdown.lexer(store.snapshot().sliceRaw(region.from, region.to)).links
+  const refs = new SourceReferences(before, read),
+    scope = refs.scope(),
+    candidate = scope.resolve('ref')
+  const change = store.prepare({
+    document: store.snapshot().document,
+    operationId: 'prefix',
+    baseVersion: 0,
+    contentVersion: 1,
+    origin: 'source',
+    historyGroup: 'typing',
+    changes: [{ from: 0, to: 0, insert: '# prefix\n\n' }],
+  })
+  store.commit(change)
+  model.apply(change)
+  const after = finish()
+  refs.update(after, read)
+  assert.equal(after.bySlot(candidate.owner.slot).owner, candidate.owner)
+  assert.equal(refs.scope().resolve('ref'), candidate)
+  assert.ok(scope.current())
+  refs.dispose()
+  model.dispose()
+})
+
 test('reference provenance reads track first declarations even when values remain equal', () => {
   let owners = new SourceOwners([
     { kind: 'first', length: 5 },

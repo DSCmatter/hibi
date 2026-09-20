@@ -154,22 +154,28 @@ export class SourceReferences {
         const values = read(region),
           definitions = new Map<string, Candidate>()
         for (const [label, value] of Object.entries(values)) {
+          const href = value?.href,
+            title = value?.title ?? null
           if (
-            !value ||
-            typeof value.href !== 'string' ||
-            (value.title != null && typeof value.title !== 'string')
+            typeof href !== 'string' ||
+            (title !== null && typeof title !== 'string')
           )
             throw new Error('Invalid reference definition.')
           this.#work.definitionsRead++
+          const previous = this.#definitions.get(slot)?.get(label)
           definitions.set(
             ownSourceText(label),
-            Object.freeze({
-              owner: region.owner,
-              value: Object.freeze({
-                href: ownSourceText(value.href),
-                title: value.title == null ? null : ownSourceText(value.title),
-              }),
-            }),
+            previous?.owner === region.owner &&
+              previous.value.href === href &&
+              previous.value.title === title
+              ? previous
+              : Object.freeze({
+                  owner: region.owner,
+                  value: Object.freeze({
+                    href: ownSourceText(href),
+                    title: title === null ? null : ownSourceText(title),
+                  }),
+                }),
           )
         }
         if (definitions.size) {
@@ -277,16 +283,28 @@ export class SourceReferences {
     }
     yield* this.#replace(owners, ids, read)
   }
-  scope() {
+  scope(owners?: SourceOwners) {
+    if (owners && owners !== this.#owners)
+      throw new Error('Reference scope belongs to a different owner snapshot.')
     const reads = new Map<string, Candidate | undefined>()
-    let mixed = false
+    let mixed = false,
+      retainedBytes = 0
     const resolve = (name: string) => {
       if (!this.#owners) throw new Error('Reference index is disposed.')
       if (!this.#ready) throw new Error('Reference index is not ready.')
       this.#work.scopeReads++
       const current = this.#winners.get(name)
       if (reads.has(name)) mixed ||= reads.get(name) !== current
-      else reads.set(ownSourceText(name), current)
+      else {
+        reads.set(ownSourceText(name), current)
+        // Conservative cache accounting, not a physical heap measurement.
+        retainedBytes +=
+          128 +
+          2 *
+            (name.length +
+              (current?.value.href.length ?? 0) +
+              (current?.value.title?.length ?? 0))
+      }
       return current
     }
     const links = new Proxy(
@@ -306,6 +324,7 @@ export class SourceReferences {
     return Object.freeze({
       links,
       resolve,
+      retainedBytes: () => retainedBytes,
       current: () => {
         if (!this.#owners || !this.#ready || mixed) return false
         for (const [name, value] of reads)

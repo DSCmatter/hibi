@@ -2960,6 +2960,10 @@
     "src/shared/source-references.ts"
   ],
   "e37c1d93b910": [
+    "src/shared/markdown-source-references.ts",
+    "src/shared/source-references.ts"
+  ],
+  "dbcdfde02229": [
     "src/shared/source-references.ts"
   ],
   "903ae9ad0d9f": [
@@ -2971,6 +2975,9 @@
   "306960dcad4c": [
     "src/renderer/src/WorkspaceSidebar.tsx",
     "src/renderer/src/main.tsx"
+  ],
+  "77d2af94e276": [
+    "src/shared/markdown-source-references.ts"
   ],
   "bdc090ec61e3": [
     "src/addons/vim/Settings.tsx",
