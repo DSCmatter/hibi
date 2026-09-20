@@ -3243,6 +3243,12 @@
   "298ea20df97c": [
     "src/renderer/src/source-session.ts"
   ],
+  "444d43f0e4c3": [
+    "src/shared/source-order-points.ts"
+  ],
+  "9fc8c40caaa6": [
+    "src/shared/source-order-points.ts"
+  ],
   "6959b4159575": [
     "src/addons/diagnostics/Settings.tsx"
   ],
@@ -4202,6 +4208,9 @@
   ],
   "c57bf48df4b4": [
     "src/shared/document-worker-service.ts"
+  ],
+  "aee2eda9746d": [
+    "src/shared/source-order-points.ts"
   ],
   "7521533ff099": [
     "src/main/workspace-settings.ts"
