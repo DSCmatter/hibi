@@ -81,11 +81,17 @@
     "src/renderer/src/WorkspaceSidebar.tsx",
     "src/ui/Sidebar.tsx"
   ],
+  "6934e9d2bb61": [
+    "src/renderer/src/ModalEditingSettings.tsx"
+  ],
   "38da1505ca83": [
     "src/addons/discord-presence/Settings.tsx"
   ],
   "a81ace5bbd8a": [
     "src/addons/discord-presence/rpc.ts"
+  ],
+  "8f6ef239c5ff": [
+    "src/renderer/src/ModalEditingSettings.tsx"
   ],
   "f115ff5e0175": [
     "src/addons/github-markdown/manifest.ts"
@@ -165,6 +171,9 @@
   ],
   "293aad4970e4": [
     "src/renderer/src/Editor.tsx"
+  ],
+  "6e1bc14eb426": [
+    "src/renderer/src/addons.ts"
   ],
   "bcd26bd0c90a": [
     "src/main/import-files.ts"
@@ -1317,6 +1326,9 @@
   "297f8ade1919": [
     "src/main/workspace-settings.ts"
   ],
+  "a0d8a682c986": [
+    "src/renderer/src/ModalEditingSettings.tsx"
+  ],
   "a68ae936a898": [
     "src/renderer/src/markdown-syntax.ts"
   ],
@@ -1879,6 +1891,9 @@
   "66146583cc60": [
     "src/main/file-associations.ts"
   ],
+  "1e7a5cff30e0": [
+    "src/renderer/src/ModalEditingSettings.tsx"
+  ],
   "100436457fde": [
     "src/shared/hotkeys.ts"
   ],
@@ -2297,6 +2312,12 @@
   "3bc8bd63923d": [
     "src/site/bootstrap.tsx"
   ],
+  "c946bad8be61": [
+    "src/renderer/src/ModalEditingSettings.tsx"
+  ],
+  "f259041d8b64": [
+    "src/renderer/src/ModalEditingSettings.tsx"
+  ],
   "aa7492130a83": [
     "src/renderer/src/EditorToolbar.tsx"
   ],
@@ -2441,6 +2462,9 @@
   ],
   "7cfcab74d09c": [
     "src/addons/tags/Panel.tsx"
+  ],
+  "a9cbcf68a682": [
+    "src/renderer/src/ModalEditingSettings.tsx"
   ],
   "a092ad6b8be0": [
     "src/addons/graph/Panel.tsx"
@@ -3061,6 +3085,9 @@
   "6beb76e49302": [
     "src/main/document.ts"
   ],
+  "17cd13d49eb4": [
+    "src/renderer/src/addons.ts"
+  ],
   "fd90aa22434a": [
     "src/main/dependencies.ts"
   ],
@@ -3563,6 +3590,12 @@
   ],
   "1e5a65cf9548": [
     "src/renderer/src/HibiSettings.tsx"
+  ],
+  "39921a740bf2": [
+    "src/renderer/src/addons.ts"
+  ],
+  "7c8ab367b187": [
+    "src/renderer/src/addons.ts"
   ],
   "361acbbafb8f": [
     "src/addons/vim/index.ts"
@@ -4232,6 +4265,12 @@
   "433fa57cd74a": [
     "src/addons/typst/compiler.ts"
   ],
+  "eecd4c4fc8ee": [
+    "src/renderer/src/addons.ts"
+  ],
+  "bfad72df7714": [
+    "src/renderer/src/addons.ts"
+  ],
   "14d33bd014e6": [
     "src/renderer/src/HotkeySettings.tsx"
   ],
@@ -4704,6 +4743,9 @@
   ],
   "3853dee11967": [
     "src/renderer/src/markdown-syntax.ts"
+  ],
+  "b2fe97e14407": [
+    "src/renderer/src/addons.ts"
   ],
   "7f659c8c45d8": [
     "src/addons/frontmatter/Properties.tsx"
