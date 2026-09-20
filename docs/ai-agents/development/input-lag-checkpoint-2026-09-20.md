@@ -9,6 +9,21 @@ Stopped after the current measurement at the user's request. **The latency goal 
 - Split-visual with one giant 100k-word paragraph remains severely delayed: sustained visible-check p99 was 2,814 ms for insertion and 7,559.1 ms for backspace. Preserving input is not a latency pass.
 - Completed Hibi captures exported in 13.04–25.22 seconds; bare captures in 11.88–15.35 seconds. No trace-finalization failures occurred in these completed cases.
 
+## Caret-only follow-up
+
+At the user's request, only the failed caret setup was fixed after the checkpoint above. The source benchmark now focuses its pane before dispatching selection and scrolling: the synchronous source-caret event therefore gives split-scroll leadership to source instead of the previously focused rich pane. Setup waits for the exact requested position, focus and viewport containment, with a five-second timeout and retained failure geometry. It does not retry scrolling or relax assertions. A quick pre-fix rerun passed, confirming the original failure was intermittent rather than guaranteed on every launch.
+
+Both original failed cases now pass the full sustained check in `/tmp/hibi-caret-setup-fixed/summary.json` (harness SHA-256 `171e6cff5e2a9cc1908cd270435931d3b73d8dacb84cc84d0a317baa03f32a14`):
+
+| Split-source, 100k characters | Initial head | Caret top/bottom | Viewport top/bottom | Result |
+| --- | --- | --- | --- | --- |
+| Paragraphs | 50000 | 376.72 / 393.72 | 82 / 688 | Passed |
+| Giant paragraph | 50000 | 376.44 / 393.44 | 82 / 688 | Passed |
+
+Each case completed 900 insertions and 900 backspaces over separate 30-second holds, with exact immediate saves, selection/scroll checks, undo to original, redo to final, and successful trace export. Command: `node scripts/trace-input-paint.mjs --engine hibi --fixed-chrome --background --mode split --target source --size chars --shape all --continue-on-error --out /tmp/hibi-caret-setup-fixed`.
+
+Scoped lint, JavaScript syntax, documentation checks and independent review passed. `npm run check` was attempted but stopped at an existing formatter error in untouched `src/addons/git/native.ts`; the full suite did not run. Product code and the remaining latency issues were not changed. The historical matrix above retains its original failures; these two successful cases are a separate follow-up capture.
+
 ## Provenance and method
 
 Hibi capture: `/tmp/hibi-app-sustained-fix10/summary.json`, product commit `0ccf2f099265f1b4ca774a56b8a83fa264456597`. Harness SHA-256: `f89932f96bab738a03a70c09b06e2561fe5ccd551ca6ce495c24b3a513834463`.

@@ -761,13 +761,14 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
   )
   bare?.onRichTransaction((update) => measurement.model('visual', update))
   if (target === 'source') {
+    // Split scroll leadership follows focus when the selection update fires.
+    view.focus()
     view.dispatch({
       selection: { anchor: offset },
       effects: codeMirror.view.EditorView.scrollIntoView(offset, {
         y: 'center',
       }),
     })
-    view.focus()
   } else {
     let raw = 0,
       position = null
@@ -1136,16 +1137,24 @@ async function runCase(config) {
     })
     result.selectedPosition = { ...placement }
     delete result.selectedPosition.baselineText
-    await page.evaluate(
-      () =>
-        new Promise((done) => {
-          requestAnimationFrame(() => requestAnimationFrame(() => done()))
-        }),
-    )
-    result.geometryAfterPlacement = await page.evaluate(measureGeometry)
-    result.placementVisibility = await page.evaluate(() =>
-      window.__inputPaint.placement(),
-    )
+    const expectedHead = placement.editorOffset ?? placement.richPosition
+    try {
+      const placed = await page.waitForFunction(
+        (expectedHead) => {
+          const caret = window.__inputPaint.placement()
+          return caret.visible && caret.head === expectedHead
+        },
+        expectedHead,
+        { timeout: 5000 },
+      )
+      await placed.dispose()
+    } finally {
+      result.geometryAfterPlacement = await page.evaluate(measureGeometry)
+      result.placementVisibility = await page.evaluate(() =>
+        window.__inputPaint.placement(),
+      )
+    }
+    assert.equal(result.placementVisibility.head, expectedHead)
     assert.ok(
       result.placementVisibility.visible,
       `Initial caret is not focused inside the editor viewport: ${JSON.stringify(result.placementVisibility)}`,
