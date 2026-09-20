@@ -39,6 +39,7 @@ import { ToolbarSettings } from './EditorToolbar'
 import { FormatsSettings } from './FormatsSettings'
 import { HibiSettings } from './HibiSettings'
 import { HotkeySettings } from './HotkeySettings'
+import { ModalEditingSettings } from './ModalEditingSettings'
 import { NotificationSettings } from './NotificationSettings'
 import type { StatusBarVisibility } from './StatusBar'
 import { SyntaxSettings } from './SyntaxSettings'
@@ -476,6 +477,13 @@ export function SettingsScreen({
                 />
               </SettingRow>
             </div>
+            {(discover || (open && (category === 'editor' || searching))) && (
+              <ModalEditingSettings
+                manifests={addons.map(({ manifest }) => manifest)}
+                states={addonStates}
+                openAddons={() => onCategory('addons')}
+              />
+            )}
           </section>
           <section
             id="settings-syntax"
