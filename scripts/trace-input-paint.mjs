@@ -196,7 +196,7 @@ async function installProbe(profile) {
       apiVersion: 2,
       version: '1.0.0',
       authors: [{ displayName: 'Benchmark' }],
-      capabilities: ['source', 'rich'],
+      capabilities: ['source'],
       entry: 'index.js',
     }),
   )
@@ -213,7 +213,6 @@ async function installProbe(profile) {
     `export default sdk => ({start(context) {
     window.__inputPaintSdk = sdk; window.__inputPaintContext = context;
     context.editor.registerSource({id:'observe', create() { return sdk.codeMirror.view.EditorView.updateListener.of(update => window.__inputPaint?.model('source', update)); }});
-    context.editor.registerRich({id:'observe', attach(editor) { window.__inputPaintRich = editor; window.__inputPaint?.attachRich(editor); const update = ({transaction}) => window.__inputPaint?.model('visual', {view:editor.view, docChanged:transaction.docChanged, selectionSet:transaction.selectionSet}); editor.on('transaction', update); return () => editor.off('transaction', update); }});
   }});`,
   )
   await writeFile(join(profile, 'addons.json'), JSON.stringify(addons))
@@ -289,8 +288,9 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
     if (holder.dispatch)
       editor.view.setProps({ dispatchTransaction: holder.dispatch })
   }
-  if (window.__inputPaintRich && !window.__inputPaintRich.isDestroyed)
-    measurement.attachRich(window.__inputPaintRich)
+  // Observe the mounted native editor without registering an addon rich hook:
+  // unknown rich hooks intentionally disable audited codec fast paths.
+  if (rich && !rich.isDestroyed) measurement.attachRich(rich)
   const selectionHead = () =>
     target === 'source'
       ? view.state.selection.main.head
@@ -597,6 +597,12 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
     finalRenderedElements: element.querySelectorAll('*').length,
   })
   window.__inputPaint = measurement
+  rich?.on('transaction', ({ transaction }) =>
+    measurement.model('visual', {
+      docChanged: transaction.docChanged,
+      selectionSet: transaction.selectionSet,
+    }),
+  )
   if (target === 'source') {
     view.dispatch({
       selection: { anchor: offset },
