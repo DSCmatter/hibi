@@ -237,6 +237,14 @@ test('typst documents and markdown blocks preview locally, export, and preserve 
     /keep this paragraph\./,
   )
   assert.equal((await read()).markdown, markdown)
+  assert.equal(
+    await page.locator('.tiptap').getAttribute('contenteditable'),
+    'false',
+  )
+  await page.getByRole('button', { name: /^normal$/i, exact: true }).click()
+  await page.waitForFunction(
+    () => document.querySelector('.tiptap')?.editor?.isEditable,
+  )
   await page
     .getByRole('button', { name: /^edit typst block$/i, exact: true })
     .click()

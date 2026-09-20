@@ -209,7 +209,12 @@ test('rich markers follow only the focused block, preserve copying and undo, and
   )
   assert.equal(await rich.locator('.markdown-marker').count(), 0)
   await paragraph.click()
+  assert.equal(await rich.getAttribute('aria-readonly'), 'true')
+  assert.equal(await rich.locator('.markdown-marker').count(), 0)
+  await page.getByRole('button', { name: /^normal$/i }).click()
+  await paragraph.click()
   await paragraph.locator('.markdown-marker').first().waitFor()
+  assert.equal(await rich.getAttribute('aria-readonly'), 'false')
   assert.equal(
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     source,

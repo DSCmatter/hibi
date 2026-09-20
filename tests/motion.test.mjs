@@ -194,7 +194,22 @@ test('split panes align corresponding carets in both directions without feedback
   )
   const rich = page.getByRole('textbox', { name: /document editor/i })
   await rich.locator('h2').nth(45).click()
-  await aligned('.rich-pane .editor-cursor', '.source-pane .mirror-cursor')
+  assert.equal(await rich.getAttribute('aria-readonly'), 'true')
+  assert.equal(await page.locator('.rich-pane .editor-cursor').count(), 0)
+  await page.waitForFunction(() => {
+    const editor = document.querySelector('.rich-pane .tiptap')?.editor
+    const caret = editor?.view.coordsAtPos(editor.state.selection.head)
+    const mirror = document
+      .querySelector('.source-pane .mirror-cursor')
+      ?.getBoundingClientRect()
+    return (
+      caret &&
+      mirror?.height &&
+      Math.abs(
+        (caret.top + caret.bottom) / 2 - mirror.top - mirror.height / 2,
+      ) < 3
+    )
+  })
   assert.equal(
     await rich.evaluate((element) => element === document.activeElement),
     true,
