@@ -94,6 +94,12 @@ if (sourceBytes)
     '--file must contain valid UTF-8 text.',
   )
 await access(resolve('out/main/index.js'))
+const rendererIndex = await readFile(resolve('out/renderer/index.html')),
+  rendererEntry =
+    rendererIndex
+      .toString('utf8')
+      .match(/<script\b[^>]*\bsrc=["']([^"']+)["']/)?.[1] ?? null,
+  statusScope = 'integrity-and-measurement-completion-only'
 const output = values.out
   ? resolve(values.out)
   : await mkdtemp(join(tmpdir(), 'hibi-input-paint-'))
@@ -117,6 +123,12 @@ const summary = {
   builtMainSha256: createHash('sha256')
     .update(await readFile(resolve('out/main/index.js')))
     .digest('hex'),
+  builtRendererIndexSha256: createHash('sha256')
+    .update(rendererIndex)
+    .digest('hex'),
+  builtRendererEntry: rendererEntry,
+  statusScope,
+  latencyTarget: { belowMs: 1, evaluatedByScenarioStatus: false },
   harnessSha256: createHash('sha256')
     .update(await readFile(new URL(import.meta.url)))
     .digest('hex'),
@@ -283,6 +295,139 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
     target === 'source'
       ? view.state.selection.main.head
       : view.state.selection.head
+  measurement.prepareSelection = (key, count) => {
+    const current =
+        target === 'source' ? view.state.selection.main : view.state.selection,
+      direction = key === 'ArrowRight' ? 1 : -1
+    if (current.anchor !== current.head)
+      throw new Error('Selection probe must begin at a caret.')
+    let head = current.head
+    if (target === 'source') {
+      let range = current
+      for (let index = 0; index < count; index++) {
+        const forward =
+          direction > 0 ===
+          (view.textDirectionAt(range.head) ===
+            window.__inputPaintSdk.codeMirror.view.Direction.LTR)
+        range = view.moveByChar(range, forward)
+      }
+      head = range.head
+    } else {
+      if (getComputedStyle(element).direction !== 'ltr')
+        throw new Error(
+          'Visual selection oracle requires a left-to-right fixture.',
+        )
+      const doc = view.state.doc,
+        Selection = current.constructor,
+        graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+      for (let index = 0; index < count; index++) {
+        const position = doc.resolve(head),
+          adjacent = direction > 0 ? position.nodeAfter : position.nodeBefore
+        if (adjacent?.isText) {
+          const text = adjacent.text,
+            part = graphemes
+              .segment(text)
+              .containing(direction > 0 ? 0 : text.length - 1)
+          head += direction * part.segment.length
+        } else if (adjacent?.isInline) head += direction * adjacent.nodeSize
+        else
+          head =
+            Selection.findFrom(
+              doc.resolve(
+                Math.max(0, Math.min(doc.content.size, head + direction)),
+              ),
+              direction,
+              true,
+            )?.head ?? head
+      }
+    }
+    measurement.selection = {
+      key,
+      count,
+      expected: { anchor: current.anchor, head },
+      frame: 0,
+    }
+    return { key, count, expected: measurement.selection.expected }
+  }
+  const selectionFrame = () => {
+    const selection = measurement.selection
+    selection.frame = 0
+    const model =
+        target === 'source' ? view.state.selection.main : view.state.selection,
+      dom = window.getSelection(),
+      records = measurement.records.filter(
+        (record) => record.phase === 'selection',
+      )
+    let domAnchor = null,
+      domHead = null,
+      caret = null
+    try {
+      if (dom?.anchorNode && dom.focusNode) {
+        domAnchor = view.posAtDOM(dom.anchorNode, dom.anchorOffset)
+        domHead = view.posAtDOM(dom.focusNode, dom.focusOffset)
+      }
+      caret = view.coordsAtPos(model.head)
+    } catch {}
+    const pane =
+        element.closest(target === 'source' ? '.source-pane' : '.rich-pane') ??
+        element,
+      clip = pane.getBoundingClientRect(),
+      matches =
+        model.anchor === selection.expected.anchor &&
+        model.head === selection.expected.head &&
+        domAnchor === model.anchor &&
+        domHead === model.head,
+      inViewport =
+        caret &&
+        caret.bottom > caret.top &&
+        caret.bottom > Math.max(0, clip.top) &&
+        caret.top < Math.min(innerHeight, clip.bottom) &&
+        caret.right >= Math.max(0, clip.left) &&
+        caret.left <= Math.min(innerWidth, clip.right)
+    selection.probe = {
+      at: performance.now(),
+      received: records.length,
+      model: { anchor: model.anchor, head: model.head },
+      dom: { anchor: domAnchor, head: domHead },
+      caret: caret
+        ? {
+            left: caret.left,
+            right: caret.right,
+            top: caret.top,
+            bottom: caret.bottom,
+          }
+        : null,
+      clip: {
+        left: clip.left,
+        right: clip.right,
+        top: clip.top,
+        bottom: clip.bottom,
+      },
+      matches,
+      inViewport: Boolean(inViewport),
+    }
+    if (records.length === selection.count && matches && inViewport) {
+      selection.visibleFrameAt = performance.now()
+      selection.coalescedModelIds = records
+        .filter((record) => record.modelAt === undefined)
+        .map((record) => record.id)
+      const last = records.at(-1)
+      for (const record of records) {
+        record.selectionOutcome =
+          record === last
+            ? 'final-endpoint'
+            : record.modelAt === undefined
+              ? 'coalesced-before-model'
+              : 'intermediate-model-only'
+        record.selectionEndpointId = last.id
+      }
+      mark('selection-endpoint')
+      requestAnimationFrame(() => {
+        selection.nextFrameAt = performance.now()
+        mark('selection-next-frame')
+      })
+    } else selection.frame = requestAnimationFrame(selectionFrame)
+  }
   const visible = () => {
     const head = selectionHead(),
       from = head - 1
@@ -361,6 +506,12 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
       measurement.latest = record
       measurement.events.keydown++
       mark(`keydown:${record.id}`)
+      if (
+        measurement.phase === 'selection' &&
+        measurement.selection &&
+        !measurement.selection.frame
+      )
+        measurement.selection.frame = requestAnimationFrame(selectionFrame)
       queueMicrotask(() => {
         record.keydownMicrotaskAt = performance.now()
       })
@@ -411,6 +562,7 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
     record.version = ++measurement.version
     record.head = selectionHead()
     mark(`model:${record.id}`)
+    if (record.phase === 'selection') return
     measurement.pending.push(record)
     if (!measurement.frame) measurement.frame = requestAnimationFrame(frame)
   }
@@ -435,6 +587,7 @@ function instrument({ target, offset, fileVisual, requestedPosition }) {
     timeOrigin: measurement.timeOrigin,
     events: measurement.events,
     records: measurement.records,
+    selection: measurement.selection,
     scroll: measurement.scroll,
     spans: measurement.spans,
     methods: measurement.methods,
@@ -611,6 +764,7 @@ async function runCase(config) {
     dispatched: [],
     saves: [],
     status: 'running',
+    statusScope,
   }
   summary.cases.push(result)
   const app = await launchBenchmarkApp(profile)
@@ -943,20 +1097,34 @@ async function runCase(config) {
       final = await save(first, 'backspace-immediate', richFirst)
       await settle('hold-backspace', repetitions)
     }
-    await dispatch(
-      'selection',
-      (fileVisual ? config.position === 'end' : offset === source.length)
-        ? 'ArrowLeft'
-        : 'ArrowRight',
-      20,
-      500,
+    const selectionKey = (
+      fileVisual
+        ? config.position === 'end'
+        : offset === source.length
     )
+      ? 'ArrowLeft'
+      : 'ArrowRight'
+    result.selectionPlan = await page.evaluate(
+      (key) => window.__inputPaint.prepareSelection(key, 20),
+      selectionKey,
+    )
+    await dispatch('selection', selectionKey, 20, 500)
     await page.waitForFunction(
-      () => !window.getSelection()?.isCollapsed,
+      () => window.__inputPaint.selection?.nextFrameAt !== undefined,
       undefined,
       { timeout: settleMs },
     )
-    await settle('selection', 20)
+    result.selection = await page.evaluate(() => window.__inputPaint.selection)
+    assert.deepEqual(
+      result.selection.probe.model,
+      result.selectionPlan.expected,
+      'Final model selection differs from the planned range',
+    )
+    assert.deepEqual(
+      result.selection.probe.dom,
+      result.selectionPlan.expected,
+      'Final DOM selection differs from the planned range',
+    )
     assert.equal(
       await page.evaluate(
         () => window.__inputPaintContext.editor.getDocument().markdown,

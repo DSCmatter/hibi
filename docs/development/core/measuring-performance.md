@@ -48,6 +48,8 @@ The output directory must be new. Character and word fixtures contain exactly 10
 
 Each case measures a key after two seconds of idle, then sends `s` for 30 seconds at 30 events per second, independently of command acknowledgements or rendering. It repeats the hold for backspace, checks selection and scrolling, and validates exact source after save and undo/redo. The first-key frame measurement precedes its save; hold-tail saves deliberately test immediate persistence and are marked so their overlap can be distinguished. Queue deadlines remain failures. `--continue-on-error` preserves them while allowing later cases to run and still exits unsuccessfully if any case fails.
 
+Selection checks predict the final character range without changing editor state, then require matching model and DOM endpoints inside the viewport through animation frames. Native selection changes may combine several arrow events into one transaction; the report labels those events explicitly rather than requiring a separate paint for every intermediate selection. A zero-width caret rectangle at a wrapped space is valid endpoint geometry. Typing, deletion, save and history checks retain their stricter per-input and exact-content assertions.
+
 Use `--quick` only to validate the harness or investigate first-key behavior; it skips the 30-second holds and does not satisfy the sustained-input check. `--mode`, `--size`, `--shape`, `--position` and `--target` select smaller investigations. Run `--help` for the accepted values.
 
 Use `--file /path/to/note.md` to benchmark an existing UTF-8 Markdown document. The harness copies its original bytes into each isolated case, records its size and SHA-256 hash, and skips the synthetic size and shape combinations. It never edits the supplied file. Source input retains exact raw-source save assertions. For visual input, start, middle and end select the first, middle or last editable textblock; the report records the ProseMirror position and leaves the source offset unavailable. Visual checks require every inserted and deleted character in the rich document, saved bytes matching the accepted canonical source, undo restoring the original raw bytes exactly, and redo restoring the captured accepted source. These visual positions are not claimed to correspond to raw Markdown offsets. When Hibi displays its source-preservation notice, the supplied file's visual case is recorded as unavailable, with the notice text and a screenshot; the harness verifies that source and disk remain unchanged and never forces editing. Unavailable cases are not successful measurements and cause a nonzero exit status. An unexpected preservation notice on a generated fixture remains a failure.
@@ -56,11 +58,15 @@ Add `--cpu-profile` for a separate attribution run. It records a renderer V8 pro
 
 Reports retain emitted key timestamps, renderer observations, native Chromium traces, script/build identity and save/history checks. A matching character range inside the viewport followed by animation frames measures a presentation opportunity, not physical display scanout. Traces expose Paint/DrawFrame events and synchronous function durations separately. Missing observations, timeouts and unfinished save/history checks are not successful latency measurements.
 
+A `passed` scenario means that integrity checks and measurement collection completed; it does not mean a latency target was achieved. The current investigation targets less than 1 ms, which must be assessed separately for each named timing endpoint. Reports record hashes for both the main-process bundle and renderer entry HTML, plus the renderer entry filename, so renderer-only changes remain distinguishable when the main bundle is unchanged.
+
 ```sh
 node scripts/analyze-input-trace.mjs --trace /tmp/hibi-input-baseline/CASE/trace.json --metrics /tmp/hibi-input-baseline/CASE/result.json --out /tmp/hibi-input-baseline/CASE/analysis
 ```
 
 The analyzer writes a concise Markdown report and detailed JSON. Trace durations overlap; do not add inclusive parent and child durations as if they were separate CPU work. Function names help locate candidates, but attribution requires matching actual code and the measured interval. Run analysis after timed capture so parsing a large trace does not compete with the app.
+
+V8 profiles can contain samples reported out of timestamp order. The analyzer reconstructs signed timestamps before estimating global sample weights and reports these anomalies. Invalid timelines have unavailable weights; per-phase CPU attribution remains unavailable. These estimates do not establish exact function durations.
 
 ## Read CI results
 

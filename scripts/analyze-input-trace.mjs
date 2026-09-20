@@ -129,6 +129,7 @@ function profilesFromTrace(events) {
       timeDeltas: [],
     }
     if (finite(data.startTime)) profile.startTime = data.startTime
+    if (finite(data.endTime)) profile.endTime = data.endTime
     if (data.cpuProfile) {
       for (const node of data.cpuProfile.nodes ?? []) {
         const old = profile.nodes.get(node.id)
@@ -146,6 +147,8 @@ function profilesFromTrace(events) {
       )
       if (finite(data.cpuProfile.startTime))
         profile.startTime = data.cpuProfile.startTime
+      if (finite(data.cpuProfile.endTime))
+        profile.endTime = data.cpuProfile.endTime
     }
     profiles.set(key, profile)
   }
@@ -162,8 +165,67 @@ function summarizeProfiles(profiles) {
   let samples = 0,
     missingDuration = 0,
     unknownNodes = 0,
-    measuredUs = 0
-  for (const profile of profiles) {
+    measuredUs = 0,
+    weightedSamples = 0
+  const timelines = []
+  for (const [profileIndex, profile] of profiles.entries()) {
+    const start = finite(profile.startTime) ? profile.startTime : 0,
+      ordered = [],
+      timeline = {
+        profile: profileIndex,
+        samples: profile.samples?.length ?? 0,
+        deltas: profile.timeDeltas?.length ?? 0,
+        negativeDeltas: 0,
+        missingDeltas: 0,
+        outOfBounds: 0,
+        reorderedSamples: 0,
+        duplicateTimestamps: 0,
+      }
+    let timestamp = start
+    for (let index = 0; index < timeline.samples; index++) {
+      const delta = profile.timeDeltas?.[index]
+      samples++
+      if (!finite(delta)) {
+        timeline.missingDeltas++
+        continue
+      }
+      if (delta < 0) timeline.negativeDeltas++
+      timestamp += delta
+      if (
+        !finite(timestamp) ||
+        timestamp < start ||
+        (finite(profile.endTime) && timestamp > profile.endTime)
+      )
+        timeline.outOfBounds++
+      ordered.push({ index, node: profile.samples[index], timestamp })
+    }
+    missingDuration += timeline.missingDeltas
+    const unavailable =
+      !timeline.samples ||
+      timeline.missingDeltas > 0 ||
+      timeline.outOfBounds > 0 ||
+      profile.timeDeltas?.length !== timeline.samples
+    timeline.weightStatus = unavailable ? 'unavailable' : 'estimated'
+    timeline.phaseAttribution = 'unavailable'
+    timeline.profileDurationMs =
+      finite(profile.endTime) && finite(profile.startTime)
+        ? round((profile.endTime - profile.startTime) / 1000)
+        : null
+    timelines.push(timeline)
+    if (unavailable) continue
+    // A negative delta moves the sample timestamp backwards; discarding just
+    // that duration double-counts its overlap with later positive intervals.
+    ordered.sort((a, b) => a.timestamp - b.timestamp || a.index - b.index)
+    let previous = start
+    for (let index = 0; index < ordered.length; index++) {
+      const sample = ordered[index]
+      if (sample.index !== index) timeline.reorderedSamples++
+      if (index && sample.timestamp === ordered[index - 1].timestamp)
+        timeline.duplicateTimestamps++
+      sample.duration = sample.timestamp - previous
+      previous = sample.timestamp
+    }
+    timeline.coveredMs = round((previous - start) / 1000)
     const nodes = new Map((profile.nodes ?? []).map((node) => [node.id, node]))
     const parents = new Map()
     for (const node of nodes.values())
@@ -172,18 +234,14 @@ function summarizeProfiles(profiles) {
       const frame = node.callFrame ?? {}
       return `${frame.functionName || '(anonymous)'} @ ${frame.url || '(native)'}:${(frame.lineNumber ?? -1) + 1}`
     }
-    for (let index = 0; index < (profile.samples?.length ?? 0); index++) {
-      samples++
-      const node = nodes.get(profile.samples[index]),
-        duration = profile.timeDeltas?.[index]
+    for (const sample of ordered) {
+      const node = nodes.get(sample.node),
+        duration = sample.duration
       if (!node) {
         unknownNodes++
         continue
       }
-      if (!finite(duration) || duration < 0) {
-        missingDuration++
-        continue
-      }
+      weightedSamples++
       measuredUs += duration
       const callStack = [],
         visited = new Set()
@@ -212,11 +270,13 @@ function summarizeProfiles(profiles) {
     samples,
     missingDuration,
     unknownNodes,
-    sampledMs: round(measuredUs / 1000),
+    weightedSamples,
+    sampledMs: weightedSamples ? round(measuredUs / 1000) : null,
+    timelines,
     topFunctions: top(functions),
     topStacks: top(stacks),
     leafNameGroups: top(groups),
-    note: 'sample-weight estimates; name groups are search aids, not causal attribution or exact function timings.',
+    note: 'global sample-weight estimates from signed cumulative timestamps, stably sorted when samples arrive out of order. malformed or out-of-bounds timelines have unavailable weights. per-phase CPU attribution is unavailable; nonmonotonic timing cannot establish it. name groups are search aids, not causal attribution or exact function timings.',
   }
 }
 
@@ -618,6 +678,16 @@ function report(summary) {
     )
   lines.push('', '## sampled leaf functions', '')
   if (!summary.cpu.samples) lines.push('no CPU samples available.')
+  for (const timeline of summary.cpu.timelines) {
+    if (timeline.negativeDeltas)
+      lines.push(
+        `profile ${timeline.profile}: ${timeline.negativeDeltas} negative deltas; signed timestamps reordered before weighting. per-phase CPU attribution unavailable.`,
+      )
+    if (timeline.weightStatus === 'unavailable')
+      lines.push(
+        `profile ${timeline.profile}: sample weights unavailable (${timeline.samples} samples, ${timeline.deltas} deltas, ${timeline.missingDeltas} missing deltas, ${timeline.outOfBounds} out-of-bounds timestamps).`,
+      )
+  }
   for (const entry of summary.cpu.topFunctions.slice(0, 8))
     lines.push(`- ${entry.sampledMs} ms: ${entry.name}`)
   lines.push('', '## longest traced function calls', '')
@@ -713,6 +783,43 @@ async function main() {
     assert.equal(result.benchmark.phases[0].endpoints.subscriberMs.count, 0)
     assert.equal(result.benchmark.outsideTimedContext[0].value, 10)
     assert.equal(result.cpu.topFunctions[0].sampledMs, 3)
+    const reordered = analyzeInputTrace({ traceEvents: [] }, null, {
+      ...profile,
+      startTime: 10000,
+      endTime: 14000,
+      nodes: [
+        { ...profile.nodes[0], children: [2, 3] },
+        profile.nodes[1],
+        { id: 3, callFrame: { functionName: 'render' } },
+      ],
+      samples: [2, 3, 2, 3],
+      timeDeltas: [1000, 2000, -1000, 1000],
+    }).cpu
+    assert.equal(reordered.sampledMs, 3)
+    assert.deepEqual(
+      reordered.topFunctions.map((entry) => [
+        entry.name.split(' @ ')[0],
+        entry.sampledMs,
+      ]),
+      [
+        ['parse', 2],
+        ['render', 1],
+      ],
+    )
+    assert.equal(reordered.timelines[0].negativeDeltas, 1)
+    assert.equal(reordered.timelines[0].reorderedSamples, 2)
+    assert.equal(reordered.timelines[0].duplicateTimestamps, 1)
+    assert.equal(reordered.timelines[0].phaseAttribution, 'unavailable')
+    for (const deltas of [[-1000, 2000], [1000], [1000, Number.NaN]]) {
+      const invalid = analyzeInputTrace({ traceEvents: [] }, null, {
+        ...profile,
+        startTime: 10000,
+        endTime: 14000,
+        timeDeltas: deltas,
+      }).cpu
+      assert.equal(invalid.sampledMs, null)
+      assert.equal(invalid.timelines[0].weightStatus, 'unavailable')
+    }
     assert.equal(result.trace.unmatchedEnds, 0)
     assert.equal(result.trace.unmatchedStarts, 0)
     assert.equal(
