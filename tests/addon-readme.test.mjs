@@ -87,6 +87,7 @@ test('addon readmes render safely without activation, and settings headers have 
   await page
     .getByRole('textbox', { name: 'Document editor', exact: true })
     .waitFor()
+  await clickMenu(app, 'Settings')
   const before = await page.evaluate(() => window.hibi.getDocument())
   const read = (id, path) =>
     page.evaluate(
@@ -118,7 +119,6 @@ test('addon readmes render safely without activation, and settings headers have 
     await assert.rejects(read(id, path))
   if (process.platform !== 'win32')
     await assert.rejects(read('readme-fixture', 'escape.md'))
-  await clickMenu(app, 'Settings')
   await page.getByRole('tab', { name: 'Hotkeys', exact: true }).click()
   const gap = await page
     .locator('#settings-hotkeys')

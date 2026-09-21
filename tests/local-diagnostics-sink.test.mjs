@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import { constants } from 'node:fs'
 import * as fs from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -398,5 +397,4 @@ test('unowned files, symlinks, hardlinks and profile symlinks are left untouched
     assert.equal(await fs.readFile(other, 'utf8'), 'PRIVATE_DOCUMENT')
     assert.ok(!sink.report().includes('PRIVATE_DOCUMENT'))
   }
-  assert.ok(constants.O_NOFOLLOW)
 })

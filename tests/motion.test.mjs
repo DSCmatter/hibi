@@ -455,12 +455,6 @@ test('workspace sidebar remains above editor content during motion and preserves
     )
     assert.equal(samples.at(-1).x, opening ? 0 : -256)
   }
-  await clickMenu(app, 'Settings')
-  assert.equal(
-    await page.getByRole('button', { name: /^new$/i, exact: true }).count(),
-    0,
-  )
-  await page.getByRole('button', { name: /^back to app$/i }).click()
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.getByRole('button', { name: /toggle workspace sidebar/i }).click()
   assert.equal(

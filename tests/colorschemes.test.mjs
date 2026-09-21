@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
@@ -183,13 +183,6 @@ test('app palettes update all surfaces, preserve editing, and persist native app
     })
     for (const [key, color] of Object.entries(colors))
       assert.equal(color.toLowerCase(), scheme.colors[key].toLowerCase())
-    await page.waitForFunction(
-      () => window.originalEditor === document.querySelector('.tiptap'),
-    )
-    assert.equal(
-      (await page.evaluate(() => window.hibi.getDocument())).markdown,
-      'keep this note',
-    )
     if (!hoveredAppearances.has(scheme.appearance)) {
       for (const kind of ['primary', 'legacy', 'row', 'ghost', 'disabled']) {
         const button = page.locator(`#hover-${kind}`)
@@ -209,15 +202,17 @@ test('app palettes update all surfaces, preserve editing, and persist native app
       hoveredAppearances.add(scheme.appearance)
     }
   }
+  await page.waitForFunction(
+    () => window.originalEditor === document.querySelector('.tiptap'),
+  )
+  assert.equal(
+    (await page.evaluate(() => window.hibi.getDocument())).markdown,
+    'keep this note',
+  )
   await page.locator('#hover-probe').evaluate((element) => element.remove())
   await page
     .getByRole('combobox', { name: /dark colorscheme/i })
     .selectOption('catppuccin-mocha')
-  await mkdir('test-results', { recursive: true })
-  await page.screenshot({
-    path: 'test-results/colorscheme-mocha.png',
-    animations: 'disabled',
-  })
   assert.match(
     await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].getBackgroundColor(),

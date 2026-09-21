@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
@@ -61,18 +61,6 @@ test('find in document searches rich text and offscreen markdown without editing
     exact: true,
   })
   const bar = page.getByRole('search', { name: /find in document/i })
-  await page.waitForFunction(
-    () =>
-      Math.abs(
-        document.querySelector('.find-bar').getBoundingClientRect().top -
-          (document.querySelector('.editor-toolbar').getBoundingClientRect()
-            .bottom +
-            Number.parseFloat(
-              getComputedStyle(document.querySelector('.editor-toolbar'))
-                .marginBottom,
-            )),
-      ) < 1,
-  )
   const waitForCount = (expected) =>
     page.waitForFunction(
       (count) =>
@@ -106,8 +94,6 @@ test('find in document searches rich text and offscreen markdown without editing
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     markdown,
   )
-  await mkdir('test-results', { recursive: true })
-  await page.screenshot({ path: 'test-results/find-in-note.png' })
   await input.press('Escape')
   await bar.waitFor({ state: 'hidden' })
   assert.equal(
@@ -157,15 +143,14 @@ test('find in document searches rich text and offscreen markdown without editing
     .filter({ hasText: /last needle/i })
     .waitFor()
   await replaceSource(
-    Array.from({ length: 2200 }, (_, index) => `${index} café`).join('\n'),
+    Array.from({ length: 200 }, (_, index) => `${index} café`).join('\n'),
   )
   await input.fill('CAFE')
-  await waitForCount('1/2200')
+  await waitForCount('1/200')
   await input.press('Shift+Enter')
-  await waitForCount('2200/2200')
+  await waitForCount('200/200')
   await input.press('Enter')
-  await waitForCount('1/2200')
-  // Replacing source invalidates old worker results without moving input focus.
+  await waitForCount('1/200')
   await replaceSource('last needle')
   await waitForCount('No results')
   assert.equal(

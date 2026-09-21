@@ -136,14 +136,11 @@ test('combined history pressure preserves inactive drafts and active source undo
   await waitForAsync(page, async () => !(await window.hibi.getDocument()).dirty)
   assert.equal(await readFile(files[0], 'utf8'), `note 0\r\n${'x'.repeat(128)}`)
   await open(4)
+  await page.evaluate(() => window.historyFixture.view.focus())
   await pressShortcut(app, `${mod}+z`)
   await waitForAsync(
     page,
     async (expected) => (await window.hibi.getDocument()).markdown === expected,
-    `note 4\r\n${'x'.repeat(127)}`,
-  )
-  assert.equal(
-    (await page.evaluate(() => window.hibi.getDocument())).markdown,
     `note 4\r\n${'x'.repeat(127)}`,
   )
   await pressShortcut(app, `${mod}+Shift+z`)

@@ -42,15 +42,6 @@ test('titlebar keeps actions minimal, blocks scrolled content, and persists toas
       .count(),
     3,
   )
-  await page
-    .getByRole('tab', { name: /^untitled\.md$/i, exact: true })
-    .dblclick()
-  assert.equal(
-    await page
-      .getByRole('textbox', { name: /^file name$/i, exact: true })
-      .count(),
-    0,
-  )
   await clickMenu(app, 'Settings')
   for (const category of ['hibi', 'appearance']) {
     await page

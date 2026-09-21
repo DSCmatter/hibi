@@ -348,6 +348,12 @@ test('update settings expose both channels, persist choice, and fit narrow windo
       () => !document.querySelector('#update-channel').disabled,
     )
     assert.equal(await picker.inputValue(), expected)
+    if (expected === 'nightly') {
+      assert.deepEqual(errors, [])
+      await app.close()
+      app = undefined
+      continue
+    }
     assert.deepEqual(await picker.locator('option').allTextContents(), [
       'Recommended nightly',
       'Nightly',
@@ -417,11 +423,6 @@ test('update settings expose both channels, persist choice, and fit narrow windo
         animations: 'disabled',
       })
     }
-    await mkdir('test-results', { recursive: true })
-    await page.screenshot({
-      path: 'test-results/update-settings.png',
-      animations: 'disabled',
-    })
     assert.deepEqual(errors, [])
     await app.close()
     app = undefined

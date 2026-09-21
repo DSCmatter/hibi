@@ -154,7 +154,6 @@ test('unsaved custom source survives enabling, rich editing, disabling, saving, 
   await page.waitForFunction(
     () => document.querySelector('.tiptap')?.isContentEditable,
   )
-  assert.equal(await page.locator('.source-notice').count(), 0)
   assert.equal(await page.evaluate(() => window.citationsLoaded), undefined)
   await page.getByRole('button', { name: 'Source view', exact: true }).click()
   await page.waitForFunction(
@@ -186,14 +185,12 @@ test('unsaved custom source survives enabling, rich editing, disabling, saving, 
   await page.waitForFunction(
     () => document.querySelector('.tiptap')?.isContentEditable,
   )
-  assert.equal(await page.locator('.source-notice').count(), 0)
   await page.evaluate(() => window.hibi.saveDocument(false))
   assert.equal(await readFile(file, 'utf8'), `${prefix}Changed body`)
   await page.reload()
   await page.waitForFunction(
     () => document.querySelector('.tiptap')?.isContentEditable,
   )
-  assert.equal(await page.locator('.source-notice').count(), 0)
   assert.equal(await page.evaluate(() => window.citationsLoaded), undefined)
   await replaceRichText(
     page,

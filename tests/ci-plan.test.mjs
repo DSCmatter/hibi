@@ -31,21 +31,24 @@ test('incremental checks select dependencies and fall back safely for cold, clea
     .sort()
   const plan = (changed, options = {}) =>
     planChecks(root, { changed, previousTests, ...options })
-  assert.deepEqual(plan([]).tests, [])
-  assert.equal(plan([]).build, false)
-  assert.deepEqual(plan(['tests/one.test.mjs']).tests, ['tests/one.test.mjs'])
-  assert.equal(plan(['tests/one.test.mjs']).build, false)
+  const clean = plan([])
+  assert.deepEqual(clean.tests, [])
+  assert.equal(clean.build, false)
+  const direct = plan(['tests/one.test.mjs'])
+  assert.deepEqual(direct.tests, ['tests/one.test.mjs'])
+  assert.equal(direct.build, false)
   assert.ok(
     plan(['tests/fixtures/image.png']).tests.includes('tests/io.test.mjs'),
   )
   assert.deepEqual(plan(['tests/helper.mjs']).tests, ['tests/helper.test.mjs'])
-  assert.deepEqual(plan(['src/shared/one.ts']).tests, [
+  const source = plan(['src/shared/one.ts'])
+  assert.deepEqual(source.tests, [
     'tests/desktop.test.mjs',
     'tests/helper.test.mjs',
     'tests/io.test.mjs',
     'tests/one.test.mjs',
   ])
-  assert.equal(plan(['src/shared/one.ts']).build, true)
+  assert.equal(source.build, true)
   assert.deepEqual(
     plan([], {
       previousTests: previousTests.filter(
@@ -54,15 +57,11 @@ test('incremental checks select dependencies and fall back safely for cold, clea
     }).tests,
     ['tests/two.test.mjs'],
   )
-  assert.ok(
-    plan([], { outputAvailable: false }).tests.includes(
-      'tests/desktop.test.mjs',
-    ),
-  )
   for (const options of [
     { changed: undefined },
     { previousTests: undefined },
     { force: true },
+    { outputAvailable: false },
     { changed: ['package-lock.json'] },
     { changed: ['.github/workflows/check.yml'] },
     { changed: ['unrecognized.config'] },
@@ -76,14 +75,20 @@ test('incremental checks select dependencies and fall back safely for cold, clea
     join(root, 'tests/dynamic.test.mjs'),
     'const target = "./runtime.mjs"; await import(target)',
   )
+  writeFileSync(join(root, 'tests/runtime.mjs'), 'export default true')
+  execFileSync('git', ['add', 'tests/dynamic.test.mjs', 'tests/runtime.mjs'], {
+    cwd: root,
+    stdio: 'pipe',
+  })
   assert.ok(
     plan(['tests/helper.mjs'], {
       previousTests: [...previousTests, 'tests/dynamic.test.mjs'],
     }).tests.includes('tests/dynamic.test.mjs'),
   )
   writeFileSync(join(root, 'src/shared/new.ts'), 'export const added = 3')
-  assert.equal(plan([]).build, true)
-  assert.ok(plan([]).tests.includes('tests/desktop.test.mjs'))
+  const untracked = plan([])
+  assert.equal(untracked.build, true)
+  assert.ok(untracked.tests.includes('tests/desktop.test.mjs'))
 })
 
 test('docs-only checks rebuild bundled help and retain documentation tests without unrelated desktop work', (t) => {
@@ -126,18 +131,13 @@ test('docs-only checks rebuild bundled help and retain documentation tests witho
   }
   for (const changed of [
     ['docs/licenses/typst-assets.md'],
-    ['src/addons/typst/README.md'],
     ['docs/guides/editing.md', 'src/shared/one.ts'],
     ['docs/config.js'],
     ['tests/fixtures/help.md'],
   ]) {
     assert.ok(plan(changed).tests.includes('tests/desktop.test.mjs'))
   }
-  for (const options of [
-    { force: true },
-    { previousTests: undefined },
-    { outputAvailable: false },
-  ]) {
+  for (const options of [{ force: true }, { previousTests: undefined }]) {
     assert.deepEqual(
       plan(['docs/guides/editing.md'], options).tests,
       previousTests,

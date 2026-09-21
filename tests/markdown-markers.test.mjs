@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
@@ -218,8 +218,6 @@ test('rich markers follow only the focused block, preserve copying and undo, and
     '# ',
   )
   assert.equal(await rich.locator('p .markdown-marker').count(), 0)
-  await mkdir('test-results', { recursive: true })
-  await page.screenshot({ path: 'test-results/markdown-markers-heading.png' })
   const paragraph = rich.locator('p').first()
   await paragraph.click()
   await page.waitForFunction(
@@ -233,7 +231,6 @@ test('rich markers follow only the focused block, preserve copying and undo, and
     'Some bold and italic with code and strike.',
   )
   assert.equal(await rich.locator('.markdown-marker').count(), 8)
-  await page.screenshot({ path: 'test-results/markdown-markers.png' })
   await paragraph.evaluate((element) => {
     const range = document.createRange()
     range.selectNodeContents(element)

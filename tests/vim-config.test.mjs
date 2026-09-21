@@ -196,6 +196,7 @@ error('Do not execute config')
   assert.ok(!(await read()).includes('jk'))
   await source.pressSequentially(' w')
   await page
+    .getByRole('tab', { name: 'note.md', exact: true })
     .getByRole('status', { name: /unsaved changes/i })
     .waitFor({ state: 'hidden' })
   assert.equal(await readFile(note, 'utf8'), await read())

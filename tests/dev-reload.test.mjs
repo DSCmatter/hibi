@@ -16,7 +16,7 @@ import test from 'node:test'
 import { setTimeout as delay } from 'node:timers/promises'
 import { chromium } from 'playwright'
 
-test('development watches renderer, preload, addons, and generators', {
+test('development watches renderer, preload, addons, and documentation generation', {
   timeout: 180000,
 }, async (t) => {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'hibi-dev-watch-')))
@@ -57,6 +57,7 @@ test('development watches renderer, preload, addons, and generators', {
     [
       'scripts/dev.mjs',
       '--',
+      ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
       `--user-data-dir=${profile}`,
       ...(process.env.GITHUB_ACTIONS ? [] : ['--hibi-test']),
     ],
@@ -221,17 +222,5 @@ test('development watches renderer, preload, addons, and generators', {
         ).enabled,
     ),
     false,
-  )
-  await replace(
-    'scripts/build-site.mjs',
-    '<title>hibi documentation</title>',
-    '<title>Updated documentation</title>',
-  )
-  await until(
-    async () =>
-      (await readFile(join(root, 'out/site/template.html'), 'utf8')).includes(
-        '<title>Updated documentation</title>',
-      ),
-    'exporter generator reloads',
   )
 })

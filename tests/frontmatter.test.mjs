@@ -12,6 +12,7 @@ import {
 } from '../src/addons/frontmatter/markdown.ts'
 import { electron } from './electron.mjs'
 import { clickMenu, replaceRichText } from './keyboard.mjs'
+import { waitForAsync } from './poll.mjs'
 import { renameDocument } from './rename.mjs'
 import { uiName } from './ui.mjs'
 
@@ -127,18 +128,26 @@ test('frontmatter contributes slash actions in rich and source panes only while 
   assert.equal(await action.count(), 0)
   assert.equal(await read(), existing)
   await source.press('Escape')
-  const toggle = async () => {
+  const toggle = async (enabled) => {
     await clickMenu(app, 'Settings')
     await page.getByRole('tab', { name: /^addons$/i, exact: true }).click()
     await page.locator('#addon-frontmatter').click()
+    await waitForAsync(
+      page,
+      async (enabled) =>
+        (await window.hibi.getAddonStates()).find(
+          (entry) => entry.id === 'frontmatter',
+        )?.enabled === enabled,
+      enabled,
+    )
     await page.getByRole('button', { name: /^back to app$/i }).click()
   }
-  await toggle()
+  await toggle(false)
   await source.fill('/yaml')
-  await menu.waitFor()
+  await page.evaluate(() => new Promise(requestAnimationFrame))
   assert.equal(await action.count(), 0)
   await source.press('Escape')
-  await toggle()
+  await toggle(true)
   await source.fill('')
   await source.fill('/yaml')
   await action.waitFor()
@@ -471,9 +480,7 @@ test('frontmatter addon, inline rename, and centered workspace entry preserve do
       .getByRole('checkbox', { name: /^frontmatter$/i, exact: true })
       .click()
     await page.waitForFunction(
-      (editable) =>
-        document.querySelector('.tiptap').getAttribute('contenteditable') ===
-        String(editable),
+      (visible) => Boolean(document.querySelector('.frontmatter')) === visible,
       enabled,
     )
     await page.getByRole('button', { name: /^back to app$/i }).click()

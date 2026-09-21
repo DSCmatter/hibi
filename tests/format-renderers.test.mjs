@@ -251,14 +251,11 @@ test('format plugins render natively, keep previews inert, and run only on reque
       const packageRow = page
         .getByRole('listitem')
         .filter({ has: page.locator('code').filter({ hasText: /^xcolor$/ }) })
-      await packageRow.getByText('Downloaded', { exact: true }).waitFor()
+      await packageRow.waitFor({ timeout: 100000 })
       await packageRow
         .getByRole('button', { name: 'Download xcolor', exact: true })
         .click()
-      await page.waitForFunction(
-        () =>
-          !document.querySelector('[aria-label="Download xcolor"]')?.disabled,
-      )
+      await packageRow.getByText('Downloaded', { exact: true }).waitFor()
       await assert.rejects(query('math', 'download-package', '../bad'))
       await mkdir('test-results', { recursive: true })
       await page.screenshot({ path: 'test-results/latex-packages.png' })

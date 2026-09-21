@@ -18,7 +18,9 @@ export function startupBundle(): Plugin {
                     imports: file.imports,
                     dynamicImports: file.dynamicImports,
                     modules: Object.keys(file.modules).map((name) =>
-                      name.replace(`${process.cwd()}/`, ''),
+                      name
+                        .replaceAll('\\', '/')
+                        .replace(`${process.cwd().replaceAll('\\', '/')}/`, ''),
                     ),
                   },
                 ]

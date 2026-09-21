@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
@@ -75,11 +75,6 @@ test('slash commands work in both editors, preserve undo, and coexist with vim',
   assert.equal(await read(), '')
   await rich.fill('/')
   await menu.waitFor()
-  await mkdir('test-results', { recursive: true })
-  await page.screenshot({
-    path: 'test-results/slash-commands.png',
-    animations: 'disabled',
-  })
   await rich.press('ArrowDown')
   await rich.press('Enter')
   assert.equal(await rich.locator('h1').count(), 1)

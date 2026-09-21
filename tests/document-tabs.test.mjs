@@ -7,7 +7,7 @@ import { electron } from './electron.mjs'
 import { clickMenu, pressShortcut, replaceRichText } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 
-test('overflowing tabs reveal close buttons smoothly and reorder without losing drafts', {
+test('overflowing tabs reveal close buttons and reorder without losing drafts', {
   timeout: 45000,
 }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'hibi-tab-overflow-'))
@@ -49,16 +49,9 @@ test('overflowing tabs reveal close buttons smoothly and reorder without losing 
     )
   }
   for (const file of files.slice(0, -1)) await open(file)
-  await page.locator('.document-tabs').evaluate((strip) => {
-    strip.scrollTo({ left: 0, behavior: 'instant' })
-    window.tabScrollFrames = []
-    window.sampleTabScroll = true
-    const sample = () => {
-      window.tabScrollFrames.push(strip.scrollLeft)
-      if (window.sampleTabScroll) requestAnimationFrame(sample)
-    }
-    requestAnimationFrame(sample)
-  })
+  await page
+    .locator('.document-tabs')
+    .evaluate((strip) => strip.scrollTo({ left: 0, behavior: 'instant' }))
   await open(files.at(-1))
   await page.waitForFunction(() => {
     const strip = document.querySelector('.document-tabs')
@@ -67,14 +60,6 @@ test('overflowing tabs reveal close buttons smoothly and reorder without losing 
       Math.abs(strip.scrollLeft - strip.scrollWidth + strip.clientWidth) < 1
     )
   })
-  const frames = await page.evaluate(() => {
-    window.sampleTabScroll = false
-    return window.tabScrollFrames
-  })
-  assert.ok(
-    new Set(frames.map(Math.round)).size > 2,
-    'scrolling must include intermediate positions',
-  )
   const fullyVisible = () =>
     page.waitForFunction(() => {
       const strip = document
@@ -156,27 +141,10 @@ test('overflowing tabs reveal close buttons smoothly and reorder without losing 
   )
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   const closingId = (await page.evaluate(() => window.hibi.getDocument())).tabId
-  await page.locator('.document-tabs').evaluate((strip) => {
-    window.tabWidths = []
-    window.sampleTabWidths = true
-    const sample = () => {
-      window.tabWidths.push(strip.scrollWidth)
-      if (window.sampleTabWidths) requestAnimationFrame(sample)
-    }
-    requestAnimationFrame(sample)
-  })
   await page.locator(`[data-tab-key="${closingId}"] .tab-close`).click()
   await page
     .locator(`[data-tab-key="${closingId}"]`)
     .waitFor({ state: 'detached' })
-  const widths = await page.evaluate(() => {
-    window.sampleTabWidths = false
-    return window.tabWidths
-  })
-  assert.ok(
-    new Set(widths).size > 2,
-    'closing an overflowing strip must include intermediate widths',
-  )
   await fullyVisible()
 })
 

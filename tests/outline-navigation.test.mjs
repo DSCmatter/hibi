@@ -7,7 +7,7 @@ import { electron } from './electron.mjs'
 import { clickMenu } from './keyboard.mjs'
 import { waitForAsync } from './poll.mjs'
 
-test('large outline follows rich and source carets with bounded sidebar rows', {
+test('large outline follows rich and source carets with bounded rows and ignores stale results', {
   timeout: 45000,
 }, async (t) => {
   const profile = await mkdtemp(join(tmpdir(), 'hibi-outline-navigation-'))
@@ -141,38 +141,6 @@ test('large outline follows rich and source carets with bounded sidebar rows', {
   )
   await rich.evaluate((element) => element.editor.commands.undo())
   await waitForAsync(page, async () => !(await window.hibi.getDocument()).dirty)
-  await page.evaluate(() => {
-    window.outlineKeyTrace = []
-    const state = () => {
-      const source = document.querySelector('.cm-content')
-      return {
-        active: document.activeElement?.className,
-        editable: source?.isContentEditable,
-        inert: Boolean(source?.closest('[inert]')),
-        ready: document.querySelector('.editor-panes')?.dataset.sourceReady,
-        mode: document.querySelector('.editor-panes')?.className,
-        anchor: getSelection()?.anchorNode?.textContent?.slice(-50),
-        offset: getSelection()?.anchorOffset,
-        heading: document.querySelector(
-          '.outline-sidebar[data-side="right"] [aria-selected="true"] .sidebar-label',
-        )?.textContent,
-      }
-    }
-    window.outlineKeyState = state
-    for (const type of ['focusin', 'keydown'])
-      document.addEventListener(
-        type,
-        (event) => {
-          window.outlineKeyTrace.push({
-            at: performance.now(),
-            type,
-            key: event.key,
-            ...state(),
-          })
-        },
-        true,
-      )
-  })
   await page.getByRole('button', { name: /^source view$/i }).click()
   const source = page.getByRole('textbox', {
     name: 'Markdown editor',
@@ -180,25 +148,11 @@ test('large outline follows rich and source carets with bounded sidebar rows', {
   })
   await source.waitFor()
   await source.focus()
-  await source.press(
-    process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End',
-  )
-  try {
-    await expectSelected('node 999')
-  } catch (error) {
-    error.message +=
-      '\n' +
-      JSON.stringify(
-        await page.evaluate(() => ({
-          trace: window.outlineKeyTrace,
-          state: window.outlineKeyState(),
-        })),
-      )
-    throw error
-  }
-  await source.press(
-    process.platform === 'darwin' ? 'Meta+ArrowUp' : 'Control+Home',
-  )
+  await source.press('ControlOrMeta+a')
+  await source.press('ArrowRight')
+  await expectSelected('node 999')
+  await source.press('ControlOrMeta+a')
+  await source.press('ArrowLeft')
   await expectSelected('top')
 })
 

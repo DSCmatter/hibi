@@ -129,14 +129,14 @@ test('failed rich module reaches draft recovery and reload can retry it', {
     .waitFor()
   await page.getByText('Document available', { exact: true }).waitFor()
   await app.evaluate(({ BrowserWindow }) => {
-    BrowserWindow.getAllWindows()[0].webContents.once(
-      'will-frame-navigate',
-      (event) => {
-        globalThis.recoveryNavigation = {
+    const contents = BrowserWindow.getAllWindows()[0].webContents
+    globalThis.recoveryNavigation = new Promise((resolve) =>
+      contents.once('will-frame-navigate', (event) =>
+        resolve({
           url: event.url,
           prevented: event.defaultPrevented,
-        }
-      },
+        }),
+      ),
     )
   })
   await page
