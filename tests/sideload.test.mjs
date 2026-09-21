@@ -268,13 +268,15 @@ test('sideloads reviewed packages disabled, discovers their settings/themes/comm
     (await page.evaluate(() => window.hibi.getDocument())).markdown,
     code,
   )
-  await source.press(`${mod}+z`)
+  await source.focus()
+  await pressShortcut(app, `${mod}+z`)
   await waitForAsync(
     page,
     async () =>
       !(await window.hibi.getDocument()).markdown.includes('fixture-code'),
   )
-  await source.press(
+  await pressShortcut(
+    app,
     process.platform === 'win32' ? 'Control+y' : `${mod}+Shift+z`,
   )
   await waitForAsync(

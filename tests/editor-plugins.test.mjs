@@ -129,6 +129,11 @@ test('word counts and block dragging preserve drafts, formatting, undo, and plug
     name: 'Markdown editor',
     exact: true,
   })
+  await page
+    .locator(
+      '.editor-panes.mode-markdown[data-source-ready="true"] .source-pane:not([inert]) .cm-content[contenteditable="true"]',
+    )
+    .waitFor({ timeout: 15_000 })
   await source.fill('# cafe\u0301 👨‍👩‍👧‍👦\n\n中文')
   await count('2 words · 12 characters')
   await pressShortcut(app, `${mod}+Shift+[`)

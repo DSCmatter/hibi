@@ -110,10 +110,9 @@ test('plugin pages, metadata, shared controls, and full source vim editing', {
   )
   await page.getByRole('tab', { name: /^markdown$/i, exact: true }).waitFor()
   await toggleAddon('vim', true)
-  assert.equal(
-    await page.locator('style[data-addon-style="vim.editor"]').count(),
-    1,
-  )
+  await page
+    .locator('style[data-addon-style="vim.editor"]')
+    .waitFor({ state: 'attached' })
   await page.getByRole('tab', { name: /^vim$/i, exact: true }).click()
   await page.waitForFunction(() => {
     const selected = document.querySelector(

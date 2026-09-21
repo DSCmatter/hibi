@@ -97,9 +97,22 @@ test('overflowing tabs reveal close buttons and reorder without losing drafts', 
     activeId,
   )
   await fullyVisible()
-  await active.dragTo(page.locator(`[data-tab-id="${neighbor}"]`), {
-    targetPosition: { x: 8, y: 10 },
-  })
+  await page
+    .locator('.document-tabs')
+    .evaluate((strip) =>
+      Promise.all(
+        strip
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished),
+      ),
+    )
+  const from = await page.locator(`[data-tab-key="${activeId}"]`).boundingBox(),
+    to = await page.locator(`[data-tab-key="${neighbor}"]`).boundingBox()
+  assert.ok(from && to)
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(to.x + 8, to.y + to.height / 2, { steps: 8 })
+  await page.mouse.up()
   await waitForAsync(
     page,
     async (id) => (await window.hibi.getDocument()).tabs[0].id === id,

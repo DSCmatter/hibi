@@ -93,7 +93,12 @@ test('development watches renderer, preload, addons, and documentation generatio
     if (child.exitCode === null && child.signalCode === null)
       await new Promise((done) => child.once('close', done))
     await browser?.close().catch(() => {})
-    await rm(root, { recursive: true, force: true })
+    await rm(root, {
+      recursive: true,
+      force: true,
+      maxRetries: 5,
+      retryDelay: 100,
+    })
   })
   async function until(predicate, label, timeout = 20000) {
     const end = Date.now() + timeout
