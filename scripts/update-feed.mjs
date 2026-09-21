@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { classifyRelease } from './nightly.mjs'
@@ -26,7 +26,14 @@ export async function updateFeed(release, directory) {
     )
     if (matches.length !== 1)
       throw new Error(`Missing or ambiguous updater package: ${platform}`)
-    const name = matches[0]
+    const source = matches[0]
+    // Older updaters reject underscores in any platform's filename.
+    const name =
+      platform === 'linux-x64'
+        ? `hibi-${release.version}-linux-x64.AppImage`
+        : source
+    if (name !== source)
+      await rename(resolve(directory, source), resolve(directory, name))
     const hash = createHash('sha512')
     let size = 0
     for await (const chunk of createReadStream(resolve(directory, name))) {

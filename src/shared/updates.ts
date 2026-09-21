@@ -64,7 +64,7 @@ export function updateRelease(
     if (
       !asset ||
       typeof asset.name !== 'string' ||
-      !/^hibi-[a-zA-Z0-9.-]+\.(exe|AppImage|dmg)$/.test(asset.name) ||
+      !/^hibi-[a-zA-Z0-9._-]+\.(exe|AppImage|dmg)$/.test(asset.name) ||
       !asset.name.startsWith(`hibi-${release.version}-`) ||
       !/^[A-Za-z0-9+/]{86}==$/.test(asset.sha512) ||
       !Number.isSafeInteger(asset.size) ||

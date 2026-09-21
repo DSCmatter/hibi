@@ -35,7 +35,7 @@ const manifest = (broken = false) => ({
   assets: Object.fromEntries(
     [
       ['win32-x64', 'win-x64.exe'],
-      ['linux-x64', 'linux-x64.AppImage'],
+      ['linux-x64', 'linux-x86_64.AppImage'],
       ['darwin-arm64', 'mac-arm64.dmg'],
       ['darwin-x64', 'mac-x64.dmg'],
     ].map(([platform, suffix]) => [
@@ -111,7 +111,20 @@ test('publication hashes real installers and keeps both feeds pinned to a comple
         checks: broken && !i ? 'failure' : 'success',
       })),
     }
-    assert.deepEqual(await updateFeed(release, root), manifest(broken))
+    const generated = await updateFeed(release, root)
+    const expected = manifest(broken)
+    expected.assets['linux-x64'].name = `hibi-${version}-linux-x64.AppImage`
+    assert.deepEqual(generated, expected)
+    assert.deepEqual(
+      await readFile(join(root, expected.assets['linux-x64'].name)),
+      bytes,
+    )
+    assert.ok(
+      !(await readdir(root)).includes(manifest().assets['linux-x64'].name),
+    )
+    assert.deepEqual(updateRelease(generated, 'nightly'), generated)
+    if (!broken)
+      assert.deepEqual(updateRelease(generated, 'nightly-green'), generated)
     for (const [platform, name] of [
       ['win32-x64', 'latest.yml'],
       ['linux-x64', 'latest-linux.yml'],
@@ -119,7 +132,7 @@ test('publication hashes real installers and keeps both feeds pinned to a comple
       const feed = parse(await readFile(join(root, name), 'utf8'))
       assert.equal(feed.version, version)
       assert.deepEqual(feed.files, [
-        { url: manifest().assets[platform].name, sha512, size: bytes.length },
+        { url: expected.assets[platform].name, sha512, size: bytes.length },
       ])
     }
   }
