@@ -5,10 +5,7 @@
 
 hibi is a desktop editor for local notes and documents. write in Markdown, edit the source, or keep both views side by side and come build the open source app for everything you write.
 
-<img width="2634" height="1664" alt="CleanShot 2026-09-21 at 1 14 57 AM@2x" src="https://github.com/user-attachments/assets/5f8ef875-0018-4cea-9773-0c16d24bfd2f" />
-
-
-
+<img width="2648" height="1664" alt="CleanShot 2026-09-21 at 9 16 14 AM@2x" src="https://github.com/user-attachments/assets/9bac8cf0-c641-4bb6-a5e2-c47fe7b0c7d1" />
 
 ## get started
 
