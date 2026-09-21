@@ -9,6 +9,9 @@ hibi is a desktop editor for local notes and documents. write in Markdown, edit 
 
 ## get started
 
+>[!NOTE]
+> nightlies are currently ad-hoc signed. which means you **may** get a smartscreen/gatekeeper warning, this is currently the case until we get into a stable build.
+
 download a build from [releases](https://github.com/schmayterling/hibi/releases) and back up your notes before using a nightly build.
 
 start typing, open a file, or open a folder as a workspace and **use `cmd+K` on macOS or `ctrl+K` on Windows and Linux to find commands and settings**.
